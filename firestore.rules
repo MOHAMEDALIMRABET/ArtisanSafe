@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Collection users - accès privé uniquement par l'utilisateur authentifié
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Collection artisans - lecture publique, écriture par l'artisan propriétaire
+    match /artisans/{artisanId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == artisanId;
+    }
+    
+    // Collection devis - accès uniquement au client et à l'artisan concernés
+    match /devis/{devisId} {
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.clientId || 
+         request.auth.uid == resource.data.artisanId);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.clientId || 
+         request.auth.uid == resource.data.artisanId);
+      allow delete: if request.auth != null && request.auth.uid == resource.data.clientId;
+    }
+    
+    // Collection avis - lecture publique, création uniquement par clients authentifiés
+    match /avis/{avisId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.clientId;
+    }
+    
+    // Collection conversations - accès uniquement aux participants
+    match /conversations/{conversationId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid in resource.data.participants;
+      
+      // Sous-collection messages
+      match /messages/{messageId} {
+        allow read: if request.auth != null && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if request.auth != null;
+      }
+    }
+  }
+}
