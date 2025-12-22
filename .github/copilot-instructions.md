@@ -4,6 +4,95 @@
 
 ArtisanSafe est une plateforme marketplace bilingue (français principal, anglais secondaire) qui connecte les clients avec des artisans qualifiés (plombiers, électriciens, menuisiers, maçons, etc.). La plateforme met l'accent sur la sécurité, la confiance et les transactions transparentes grâce à des profils vérifiés, des paiements sécurisés et une médiation des litiges.
 
+## 🎨 CHARTE GRAPHIQUE OBLIGATOIRE
+
+### Palette de couleurs (À RESPECTER STRICTEMENT)
+
+**Couleurs principales :**
+- **Primary (Orange BTP)**: `#FF6B00` - Boutons CTA, liens, accents importants
+- **Secondary (Bleu foncé)**: `#2C3E50` - Headers, navigation, confiance
+- **Accent (Jaune sécurité)**: `#FFC107` - Alertes sécurité, highlights
+
+**Couleurs fonctionnelles :**
+- **Success**: `#28A745`
+- **Danger**: `#DC3545`
+- **Warning**: `#FFC107`
+- **Info**: `#17A2B8`
+
+**Couleurs neutres :**
+- **Gris foncé**: `#6C757D`
+- **Gris moyen**: `#95A5A6`
+- **Gris clair**: `#E9ECEF`
+- **Fond clair**: `#F8F9FA`
+- **Blanc**: `#FFFFFF`
+
+**Couleurs de texte :**
+- **Texte principal**: `#2C3E50`
+- **Texte secondaire**: `#6C757D`
+- **Texte sur fond foncé**: `#FFFFFF`
+
+### Règles d'utilisation TailwindCSS
+
+#### Classes TailwindCSS à utiliser :
+```tsx
+// Couleurs principales
+bg-[#FF6B00]     // Fond orange (boutons primaires)
+bg-[#2C3E50]     // Fond bleu foncé (headers)
+bg-[#FFC107]     // Fond jaune (alertes)
+
+text-[#FF6B00]   // Texte orange (liens)
+text-[#2C3E50]   // Texte bleu foncé
+text-[#6C757D]   // Texte gris
+
+border-[#FF6B00] // Bordure orange
+border-[#2C3E50] // Bordure bleue
+
+hover:bg-[#E56100]  // Orange hover
+hover:bg-[#1A3A5C]  // Bleu hover
+```
+
+#### Composants UI - Conventions :
+
+**Bouton Primary :**
+```tsx
+className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-4 py-2 rounded-lg"
+```
+
+**Bouton Secondary :**
+```tsx
+className="border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white px-4 py-2 rounded-lg"
+```
+
+**Header/Navigation :**
+```tsx
+className="bg-[#2C3E50] text-white"
+```
+
+**Liens :**
+```tsx
+className="text-[#FF6B00] hover:underline"
+```
+
+**Cards :**
+```tsx
+className="bg-white border border-[#E9ECEF] hover:border-[#FF6B00] rounded-lg shadow-md"
+```
+
+### ❌ INTERDICTIONS STRICTES
+
+- ❌ NE JAMAIS utiliser `bg-blue-600`, `bg-blue-500`, `text-blue-600` (sauf pour info)
+- ❌ NE JAMAIS utiliser `bg-green-500` comme couleur principale
+- ❌ NE JAMAIS inventer de nouvelles couleurs
+- ❌ NE JAMAIS utiliser de dégradés autre que orange/bleu
+- ✅ TOUJOURS utiliser `bg-[#FF6B00]` pour les boutons d'action
+- ✅ TOUJOURS utiliser `bg-[#2C3E50]` pour les headers
+- ✅ TOUJOURS utiliser `text-[#FF6B00]` pour les liens
+
+### Contexte métier BTP
+- L'orange évoque la sécurité des chantiers
+- Le bleu inspire confiance et professionnalisme
+- Interface claire, professionnelle et rassurante
+
 ## Statut du projet
 
 **Phase actuelle :** Développement MVP - Infrastructure Firebase configurée.
