@@ -52,17 +52,29 @@ export default function InscriptionPage() {
 
     try {
       if (role === 'client') {
-        await signUpClient({ email, password, nom, prenom, telephone });
+        await signUpClient({ 
+          email, 
+          password, 
+          firstName: prenom,
+          lastName: nom,
+          phone: telephone,
+          role: 'client'
+        });
       } else {
         await signUpArtisan({
           email,
           password,
-          nom,
-          prenom,
-          telephone,
-          entreprise,
-          siret,
+          firstName: prenom,
+          lastName: nom,
+          phone: telephone,
+          role: 'artisan',
+          businessName: entreprise,
           metiers,
+          location: {
+            address: '',
+            city: '',
+            postalCode: ''
+          }
         });
       }
       

@@ -22,9 +22,9 @@ export default function Home() {
               </Button>
             </Link>
             <Link href="/connexion">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
+              <button className="w-full sm:w-auto bg-white text-[#2C3E50] hover:bg-[#D1D5DB] px-6 py-3 text-lg font-medium rounded-lg transition-all duration-200 border-2 border-white shadow-lg hover:shadow-xl">
                 Se connecter
-              </Button>
+              </button>
             </Link>
           </div>
         </div>
@@ -79,9 +79,9 @@ export default function Home() {
               Inscription gratuite, commission uniquement sur les prestations réalisées.
             </p>
             <Link href="/inscription">
-              <Button variant="secondary" size="lg" className="bg-white text-[#FF6B00] hover:bg-[#F8F9FA]">
+              <button className="bg-white text-[#FF6B00] hover:bg-[#E9ECEF] hover:text-[#E56100] px-6 py-3 text-lg font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
                 Créer mon profil artisan
-              </Button>
+              </button>
             </Link>
           </div>
         </div>

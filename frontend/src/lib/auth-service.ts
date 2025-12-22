@@ -2,7 +2,7 @@ import { auth } from '@/lib/firebase';
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut,
+  signOut as firebaseSignOut,
   onAuthStateChanged,
   User,
   updateProfile
@@ -148,7 +148,7 @@ export const authService = {
    */
   async signOut() {
     try {
-      await signOut(auth);
+      await firebaseSignOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
@@ -169,3 +169,12 @@ export const authService = {
     return auth.currentUser;
   },
 };
+
+// Exports individuels pour faciliter l'import
+export const signUpClient = authService.signUpClient.bind(authService);
+export const signUpArtisan = authService.signUpArtisan.bind(authService);
+export const signIn = authService.signIn.bind(authService);
+export const signOut = authService.signOut.bind(authService);
+export const getCurrentUser = authService.getCurrentUser.bind(authService);
+export const onAuthChanged = authService.onAuthStateChanged.bind(authService);
+
