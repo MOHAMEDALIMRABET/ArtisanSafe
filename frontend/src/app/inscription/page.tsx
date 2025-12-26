@@ -115,7 +115,7 @@ export default function InscriptionPage() {
       <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] flex items-center justify-center p-4">
         <Card className="max-w-2xl w-full">
           <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
-            Bienvenue sur ArtisanSafe
+            Bienvenue sur Artisan Dispo
           </h1>
           <p className="text-center text-gray-600 mb-8">
             Choisissez votre profil pour commencer

@@ -32,7 +32,7 @@ export default function ConnexionPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">ArtisanSafe</h1>
+          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Artisan Dispo</h1>
           <p className="text-gray-600">Connectez-vous à votre compte</p>
         </div>
 

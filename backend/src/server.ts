@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/v1/health', (req: Request, res: Response) => {
   res.json({ 
     status: 'success', 
-    message: 'ArtisanSafe API fonctionne correctement',
+    message: 'Artisan Dispo API fonctionne correctement',
     timestamp: new Date().toISOString()
   });
 });
