@@ -402,7 +402,16 @@ PUT    /admin/users/:id/suspend    // Suspendre compte
 
 ---
 
-## 💾 Data Layer
+## 💾 Data Layer (100% Firebase pour MVP)
+
+### ✅ Stack de stockage MVP
+Toute la donnée et le stockage restent sur **Firebase** :
+- **Firebase Firestore** : Base de données NoSQL temps réel
+- **Firebase Storage** : Stockage fichiers (images, PDF)
+- **Firebase Auth** : Authentification utilisateurs
+- **Firebase Functions** : Backend serverless (optionnel)
+
+**👉 Pas d'AWS, pas de Redis pour le MVP - Stack 100% Firebase**
 
 ### Firebase Firestore
 **Choix technique :** Base NoSQL documentaire, temps réel, scalable
@@ -679,21 +688,14 @@ PUT    /admin/users/:id/suspend    // Suspendre compte
 
 ---
 
-### Redis (Cache & Rate Limiting)
-**Usage :**
-- **Cache** : données fréquentes (profils artisans, disponibilités)
-- **Sessions** : tokens JWT
-- **Rate limiting** : protection anti-spam
-- **Queues** : jobs asynchrones (emails, notifications)
+### Redis (Cache & Rate Limiting) - ⚠️ PHASE 2
+**Note :** Redis sera intégré en Phase 2 pour optimisation. MVP fonctionne 100% Firebase.
 
-**Structure clés :**
-```
-user:session:{userId}             → JWT token
-artisan:disponibilites:{id}       → Cache agenda (TTL 1h)
-ratelimit:{ip}:{endpoint}         → Compteur requêtes
-matching:cache:{demandeId}        → Résultats matching (TTL 10min)
-notifications:queue               → Queue emails/push
-```
+**Usage futur :**
+- Cache données fréquentes
+- Sessions tokens
+- Rate limiting avancé
+- Queues asynchrones
 
 ---
 
@@ -827,65 +829,101 @@ POST /webhooks/stripe
 
 ## 📊 Performance & Scalabilité
 
-### Optimisations
-- **Cache Redis** : données fréquentes (TTL adaptatif)
-- **CDN** : assets statiques (images, CSS, JS)
-- **Lazy loading** : pagination résultats
-- **Compression** : Gzip/Brotli réponses API
-- **Database indexing** : requêtes optimisées
+### Optimisations (MVP Firebase)
+- **Cache Firestore** : persistence automatique offline
+- **CDN Firebase** : assets statiques automatique
+- **Lazy loading** : pagination résultats (limit/offset)
+- **Compression** : Gzip automatique Firebase
+- **Database indexing** : index composites Firestore
 
-### Monitoring
-- **APM** : New Relic / Datadog
-- **Logs** : Winston + centralisés (CloudWatch / LogRocket)
-- **Métriques** :
-  - Temps de réponse API
-  - Taux d'erreurs
-  - Throughput requêtes/s
-  - Taux de conversion
+### Optimisations (Phase 2)
+- Redis cache externe
+- CDN Cloudflare
+- APM monitoring
 
-### Scalabilité
-- **Horizontal scaling** : multiple instances API Gateway
-- **Load balancing** : Nginx / AWS ALB
-- **Microservices** : déploiement indépendant
-- **Firebase auto-scaling** : géré automatiquement
+### Monitoring (MVP)
+- **Firebase Console** : Analytics intégré
+- **Logs** : Firebase Functions logs
+- **Crashlytics** : Erreurs mobile (Firebase)
+
+### Monitoring (Phase 2)
+- APM : New Relic / Datadog
+- Logs centralisés : CloudWatch / LogRocket
+- Métriques avancées
+
+### Scalabilité (MVP Firebase)
+- **Auto-scaling Firebase** : géré automatiquement par Google
+- **Firestore** : scalabilité horizontale native
+- **Firebase Functions** : scaling automatique
+- **Firebase Storage** : CDN global intégré
+
+### Scalabilité (Phase 2 - Si besoin)
+- Backend séparé (Node.js standalone)
+- Load balancing Nginx / AWS ALB
+- Microservices déployés séparément
 
 ---
 
-## 🚀 Déploiement
+## 🚀 Déploiement (MVP - 100% Firebase)
+
+### Stack MVP recommandée
+1. **Frontend** : Vercel (Next.js) ✅
+2. **Backend API** : Vercel Serverless Functions OU Firebase Functions
+3. **Database** : Firebase Firestore ✅
+4. **Storage** : Firebase Storage ✅
+5. **Auth** : Firebase Auth ✅
+6. **Paiements** : Stripe (externe) ✅
+
+**👉 Aucun serveur à gérer, scaling automatique, coûts optimisés**
 
 ### Environnements
 - **Development** : local (localhost:3000 / 5000)
 - **Staging** : tests pré-production
 - **Production** : plateforme live
 
-### Infrastructure
-- **Frontend** : Vercel (Next.js)
-- **Backend** : AWS EC2 / Heroku / Railway
-- **Database** : Firebase (managed)
-- **Cache** : Redis Cloud / AWS ElastiCache
-- **CDN** : Cloudflare
+### Infrastructure (MVP - 100% Firebase)
+- **Frontend** : Vercel (Next.js) ou Firebase Hosting
+- **Backend** : Firebase Functions ou Vercel Serverless
+- **Database** : Firebase Firestore ✅
+- **Storage** : Firebase Storage ✅
+- **Auth** : Firebase Auth ✅
+- **CDN** : Firebase CDN intégré
 - **CI/CD** : GitHub Actions
 
-### Variables d'environnement
+### Infrastructure (Phase 2 - Optimisation)
+- Backend : AWS EC2 / Heroku (si besoin scaling)
+- Cache : Redis Cloud / AWS ElastiCache
+- Monitoring : New Relic / Datadog
+
+### Variables d'environnement (MVP Firebase)
 ```bash
 # Backend (.env)
 NODE_ENV=production
 PORT=5000
 
-# Firebase
+# Firebase (TOUT le stockage)
 FIREBASE_PROJECT_ID=artisansafe
 FIREBASE_PRIVATE_KEY=...
 FIREBASE_CLIENT_EMAIL=...
+FIREBASE_STORAGE_BUCKET=artisansafe.appspot.com
 
-# Stripe
+# Stripe (Paiements)
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Redis
+# CORS
+ALLOWED_ORIGINS=https://artisandispo.fr
+```
+
+### Variables supplémentaires (Phase 2)
+```bash
+# Redis (cache) - Phase 2 uniquement
 REDIS_URL=redis://...
 
-# CORS
-ALLOWED_ORIGINS=https://artisandispo.fr,https://app.artisandispo.fr
+# AWS (si migration partielle) - Phase 2 uniquement
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_S3_BUCKET=...
 ```
 
 ---
@@ -917,26 +955,31 @@ ALLOWED_ORIGINS=https://artisandispo.fr,https://app.artisandispo.fr
 
 ---
 
-## 🎯 Prochaines étapes techniques
+## 🎯 Prochaines étapes techniques (MVP Firebase)
 
-### Phase 2 - Développement (Semaines 3-4)
-1. ✅ Setup API Gateway Express
-2. ⏳ Implémenter microservice Auth & Users
-3. ⏳ Implémenter Core Marketplace (demandes/devis)
-4. ⏳ Développer Matching Engine
-5. ⏳ Setup Redis cache
+### Phase 2 - Développement Core (Semaines 3-4)
+1. ⏳ Implémenter services Firebase (demandes, devis, contrats)
+2. ⏳ Développer Matching Engine (algorithme scoring)
+3. ⏳ Créer collections Firestore avec règles sécurité
+4. ⏳ Implémenter recherche artisans (geo-queries)
 
 ### Phase 3 - Intégrations (Semaines 5-6)
-1. ⏳ Intégration Stripe Connect
-2. ⏳ Messagerie WebSocket
-3. ⏳ Service notifications (emails/push)
+1. ⏳ Intégration Stripe Connect (paiements + escrow)
+2. ⏳ Messagerie temps réel (Firestore subcollections)
+3. ⏳ Notifications (Firebase Cloud Messaging)
 4. ⏳ Upload fichiers Firebase Storage
 
 ### Phase 4 - Production (Semaines 7-8)
-1. ⏳ Admin backoffice
+1. ⏳ Admin backoffice (Firebase Admin SDK)
 2. ⏳ Système litiges
 3. ⏳ Tests end-to-end
-4. ⏳ Déploiement production
+4. ⏳ Déploiement production (Vercel + Firebase)
+
+### Phase 5 - Optimisation (Post-MVP, si besoin)
+1. ⏳ Intégration Redis (cache)
+2. ⏳ Migration backend vers serveur dédié
+3. ⏳ CDN Cloudflare
+4. ⏳ Monitoring avancé (Datadog)
 
 ---
 
