@@ -61,6 +61,10 @@ export default function ProfilArtisanPage() {
 
       setArtisan(artisanData);
       
+      // DEBUG: Voir les métiers dans Firestore
+      console.log('Métiers chargés depuis Firestore:', artisanData.metiers);
+      console.log('Type des métiers:', typeof artisanData.metiers, Array.isArray(artisanData.metiers));
+      
       // Pré-remplir le formulaire
       setSiret(artisanData.siret || '');
       setRaisonSociale(artisanData.raisonSociale || '');
@@ -136,6 +140,9 @@ export default function ProfilArtisanPage() {
         departements: [] // À implémenter plus tard
       }];
 
+      // DEBUG: Voir les métiers avant sauvegarde
+      console.log('Métiers à sauvegarder:', metiers);
+      
       await updateArtisan(artisan.userId, {
         siret: siret.replace(/\s/g, ''),
         raisonSociale: raisonSociale.trim(),

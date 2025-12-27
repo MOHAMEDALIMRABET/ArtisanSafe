@@ -17,7 +17,14 @@ export type Categorie =
   | 'electricite' 
   | 'peinture' 
   | 'menuiserie' 
-  | 'maconnerie' 
+  | 'maconnerie'
+  | 'placo'
+  | 'carrelage'
+  | 'chauffage'
+  | 'climatisation'
+  | 'toiture'
+  | 'isolation'
+  | 'serrurerie'
   | 'autre';
 
 export type Urgence = 'normal' | 'rapide' | 'urgent';
