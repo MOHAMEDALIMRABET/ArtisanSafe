@@ -46,11 +46,6 @@ export default function ArtisanDashboardPage() {
       const artisanData = await getArtisanByUserId(currentUser.uid);
       if (artisanData) {
         setArtisan(artisanData);
-        // Si profil incomplet, rediriger vers profil
-        if (!artisanData.siret) {
-          router.push('/artisan/profil');
-          return;
-        }
       }
 
       setIsLoading(false);
@@ -131,8 +126,8 @@ export default function ArtisanDashboardPage() {
               </div>
               {artisan && (
                 <div className="text-sm text-gray-500">
-                  <p>📍 {artisan.zonesIntervention.length} zones d'intervention</p>
-                  <p>🔧 {artisan.categories.length} métier(s)</p>
+                  <p>📍 {artisan.zonesIntervention?.length || 0} zones d'intervention</p>
+                  <p>🔧 {artisan.metiers?.length || 0} métier(s)</p>
                 </div>
               )}
             </div>
