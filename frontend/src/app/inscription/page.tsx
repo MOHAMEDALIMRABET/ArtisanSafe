@@ -121,8 +121,32 @@ export default function InscriptionPage() {
   // Étape 1 : Choix du rôle
   if (!role) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] flex items-center justify-center p-4">
-        <Card className="max-w-2xl w-full">
+      <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C]">
+        {/* Navigation Header */}
+        <nav className="bg-white shadow-md sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-[#FF6B00] rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <span className="text-2xl font-bold text-[#2C3E50]">Artisan Dispo</span>
+              </Link>
+              <div className="flex items-center gap-3">
+                <Link href="/connexion">
+                  <button className="text-[#2C3E50] hover:text-[#FF6B00] font-medium px-4 py-2 rounded-lg transition-colors">
+                    Connexion
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <div className="flex items-center justify-center p-4 py-16">
+          <Card className="max-w-2xl w-full">
           <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
             Bienvenue sur Artisan Dispo
           </h1>
@@ -217,14 +241,39 @@ export default function InscriptionPage() {
             </p>
           </div>
         </Card>
+        </div>
       </div>
     );
   }
 
   // Étape 2 : Formulaire d'inscription
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-      <Card className="max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      {/* Navigation Header */}
+      <nav className="bg-white shadow-md sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-[#FF6B00] rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <span className="text-2xl font-bold text-[#2C3E50]">Artisan Dispo</span>
+            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/connexion">
+                <button className="text-[#2C3E50] hover:text-[#FF6B00] font-medium px-4 py-2 rounded-lg transition-colors">
+                  Connexion
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="flex items-center justify-center p-4 py-16">
+        <Card className="max-w-md w-full">
         <button
           onClick={() => setRole(null)}
           className="flex items-center text-gray-600 hover:text-gray-800 mb-4"
@@ -375,6 +424,7 @@ export default function InscriptionPage() {
           </Link>
         </div>
       </Card>
+      </div>
     </div>
   );
 }
