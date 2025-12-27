@@ -24,6 +24,7 @@ export interface SignUpData {
 export interface ArtisanSignUpData extends SignUpData {
   role: 'artisan';
   businessName: string;
+  siret?: string;
   metiers: string[];
   location: {
     address: string;
@@ -126,7 +127,7 @@ export const authService = {
       // Créer le profil artisan public avec notre nouveau service
       const artisanData = {
         userId: user.uid,
-        siret: '', // À remplir dans le profil
+        siret: data.siret || '', // SIRET fourni à l'inscription ou à remplir dans le profil
         raisonSociale: data.businessName,
         formeJuridique: 'SARL' as const, // Valeur par défaut, à modifier dans le profil
         metiers: (data.metiers || []) as any[], // Les métiers sont déjà normalisés depuis le formulaire

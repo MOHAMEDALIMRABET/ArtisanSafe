@@ -79,6 +79,7 @@ export default function InscriptionPage() {
           phone: telephone,
           role: 'artisan',
           businessName: entreprise,
+          siret: siret,
           metiers,
           location: {
             address: '',
