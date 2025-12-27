@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { Button, Input, Card, Logo } from '@/components/ui';
+import type { Categorie } from '@/types/firestore';
 
 type UserRole = 'client' | 'artisan';
 
@@ -107,16 +108,24 @@ export default function InscriptionPage() {
     setMetiers(metiers.filter(m => m !== metier));
   };
 
-  const metiersDisponibles = [
-    'Plomberie',
-    'Électricité',
-    'Menuiserie',
-    'Maçonnerie',
-    'Peinture',
-    'Carrelage',
-    'Toiture',
-    'Chauffage',
-  ];
+  // Mapping métiers : valeur technique -> label affichage
+  const METIERS_MAP: Record<Categorie, string> = {
+    'plomberie': 'Plomberie',
+    'electricite': 'Électricité',
+    'menuiserie': 'Menuiserie',
+    'maconnerie': 'Maçonnerie',
+    'peinture': 'Peinture',
+    'carrelage': 'Carrelage',
+    'toiture': 'Toiture',
+    'chauffage': 'Chauffage',
+    'climatisation': 'Climatisation',
+    'placo': 'Placo',
+    'isolation': 'Isolation',
+    'serrurerie': 'Serrurerie',
+    'autre': 'Autre'
+  };
+
+  const metiersDisponibles = Object.keys(METIERS_MAP) as Categorie[];
 
   // Étape 1 : Choix du rôle
   if (!role) {
@@ -351,7 +360,7 @@ export default function InscriptionPage() {
                   >
                     <option value="" style={{ color: '#6B7280' }}>Sélectionner un métier</option>
                     {metiersDisponibles.map((m) => (
-                      <option key={m} value={m} style={{ color: '#1F2937' }}>{m}</option>
+                      <option key={m} value={m} style={{ color: '#1F2937' }}>{METIERS_MAP[m]}</option>
                     ))}
                   </select>
                   <Button type="button" onClick={addMetier} variant="outline">
@@ -364,7 +373,7 @@ export default function InscriptionPage() {
                       key={metier}
                       className="inline-flex items-center px-3 py-1 bg-[#FF6B00] text-white rounded-full text-sm font-medium"
                     >
-                      {metier}
+                      {METIERS_MAP[metier as Categorie] || metier}
                       <button
                         type="button"
                         onClick={() => removeMetier(metier)}

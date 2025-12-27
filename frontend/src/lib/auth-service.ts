@@ -129,7 +129,7 @@ export const authService = {
         siret: '', // À remplir dans le profil
         raisonSociale: data.businessName,
         formeJuridique: 'SARL' as const, // Valeur par défaut, à modifier dans le profil
-        metiers: (data.metiers || []).map(m => m.toLowerCase()) as any[], // Convertir en minuscules
+        metiers: (data.metiers || []) as any[], // Les métiers sont déjà normalisés depuis le formulaire
         zonesIntervention: data.location?.city ? [{
           ville: data.location.city,
           codePostal: data.location.postalCode || '',

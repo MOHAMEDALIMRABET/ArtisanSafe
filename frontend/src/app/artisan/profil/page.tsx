@@ -6,7 +6,24 @@ import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId, updateArtisan } from '@/lib/firebase/artisan-service';
 import { Button, Input, Logo } from '@/components/ui';
-import type { Artisan, Categorie, ZoneIntervention } from '@/types/firestore';
+import type { Categorie, Artisan, ZoneIntervention } from '@/types/firestore';
+
+// Mapping métiers : valeur technique -> label affichage
+const METIERS_MAP: Record<Categorie, string> = {
+  'plomberie': 'Plomberie',
+  'electricite': 'Électricité',
+  'menuiserie': 'Menuiserie',
+  'maconnerie': 'Maçonnerie',
+  'peinture': 'Peinture',
+  'carrelage': 'Carrelage',
+  'toiture': 'Toiture',
+  'chauffage': 'Chauffage',
+  'climatisation': 'Climatisation',
+  'placo': 'Placo',
+  'isolation': 'Isolation',
+  'serrurerie': 'Serrurerie',
+  'autre': 'Autre'
+};
 
 const METIERS_DISPONIBLES: Categorie[] = [
   'plomberie',
@@ -64,11 +81,19 @@ export default function ProfilArtisanPage() {
       // DEBUG: Voir les métiers dans Firestore
       console.log('Métiers chargés depuis Firestore:', artisanData.metiers);
       console.log('Type des métiers:', typeof artisanData.metiers, Array.isArray(artisanData.metiers));
+      console.log('Métiers détaillés:', JSON.stringify(artisanData.metiers));
       
       // Pré-remplir le formulaire
       setSiret(artisanData.siret || '');
       setRaisonSociale(artisanData.raisonSociale || '');
-      setMetiers(artisanData.metiers || []);
+      
+      // Assurer que metiers est bien un tableau
+      const metiersArray = Array.isArray(artisanData.metiers) 
+        ? artisanData.metiers 
+        : (artisanData.metiers ? Object.values(artisanData.metiers) : []);
+      
+      console.log('Métiers après conversion:', metiersArray);
+      setMetiers(metiersArray);
       setTarifHoraire(artisanData.tarifHoraire?.toString() || '');
       setPresentation(artisanData.presentation || '');
       
@@ -282,7 +307,7 @@ export default function ProfilArtisanPage() {
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  {metier.charAt(0).toUpperCase() + metier.slice(1)}
+                  {METIERS_MAP[metier]}
                 </button>
               ))}
             </div>

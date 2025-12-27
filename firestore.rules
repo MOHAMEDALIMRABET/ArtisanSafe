@@ -67,9 +67,6 @@ service cloud.firestore {
                        isArtisan();
       allow update: if (isAuthenticated() && request.auth.uid == resource.data.userId) || isAdmin();
       allow delete: if isAdmin();
-      
-      // Validation SIRET
-      allow write: if request.resource.data.siret.matches('^[0-9]{14}$');
     }
     
     // ============================================
