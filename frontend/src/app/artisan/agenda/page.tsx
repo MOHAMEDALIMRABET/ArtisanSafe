@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar';
+import { Calendar, dateFnsLocalizer, Views, SlotInfo } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -33,6 +33,7 @@ interface CalendarEvent {
   end: Date;
   disponible: boolean;
   recurrence?: 'hebdomadaire' | 'ponctuel';
+  allDay?: boolean; // Journée complète ou plage horaire
 }
 
 export default function AgendaPage() {
@@ -122,16 +123,41 @@ export default function AgendaPage() {
     }
   };
 
-  const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
-    const title = window.prompt('Nouveau créneau de disponibilité :');
+  const handleSelectSlot = (slotInfo: SlotInfo) => {
+    const { start, end, action } = slotInfo;
+    
+    // Déterminer si c'est une sélection multi-jours
+    const isMultiDay = end.getTime() - start.getTime() > 24 * 60 * 60 * 1000;
+    
+    const typeDisponibilite = window.confirm(
+      `Créer une disponibilité pour la période sélectionnée ?\n\n` +
+      `Du: ${format(start, 'dd/MM/yyyy HH:mm', { locale: fr })}\n` +
+      `Au: ${format(end, 'dd/MM/yyyy HH:mm', { locale: fr })}\n\n` +
+      `OK = Journée(s) complète(s) (7h-20h)\n` +
+      `Annuler = Garder l'horaire sélectionné`
+    );
+    
+    const title = window.prompt('Titre de la disponibilité :', 'Disponible');
+    
     if (title) {
+      let eventStart = new Date(start);
+      let eventEnd = new Date(end);
+      let allDay = typeDisponibilite;
+      
+      // Si journée complète, ajuster les heures
+      if (allDay) {
+        eventStart.setHours(7, 0, 0, 0);
+        eventEnd.setHours(20, 0, 0, 0);
+      }
+      
       const newEvent: CalendarEvent = {
         id: String(Date.now()),
         title,
-        start,
-        end,
+        start: eventStart,
+        end: eventEnd,
         disponible: true,
-        recurrence: 'ponctuel'
+        recurrence: 'ponctuel',
+        allDay
       };
       setEvents([...events, newEvent]);
     }
@@ -239,10 +265,13 @@ export default function AgendaPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <h2 className="font-semibold text-blue-900 mb-2">💡 Comment utiliser l'agenda ?</h2>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• <strong>Cliquez sur un créneau vide</strong> pour ajouter une disponibilité</li>
-            <li>• <strong>Cliquez sur un événement existant</strong> pour le modifier/supprimer</li>
+            <li>• <strong>Cliquez et faites glisser</strong> pour sélectionner une plage (jours, semaines, mois)</li>
+            <li>• <strong>Sélection multi-jours</strong> : Créez des disponibilités sur plusieurs jours d'un coup</li>
+            <li>• <strong>Journée complète</strong> : Sélectionnez "OK" pour disponibilité 7h-20h</li>
+            <li>• <strong>Horaire spécifique</strong> : Sélectionnez "Annuler" pour garder l'horaire exact</li>
+            <li>• <strong>Cliquez sur un événement</strong> pour le modifier/supprimer</li>
             <li>• <strong>Vert</strong> = Disponible | <strong>Rouge</strong> = Occupé</li>
-            <li>• Utilisez les flèches pour naviguer entre les semaines</li>
+            <li>• Changez de vue : Semaine, Mois, Jour, Agenda pour une meilleure gestion</li>
           </ul>
         </div>
 
@@ -253,24 +282,34 @@ export default function AgendaPage() {
             events={events}
             startAccessor="start"
             endAccessor="end"
+            allDayAccessor="allDay"
             style={{ height: '100%' }}
-            views={[Views.WEEK, Views.DAY, Views.MONTH]}
-            defaultView={Views.WEEK}
+            views={[Views.MONTH, Views.WEEK, Views.WORK_WEEK, Views.DAY, Views.AGENDA]}
+            defaultView={Views.MONTH}
             step={60}
+            timeslots={2}
             showMultiDayTimes
             selectable
+            selectMirror
+            longPressThreshold={250}
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
             eventPropGetter={eventStyleGetter}
+            drilldownView="day"
             messages={{
               week: 'Semaine',
+              work_week: 'Semaine de travail',
               day: 'Jour',
               month: 'Mois',
               previous: 'Précédent',
               next: 'Suivant',
               today: "Aujourd'hui",
               agenda: 'Agenda',
-              noEventsInRange: 'Aucun événement dans cette période',
+              date: 'Date',
+              time: 'Heure',
+              event: 'Événement',
+              allDay: 'Journée',
+              noEventsInRange: 'Aucune disponibilité dans cette période',
               showMore: (total) => `+ ${total} de plus`,
             }}
             culture="fr"
