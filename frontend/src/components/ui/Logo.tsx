@@ -19,12 +19,11 @@ export function Logo({ variant = 'full', size = 'md', href = '/' }: LogoProps) {
   const LogoContent = () => {
     return (
       <div className="flex items-center">
-        <Image
-          src="/logo-artisandispo.png"
+        <img
+          src="/images/Logo-artisandispo.png"
           alt="ArtisanDispo - Trouvez votre artisan de confiance"
           width={width}
           height={height}
-          priority
           className="h-auto object-contain"
         />
       </div>
