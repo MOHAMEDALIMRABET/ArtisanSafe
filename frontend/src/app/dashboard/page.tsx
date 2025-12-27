@@ -33,16 +33,14 @@ export default function DashboardPage() {
         return;
       }
 
+      // Si artisan, rediriger vers le dashboard artisan
+      if (userData.role === 'artisan') {
+        router.push('/artisan/dashboard');
+        return;
+      }
+
       setUser(userData);
       setIsLoading(false);
-
-      // Si artisan et profil incomplet, rediriger vers profil
-      if (userData.role === 'artisan') {
-        const artisan = await getArtisanByUserId(currentUser.uid);
-        if (artisan && !artisan.siret) {
-          router.push('/artisan/profil');
-        }
-      }
     } catch (error) {
       console.error('Erreur chargement utilisateur:', error);
       setIsLoading(false);
