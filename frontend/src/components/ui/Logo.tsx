@@ -17,11 +17,11 @@ export function Logo({ variant = 'full', size = 'md', href = '/' }: LogoProps) {
   const { width, height } = sizes[size];
 
   const LogoContent = () => {
-    // Toujours utiliser l'image PNG du logo
+    // Utiliser le SVG optimisé
     return (
       <div className="flex items-center">
         <Image
-          src="/logo-artisandispo.png"
+          src="/logo-artisandispo.svg"
           alt="ArtisanDispo - Trouvez votre artisan de confiance"
           width={width}
           height={height}
