@@ -1,46 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200">
-  <!-- Icône maison avec personnages -->
-  <g transform="translate(20, 50)">
-    <!-- Maison verte -->
-    <path d="M40 60 L80 30 L120 60" fill="none" stroke="#4A7C59" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-    <rect x="45" y="60" width="70" height="55" fill="none" stroke="#4A7C59" stroke-width="5" rx="2"/>
-    <rect x="65" y="75" width="15" height="15" fill="#4A7C59" rx="1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200">
+  <!-- Maison verte avec bordure -->
+  <g id="house">
+    <!-- Toit vert -->
+    <path d="M20 90 L100 20 L180 90" fill="none" stroke="#4A7C59" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 90 L100 20 L180 90" fill="#4A7C59" opacity="0.1"/>
+    
+    <!-- Corps de la maison -->
+    <rect x="30" y="90" width="140" height="90" fill="none" stroke="#4A7C59" stroke-width="8" rx="3"/>
+    
+    <!-- Fenêtre carrée -->
+    <rect x="70" y="50" width="20" height="20" fill="#4A7C59" stroke="#4A7C59" stroke-width="2"/>
+    <line x1="80" y1="50" x2="80" y2="70" stroke="white" stroke-width="2"/>
+    <line x1="70" y1="60" x2="90" y2="60" stroke="white" stroke-width="2"/>
     
     <!-- Marteau sur le toit -->
-    <g transform="translate(105, 40)">
-      <path d="M0 0 L8 -8 L12 -4 L4 4 Z" fill="#4A7C59"/>
-      <line x1="4" y1="4" x2="10" y2="10" stroke="#4A7C59" stroke-width="3" stroke-linecap="round"/>
+    <g transform="translate(145, 35)">
+      <rect x="0" y="0" width="15" height="8" fill="#4A7C59" rx="2"/>
+      <rect x="5" y="8" width="4" height="20" fill="#4A7C59" rx="1"/>
     </g>
-    
-    <!-- Personne gauche (beige clair) -->
-    <circle cx="65" cy="80" r="8" fill="#E8B89C"/>
-    <path d="M58 90 Q61 87 65 87 Q69 87 72 90 L72 110 L58 110 Z" fill="#E8B89C"/>
-    
-    <!-- Personne droite (orange) -->
-    <circle cx="95" cy="80" r="8" fill="#D97847"/>
-    <path d="M88 90 Q91 87 95 87 Q99 87 102 90 L102 110 L88 110 Z" fill="#D97847"/>
-    
-    <!-- Poignée de main au centre -->
-    <ellipse cx="80" cy="95" rx="14" ry="7" fill="#4A7C59" opacity="0.6"/>
-    
-    <!-- Pin de géolocalisation -->
-    <path d="M80 98 Q80 102 80 106 L80 112" stroke="#4A7C59" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <circle cx="80" cy="102" r="4.5" fill="#4A7C59"/>
-    <circle cx="80" cy="102" r="2" fill="white"/>
-    
-    <!-- Courbe orange décorative -->
-    <path d="M40 120 Q80 125 120 120" fill="none" stroke="#FF6B00" stroke-width="4" stroke-linecap="round"/>
   </g>
   
-  <!-- Texte "ArtisanDispo" -->
-  <g transform="translate(180, 100)">
-    <!-- "Artisan" en vert foncé -->
-    <text x="0" y="0" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#2C5F3F" font-style="italic">
-      Artisan
-    </text>
-    <!-- "Dispo" en orange -->
-    <text x="170" y="0" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#FF6B00" font-style="italic">
-      Dispo
-    </text>
+  <!-- Personne de gauche (beige) -->
+  <g id="person-left">
+    <circle cx="70" cy="110" r="18" fill="#DEB887"/>
+    <path d="M55 135 Q62 128 70 128 Q78 128 85 135 L85 175 L55 175 Z" fill="#DEB887"/>
+    <ellipse cx="70" cy="145" rx="8" ry="12" fill="#DEB887" opacity="0.3"/>
   </g>
+  
+  <!-- Personne de droite (orange) -->
+  <g id="person-right">
+    <circle cx="130" cy="110" r="18" fill="#C8653B"/>
+    <path d="M115 135 Q122 128 130 128 Q138 128 145 135 L145 175 L115 175 Z" fill="#C8653B"/>
+    <ellipse cx="130" cy="145" rx="8" ry="12" fill="#C8653B" opacity="0.3"/>
+  </g>
+  
+  <!-- Poignée de main au centre -->
+  <g id="handshake">
+    <ellipse cx="100" cy="140" rx="22" ry="10" fill="#4A7C59" opacity="0.6"/>
+    <circle cx="100" cy="140" r="6" fill="#4A7C59"/>
+  </g>
+  
+  <!-- Pin de géolocalisation vert -->
+  <g id="location-pin">
+    <circle cx="100" cy="148" r="10" fill="#4A7C59"/>
+    <circle cx="100" cy="148" r="5" fill="white"/>
+    <path d="M100 158 Q100 165 100 172" stroke="#4A7C59" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Courbe orange décorative en bas -->
+  <path d="M20 185 Q100 195 180 185" fill="none" stroke="#FF8C42" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Texte "Artisan" en script vert foncé -->
+  <text x="220" y="120" font-family="'Brush Script MT', 'Lucida Handwriting', cursive" font-size="65" fill="#2F5233" font-style="italic">
+    Artisan
+  </text>
+  
+  <!-- Texte "Dispo" en script orange -->
+  <text x="480" y="120" font-family="'Brush Script MT', 'Lucida Handwriting', cursive" font-size="65" fill="#FF6B3D" font-style="italic">
+    Dispo
+  </text>
 </svg>
