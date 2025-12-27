@@ -9,3 +9,4 @@ export * from './demande-service';
 export * from './devis-service';
 export * from './contrat-service';
 export * from './matching-service';
+export * from './notification-service';

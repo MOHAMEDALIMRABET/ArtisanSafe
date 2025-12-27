@@ -44,6 +44,9 @@ function ResultatsContent() {
           urgence,
         };
 
+        // Sauvegarder les critères pour la création de demande
+        sessionStorage.setItem('searchCriteria', JSON.stringify(criteria));
+
         // Lancer le matching
         const matchedArtisans = await matchArtisans(criteria);
         setResults(matchedArtisans);
