@@ -9,19 +9,18 @@ interface LogoProps {
 
 export function Logo({ variant = 'full', size = 'md', href = '/' }: LogoProps) {
   const sizes = {
-    sm: { width: 120, height: 40 },
-    md: { width: 160, height: 50 },
-    lg: { width: 200, height: 65 },
+    sm: { width: 200, height: 50 },
+    md: { width: 300, height: 75 },
+    lg: { width: 400, height: 100 },
   };
 
   const { width, height } = sizes[size];
 
   const LogoContent = () => {
-    // Utiliser le SVG optimisé
     return (
       <div className="flex items-center">
         <Image
-          src="/logo-artisandispo.svg"
+          src="/logo-artisandispo.png"
           alt="ArtisanDispo - Trouvez votre artisan de confiance"
           width={width}
           height={height}
