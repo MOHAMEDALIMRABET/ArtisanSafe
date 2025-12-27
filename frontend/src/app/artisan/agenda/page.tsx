@@ -7,6 +7,10 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { authService } from '@/lib/auth-service';
+import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import { disponibiliteService } from '@/lib/firebase/disponibilite-service';
+import type { DisponibiliteSlot, Artisan } from '@/types/firestore';
+import { Timestamp } from 'firebase/firestore';
 
 // Configuration du localisateur français
 const locales = {
@@ -21,8 +25,8 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Types pour les créneaux de disponibilité
-interface DisponibiliteSlot {
+// Types pour les créneaux de disponibilité (pour le calendrier)
+interface CalendarEvent {
   id: string;
   title: string;
   start: Date;
@@ -33,8 +37,10 @@ interface DisponibiliteSlot {
 
 export default function AgendaPage() {
   const router = useRouter();
-  const [events, setEvents] = useState<DisponibiliteSlot[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [artisanId, setArtisanId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -53,27 +59,62 @@ export default function AgendaPage() {
 
   const loadDisponibilites = async () => {
     try {
-      // Exemple de données (à remplacer par appel Firestore)
-      const exampleSlots: DisponibiliteSlot[] = [
-        {
-          id: '1',
-          title: 'Disponible',
-          start: new Date(2025, 11, 27, 9, 0), // 27 déc 2025 9h
-          end: new Date(2025, 11, 27, 17, 0), // 27 déc 2025 17h
-          disponible: true,
-          recurrence: 'hebdomadaire'
-        },
-        {
-          id: '2',
-          title: 'Occupé - Chantier',
-          start: new Date(2025, 11, 28, 10, 0),
-          end: new Date(2025, 11, 28, 16, 0),
-          disponible: false,
-          recurrence: 'ponctuel'
-        }
-      ];
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser) return;
+
+      // Charger les données artisan
+      const artisanData = await getArtisanByUserId(currentUser.uid);
+      if (!artisanData || !artisanData.id) {
+        console.error('Artisan non trouvé');
+        setLoading(false);
+        return;
+      }
+
+      setArtisanId(artisanData.id);
+
+      // Charger les disponibilités depuis Firestore
+      const disponibilites = await disponibiliteService.getDisponibilites(artisanData.id);
       
-      setEvents(exampleSlots);
+      // Convertir DisponibiliteSlot[] en CalendarEvent[]
+      const calendarEvents: CalendarEvent[] = disponibilites.map(dispo => {
+        let start: Date;
+        let end: Date;
+
+        if (dispo.recurrence === 'ponctuel' && dispo.date) {
+          // Créneau ponctuel
+          const dateBase = dispo.date.toDate();
+          const [startH, startM] = dispo.heureDebut.split(':').map(Number);
+          const [endH, endM] = dispo.heureFin.split(':').map(Number);
+          
+          start = new Date(dateBase);
+          start.setHours(startH, startM, 0);
+          
+          end = new Date(dateBase);
+          end.setHours(endH, endM, 0);
+        } else {
+          // Créneau hebdomadaire (exemple cette semaine)
+          const today = new Date();
+          const [startH, startM] = dispo.heureDebut.split(':').map(Number);
+          const [endH, endM] = dispo.heureFin.split(':').map(Number);
+          
+          start = new Date(today);
+          start.setHours(startH, startM, 0);
+          
+          end = new Date(today);
+          end.setHours(endH, endM, 0);
+        }
+
+        return {
+          id: dispo.id || String(Date.now()),
+          title: dispo.titre || (dispo.disponible ? 'Disponible' : 'Occupé'),
+          start,
+          end,
+          disponible: dispo.disponible,
+          recurrence: dispo.recurrence
+        };
+      });
+      
+      setEvents(calendarEvents);
       setLoading(false);
     } catch (error) {
       console.error('Erreur chargement disponibilités:', error);
@@ -84,7 +125,7 @@ export default function AgendaPage() {
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
     const title = window.prompt('Nouveau créneau de disponibilité :');
     if (title) {
-      const newEvent: DisponibiliteSlot = {
+      const newEvent: CalendarEvent = {
         id: String(Date.now()),
         title,
         start,
@@ -96,14 +137,14 @@ export default function AgendaPage() {
     }
   };
 
-  const handleSelectEvent = (event: DisponibiliteSlot) => {
+  const handleSelectEvent = (event: CalendarEvent) => {
     const action = window.confirm(`Modifier "${event.title}" ?\n\nOK = Supprimer\nAnnuler = Garder`);
     if (action) {
       setEvents(events.filter(e => e.id !== event.id));
     }
   };
 
-  const eventStyleGetter = (event: DisponibiliteSlot) => {
+  const eventStyleGetter = (event: CalendarEvent) => {
     const backgroundColor = event.disponible ? '#28A745' : '#DC3545';
     const style = {
       backgroundColor,
@@ -114,6 +155,47 @@ export default function AgendaPage() {
       display: 'block'
     };
     return { style };
+  };
+
+  const handleSave = async () => {
+    if (!artisanId) {
+      alert('Erreur: Artisan non identifié');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Convertir CalendarEvent[] en DisponibiliteSlot[]
+      const disponibilites: DisponibiliteSlot[] = events.map(event => {
+        const heureDebut = format(event.start, 'HH:mm');
+        const heureFin = format(event.end, 'HH:mm');
+
+        const dispo: DisponibiliteSlot = {
+          id: event.id,
+          heureDebut,
+          heureFin,
+          recurrence: event.recurrence || 'ponctuel',
+          disponible: event.disponible,
+          titre: event.title
+        };
+
+        if (event.recurrence === 'ponctuel') {
+          dispo.date = Timestamp.fromDate(event.start);
+        }
+
+        return dispo;
+      });
+
+      await disponibiliteService.setDisponibilites(artisanId, disponibilites);
+      
+      alert('✅ Disponibilités sauvegardées avec succès !');
+      router.push('/artisan/dashboard');
+    } catch (error) {
+      console.error('Erreur sauvegarde:', error);
+      alert('❌ Erreur lors de la sauvegarde');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -202,18 +284,25 @@ export default function AgendaPage() {
           <button
             onClick={() => router.push('/artisan/dashboard')}
             className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+            disabled={saving}
           >
             Annuler
           </button>
           <button
-            onClick={() => {
-              // TODO: Sauvegarder dans Firestore
-              alert('Disponibilités sauvegardées !');
-              router.push('/artisan/dashboard');
-            }}
-            className="px-6 py-3 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] font-medium"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-3 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            💾 Sauvegarder les disponibilités
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Sauvegarde...
+              </>
+            ) : (
+              <>
+                💾 Sauvegarder les disponibilités
+              </>
+            )}
           </button>
         </div>
       </div>
