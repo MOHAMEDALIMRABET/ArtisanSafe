@@ -1,82 +1,86 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 250">
-  <!-- Maison verte avec contour -->
+  <!-- Maison verte avec contour plus épais -->
   <g id="house-structure">
     <!-- Toit -->
     <path d="M 30 110 L 130 30 L 230 110" 
           fill="none" 
-          stroke="#4A7C59" 
-          stroke-width="14" 
+          stroke="#5FAD6C" 
+          stroke-width="16" 
           stroke-linecap="round" 
           stroke-linejoin="round"/>
     
     <!-- Murs de la maison -->
     <path d="M 40 110 L 40 200 L 220 200 L 220 110" 
           fill="none" 
-          stroke="#4A7C59" 
-          stroke-width="12" 
+          stroke="#5FAD6C" 
+          stroke-width="14" 
           stroke-linejoin="round"/>
     
     <!-- Fenêtre avec carreaux -->
     <rect x="100" y="60" width="30" height="30" 
-          fill="#4A7C59" 
-          stroke="#4A7C59" 
+          fill="#5FAD6C" 
+          stroke="#5FAD6C" 
           stroke-width="3"/>
-    <line x1="115" y1="60" x2="115" y2="90" stroke="white" stroke-width="3"/>
-    <line x1="100" y1="75" x2="130" y2="75" stroke="white" stroke-width="3"/>
+    <line x1="115" y1="60" x2="115" y2="90" stroke="white" stroke-width="4"/>
+    <line x1="100" y1="75" x2="130" y2="75" stroke="white" stroke-width="4"/>
     
     <!-- Marteau sur le toit -->
     <g transform="translate(185, 45) rotate(-25)">
-      <rect x="0" y="0" width="20" height="12" fill="#4A7C59" rx="3"/>
-      <rect x="7" y="12" width="6" height="28" fill="#4A7C59" rx="2"/>
+      <rect x="0" y="0" width="20" height="12" fill="#5FAD6C" rx="3"/>
+      <rect x="7" y="12" width="6" height="28" fill="#5FAD6C" rx="2"/>
     </g>
   </g>
   
-  <!-- Personne de gauche (beige/tan) -->
+  <!-- Personne de gauche (beige plus clair) -->
   <g id="person-left">
-    <circle cx="85" cy="135" r="22" fill="#D4A574"/>
+    <circle cx="85" cy="135" r="22" fill="#E8C9A0"/>
     <path d="M 65 165 Q 75 157 85 157 Q 95 157 105 165 L 105 210 L 65 210 Z" 
-          fill="#D4A574"/>
+          fill="#E8C9A0"/>
   </g>
   
-  <!-- Personne de droite (orange) -->
+  <!-- Personne de droite (orange plus clair) -->
   <g id="person-right">
-    <circle cx="175" cy="135" r="22" fill="#C85A3C"/>
+    <circle cx="175" cy="135" r="22" fill="#E87854"/>
     <path d="M 155 165 Q 165 157 175 157 Q 185 157 195 165 L 195 210 L 155 210 Z" 
-          fill="#C85A3C"/>
+          fill="#E87854"/>
   </g>
   
-  <!-- Poignée de main (ellipse verte au centre) -->
-  <ellipse cx="130" cy="175" rx="28" ry="14" fill="#4A7C59" opacity="0.7"/>
+  <!-- Poignée de main (ellipse verte plus visible) -->
+  <ellipse cx="130" cy="175" rx="28" ry="14" fill="#5FAD6C" opacity="0.8"/>
   
-  <!-- Pin de géolocalisation vert -->
+  <!-- Pin de géolocalisation vert plus clair -->
   <g id="location-pin">
-    <circle cx="130" cy="185" r="14" fill="#5A9367" stroke="#4A7C59" stroke-width="2"/>
+    <circle cx="130" cy="185" r="14" fill="#6BC07A" stroke="#5FAD6C" stroke-width="2"/>
     <circle cx="130" cy="185" r="7" fill="white"/>
   </g>
   
-  <!-- Courbe orange décorative -->
+  <!-- Courbe orange décorative plus claire -->
   <path d="M 30 220 Q 130 235 230 220" 
         fill="none" 
-        stroke="#F4924A" 
-        stroke-width="10" 
+        stroke="#FF9D5C" 
+        stroke-width="11" 
         stroke-linecap="round"/>
   
-  <!-- Texte "Artisan" et "Dispo" côte à côte -->
+  <!-- Texte "Artisan" et "Dispo" côte à côte avec meilleure visibilité -->
   <g id="logo-text">
-    <!-- "Artisan" en style cursif vert foncé -->
+    <!-- "Artisan" en style cursif vert plus foncé et bold -->
     <text x="270" y="145" 
           font-family="'Brush Script MT', 'Lucida Handwriting', cursive, serif" 
-          font-size="85" 
-          fill="#2F5233" 
+          font-size="90" 
+          fill="#1E4D2B" 
           font-style="italic"
-          font-weight="400">Artisan</text>
+          font-weight="700"
+          stroke="#1E4D2B"
+          stroke-width="0.5">Artisan</text>
     
-    <!-- "Dispo" en style cursif orange, juste à côté -->
+    <!-- "Dispo" en style cursif orange plus vif et bold -->
     <text x="520" y="145" 
           font-family="'Brush Script MT', 'Lucida Handwriting', cursive, serif" 
-          font-size="85" 
-          fill="#E86B3C" 
+          font-size="90" 
+          fill="#FF6B35" 
           font-style="italic"
-          font-weight="400">Dispo</text>
+          font-weight="700"
+          stroke="#FF6B35"
+          stroke-width="0.5">Dispo</text>
   </g>
 </svg>
