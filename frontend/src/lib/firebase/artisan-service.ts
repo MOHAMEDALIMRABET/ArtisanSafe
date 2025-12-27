@@ -37,14 +37,19 @@ export async function createArtisan(
 ): Promise<Artisan> {
   const artisanRef = doc(db, COLLECTION_NAME, artisanData.userId);
   
+  // Filtrer les valeurs undefined
+  const cleanData = Object.fromEntries(
+    Object.entries(artisanData).filter(([_, v]) => v !== undefined)
+  );
+  
   const newArtisan: Artisan = {
-    ...artisanData,
+    ...cleanData,
     notation: 0,
     nombreAvis: 0,
     documentsVerifies: false,
     badgeVerifie: false,
     disponibilites: artisanData.disponibilites || [],
-  };
+  } as Artisan;
 
   await setDoc(artisanRef, newArtisan);
   return newArtisan;
@@ -72,7 +77,13 @@ export async function updateArtisan(
   updates: Partial<Artisan>
 ): Promise<void> {
   const artisanRef = doc(db, COLLECTION_NAME, userId);
-  await updateDoc(artisanRef, updates);
+  
+  // Filtrer les valeurs undefined
+  const cleanUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([_, v]) => v !== undefined)
+  );
+  
+  await updateDoc(artisanRef, cleanUpdates);
 }
 
 /**

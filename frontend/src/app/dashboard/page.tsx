@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
-import { getUser } from '@/lib/firebase/user-service';
+import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import type { User } from '@/types/firestore';
 
@@ -25,7 +25,7 @@ export default function DashboardPage() {
         return;
       }
 
-      const userData = await getUser(currentUser.uid);
+      const userData = await getUserById(currentUser.uid);
       if (!userData) {
         await authService.signOut();
         router.push('/connexion');

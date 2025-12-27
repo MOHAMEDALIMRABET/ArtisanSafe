@@ -360,11 +360,12 @@ export default function InscriptionPage() {
                   <select
                     value={metierInput}
                     onChange={(e) => setMetierInput(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00] bg-white text-base font-normal appearance-none"
+                    style={{ color: '#1F2937', minHeight: '42px' }}
                   >
-                    <option value="">Sélectionner un métier</option>
+                    <option value="" style={{ color: '#6B7280' }}>Sélectionner un métier</option>
                     {metiersDisponibles.map((m) => (
-                      <option key={m} value={m}>{m}</option>
+                      <option key={m} value={m} style={{ color: '#1F2937' }}>{m}</option>
                     ))}
                   </select>
                   <Button type="button" onClick={addMetier} variant="outline">
@@ -375,13 +376,13 @@ export default function InscriptionPage() {
                   {metiers.map((metier) => (
                     <span
                       key={metier}
-                      className="inline-flex items-center px-3 py-1 bg-[#FF6B00] bg-opacity-10 text-[#FF6B00] rounded-full text-sm"
+                      className="inline-flex items-center px-3 py-1 bg-[#FF6B00] text-white rounded-full text-sm font-medium"
                     >
                       {metier}
                       <button
                         type="button"
                         onClick={() => removeMetier(metier)}
-                        className="ml-2 text-[#FF6B00] hover:text-[#E56100]"
+                        className="ml-2 text-white hover:text-gray-200"
                       >
                         ×
                       </button>

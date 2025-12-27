@@ -124,32 +124,24 @@ export const authService = {
       await createUser(user.uid, userData);
 
       // Créer le profil artisan public avec notre nouveau service
-      const artisanData: Omit<Artisan, 'id'> = {
+      const artisanData = {
         userId: user.uid,
-        nomEntreprise: data.businessName,
         siret: '', // À remplir dans le profil
-        metiers: data.metiers as any[],
-        description: '',
-        photoProfil: '',
-        zonesIntervention: data.location.city ? [{
+        raisonSociale: data.businessName,
+        formeJuridique: 'SARL' as const, // Valeur par défaut, à modifier dans le profil
+        metiers: (data.metiers || []).map(m => m.toLowerCase()) as any[], // Convertir en minuscules
+        zonesIntervention: data.location?.city ? [{
           ville: data.location.city,
-          codePostal: data.location.postalCode,
+          codePostal: data.location.postalCode || '',
+          departements: [],
           rayonKm: 30, // Rayon par défaut
         }] : [],
         disponibilites: [], // À remplir dans l'agenda
-        tarifHoraire: undefined,
         notation: 0,
         nombreAvis: 0,
         badgeVerifie: false,
         documentsVerifies: false,
-        dateVerification: undefined,
-        compteBancaire: {
-          stripeAccountId: '', // À configurer plus tard
-          onboardingComplete: false,
-        },
-        statut: 'inactif', // Inactif jusqu'à vérification
-        dateCreation: Timestamp.now(),
-        dateModification: Timestamp.now(),
+        statut: 'inactif' as const, // Inactif jusqu'à vérification
       };
 
       await createArtisan(artisanData);
