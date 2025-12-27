@@ -195,7 +195,7 @@ export default function Home() {
               <p className="text-lg mb-6 text-[#E9ECEF]">
                 Trouvez le bon artisan pour vos travaux. Comparez les devis et choisissez en toute confiance.
               </p>
-              <Link href="/inscription">
+              <Link href="/inscription?role=client">
                 <button className="bg-white text-[#2C3E50] hover:bg-[#E9ECEF] hover:text-[#1A3A5C] px-6 py-3 text-lg font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
                   Créer mon profil particulier
                 </button>
@@ -213,7 +213,7 @@ export default function Home() {
                 Rejoignez notre plateforme et développez votre activité. 
                 Inscription gratuite, commission uniquement sur les prestations réalisées.
               </p>
-              <Link href="/inscription">
+              <Link href="/inscription?role=artisan">
                 <button className="bg-white text-[#FF6B00] hover:bg-[#E9ECEF] hover:text-[#E56100] px-6 py-3 text-lg font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
                   Créer mon profil artisan
                 </button>

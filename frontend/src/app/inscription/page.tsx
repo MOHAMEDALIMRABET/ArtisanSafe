@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { Button, Input, Card } from '@/components/ui';
@@ -10,9 +10,18 @@ type UserRole = 'client' | 'artisan';
 
 export default function InscriptionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [role, setRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Détecter le rôle depuis l'URL au chargement
+  useEffect(() => {
+    const roleParam = searchParams.get('role');
+    if (roleParam === 'client' || roleParam === 'artisan') {
+      setRole(roleParam);
+    }
+  }, [searchParams]);
 
   // Formulaire commun
   const [email, setEmail] = useState('');
