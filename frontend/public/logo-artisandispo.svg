@@ -61,19 +61,22 @@
         stroke-width="10" 
         stroke-linecap="round"/>
   
-  <!-- Texte "Artisan" en style cursif vert foncé -->
-  <text x="280" y="145" 
-        font-family="'Brush Script MT', 'Lucida Handwriting', cursive, serif" 
-        font-size="85" 
-        fill="#2F5233" 
-        font-style="italic"
-        font-weight="400">Artisan</text>
-  
-  <!-- Texte "Dispo" en style cursif orange -->
-  <text x="570" y="145" 
-        font-family="'Brush Script MT', 'Lucida Handwriting', cursive, serif" 
-        font-size="85" 
-        fill="#E86B3C" 
-        font-style="italic"
-        font-weight="400">Dispo</text>
+  <!-- Texte "Artisan" et "Dispo" côte à côte -->
+  <g id="logo-text">
+    <!-- "Artisan" en style cursif vert foncé -->
+    <text x="270" y="145" 
+          font-family="'Brush Script MT', 'Lucida Handwriting', cursive, serif" 
+          font-size="85" 
+          fill="#2F5233" 
+          font-style="italic"
+          font-weight="400">Artisan</text>
+    
+    <!-- "Dispo" en style cursif orange, juste à côté -->
+    <text x="520" y="145" 
+          font-family="'Brush Script MT', 'Lucida Handwriting', cursive, serif" 
+          font-size="85" 
+          fill="#E86B3C" 
+          font-style="italic"
+          font-weight="400">Dispo</text>
+  </g>
 </svg>
