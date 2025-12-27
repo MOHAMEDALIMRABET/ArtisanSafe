@@ -33,7 +33,7 @@ export default function ConnexionPage() {
       <Card className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Logo variant="icon" size="md" href="/" />
+            <Logo size="md" href="/" />
           </div>
           <p className="text-gray-600">Connectez-vous à votre compte</p>
         </div>

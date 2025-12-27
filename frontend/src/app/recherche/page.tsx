@@ -125,7 +125,7 @@ export default function RecherchePage() {
             <h1 className="text-3xl font-bold">Trouvez votre artisan</h1>
             <p className="text-[#95A5A6] mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
           </div>
-          <Logo variant="icon" size="md" href="/" />
+          <Logo size="md" href="/" />
         </div>
       </header>
 

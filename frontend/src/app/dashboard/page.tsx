@@ -71,7 +71,7 @@ export default function DashboardPage() {
       <nav className="bg-white shadow-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Logo variant="icon" size="md" />
+            <Logo size="md" />
             </Link>
             
             <button

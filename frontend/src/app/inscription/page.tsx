@@ -126,7 +126,7 @@ export default function InscriptionPage() {
         <nav className="bg-white shadow-md sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <Logo variant="icon" size="md" />
+              <Logo size="md" />
               <div className="flex items-center gap-3">
                 <Link href="/connexion">
                   <button className="text-[#2C3E50] hover:text-[#FF6B00] font-medium px-4 py-2 rounded-lg transition-colors">

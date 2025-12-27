@@ -10,7 +10,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Logo variant="icon" size="md" />
+            <Logo size="md" />
 
             {/* Menu de navigation */}
             <div className="hidden md:flex items-center gap-8">
