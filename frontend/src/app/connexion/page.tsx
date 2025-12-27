@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signIn } from '@/lib/auth-service';
+import { authService } from '@/lib/auth-service';
 import { Button, Input, Card } from '@/components/ui';
 
 export default function ConnexionPage() {
@@ -19,7 +19,7 @@ export default function ConnexionPage() {
     setIsLoading(true);
 
     try {
-      await signIn(email, password);
+      await authService.signIn(email, password);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Email ou mot de passe incorrect');

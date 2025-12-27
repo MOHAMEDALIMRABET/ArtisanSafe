@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signUpClient, signUpArtisan } from '@/lib/auth-service';
+import { authService } from '@/lib/auth-service';
 import { Button, Input, Card } from '@/components/ui';
 
 type UserRole = 'client' | 'artisan';
@@ -52,7 +52,7 @@ export default function InscriptionPage() {
 
     try {
       if (role === 'client') {
-        await signUpClient({ 
+        await authService.signUpClient({ 
           email, 
           password, 
           firstName: prenom,
@@ -61,7 +61,7 @@ export default function InscriptionPage() {
           role: 'client'
         });
       } else {
-        await signUpArtisan({
+        await authService.signUpArtisan({
           email,
           password,
           firstName: prenom,

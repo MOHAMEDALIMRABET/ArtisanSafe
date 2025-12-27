@@ -1,4 +1,4 @@
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/firebase/config';
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -7,7 +7,10 @@ import {
   User,
   updateProfile
 } from 'firebase/auth';
-import { firestoreService, COLLECTIONS } from './firestore-service';
+import { createUser } from './firebase/user-service';
+import { createArtisan } from './firebase/artisan-service';
+import type { User as UserType, Artisan } from '@/types/firestore';
+import { Timestamp } from 'firebase/firestore';
 
 export interface SignUpData {
   email: string;
@@ -52,19 +55,26 @@ export const authService = {
         displayName: `${data.firstName} ${data.lastName}`,
       });
 
-      // Créer le document utilisateur dans Firestore
-      await firestoreService.set(COLLECTIONS.USERS, user.uid, {
-        uid: user.uid,
+      // Créer le document utilisateur dans Firestore avec notre nouveau service
+      const userData: Omit<UserType, 'id'> = {
         email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
+        nom: data.lastName,
+        prenom: data.firstName,
+        telephone: data.phone || '',
         role: 'client',
-        savedArtisans: [],
-        activeDevis: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+        statut: 'verifie', // Client vérifié par défaut
+        preferences: {
+          notifications: {
+            email: true,
+            push: true,
+            sms: false,
+          },
+        },
+        dateCreation: Timestamp.now(),
+        dateModification: Timestamp.now(),
+      };
+
+      await createUser(user.uid, userData);
 
       return user;
     } catch (error) {
@@ -92,36 +102,57 @@ export const authService = {
         displayName: data.businessName,
       });
 
-      // Créer le document utilisateur
-      await firestoreService.set(COLLECTIONS.USERS, user.uid, {
-        uid: user.uid,
+      // Créer le document utilisateur avec notre nouveau service
+      const userData: Omit<UserType, 'id'> = {
         email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
+        nom: data.lastName,
+        prenom: data.firstName,
+        telephone: data.phone || '',
         role: 'artisan',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+        statut: 'non_verifie', // Artisan doit être vérifié manuellement
+        preferences: {
+          notifications: {
+            email: true,
+            push: true,
+            sms: false,
+          },
+        },
+        dateCreation: Timestamp.now(),
+        dateModification: Timestamp.now(),
+      };
 
-      // Créer le profil artisan public
-      await firestoreService.set(COLLECTIONS.ARTISANS, user.uid, {
-        uid: user.uid,
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        businessName: data.businessName,
-        metiers: data.metiers,
+      await createUser(user.uid, userData);
+
+      // Créer le profil artisan public avec notre nouveau service
+      const artisanData: Omit<Artisan, 'id'> = {
+        userId: user.uid,
+        nomEntreprise: data.businessName,
+        siret: '', // À remplir dans le profil
+        metiers: data.metiers as any[],
         description: '',
-        location: data.location,
-        verified: false, // À vérifier manuellement
-        rating: 0,
-        reviewCount: 0,
-        availability: true,
-        portfolio: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+        photoProfil: '',
+        zonesIntervention: data.location.city ? [{
+          ville: data.location.city,
+          codePostal: data.location.postalCode,
+          rayonKm: 30, // Rayon par défaut
+        }] : [],
+        disponibilites: [], // À remplir dans l'agenda
+        tarifHoraire: undefined,
+        notation: 0,
+        nombreAvis: 0,
+        badgeVerifie: false,
+        documentsVerifies: false,
+        dateVerification: undefined,
+        compteBancaire: {
+          stripeAccountId: '', // À configurer plus tard
+          onboardingComplete: false,
+        },
+        statut: 'inactif', // Inactif jusqu'à vérification
+        dateCreation: Timestamp.now(),
+        dateModification: Timestamp.now(),
+      };
+
+      await createArtisan(artisanData);
 
       return user;
     } catch (error) {
