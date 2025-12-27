@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <!-- Maison verte -->
+  <g id="house">
+    <!-- Toit -->
+    <path d="M120 180 L200 120 L280 180" fill="none" stroke="#4A7C59" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Murs -->
+    <rect x="130" y="180" width="140" height="120" fill="none" stroke="#4A7C59" stroke-width="8"/>
+    <!-- Fenêtre -->
+    <rect x="160" y="200" width="30" height="30" fill="#4A7C59"/>
+    <!-- Marteau -->
+    <path d="M240 140 L260 120 L270 130 L250 150 Z" fill="#4A7C59"/>
+    <line x1="250" y1="150" x2="270" y2="170" stroke="#4A7C59" stroke-width="4"/>
+  </g>
+  
+  <!-- Personnes qui se serrent la main -->
+  <g id="handshake">
+    <!-- Personne 1 (gauche) - orange -->
+    <circle cx="150" cy="220" r="15" fill="#E88B5E"/>
+    <path d="M140 240 Q145 235 150 235 Q155 235 160 240 L160 270 L140 270 Z" fill="#E88B5E"/>
+    
+    <!-- Personne 2 (droite) - orange -->
+    <circle cx="250" cy="220" r="15" fill="#D97847"/>
+    <path d="M240 240 Q245 235 250 235 Q255 235 260 240 L260 270 L240 270 Z" fill="#D97847"/>
+    
+    <!-- Poignée de main -->
+    <ellipse cx="200" cy="245" rx="25" ry="12" fill="#4A7C59" opacity="0.7"/>
+  </g>
+  
+  <!-- Pin de géolocalisation -->
+  <g id="pin">
+    <path d="M200 255 Q200 265 200 275 L200 285" stroke="#4A7C59" stroke-width="3" fill="none"/>
+    <circle cx="200" cy="260" r="8" fill="#4A7C59"/>
+    <circle cx="200" cy="260" r="4" fill="white"/>
+  </g>
+  
+  <!-- Courbe orange -->
+  <path d="M120 310 Q200 320 280 310" fill="none" stroke="#FF6B00" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Texte Artisan (vert foncé) -->
+  <text x="320" y="250" font-family="'Brush Script MT', cursive, serif" font-size="80" fill="#2C5F3F" font-weight="normal" font-style="italic">
+    Artisan
+  </text>
+  
+  <!-- Texte Dispo (orange) -->
+  <text x="680" y="250" font-family="'Brush Script MT', cursive, serif" font-size="80" fill="#FF6B00" font-weight="normal" font-style="italic">
+    Dispo
+  </text>
+</svg>

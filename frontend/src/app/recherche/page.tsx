@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
+import { Button, Logo } from '@/components/ui';
 import { Input } from '@/components/ui/Input';
 
 type Categorie = 'plomberie' | 'electricite' | 'menuiserie' | 'maconnerie' | 'peinture' | 'autre';
@@ -120,9 +120,12 @@ export default function RecherchePage() {
     <div className="min-h-screen bg-[#F8F9FA]">
       {/* Header */}
       <header className="bg-[#2C3E50] text-white py-6 shadow-lg">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold">Trouvez votre artisan</h1>
-          <p className="text-[#95A5A6] mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Trouvez votre artisan</h1>
+            <p className="text-[#95A5A6] mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
+          </div>
+          <Logo variant="icon" size="md" href="/" />
         </div>
       </header>
 

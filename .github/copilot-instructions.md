@@ -6,6 +6,23 @@ ArtisanSafe est une plateforme marketplace bilingue (français principal, anglai
 
 ## 🎨 CHARTE GRAPHIQUE OBLIGATOIRE
 
+### Logo officiel
+
+![Logo ArtisanDispo](https://raw.githubusercontent.com/MOHAMEDALIMRABET/ArtisanSafe/main/docs/assets/logo-artisandispo.png)
+
+**Caractéristiques du logo :**
+- Icône maison verte avec marteau (symbolise BTP/artisanat)
+- Deux personnes se serrant la main (confiance, partenariat)
+- Pin de géolocalisation (proximité locale)
+- Typographie : "Artisan" en vert foncé, "Dispo" en orange
+- Courbe orange sous le logo (dynamisme, disponibilité)
+
+**Utilisation :**
+- Navigation principale : icône circulaire orange avec maison blanche
+- Page d'accueil : logo complet avec texte
+- Favicon : version simplifiée de l'icône maison
+- Réseaux sociaux : logo carré 1024x1024px
+
 ### Palette de couleurs (À RESPECTER STRICTEMENT)
 
 **Couleurs principales :**

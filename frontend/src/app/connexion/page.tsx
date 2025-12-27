@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
-import { Button, Input, Card } from '@/components/ui';
+import { Button, Input, Card, Logo } from '@/components/ui';
 
 export default function ConnexionPage() {
   const router = useRouter();
@@ -32,7 +32,9 @@ export default function ConnexionPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Artisan Dispo</h1>
+          <div className="flex justify-center mb-4">
+            <Logo variant="icon" size="md" href="/" />
+          </div>
           <p className="text-gray-600">Connectez-vous à votre compte</p>
         </div>
 
