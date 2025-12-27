@@ -134,19 +134,27 @@ export default function ArtisanDashboardPage() {
           </Link>
 
           {/* Agenda */}
-          <div className="bg-gray-100 rounded-lg shadow-md p-6 opacity-50">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+          <Link href="/artisan/agenda">
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Mon Agenda</h2>
+                  <p className="text-sm text-gray-600">Disponibilités & créneaux</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Agenda</h2>
-                <p className="text-sm text-gray-600">À venir</p>
-              </div>
+              {artisan && (
+                <div className="text-sm text-gray-500">
+                  <p>📅 {artisan.disponibilites?.length || 0} créneau(x) défini(s)</p>
+                  <p className="text-green-600 font-medium mt-1">✨ Nouveau !</p>
+                </div>
+              )}
             </div>
-          </div>
+          </Link>
 
           {/* Demandes */}
           <div className="bg-gray-100 rounded-lg shadow-md p-6 opacity-50">

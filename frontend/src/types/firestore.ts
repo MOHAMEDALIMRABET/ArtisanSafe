@@ -130,10 +130,25 @@ export interface ZoneIntervention {
   longitude: number;
 }
 
+// Structure simple pour compatibilité (deprecated)
 export interface Disponibilite {
   date: string; // YYYY-MM-DD
   disponible: boolean;
   capacite: number; // nombre de chantiers/jour
+}
+
+// Structure complète pour l'agenda (nouvelle version)
+export interface DisponibiliteSlot {
+  id?: string;
+  jour?: 'lundi' | 'mardi' | 'mercredi' | 'jeudi' | 'vendredi' | 'samedi' | 'dimanche'; // Pour récurrence hebdomadaire
+  date?: Timestamp; // Pour créneaux ponctuels
+  heureDebut: string; // Format "HH:mm" ex: "09:00"
+  heureFin: string; // Format "HH:mm" ex: "17:00"
+  recurrence: 'hebdomadaire' | 'ponctuel';
+  disponible: boolean; // true = dispo, false = occupé
+  titre?: string; // Ex: "Chantier client X", "Disponible"
+  couleur?: string; // Hex color pour customisation
+  dateCreation?: Timestamp;
 }
 
 export interface CompteBancaire {
@@ -147,7 +162,7 @@ export interface Artisan {
   formeJuridique: FormeJuridique;
   metiers: Categorie[]; // ['plomberie', 'electricite']
   zonesIntervention: ZoneIntervention[];
-  disponibilites: Disponibilite[];
+  disponibilites: DisponibiliteSlot[]; // Nouvelle structure
   tarifHoraire?: number;
   notation: number; // 0-5
   nombreAvis: number;
