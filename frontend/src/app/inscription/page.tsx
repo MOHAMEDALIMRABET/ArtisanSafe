@@ -219,12 +219,6 @@ export default function InscriptionPage() {
                     <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    Commission 8%
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
                     Visibilité locale
                   </li>
                 </ul>
@@ -261,7 +255,13 @@ export default function InscriptionPage() {
               </div>
               <span className="text-2xl font-bold text-[#2C3E50]">Artisan Dispo</span>
             </Link>
-          </div>k={() => setRole(null)}
+          </div>
+        </div>
+      </nav>
+
+      <div className="container mx-auto px-4 py-8 max-w-md">
+        <button
+          onClick={() => setRole(null)}
           className="flex items-center text-gray-600 hover:text-gray-800 mb-4"
         >
           <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -409,7 +409,6 @@ export default function InscriptionPage() {
             Se connecter
           </Link>
         </div>
-      </Card>
       </div>
     </div>
   );
