@@ -182,6 +182,60 @@ Lors de la construction des APIs backend :
 - **devis** : Demandes de devis - accès client/artisan uniquement
 - **avis** : Évaluations - lecture publique, création par clients
 - **conversations** + **messages** : Messagerie temps réel
+- **contrats** : Contrats signés entre clients et artisans
+- **disponibilites** : Créneaux d'indisponibilité des artisans
+
+#### ⚠️ RÈGLE CRITIQUE - Éviter les index composites Firestore
+
+**Problème :**
+Les requêtes combinant `where()` + `orderBy()` sur différents champs nécessitent un **index composite** dans Firestore, ce qui bloque le développement jusqu'à la création manuelle de l'index.
+
+**Erreur typique :**
+```typescript
+// ❌ ÉVITER - Nécessite index composite
+const q = query(
+  collection(db, 'contrats'),
+  where('artisanId', '==', artisanId),
+  orderBy('dateCreation', 'desc')  // ← Provoque erreur index
+);
+```
+
+**Solution - Tri côté client :**
+```typescript
+// ✅ TOUJOURS FAIRE - Requête simple + tri JavaScript
+const q = query(
+  collection(db, 'contrats'),
+  where('artisanId', '==', artisanId)  // Seul where(), pas d'orderBy
+);
+
+const querySnapshot = await getDocs(q);
+const contrats = querySnapshot.docs.map(doc => ({
+  id: doc.id,
+  ...doc.data(),
+} as Contrat));
+
+// Tri côté client en JavaScript
+return contrats.sort((a, b) => {
+  const dateA = a.dateCreation?.toMillis() || 0;
+  const dateB = b.dateCreation?.toMillis() || 0;
+  return dateB - dateA;  // Ordre décroissant
+});
+```
+
+**Avantages :**
+- ✅ Fonctionne immédiatement sans configuration Firebase
+- ✅ Pas de délai de création d'index
+- ✅ Flexibilité totale sur la logique de tri
+- ✅ Aucune dépendance entre environnements (dev/prod)
+
+**Performance :**
+- OK jusqu'à ~1000 documents (tri en <10ms)
+- Si besoin de pagination avec tri : créer index composite manuellement
+
+**Règle générale :**
+- 🚫 NE JAMAIS combiner `where()` + `orderBy()` sur champs différents
+- ✅ TOUJOURS faire `where()` uniquement dans Firestore
+- ✅ TOUJOURS trier avec `.sort()` en JavaScript après récupération
 
 #### Bonnes pratiques
 - Utiliser les services dans `frontend/src/lib/` :

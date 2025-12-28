@@ -66,7 +66,10 @@ export async function getArtisanByUserId(userId: string): Promise<Artisan | null
     return null;
   }
 
-  return artisanSnap.data() as Artisan;
+  return {
+    id: artisanSnap.id,
+    ...artisanSnap.data()
+  } as Artisan;
 }
 
 /**
@@ -194,7 +197,10 @@ export async function searchArtisansByMetier(metier: Categorie): Promise<Artisan
   );
   const querySnapshot = await getDocs(q);
   
-  return querySnapshot.docs.map(doc => doc.data() as Artisan);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  } as Artisan));
 }
 
 /**
@@ -205,7 +211,10 @@ export async function getVerifiedArtisans(): Promise<Artisan[]> {
   const q = query(artisansRef, where('badgeVerifie', '==', true));
   const querySnapshot = await getDocs(q);
   
-  return querySnapshot.docs.map(doc => doc.data() as Artisan);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  } as Artisan));
 }
 
 /**
@@ -219,7 +228,10 @@ export async function getPendingArtisans(): Promise<Artisan[]> {
   );
   const querySnapshot = await getDocs(q);
   
-  return querySnapshot.docs.map(doc => doc.data() as Artisan);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  } as Artisan));
 }
 
 /**

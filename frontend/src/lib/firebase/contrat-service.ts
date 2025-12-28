@@ -100,15 +100,22 @@ export async function getContratsByClient(clientId: string): Promise<Contrat[]> 
   const contratsRef = collection(db, COLLECTION_NAME);
   const q = query(
     contratsRef,
-    where('clientId', '==', clientId),
-    orderBy('dateCreation', 'desc')
+    where('clientId', '==', clientId)
+    // Retirer orderBy pour éviter l'index composite
   );
   const querySnapshot = await getDocs(q);
   
-  return querySnapshot.docs.map(doc => ({
+  const contrats = querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
   } as Contrat));
+  
+  // Tri côté client par dateCreation desc
+  return contrats.sort((a, b) => {
+    const dateA = a.dateCreation?.toMillis() || 0;
+    const dateB = b.dateCreation?.toMillis() || 0;
+    return dateB - dateA;
+  });
 }
 
 /**
@@ -118,15 +125,23 @@ export async function getContratsByArtisan(artisanId: string): Promise<Contrat[]
   const contratsRef = collection(db, COLLECTION_NAME);
   const q = query(
     contratsRef,
-    where('artisanId', '==', artisanId),
-    orderBy('dateCreation', 'desc')
+    where('artisanId', '==', artisanId)
+    // Retirer orderBy pour éviter l'index composite
+    // Le tri sera fait côté client si nécessaire
   );
   const querySnapshot = await getDocs(q);
   
-  return querySnapshot.docs.map(doc => ({
+  const contrats = querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
   } as Contrat));
+  
+  // Tri côté client par dateCreation desc
+  return contrats.sort((a, b) => {
+    const dateA = a.dateCreation?.toMillis() || 0;
+    const dateB = b.dateCreation?.toMillis() || 0;
+    return dateB - dateA;
+  });
 }
 
 /**
