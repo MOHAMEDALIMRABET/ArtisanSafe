@@ -55,10 +55,21 @@ export default function AgendaPage() {
   // État pour le modal d'édition d'événement
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [editedTitle, setEditedTitle] = useState('');
+  
+  // État pour la recherche par plage de dates dans l'agenda
+  const [searchStartDate, setSearchStartDate] = useState('');
+  const [searchEndDate, setSearchEndDate] = useState('');
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Effet pour appliquer automatiquement le filtrage par dates
+  useEffect(() => {
+    if (searchStartDate && searchEndDate && currentView === Views.AGENDA) {
+      setCurrentDate(new Date(searchStartDate));
+    }
+  }, [searchStartDate, searchEndDate, currentView]);
 
   const checkAuth = async () => {
     const user = authService.getCurrentUser();
@@ -681,17 +692,64 @@ export default function AgendaPage() {
           <h2 className="font-semibold text-blue-900 mb-2">💡 Comment utiliser l'agenda ?</h2>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>• <strong>Sélection rapide</strong> : Cliquez sur "Sélection rapide par dates" pour marquer vos indisponibilités sur plusieurs mois</li>
-            <li>• <strong>Cliquez sur un jour</strong> dans le calendrier pour marquer une indisponibilité</li>
-            <li>• <strong>Cliquez et faites glisser</strong> pour sélectionner plusieurs jours consécutifs</li>
-            <li>• <strong>Vue Mois</strong> : Idéale pour gérer vos indisponibilités</li>
-            <li>• <strong>Cliquez sur un événement</strong> pour le renommer ou le supprimer (sauf les contrats 🔒)</li>
-            <li>• <strong>Rouge</strong> = Indisponible (Occupé) | Les jours sans couleur = Disponible</li>
+            <li>• <strong>Vue Agenda</strong> : Pratique pour lister vos indisponibilités</li>
+            <li>• <strong>Vue Calendrier</strong> : Cliquez et faites glisser pour sélectionner plusieurs jours consécutifs - Idéale pour gérer vos indisponibilités
+              <ul className="ml-6 mt-1 space-y-1">
+                <li>◦ <strong>Cliquez sur un jour</strong> dans le calendrier pour marquer une indisponibilité</li>
+                <li>◦ <strong>Cliquez sur un événement</strong> pour le renommer ou le supprimer (sauf les contrats 🔒)</li>
+                <li>◦ <strong>Rouge</strong> = Indisponible (Occupé) | Les jours sans couleur = Disponible</li>
+              </ul>
+            </li>
             <li>• <strong>🔒 Contrats signés</strong> : Créent automatiquement des indisponibilités (non supprimables)</li>
           </ul>
         </div>
 
         {/* Calendrier */}
-        <div className="bg-white rounded-lg shadow-lg p-6" style={{ height: '700px' }}>
+        <div className="bg-white rounded-lg shadow-lg p-6 overflow-hidden" style={{ height: '700px', maxWidth: '100%' }}>
+          {/* Barre de recherche par dates - Visible uniquement en vue Agenda */}
+          {currentView === Views.AGENDA && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-end gap-4 flex-wrap">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    📅 Date de début
+                  </label>
+                  <input
+                    type="date"
+                    value={searchStartDate}
+                    onChange={(e) => setSearchStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#FF6B00] focus:outline-none"
+                  />
+                </div>
+                
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    📅 Date de fin
+                  </label>
+                  <input
+                    type="date"
+                    value={searchEndDate}
+                    onChange={(e) => setSearchEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#FF6B00] focus:outline-none"
+                  />
+                </div>
+                
+                <div>
+                  <button
+                    onClick={() => {
+                      setSearchStartDate('');
+                      setSearchEndDate('');
+                      setCurrentDate(new Date());
+                    }}
+                    className="px-4 py-2 border-2 border-[#FF6B00] text-[#FF6B00] rounded-lg hover:bg-orange-50 font-medium transition-colors"
+                  >
+                    ↺ Réinitialiser
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <Calendar
             localizer={localizer}
             events={events}
@@ -704,6 +762,10 @@ export default function AgendaPage() {
             onView={handleViewChange}
             date={currentDate}
             onNavigate={handleNavigate}
+            length={searchStartDate && searchEndDate ? 
+              Math.ceil((new Date(searchEndDate).getTime() - new Date(searchStartDate).getTime()) / (1000 * 60 * 60 * 24)) + 1 : 
+              365
+            }
             selectable
             selectMirror
             longPressThreshold={250}
@@ -711,7 +773,7 @@ export default function AgendaPage() {
             onSelectEvent={handleSelectEvent}
             eventPropGetter={eventStyleGetter}
             messages={{
-              month: 'Mois',
+              month: 'Calendrier',
               previous: 'Précédent',
               next: 'Suivant',
               today: "Aujourd'hui",
@@ -723,6 +785,54 @@ export default function AgendaPage() {
               showMore: (total) => `+ ${total} de plus`,
             }}
             culture="fr"
+            components={{
+              toolbar: (props) => {
+                const isCalendarView = props.view === 'month';
+                return (
+                  <div className="rbc-toolbar">
+                    {isCalendarView && (
+                      <span className="rbc-btn-group">
+                        <button 
+                          type="button" 
+                          onClick={() => props.onNavigate('TODAY')}
+                        >
+                          Aujourd'hui
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => props.onNavigate('PREV')}
+                        >
+                          Précédent
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => props.onNavigate('NEXT')}
+                        >
+                          Suivant
+                        </button>
+                      </span>
+                    )}
+                    <span className="rbc-toolbar-label"></span>
+                    <span className="rbc-btn-group">
+                      <button
+                        type="button"
+                        className={props.view === 'month' ? 'rbc-active' : ''}
+                        onClick={() => props.onView('month')}
+                      >
+                        Calendrier
+                      </button>
+                      <button
+                        type="button"
+                        className={props.view === 'agenda' ? 'rbc-active' : ''}
+                        onClick={() => props.onView('agenda')}
+                      >
+                        Agenda
+                      </button>
+                    </span>
+                  </div>
+                );
+              }
+            }}
           />
         </div>
 

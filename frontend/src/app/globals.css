@@ -40,3 +40,146 @@ body {
 .animate-slideDown {
   animation: slideDown 0.3s ease-out;
 }
+
+/* Styles pour le calendrier react-big-calendar */
+
+/* Jours hors du mois en cours (grisés par défaut) */
+.rbc-off-range {
+  color: #d1d5db !important;
+  background-color: #f9fafb !important;
+}
+
+.rbc-off-range-bg {
+  background-color: #f9fafb !important;
+}
+
+/* Sélection de plage de dates - Orange vif pour distinction claire */
+.rbc-slot-selecting {
+  background-color: rgba(255, 107, 0, 0.3) !important; /* Orange transparent */
+  border: 2px solid #FF6B00 !important;
+}
+
+/* Cellule actuellement survolée pendant la sélection */
+.rbc-day-bg.rbc-today.rbc-now {
+  background-color: rgba(255, 193, 7, 0.15) !important; /* Jaune léger pour aujourd'hui */
+}
+
+/* Sélection active/finale - Orange plus foncé */
+.rbc-selected-cell {
+  background-color: rgba(255, 107, 0, 0.4) !important;
+}
+
+/* Jour sélectionné */
+.rbc-selected {
+  background-color: #FF6B00 !important;
+  color: white !important;
+}
+
+/* Masquer la plage de dates dans la toolbar de la vue Agenda */
+.rbc-toolbar-label {
+  display: none !important;
+}
+
+/* Positionnement de la toolbar - Boutons de navigation à gauche, boutons de vue à droite */
+.rbc-toolbar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin-bottom: 15px !important;
+}
+
+.rbc-toolbar .rbc-btn-group:first-child {
+  margin-right: auto !important;
+}
+
+.rbc-toolbar .rbc-btn-group:last-child {
+  margin-left: auto !important;
+}
+
+/* Styles pour la vue Agenda - Contenir les événements dans le tableau */
+.rbc-agenda-view {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  max-height: 550px !important;
+  width: 100% !important;
+  padding-bottom: 20px !important;
+}
+
+.rbc-agenda-view table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+.rbc-agenda-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  margin-bottom: 30px !important;
+}
+
+.rbc-agenda-view table tbody > tr,
+.rbc-agenda-view table thead > tr {
+  width: 100% !important;
+  display: table !important;
+  table-layout: fixed !important;
+}
+
+.rbc-agenda-date-cell,
+.rbc-agenda-time-cell,
+.rbc-agenda-event-cell {
+  padding: 8px !important;
+  vertical-align: top !important;
+  border: 1px solid #e5e7eb !important;
+  word-wrap: break-word !important;
+  box-sizing: border-box !important;
+}
+
+/* Colonnes avec largeurs fixes */
+.rbc-agenda-date-cell {
+  width: 130px !important;
+  max-width: 130px !important;
+  min-width: 130px !important;
+}
+
+.rbc-agenda-time-cell {
+  width: 100px !important;
+  max-width: 100px !important;
+  min-width: 100px !important;
+}
+
+.rbc-agenda-event-cell {
+  width: calc(100% - 230px) !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* En-têtes du tableau */
+.rbc-header {
+  padding: 10px 8px !important;
+  font-weight: 600 !important;
+  background-color: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Lignes du tableau */
+.rbc-agenda-view table tbody > tr > td {
+  border: 1px solid #e5e7eb !important;
+}
+
+/* Événements dans les cellules */
+.rbc-event-content {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  width: 100% !important;
+}
+
+/* Conteneur du calendrier */
+.rbc-calendar {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
