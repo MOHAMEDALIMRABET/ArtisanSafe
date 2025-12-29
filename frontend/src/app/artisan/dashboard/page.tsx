@@ -120,7 +120,22 @@ export default function ArtisanDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Mon Profil</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-800">Mon Profil</h2>
+                    {!artisan?.verified && (
+                      <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
+                        En attente de vérification
+                      </span>
+                    )}
+                    {artisan?.verified && (
+                      <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                        </svg>
+                        Vérifié
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-600">SIRET, métiers, zones</p>
                 </div>
               </div>
@@ -155,6 +170,50 @@ export default function ArtisanDashboardPage() {
               )}
             </div>
           </Link>
+
+          {/* Vérification du Profil */}
+          {!artisan?.verified && (
+            <Link href="/artisan/verification">
+              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-orange-200 hover:border-[#FF6B00]">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center animate-pulse">
+                    <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h2 className="text-xl font-bold text-gray-800">Vérification Profil</h2>
+                      <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-bounce">
+                        Action requise
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">Complétez votre vérification pour débloquer toutes les fonctionnalités</p>
+                  </div>
+                </div>
+                <div className="bg-white bg-opacity-70 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={artisan?.siretVerified ? "text-green-600" : "text-orange-600"}>
+                      {artisan?.siretVerified ? "✅" : "⏳"}
+                    </span>
+                    <span className="text-gray-700">Vérification SIRET</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={artisan?.contactVerification?.email?.verified ? "text-green-600" : "text-orange-600"}>
+                      {artisan?.contactVerification?.email?.verified ? "✅" : "⏳"}
+                    </span>
+                    <span className="text-gray-700">Validation email</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={artisan?.contactVerification?.telephone?.verified ? "text-green-600" : "text-orange-600"}>
+                      {artisan?.contactVerification?.telephone?.verified ? "✅" : "⏳"}
+                    </span>
+                    <span className="text-gray-700">Validation téléphone</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )}
 
           {/* Demandes */}
           <div className="bg-gray-100 rounded-lg shadow-md p-6 opacity-50">

@@ -1,0 +1,464 @@
+/**
+ * Service de vérification des profils artisans
+ * ArtisanDispo - Système de vérification
+ */
+
+import { doc, updateDoc, Timestamp, getDoc } from 'firebase/firestore';
+import { db } from './config';
+import type { Artisan, VerificationStatus } from '@/types/firestore';
+
+// ============================================
+// 1. VÉRIFICATION SIRET (API INSEE/SIRENE)
+// ============================================
+
+interface SiretValidationResult {
+  valid: boolean;
+  companyName?: string;
+  legalForm?: string;
+  active?: boolean;
+  error?: string;
+}
+
+/**
+ * Vérifie la validité d'un SIRET via l'API Recherche Entreprises
+ * API Gratuite du gouvernement français
+ */
+export async function verifySiret(siret: string): Promise<SiretValidationResult> {
+  try {
+    // Nettoyer le SIRET (enlever espaces)
+    const cleanSiret = siret.replace(/\s/g, '');
+    
+    // Vérification du format (14 chiffres)
+    if (!/^\d{14}$/.test(cleanSiret)) {
+      return { valid: false, error: 'Format SIRET invalide (14 chiffres requis)' };
+    }
+    
+    // Appel à l'API Recherche Entreprises (gratuite)
+    const response = await fetch(
+      `https://recherche-entreprises.api.gouv.fr/search?q=${cleanSiret}`,
+      {
+        headers: {
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      return { valid: false, error: 'Erreur lors de la vérification SIRET' };
+    }
+    
+    const data = await response.json();
+    
+    if (!data.results || data.results.length === 0) {
+      return { valid: false, error: 'SIRET non trouvé dans la base SIRENE' };
+    }
+    
+    const company = data.results[0];
+    
+    // Vérifier si l'entreprise est active
+    const isActive = company.etat_administratif === 'A'; // A = Actif
+    
+    if (!isActive) {
+      return { 
+        valid: false, 
+        error: 'Cette entreprise est fermée ou radiée' 
+      };
+    }
+    
+    return {
+      valid: true,
+      companyName: company.nom_complet || company.nom_raison_sociale,
+      legalForm: company.nature_juridique,
+      active: true
+    };
+    
+  } catch (error) {
+    console.error('Erreur vérification SIRET:', error);
+    return { 
+      valid: false, 
+      error: 'Erreur technique lors de la vérification' 
+    };
+  }
+}
+
+/**
+ * Met à jour le statut de vérification SIRET dans Firestore
+ */
+export async function updateSiretVerification(
+  userId: string, 
+  verified: boolean,
+  companyData?: { companyName: string; legalForm: string }
+): Promise<void> {
+  const artisanRef = doc(db, 'artisans', userId);
+  
+  const updateData: any = {
+    siretVerified: verified,
+    siretVerificationDate: Timestamp.now()
+  };
+  
+  // Si vérification réussie, mettre à jour les données entreprise
+  if (verified && companyData) {
+    updateData.raisonSociale = companyData.companyName;
+  }
+  
+  await updateDoc(artisanRef, updateData);
+}
+
+// ============================================
+// 2. VÉRIFICATION EMAIL
+// ============================================
+
+/**
+ * Envoie un email de vérification (Firebase Auth le fait automatiquement)
+ * Cette fonction met à jour le statut dans Firestore
+ */
+export async function markEmailAsVerified(userId: string): Promise<void> {
+  const artisanRef = doc(db, 'artisans', userId);
+  
+  await updateDoc(artisanRef, {
+    'contactVerification.email.verified': true,
+    'contactVerification.email.verifiedDate': Timestamp.now()
+  });
+}
+
+// ============================================
+// 3. VÉRIFICATION TÉLÉPHONE (SMS)
+// ============================================
+
+/**
+ * Génère un code de vérification à 6 chiffres
+ */
+function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * Envoie un SMS avec un code de vérification
+ * Note: Nécessite un service SMS (Twilio, AWS SNS, etc.)
+ * Pour le MVP, on peut simuler ou utiliser une API gratuite
+ */
+export async function sendPhoneVerificationCode(
+  userId: string,
+  phoneNumber: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const code = generateVerificationCode();
+    const artisanRef = doc(db, 'artisans', userId);
+    
+    // Sauvegarder le code dans Firestore (expire dans 10 minutes)
+    const expiryDate = new Date();
+    expiryDate.setMinutes(expiryDate.getMinutes() + 10);
+    
+    await updateDoc(artisanRef, {
+      'contactVerification.telephone.verificationCode': code,
+      'contactVerification.telephone.codeExpiry': Timestamp.fromDate(expiryDate)
+    });
+    
+    // TODO: Intégrer un vrai service SMS
+    // Pour le MVP, on peut logger le code (À SUPPRIMER EN PRODUCTION)
+    console.log(`📱 Code de vérification pour ${phoneNumber}: ${code}`);
+    
+    // Simulation d'envoi SMS
+    // await fetch('https://api.sms-service.com/send', {
+    //   method: 'POST',
+    //   body: JSON.stringify({
+    //     to: phoneNumber,
+    //     message: `Votre code de vérification ArtisanDispo: ${code}`
+    //   })
+    // });
+    
+    return { success: true };
+    
+  } catch (error) {
+    console.error('Erreur envoi SMS:', error);
+    return { success: false, error: 'Erreur lors de l\'envoi du SMS' };
+  }
+}
+
+/**
+ * Vérifie le code SMS saisi par l'utilisateur
+ */
+export async function verifyPhoneCode(
+  userId: string,
+  code: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const artisanRef = doc(db, 'artisans', userId);
+    const artisanDoc = await getDoc(artisanRef);
+    
+    if (!artisanDoc.exists()) {
+      return { success: false, error: 'Artisan non trouvé' };
+    }
+    
+    const artisan = artisanDoc.data() as Artisan;
+    const storedCode = artisan.contactVerification?.telephone?.verificationCode;
+    const codeExpiry = artisan.contactVerification?.telephone?.codeExpiry;
+    
+    // Vérifier si le code existe
+    if (!storedCode) {
+      return { success: false, error: 'Aucun code de vérification en attente' };
+    }
+    
+    // Vérifier l'expiration
+    if (codeExpiry && codeExpiry.toDate() < new Date()) {
+      return { success: false, error: 'Code expiré. Demandez un nouveau code.' };
+    }
+    
+    // Vérifier le code
+    if (storedCode !== code) {
+      return { success: false, error: 'Code incorrect' };
+    }
+    
+    // Code valide - marquer comme vérifié
+    await updateDoc(artisanRef, {
+      'contactVerification.telephone.verified': true,
+      'contactVerification.telephone.verifiedDate': Timestamp.now(),
+      'contactVerification.telephone.verificationCode': null,
+      'contactVerification.telephone.codeExpiry': null
+    });
+    
+    return { success: true };
+    
+  } catch (error) {
+    console.error('Erreur vérification code:', error);
+    return { success: false, error: 'Erreur lors de la vérification' };
+  }
+}
+
+// ============================================
+// 4. UPLOAD ET PARSING DOCUMENTS
+// ============================================
+
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from './config';
+import { parseKbisDocument, compareSiret, type KbisParseResult } from './document-parser';
+
+/**
+ * Upload un fichier vers Firebase Storage
+ */
+async function uploadToStorage(
+  userId: string,
+  file: File,
+  documentType: 'kbis' | 'idCard'
+): Promise<string> {
+  const timestamp = Date.now();
+  const fileName = `${documentType}_${timestamp}_${file.name}`;
+  const storageRef = ref(storage, `artisans/${userId}/documents/${fileName}`);
+  
+  await uploadBytes(storageRef, file);
+  const downloadURL = await getDownloadURL(storageRef);
+  
+  return downloadURL;
+}
+
+/**
+ * Upload et parse le Kbis, puis compare le SIRET
+ */
+export async function uploadAndVerifyKbis(
+  userId: string,
+  file: File,
+  profileSiret: string
+): Promise<{
+  success: boolean;
+  url?: string;
+  parseResult?: KbisParseResult;
+  error?: string;
+}> {
+  try {
+    // 1. Parser le document pour extraire le SIRET
+    console.log('📄 Parsing du Kbis en cours...');
+    const parseResult = await parseKbisDocument(file);
+    
+    if (!parseResult.success) {
+      return {
+        success: false,
+        error: parseResult.error
+      };
+    }
+    
+    // 2. Comparer le SIRET extrait avec celui du profil
+    console.log('🔍 Comparaison SIRET...');
+    const comparison = compareSiret(parseResult.siret!, profileSiret);
+    
+    if (!comparison.match) {
+      return {
+        success: false,
+        parseResult,
+        error: comparison.error
+      };
+    }
+    
+    // 3. Upload le fichier vers Firebase Storage
+    console.log('☁️ Upload vers Firebase Storage...');
+    const url = await uploadToStorage(userId, file, 'kbis');
+    
+    // 4. Sauvegarder dans Firestore avec statut "vérifié automatiquement"
+    const artisanRef = doc(db, 'artisans', userId);
+    await updateDoc(artisanRef, {
+      'verificationDocuments.kbis': {
+        url,
+        uploadDate: Timestamp.now(),
+        verified: true, // Auto-vérifié car SIRET correspond
+        siretMatched: true,
+        extractedData: {
+          siret: parseResult.siret,
+          siren: parseResult.siren,
+          companyName: parseResult.companyName,
+          legalForm: parseResult.legalForm
+        }
+      }
+    });
+    
+    console.log('✅ Kbis vérifié et sauvegardé avec succès');
+    
+    return {
+      success: true,
+      url,
+      parseResult
+    };
+    
+  } catch (error) {
+    console.error('Erreur upload Kbis:', error);
+    return {
+      success: false,
+      error: 'Erreur technique lors du traitement du document'
+    };
+  }
+}
+
+/**
+ * Upload une pièce d'identité (pas de parsing, juste upload)
+ */
+export async function uploadIdCard(
+  userId: string,
+  file: File
+): Promise<{
+  success: boolean;
+  url?: string;
+  error?: string;
+}> {
+  try {
+    // Vérifier le type de fichier
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      return {
+        success: false,
+        error: 'Format non supporté. Utilisez JPG, PNG ou PDF.'
+      };
+    }
+    
+    // Vérifier la taille (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return {
+        success: false,
+        error: 'Fichier trop volumineux (max 5MB)'
+      };
+    }
+    
+    // Upload vers Firebase Storage
+    const url = await uploadToStorage(userId, file, 'idCard');
+    
+    // Sauvegarder dans Firestore (admin devra vérifier)
+    const artisanRef = doc(db, 'artisans', userId);
+    await updateDoc(artisanRef, {
+      'verificationDocuments.idCard': {
+        url,
+        uploadDate: Timestamp.now(),
+        verified: false // Nécessite validation admin
+      }
+    });
+    
+    return {
+      success: true,
+      url
+    };
+    
+  } catch (error) {
+    console.error('Erreur upload pièce d\'identité:', error);
+    return {
+      success: false,
+      error: 'Erreur lors de l\'upload'
+    };
+  }
+}
+
+/**
+ * Met à jour l'URL d'un document vérifié
+ * Note: L'upload vers Firebase Storage se fait côté client
+ */
+export async function saveDocumentUrl(
+  userId: string,
+  documentType: 'kbis' | 'idCard',
+  url: string
+): Promise<void> {
+  const artisanRef = doc(db, 'artisans', userId);
+  
+  await updateDoc(artisanRef, {
+    [`verificationDocuments.${documentType}`]: {
+      url,
+      uploadDate: Timestamp.now(),
+      verified: false // Admin devra valider
+    }
+  });
+}
+
+// ============================================
+// 5. VÉRIFICATION GLOBALE
+// ============================================
+
+/**
+ * Calcule le statut global de vérification
+ */
+export async function calculateVerificationStatus(userId: string): Promise<VerificationStatus> {
+  const artisanRef = doc(db, 'artisans', userId);
+  const artisanDoc = await getDoc(artisanRef);
+  
+  if (!artisanDoc.exists()) {
+    return 'incomplete';
+  }
+  
+  const artisan = artisanDoc.data() as Artisan;
+  
+  // Vérifier les critères requis
+  const siretOk = artisan.siretVerified === true;
+  const emailOk = artisan.contactVerification?.email?.verified === true;
+  const phoneOk = artisan.contactVerification?.telephone?.verified === true;
+  const kbisOk = artisan.verificationDocuments?.kbis?.verified === true;
+  const idCardOk = artisan.verificationDocuments?.idCard?.verified === true;
+  
+  // Tous les critères remplis = approved
+  if (siretOk && emailOk && phoneOk && kbisOk && idCardOk) {
+    return 'approved';
+  }
+  
+  // Au moins un document uploadé = pending (en attente validation admin)
+  if (artisan.verificationDocuments?.kbis || artisan.verificationDocuments?.idCard) {
+    return 'pending';
+  }
+  
+  // Rien de fait = incomplete
+  return 'incomplete';
+}
+
+/**
+ * Met à jour le statut de vérification global
+ */
+export async function updateVerificationStatus(
+  userId: string,
+  status: VerificationStatus
+): Promise<void> {
+  const artisanRef = doc(db, 'artisans', userId);
+  
+  const updateData: any = {
+    verificationStatus: status
+  };
+  
+  // Si approuvé, marquer comme vérifié
+  if (status === 'approved') {
+    updateData.verified = true;
+    updateData.verificationDate = Timestamp.now();
+  }
+  
+  await updateDoc(artisanRef, updateData);
+}

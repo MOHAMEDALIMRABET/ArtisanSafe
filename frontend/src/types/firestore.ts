@@ -155,6 +155,34 @@ export interface CompteBancaire {
   stripeAccountId: string; // Stripe Connect
 }
 
+export type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'incomplete';
+
+export interface VerificationDocuments {
+  kbis?: {
+    url: string;
+    uploadDate: Timestamp;
+    verified: boolean;
+  };
+  idCard?: {
+    url: string;
+    uploadDate: Timestamp;
+    verified: boolean;
+  };
+}
+
+export interface ContactVerification {
+  email: {
+    verified: boolean;
+    verifiedDate?: Timestamp;
+  };
+  telephone: {
+    verified: boolean;
+    verifiedDate?: Timestamp;
+    verificationCode?: string; // Code SMS temporaire
+    codeExpiry?: Timestamp;
+  };
+}
+
 export interface Artisan {
   userId: string;
   siret: string;
@@ -166,9 +194,22 @@ export interface Artisan {
   tarifHoraire?: number;
   notation: number; // 0-5
   nombreAvis: number;
+  
+  // Système de vérification
+  verified: boolean; // Profil complètement vérifié
+  verificationStatus: VerificationStatus;
+  verificationDocuments?: VerificationDocuments;
+  contactVerification?: ContactVerification;
+  siretVerified: boolean; // Vérification automatique SIRET
+  siretVerificationDate?: Timestamp;
+  verificationDate?: Timestamp; // Date de vérification complète
+  rejectionReason?: string; // Raison si rejeté
+  
+  // Anciens champs (à supprimer progressivement)
   documentsVerifies: boolean;
   badgeVerifie: boolean;
   dateVerification?: Timestamp;
+  
   compteBancaire?: CompteBancaire;
   presentation?: string; // Description/bio
   photoProfil?: string; // URL Firebase Storage
@@ -450,4 +491,76 @@ export interface MatchingCriteria {
   datesSouhaitees: DatesSouhaitees;
   budgetMax?: number;
   rayonMax?: number; // km (défaut 50)
+}
+
+// ============================================
+// ADMIN - VÉRIFICATION DES ARTISANS
+// ============================================
+
+/**
+ * Données d'un artisan en attente de vérification (pour admin)
+ */
+export interface AdminVerificationRequest {
+  artisanId: string;
+  userId: string;
+  nomComplet: string;
+  email: string;
+  telephone: string;
+  entreprise: {
+    nom: string;
+    siret: string;
+    formeJuridique: FormeJuridique;
+  };
+  verificationStatus: VerificationStatus;
+  siretVerified: boolean;
+  contactVerification?: ContactVerification;
+  verificationDocuments?: VerificationDocuments;
+  dateInscription: Timestamp;
+  dateLastUpdate?: Timestamp;
+  // Données calculées pour l'affichage
+  missingSteps: string[];
+  completionPercentage: number;
+}
+
+/**
+ * Action admin sur une vérification
+ */
+export interface AdminVerificationAction {
+  adminId: string;
+  adminEmail: string;
+  action: 'approve' | 'reject';
+  reason?: string; // Obligatoire si reject
+  timestamp: Timestamp;
+  documentChecked: 'kbis' | 'idCard' | 'both';
+}
+
+/**
+ * Historique des actions admin sur un artisan
+ */
+export interface AdminActionHistory {
+  artisanId: string;
+  actions: AdminVerificationAction[];
+  dateCreation: Timestamp;
+  dateModification?: Timestamp;
+}
+
+/**
+ * Utilisateur admin
+ */
+export interface Admin extends User {
+  role: 'admin';
+  permissions: AdminPermissions;
+  actif: boolean;
+  dateLastLogin?: Timestamp;
+}
+
+/**
+ * Permissions admin
+ */
+export interface AdminPermissions {
+  canVerifyArtisans: boolean;
+  canManageUsers: boolean;
+  canViewFinances: boolean;
+  canManageLitige: boolean;
+  isSuperAdmin: boolean;
 }

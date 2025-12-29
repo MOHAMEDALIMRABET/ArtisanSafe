@@ -208,6 +208,22 @@ export default function AgendaPage() {
       return;
     }
     
+    // Vérifier si le jour sélectionné contient déjà un événement
+    const clickedDate = new Date(start);
+    clickedDate.setHours(0, 0, 0, 0);
+    
+    const existingEvent = events.find(event => {
+      const eventDate = new Date(event.start);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate.getTime() === clickedDate.getTime();
+    });
+    
+    // Si un événement existe déjà, ouvrir le modal d'édition
+    if (existingEvent) {
+      handleSelectEvent(existingEvent);
+      return;
+    }
+    
     // Calculer le nombre de jours dans la sélection
     const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -488,7 +504,7 @@ export default function AgendaPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Retour au dashboard
+                Retour au tableau de bord
               </button>
             </div>
             <div className="flex items-center gap-4">
@@ -718,7 +734,8 @@ export default function AgendaPage() {
                     type="date"
                     value={searchStartDate}
                     onChange={(e) => setSearchStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#FF6B00] focus:outline-none"
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#FF6B00] focus:outline-none cursor-pointer"
                   />
                 </div>
                 
@@ -730,7 +747,8 @@ export default function AgendaPage() {
                     type="date"
                     value={searchEndDate}
                     onChange={(e) => setSearchEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#FF6B00] focus:outline-none"
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#FF6B00] focus:outline-none cursor-pointer"
                   />
                 </div>
                 
@@ -867,15 +885,15 @@ export default function AgendaPage() {
       {/* Modal d'édition d'événement */}
       {editingEvent && (
         <>
-          {/* Overlay */}
+          {/* Overlay transparent pour fermer au clic extérieur */}
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-50"
+            className="fixed inset-0 z-40"
             onClick={handleCloseEditModal}
           />
           
           {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-slideDown">
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-slideDown pointer-events-auto">
               {/* Bouton fermer (X) */}
               <button
                 onClick={handleCloseEditModal}

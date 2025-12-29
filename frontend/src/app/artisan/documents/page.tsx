@@ -1,0 +1,468 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { authService } from '@/lib/auth-service';
+import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import { uploadAndVerifyKbis, uploadIdCard } from '@/lib/firebase/verification-service';
+import type { Artisan } from '@/types/firestore';
+import type { KbisParseResult } from '@/lib/firebase/document-parser';
+
+export default function DocumentsUploadPage() {
+  const router = useRouter();
+  const [artisan, setArtisan] = useState<Artisan | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // États pour Kbis
+  const [kbisFile, setKbisFile] = useState<File | null>(null);
+  const [kbisUploading, setKbisUploading] = useState(false);
+  const [kbisParseResult, setKbisParseResult] = useState<KbisParseResult | null>(null);
+  const [kbisError, setKbisError] = useState('');
+  const [kbisSuccess, setKbisSuccess] = useState(false);
+
+  // États pour pièce d'identité
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [idUploading, setIdUploading] = useState(false);
+  const [idError, setIdError] = useState('');
+  const [idSuccess, setIdSuccess] = useState(false);
+
+  useEffect(() => {
+    loadArtisan();
+  }, []);
+
+  const loadArtisan = async () => {
+    try {
+      const user = authService.getCurrentUser();
+      if (!user) {
+        router.push('/connexion');
+        return;
+      }
+
+      const artisanData = await getArtisanByUserId(user.uid);
+      if (!artisanData) {
+        router.push('/artisan/profil');
+        return;
+      }
+
+      setArtisan(artisanData);
+    } catch (error) {
+      console.error('Erreur chargement:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================
+  // UPLOAD KBIS
+  // ============================================
+
+  const handleKbisFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setKbisFile(file);
+      setKbisError('');
+      setKbisParseResult(null);
+      setKbisSuccess(false);
+    }
+  };
+
+  const handleUploadKbis = async () => {
+    if (!kbisFile || !artisan) return;
+
+    setKbisUploading(true);
+    setKbisError('');
+    setKbisSuccess(false);
+
+    try {
+      const result = await uploadAndVerifyKbis(
+        artisan.userId,
+        kbisFile,
+        artisan.siret
+      );
+
+      if (result.success) {
+        setKbisSuccess(true);
+        setKbisParseResult(result.parseResult || null);
+        await loadArtisan();
+        
+        // Afficher les informations extraites
+        if (result.parseResult) {
+          alert(`✅ Kbis vérifié avec succès !\n\nSIRET trouvé : ${result.parseResult.siret}\nEntreprise : ${result.parseResult.companyName || 'N/A'}`);
+        }
+      } else {
+        setKbisError(result.error || 'Erreur inconnue');
+      }
+    } catch (error) {
+      console.error('Erreur upload Kbis:', error);
+      setKbisError('Erreur technique');
+    } finally {
+      setKbisUploading(false);
+    }
+  };
+
+  // ============================================
+  // UPLOAD PIÈCE D'IDENTITÉ
+  // ============================================
+
+  const handleIdFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIdFile(file);
+      setIdError('');
+      setIdSuccess(false);
+    }
+  };
+
+  const handleUploadId = async () => {
+    if (!idFile || !artisan) return;
+
+    setIdUploading(true);
+    setIdError('');
+    setIdSuccess(false);
+
+    try {
+      const result = await uploadIdCard(artisan.userId, idFile);
+
+      if (result.success) {
+        setIdSuccess(true);
+        await loadArtisan();
+        alert('✅ Pièce d\'identité uploadée avec succès !\n\nElle sera vérifiée par notre équipe sous 24-48h.');
+      } else {
+        setIdError(result.error || 'Erreur inconnue');
+      }
+    } catch (error) {
+      console.error('Erreur upload pièce d\'identité:', error);
+      setIdError('Erreur technique');
+    } finally {
+      setIdUploading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!artisan) return null;
+
+  const kbisVerified = artisan.verificationDocuments?.kbis?.verified === true;
+  const idVerified = artisan.verificationDocuments?.idCard?.verified === true;
+  const kbisUploaded = !!artisan.verificationDocuments?.kbis?.url;
+  const idUploaded = !!artisan.verificationDocuments?.idCard?.url;
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4 max-w-4xl">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => router.push('/artisan/verification')}
+            className="text-gray-600 hover:text-[#FF6B00] flex items-center gap-2 mb-4"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Retour à la vérification
+          </button>
+
+          <h1 className="text-3xl font-bold text-gray-900">Documents Justificatifs</h1>
+          <p className="text-gray-600 mt-2">
+            Uploadez vos documents pour finaliser la vérification de votre profil
+          </p>
+        </div>
+
+        {/* Prérequis */}
+        {(!artisan.siretVerified || !artisan.contactVerification?.email?.verified || !artisan.contactVerification?.telephone?.verified) && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div className="flex">
+              <svg className="h-5 w-5 text-yellow-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" />
+              </svg>
+              <div>
+                <p className="text-sm text-yellow-700">
+                  <strong>Attention :</strong> Complétez d'abord les vérifications SIRET, email et téléphone avant d'uploader vos documents.
+                </p>
+                <button
+                  onClick={() => router.push('/artisan/verification')}
+                  className="text-sm text-yellow-700 underline mt-1"
+                >
+                  → Aller aux vérifications
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-6">
+          {/* 1. KBIS */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  kbisVerified ? 'bg-green-100' : kbisUploaded ? 'bg-blue-100' : 'bg-orange-100'
+                }`}>
+                  {kbisVerified ? (
+                    <span className="text-2xl">✅</span>
+                  ) : kbisUploaded ? (
+                    <span className="text-2xl">⏳</span>
+                  ) : (
+                    <span className="text-2xl">📄</span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Extrait Kbis</h3>
+                  <p className="text-sm text-gray-600">Moins de 3 mois - Vérification automatique SIRET</p>
+                </div>
+              </div>
+
+              {kbisVerified && (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  ✓ Vérifié
+                </span>
+              )}
+              {kbisUploaded && !kbisVerified && (
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  En attente
+                </span>
+              )}
+            </div>
+
+            {!kbisVerified && (
+              <div>
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                  <p className="text-sm text-blue-700 mb-2">
+                    <strong>📋 Ce qui sera vérifié automatiquement :</strong>
+                  </p>
+                  <ul className="text-sm text-blue-700 list-disc list-inside space-y-1">
+                    <li>Extraction automatique du SIRET du document</li>
+                    <li>Comparaison avec le SIRET de votre profil : <strong>{artisan.siret}</strong></li>
+                    <li>Si les SIRET correspondent → Validation automatique ✅</li>
+                  </ul>
+                </div>
+
+                {kbisError && (
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                    <p className="text-sm text-red-700">❌ {kbisError}</p>
+                  </div>
+                )}
+
+                {kbisSuccess && kbisParseResult && (
+                  <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+                    <p className="text-sm text-green-700 font-semibold mb-2">
+                      ✅ Document vérifié avec succès !
+                    </p>
+                    <div className="text-sm text-green-700 space-y-1">
+                      <p><strong>SIRET trouvé :</strong> {kbisParseResult.siret}</p>
+                      {kbisParseResult.companyName && (
+                        <p><strong>Entreprise :</strong> {kbisParseResult.companyName}</p>
+                      )}
+                      {kbisParseResult.legalForm && (
+                        <p><strong>Forme juridique :</strong> {kbisParseResult.legalForm}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Sélectionner le fichier Kbis (PDF, JPG, PNG)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleKbisFileChange}
+                      className="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-lg file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-orange-50 file:text-[#FF6B00]
+                        hover:file:bg-orange-100
+                        cursor-pointer"
+                    />
+                    {kbisFile && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        📎 {kbisFile.name} ({(kbisFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleUploadKbis}
+                    disabled={!kbisFile || kbisUploading}
+                    className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {kbisUploading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Traitement en cours...
+                      </span>
+                    ) : (
+                      '📤 Analyser et Uploader le Kbis'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. PIÈCE D'IDENTITÉ */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  idVerified ? 'bg-green-100' : idUploaded ? 'bg-blue-100' : 'bg-orange-100'
+                }`}>
+                  {idVerified ? (
+                    <span className="text-2xl">✅</span>
+                  ) : idUploaded ? (
+                    <span className="text-2xl">⏳</span>
+                  ) : (
+                    <span className="text-2xl">🆔</span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Pièce d'Identité</h3>
+                  <p className="text-sm text-gray-600">CNI ou Passeport en cours de validité</p>
+                </div>
+              </div>
+
+              {idVerified && (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  ✓ Vérifié
+                </span>
+              )}
+              {idUploaded && !idVerified && (
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  En attente
+                </span>
+              )}
+            </div>
+
+            {!idVerified && (
+              <div>
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                  <p className="text-sm text-blue-700">
+                    <strong>📸 Instructions :</strong>
+                  </p>
+                  <ul className="text-sm text-blue-700 list-disc list-inside space-y-1 mt-2">
+                    <li>Photo ou scan recto-verso de votre CNI/Passeport</li>
+                    <li>Document en cours de validité</li>
+                    <li>Image claire et lisible</li>
+                    <li>Format : JPG, PNG ou PDF (max 5MB)</li>
+                  </ul>
+                </div>
+
+                {idError && (
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                    <p className="text-sm text-red-700">❌ {idError}</p>
+                  </div>
+                )}
+
+                {idSuccess && (
+                  <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+                    <p className="text-sm text-green-700">
+                      ✅ Document uploadé ! Il sera vérifié par notre équipe sous 24-48h.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Sélectionner votre pièce d'identité (JPG, PNG, PDF)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.pdf"
+                      onChange={handleIdFileChange}
+                      className="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-lg file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-orange-50 file:text-[#FF6B00]
+                        hover:file:bg-orange-100
+                        cursor-pointer"
+                    />
+                    {idFile && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        📎 {idFile.name} ({(idFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleUploadId}
+                    disabled={!idFile || idUploading}
+                    className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {idUploading ? 'Upload en cours...' : '📤 Uploader la pièce d\'identité'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Statut global */}
+        <div className="mt-8 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-6">
+          <h3 className="font-bold text-lg mb-4">📊 Statut de la Vérification</h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">SIRET vérifié</span>
+              <span className={artisan.siretVerified ? "text-green-600 font-semibold" : "text-gray-400"}>
+                {artisan.siretVerified ? "✅" : "⏳"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">Email vérifié</span>
+              <span className={artisan.contactVerification?.email?.verified ? "text-green-600 font-semibold" : "text-gray-400"}>
+                {artisan.contactVerification?.email?.verified ? "✅" : "⏳"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">Téléphone vérifié</span>
+              <span className={artisan.contactVerification?.telephone?.verified ? "text-green-600 font-semibold" : "text-gray-400"}>
+                {artisan.contactVerification?.telephone?.verified ? "✅" : "⏳"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">Kbis vérifié</span>
+              <span className={kbisVerified ? "text-green-600 font-semibold" : "text-gray-400"}>
+                {kbisVerified ? "✅" : "⏳"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">Pièce d'identité vérifiée</span>
+              <span className={idVerified ? "text-green-600 font-semibold" : "text-gray-400"}>
+                {idVerified ? "✅" : "⏳"}
+              </span>
+            </div>
+          </div>
+
+          {kbisVerified && idVerified && artisan.siretVerified && 
+           artisan.contactVerification?.email?.verified && 
+           artisan.contactVerification?.telephone?.verified && (
+            <div className="mt-4 bg-green-100 border-2 border-green-500 rounded-lg p-4">
+              <p className="text-green-800 font-bold text-center">
+                🎉 Félicitations ! Votre profil est entièrement vérifié !
+              </p>
+              <p className="text-green-700 text-sm text-center mt-1">
+                Vous pouvez maintenant recevoir des demandes de devis
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

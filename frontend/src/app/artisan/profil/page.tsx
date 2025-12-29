@@ -177,12 +177,12 @@ export default function ProfilArtisanPage() {
         presentation: presentation.trim() || undefined
       });
 
-      setSuccess('Profil mis à jour avec succès !');
+      setSuccess('✨ Votre profil a été mis à jour avec succès !');
       
       // Recharger le profil
       await loadArtisanProfile();
       
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       console.error('Erreur mise à jour:', err);
       setError('Une erreur est survenue lors de la mise à jour');
@@ -254,9 +254,20 @@ export default function ProfilArtisanPage() {
           </div>
         )}
         
+        {/* Toast notification - Position fixe en haut à droite */}
         {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-            {success}
+          <div className="fixed top-20 right-6 z-50 p-4 bg-green-500 text-white rounded-lg shadow-2xl flex items-center gap-3 animate-slideDown max-w-md">
+            <span className="text-3xl">✅</span>
+            <div className="flex-1">
+              <p className="font-bold text-lg">Succès !</p>
+              <p className="text-sm">Votre profil a été mis à jour avec succès</p>
+            </div>
+            <button
+              onClick={() => setSuccess('')}
+              className="text-white hover:text-gray-200 text-2xl font-bold ml-2"
+            >
+              ×
+            </button>
           </div>
         )}
 
