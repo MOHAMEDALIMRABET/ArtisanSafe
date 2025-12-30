@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import smsRoutes from './routes/sms.routes';
 
 dotenv.config();
 
@@ -20,6 +21,9 @@ app.get('/api/v1/health', (req: Request, res: Response) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Routes SMS
+app.use('/api/v1/sms', smsRoutes);
 
 // Gestion des erreurs 404
 app.use((req: Request, res: Response) => {

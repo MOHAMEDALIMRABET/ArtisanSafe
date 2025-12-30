@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import { getUserById } from '@/lib/firebase/user-service';
 import { uploadAndVerifyKbis, uploadIdCard } from '@/lib/firebase/verification-service';
 import type { Artisan } from '@/types/firestore';
 import type { KbisParseResult } from '@/lib/firebase/document-parser';
@@ -74,10 +75,16 @@ export default function DocumentsUploadPage() {
     setKbisSuccess(false);
 
     try {
+      // Récupérer le représentant légal depuis le profil utilisateur
+      const user = authService.getCurrentUser();
+      const userData = user ? await getUserById(user.uid) : null;
+      const representantLegal = userData?.representantLegal;
+      
       const result = await uploadAndVerifyKbis(
         artisan.userId,
         kbisFile,
-        artisan.siret
+        artisan.siret,
+        representantLegal
       );
 
       if (result.success) {
@@ -85,10 +92,21 @@ export default function DocumentsUploadPage() {
         setKbisParseResult(result.parseResult || null);
         await loadArtisan();
         
-        // Afficher les informations extraites
+        // Afficher les informations extraites et warnings
+        let message = '✅ KBIS vérifié avec succès !\n\n';
         if (result.parseResult) {
-          alert(`✅ Kbis vérifié avec succès !\n\nSIRET trouvé : ${result.parseResult.siret}\nEntreprise : ${result.parseResult.companyName || 'N/A'}`);
+          message += `SIRET trouvé : ${result.parseResult.siret}\n`;
+          message += `Entreprise : ${result.parseResult.companyName || 'N/A'}\n`;
+          if (result.parseResult.representantLegal) {
+            message += `Représentant légal : ${result.parseResult.representantLegal}\n`;
+          }
         }
+        
+        if (result.warnings && result.warnings.length > 0) {
+          message += '\n⚠️ Avertissements :\n' + result.warnings.join('\n');
+        }
+        
+        alert(message);
       } else {
         setKbisError(result.error || 'Erreur inconnue');
       }
@@ -150,6 +168,49 @@ export default function DocumentsUploadPage() {
   }
 
   if (!artisan) return null;
+
+  // Bloquer l'accès si le profil n'est pas vérifié
+  if (!artisan.verified) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-10 h-10 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">🔒 Accès restreint</h1>
+            <p className="text-gray-600 mb-6">
+              Vous devez d'abord compléter la vérification de votre profil (SIRET, email, téléphone) avant de pouvoir uploader vos documents justificatifs.
+            </p>
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 text-left">
+              <p className="text-sm text-blue-700 mb-2">
+                <strong>📋 Étapes à compléter :</strong>
+              </p>
+              <ul className="text-sm text-blue-700 list-disc list-inside space-y-1">
+                <li className={artisan?.siretVerified ? 'line-through' : ''}>
+                  {artisan?.siretVerified ? '✅' : '⏳'} Vérification SIRET
+                </li>
+                <li className={artisan?.contactVerification?.email?.verified ? 'line-through' : ''}>
+                  {artisan?.contactVerification?.email?.verified ? '✅' : '⏳'} Validation email
+                </li>
+                <li className={artisan?.contactVerification?.telephone?.verified ? 'line-through' : ''}>
+                  {artisan?.contactVerification?.telephone?.verified ? '✅' : '⏳'} Validation téléphone
+                </li>
+              </ul>
+            </div>
+            <button
+              onClick={() => router.push('/artisan/verification')}
+              className="bg-[#FF6B00] text-white px-6 py-3 rounded-lg hover:bg-[#E56100] transition-colors"
+            >
+              → Compléter la vérification du profil
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const kbisVerified = artisan.verificationDocuments?.kbis?.verified === true;
   const idVerified = artisan.verificationDocuments?.idCard?.verified === true;

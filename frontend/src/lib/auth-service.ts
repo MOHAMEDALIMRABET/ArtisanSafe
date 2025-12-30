@@ -17,6 +17,7 @@ export interface SignUpData {
   password: string;
   firstName: string;
   lastName: string;
+  representantLegal?: string;
   role: 'client' | 'artisan';
   phone?: string;
 }
@@ -61,6 +62,7 @@ export const authService = {
         email: data.email,
         nom: data.lastName,
         prenom: data.firstName,
+        representantLegal: data.representantLegal,
         telephone: data.phone || '',
         role: 'client',
         statut: 'verifie', // Client vérifié par défaut
@@ -108,6 +110,7 @@ export const authService = {
         email: data.email,
         nom: data.lastName,
         prenom: data.firstName,
+        representantLegal: data.representantLegal,
         telephone: data.phone || '',
         role: 'artisan',
         statut: 'non_verifie', // Artisan doit être vérifié manuellement

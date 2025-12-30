@@ -12,6 +12,7 @@ export interface KbisParseResult {
   siren?: string;
   companyName?: string;
   legalForm?: string;
+  representantLegal?: string;
   registrationDate?: string;
   error?: string;
 }
@@ -155,6 +156,7 @@ function parseKbisText(text: string): KbisParseResult {
   const sirenPattern = /SIREN[:\s]*(\d{3}\s?\d{3}\s?\d{3})/i;
   const companyNamePattern = /DENOMINATION[:\s]*([A-ZÀ-ÿ\s&'-]+)/i;
   const legalFormPattern = /(SARL|SAS|SASU|EURL|SA|SCI|EIRL|EI|MICRO-ENTREPRISE)/i;
+  const representantPattern = /(?:GERANT|PRESIDENT|DIRIGEANT|REPRESENTANT\s+LEGAL)[:\s]*([A-ZÀ-ÿ\s'-]+)/i;
 
   // Extraire SIRET
   const siretMatch = cleanText.match(siretPattern);
@@ -173,6 +175,12 @@ function parseKbisText(text: string): KbisParseResult {
   // Extraire forme juridique
   const legalFormMatch = cleanText.match(legalFormPattern);
   const legalForm = legalFormMatch ? legalFormMatch[1] : undefined;
+
+  // Extraire représentant légal
+  const representantMatch = cleanText.match(representantPattern);
+  const representantLegal = representantMatch 
+    ? representantMatch[1].trim() 
+    : undefined;
 
   // Vérifier qu'on a au moins le SIRET
   if (!siret) {
@@ -195,7 +203,8 @@ function parseKbisText(text: string): KbisParseResult {
     siret,
     siren,
     companyName,
-    legalForm
+    legalForm,
+    representantLegal
   };
 }
 
@@ -251,3 +260,77 @@ export function isKbisRecent(extractionDate?: string): {
     return { isRecent: true }; // Accepter si erreur de parsing date
   }
 }
+
+/**
+ * Normalise un nom pour la comparaison
+ * - Supprime les accents
+ * - Convertit en majuscules
+ * - Supprime les caractères spéciaux
+ * - Supprime les espaces multiples
+ */
+function normalizeName(name: string): string {
+  return name
+    .normalize('NFD') // Décompose les caractères accentués
+    .replace(/[\u0300-\u036f]/g, '') // Supprime les accents
+    .toUpperCase()
+    .replace(/[^A-Z\s]/g, '') // Garde uniquement lettres et espaces
+    .replace(/\s+/g, ' ') // Espaces multiples → un seul
+    .trim();
+}
+
+/**
+ * Compare le représentant légal du KBIS avec celui du profil
+ * Gère les variations : "Pierre DUPONT" = "DUPONT Pierre" = "P. DUPONT"
+ */
+export function compareRepresentantLegal(
+  kbisRepresentant: string, 
+  profileRepresentant: string
+): {
+  match: boolean;
+  confidence: 'high' | 'medium' | 'low';
+  error?: string;
+} {
+  // Normaliser les deux noms
+  const cleanKbis = normalizeName(kbisRepresentant);
+  const cleanProfile = normalizeName(profileRepresentant);
+
+  // Comparaison exacte
+  if (cleanKbis === cleanProfile) {
+    return { match: true, confidence: 'high' };
+  }
+
+  // Extraire les mots (nom et prénom séparés)
+  const kbisWords = cleanKbis.split(' ').filter(w => w.length > 0);
+  const profileWords = cleanProfile.split(' ').filter(w => w.length > 0);
+
+  // Vérifier si tous les mots du profil sont dans le KBIS (ou vice-versa)
+  const allProfileWordsInKbis = profileWords.every(word => 
+    kbisWords.some(kw => kw.includes(word) || word.includes(kw))
+  );
+
+  const allKbisWordsInProfile = kbisWords.every(word => 
+    profileWords.some(pw => pw.includes(word) || word.includes(pw))
+  );
+
+  if (allProfileWordsInKbis || allKbisWordsInProfile) {
+    return { match: true, confidence: 'medium' };
+  }
+
+  // Vérifier si au moins le nom de famille correspond
+  const longestKbisWord = kbisWords.reduce((a, b) => a.length > b.length ? a : b, '');
+  const longestProfileWord = profileWords.reduce((a, b) => a.length > b.length ? a : b, '');
+
+  if (longestKbisWord === longestProfileWord && longestKbisWord.length > 2) {
+    return { 
+      match: true, 
+      confidence: 'low',
+      error: 'Le nom de famille correspond mais vérification manuelle recommandée'
+    };
+  }
+
+  return {
+    match: false,
+    error: `Le représentant légal du KBIS (${kbisRepresentant}) ne correspond pas au profil (${profileRepresentant})`
+  };
+}
+

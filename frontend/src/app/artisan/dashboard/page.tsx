@@ -171,6 +171,74 @@ export default function ArtisanDashboardPage() {
             </div>
           </Link>
 
+          {/* Documents KBIS et Pièce d'identité */}
+          {artisan?.verified ? (
+            <Link href="/artisan/documents">
+              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-bold text-gray-800">Mes Documents</h2>
+                      {(!artisan?.verificationDocuments?.kbis?.verified || !artisan?.verificationDocuments?.idCard?.verified) && (
+                        <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
+                          À compléter
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">KBIS & Pièce d'identité</p>
+                  </div>
+                </div>
+                {artisan && (
+                  <div className="text-sm space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={artisan.verificationDocuments?.kbis?.verified ? "text-green-600" : "text-orange-600"}>
+                        {artisan.verificationDocuments?.kbis?.verified ? "✅" : "📄"}
+                      </span>
+                      <span className="text-gray-700">
+                        KBIS {artisan.verificationDocuments?.kbis?.verified ? "vérifié" : "requis"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={artisan.verificationDocuments?.idCard?.verified ? "text-green-600" : "text-orange-600"}>
+                        {artisan.verificationDocuments?.idCard?.verified ? "✅" : "🪪"}
+                      </span>
+                      <span className="text-gray-700">
+                        Pièce d'identité {artisan.verificationDocuments?.idCard?.verified ? "vérifiée" : "requise"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Link>
+          ) : (
+            <div className="bg-gray-100 rounded-lg shadow-md p-6 border-2 border-gray-300 opacity-60 cursor-not-allowed">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-500">Mes Documents</h2>
+                    <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
+                      À compléter après la vérification de profil
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">🔒 Débloqué après vérification du profil</p>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500">
+                Complétez la vérification de votre profil (SIRET, email, téléphone) pour débloquer l'upload de documents.
+              </div>
+            </div>
+          )}
+
           {/* Vérification du Profil */}
           {!artisan?.verified && (
             <Link href="/artisan/verification">

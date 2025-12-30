@@ -30,6 +30,7 @@ export default function InscriptionPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
+  const [representantLegal, setRepresentantLegal] = useState('');
   const [telephone, setTelephone] = useState('');
 
   // Champs spécifiques artisan
@@ -58,6 +59,11 @@ export default function InscriptionPage() {
       return;
     }
 
+    if (role === 'artisan' && !representantLegal.trim()) {
+      setError('Le nom du représentant légal est obligatoire pour vérifier votre KBIS');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -67,6 +73,7 @@ export default function InscriptionPage() {
           password, 
           firstName: prenom,
           lastName: nom,
+          representantLegal: representantLegal || undefined,
           phone: telephone,
           role: 'client'
         });
@@ -76,6 +83,7 @@ export default function InscriptionPage() {
           password,
           firstName: prenom,
           lastName: nom,
+          representantLegal: representantLegal,
           phone: telephone,
           role: 'artisan',
           businessName: entreprise,
@@ -329,6 +337,17 @@ export default function InscriptionPage() {
             required
             placeholder="06 12 34 56 78"
           />
+
+          {role === 'artisan' && (
+            <Input
+              label="Représentant légal"
+              value={representantLegal}
+              onChange={(e) => setRepresentantLegal(e.target.value)}
+              required
+              placeholder="Nom complet (ex: Pierre DUPONT)"
+              helperText="Doit correspondre au nom figurant sur votre KBIS"
+            />
+          )}
 
           {role === 'artisan' && (
             <>

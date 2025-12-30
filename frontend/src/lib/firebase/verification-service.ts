@@ -133,9 +133,7 @@ function generateVerificationCode(): string {
 }
 
 /**
- * Envoie un SMS avec un code de vérification
- * Note: Nécessite un service SMS (Twilio, AWS SNS, etc.)
- * Pour le MVP, on peut simuler ou utiliser une API gratuite
+ * Envoie un SMS avec un code de vérification via le backend
  */
 export async function sendPhoneVerificationCode(
   userId: string,
@@ -154,23 +152,34 @@ export async function sendPhoneVerificationCode(
       'contactVerification.telephone.codeExpiry': Timestamp.fromDate(expiryDate)
     });
     
-    // TODO: Intégrer un vrai service SMS
-    // Pour le MVP, on peut logger le code (À SUPPRIMER EN PRODUCTION)
-    console.log(`📱 Code de vérification pour ${phoneNumber}: ${code}`);
-    
-    // Simulation d'envoi SMS
-    // await fetch('https://api.sms-service.com/send', {
-    //   method: 'POST',
-    //   body: JSON.stringify({
-    //     to: phoneNumber,
-    //     message: `Votre code de vérification ArtisanDispo: ${code}`
-    //   })
-    // });
-    
-    return { success: true };
+    // Appel au backend pour envoyer le SMS via SMS Gateway API
+    const backendURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    const response = await fetch(`${backendURL}/sms/send-verification-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phoneNumber,
+        code
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      console.log('✅ SMS envoyé avec succès');
+      return { success: true };
+    } else {
+      console.error('❌ Erreur envoi SMS:', data);
+      return { 
+        success: false, 
+        error: data.error?.message || 'Erreur lors de l\'envoi du SMS' 
+      };
+    }
     
   } catch (error) {
-    console.error('Erreur envoi SMS:', error);
+    console.error('❌ Erreur envoi SMS:', error);
     return { success: false, error: 'Erreur lors de l\'envoi du SMS' };
   }
 }
@@ -231,7 +240,7 @@ export async function verifyPhoneCode(
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from './config';
-import { parseKbisDocument, compareSiret, type KbisParseResult } from './document-parser';
+import { parseKbisDocument, compareSiret, compareRepresentantLegal, type KbisParseResult } from './document-parser';
 
 /**
  * Upload un fichier vers Firebase Storage
@@ -252,20 +261,24 @@ async function uploadToStorage(
 }
 
 /**
- * Upload et parse le Kbis, puis compare le SIRET
+ * Upload et parse le Kbis, puis compare le SIRET et le représentant légal
  */
 export async function uploadAndVerifyKbis(
   userId: string,
   file: File,
-  profileSiret: string
+  profileSiret: string,
+  profileRepresentant?: string
 ): Promise<{
   success: boolean;
   url?: string;
   parseResult?: KbisParseResult;
+  warnings?: string[];
   error?: string;
 }> {
   try {
-    // 1. Parser le document pour extraire le SIRET
+    const warnings: string[] = [];
+    
+    // 1. Parser le document pour extraire les données
     console.log('📄 Parsing du Kbis en cours...');
     const parseResult = await parseKbisDocument(file);
     
@@ -278,43 +291,79 @@ export async function uploadAndVerifyKbis(
     
     // 2. Comparer le SIRET extrait avec celui du profil
     console.log('🔍 Comparaison SIRET...');
-    const comparison = compareSiret(parseResult.siret!, profileSiret);
+    const siretComparison = compareSiret(parseResult.siret!, profileSiret);
     
-    if (!comparison.match) {
+    if (!siretComparison.match) {
       return {
         success: false,
         parseResult,
-        error: comparison.error
+        error: siretComparison.error
       };
     }
     
-    // 3. Upload le fichier vers Firebase Storage
+    // 3. Comparer le représentant légal si disponible
+    let representantMatched = false;
+    let representantConfidence: 'high' | 'medium' | 'low' | undefined;
+    
+    if (profileRepresentant && parseResult.representantLegal) {
+      console.log('👤 Comparaison du représentant légal...');
+      const representantComparison = compareRepresentantLegal(
+        parseResult.representantLegal,
+        profileRepresentant
+      );
+      
+      representantMatched = representantComparison.match;
+      representantConfidence = representantComparison.confidence;
+      
+      if (!representantComparison.match) {
+        warnings.push(representantComparison.error || 'Le représentant légal ne correspond pas');
+        console.warn('⚠️ Représentant légal ne correspond pas - vérification manuelle requise');
+      } else if (representantComparison.confidence === 'low') {
+        warnings.push(representantComparison.error || 'Vérification manuelle du représentant légal recommandée');
+      }
+    } else if (profileRepresentant && !parseResult.representantLegal) {
+      warnings.push('Impossible d\'extraire le représentant légal du KBIS - vérification manuelle requise');
+    }
+    
+    // 4. Upload le fichier vers Firebase Storage
     console.log('☁️ Upload vers Firebase Storage...');
     const url = await uploadToStorage(userId, file, 'kbis');
     
-    // 4. Sauvegarder dans Firestore avec statut "vérifié automatiquement"
+    // 5. Déterminer si le document est auto-vérifié
+    const autoVerified = siretComparison.match && (!profileRepresentant || representantMatched);
+    
+    // 6. Sauvegarder dans Firestore
     const artisanRef = doc(db, 'artisans', userId);
     await updateDoc(artisanRef, {
       'verificationDocuments.kbis': {
         url,
         uploadDate: Timestamp.now(),
-        verified: true, // Auto-vérifié car SIRET correspond
-        siretMatched: true,
+        verified: autoVerified,
+        siretMatched: siretComparison.match,
+        representantMatched,
+        representantConfidence,
+        requiresManualReview: warnings.length > 0,
         extractedData: {
           siret: parseResult.siret,
           siren: parseResult.siren,
           companyName: parseResult.companyName,
-          legalForm: parseResult.legalForm
+          legalForm: parseResult.legalForm,
+          representantLegal: parseResult.representantLegal
         }
       }
     });
     
-    console.log('✅ Kbis vérifié et sauvegardé avec succès');
+    if (autoVerified) {
+      console.log('✅ KBIS vérifié automatiquement avec succès');
+    } else {
+      console.log('⚠️ KBIS uploadé mais nécessite une vérification manuelle');
+    }
     
     return {
       success: true,
       url,
-      parseResult
+      parseResult,
+      warnings: warnings.length > 0 ? warnings : undefined
     };
     
   } catch (error) {

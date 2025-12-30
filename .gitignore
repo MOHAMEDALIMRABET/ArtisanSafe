@@ -13,6 +13,12 @@ frontend/.env.local
 backend/.env
 backend/.env.local
 
+# ⚠️ CRITICAL: Firebase credentials (NEVER commit these!)
+backend/serviceAccountKey.json
+backend/firebase-adminsdk-*.json
+**/serviceAccountKey.json
+**/*-firebase-adminsdk-*.json
+
 # Logs
 logs/
 *.log
@@ -45,6 +51,9 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Personal credentials backup (NEVER commit!)
+MY_CREDENTIALS.md
 
 # Production
 .vercel

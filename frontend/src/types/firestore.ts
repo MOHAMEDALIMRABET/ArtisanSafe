@@ -112,6 +112,7 @@ export interface User {
   role: UserRole;
   nom: string;
   prenom: string;
+  representantLegal?: string; // Nom du représentant légal (obligatoire artisan, pour vérification KBIS)
   telephone: string;
   adresse?: UserAdresse;
   dateCreation: Timestamp;
@@ -162,6 +163,17 @@ export interface VerificationDocuments {
     url: string;
     uploadDate: Timestamp;
     verified: boolean;
+    siretMatched?: boolean;
+    representantMatched?: boolean;
+    representantConfidence?: 'high' | 'medium' | 'low';
+    requiresManualReview?: boolean;
+    extractedData?: {
+      siret?: string;
+      siren?: string;
+      companyName?: string;
+      legalForm?: string;
+      representantLegal?: string;
+    };
   };
   idCard?: {
     url: string;

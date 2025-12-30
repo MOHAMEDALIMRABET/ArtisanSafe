@@ -60,23 +60,41 @@
 
 ## 📦 Installation
 
-```bash
-# Cloner le repository
-git clone https://github.com/MOHAMEDALIMRABET/ArtisanSafe.git
+### 🚀 Pour les testeurs et développeurs
 
-# Naviguer dans le dossier
+📖 **Guide d'installation complet** : Consultez [INSTALLATION.md](INSTALLATION.md) pour une configuration détaillée pas à pas.
+
+**Résumé rapide :**
+
+```bash
+# 1. Cloner le repository
+git clone https://github.com/MOHAMEDALIMRABET/ArtisanSafe.git
 cd ArtisanSafe
 
-# Installer les dépendances
+# 2. Vérifier la configuration
+node verify-setup.js
+# ou sur Windows PowerShell :
+# .\verify-setup.ps1
+
+# 3. Configuration Frontend
+cd frontend
 npm install
+# Créer .env.local avec les credentials Firebase (voir INSTALLATION.md)
 
-# Configurer les variables d'environnement
-cp .env. example .env
-# Éditer le fichier .env avec vos configurations
+# 4. Configuration Backend
+cd ../backend
+npm install
+# Créer .env avec les credentials Firebase Admin (voir INSTALLATION.md)
 
-# Lancer en mode développement
-npm run dev
+# 5. Démarrer l'application
+# Terminal 1 - Frontend
+cd frontend && npm run dev  # http://localhost:3000
+
+# Terminal 2 - Backend
+cd backend && npm run dev   # http://localhost:5000
 ```
+
+⚠️ **Important** : Vous devez obtenir les credentials Firebase auprès de l'administrateur du projet avant de pouvoir utiliser l'application. Voir [docs/ADMIN_CREDENTIALS_SHARING.md](docs/ADMIN_CREDENTIALS_SHARING.md) pour les administrateurs.
 
 ## 🏗️ Structure du projet
 
