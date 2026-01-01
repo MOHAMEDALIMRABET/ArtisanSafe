@@ -39,6 +39,38 @@ export default function InscriptionPage() {
   const [metiers, setMetiers] = useState<string[]>([]);
   const [metierInput, setMetierInput] = useState('');
 
+  // Fonction pour formater le téléphone au format international
+  const formatPhoneNumber = (phone: string): string => {
+    // Retirer tous les caractères non numériques
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Si commence par 0 (format français), remplacer par +33
+    if (cleaned.startsWith('0')) {
+      return '+33' + cleaned.substring(1);
+    }
+    
+    // Si commence par 33, ajouter +
+    if (cleaned.startsWith('33')) {
+      return '+' + cleaned;
+    }
+    
+    // Si déjà au format +33
+    if (phone.startsWith('+33')) {
+      return '+33' + cleaned.substring(2);
+    }
+    
+    // Par défaut, ajouter +33 (France)
+    return '+33' + cleaned;
+  };
+
+  // Validation du numéro de téléphone français
+  const isValidFrenchPhone = (phone: string): boolean => {
+    const cleaned = phone.replace(/\D/g, '');
+    // Doit commencer par 0 et avoir 10 chiffres, OU commencer par 33 et avoir 11 chiffres
+    return (cleaned.startsWith('0') && cleaned.length === 10) ||
+           (cleaned.startsWith('33') && cleaned.length === 11);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -54,6 +86,12 @@ export default function InscriptionPage() {
       return;
     }
 
+    // Validation du téléphone
+    if (!isValidFrenchPhone(telephone)) {
+      setError('Le numéro de téléphone doit être un numéro français valide (10 chiffres commençant par 0)');
+      return;
+    }
+
     if (role === 'artisan' && metiers.length === 0) {
       setError('Veuillez sélectionner au moins un métier');
       return;
@@ -63,6 +101,9 @@ export default function InscriptionPage() {
       setError('Le nom du représentant légal est obligatoire pour vérifier votre KBIS');
       return;
     }
+
+    // Formater le téléphone au format international
+    const formattedPhone = formatPhoneNumber(telephone);
 
     setIsLoading(true);
 
@@ -74,7 +115,7 @@ export default function InscriptionPage() {
           firstName: prenom,
           lastName: nom,
           representantLegal: representantLegal || undefined,
-          phone: telephone,
+          phone: formattedPhone,
           role: 'client'
         });
       } else {
@@ -84,7 +125,7 @@ export default function InscriptionPage() {
           firstName: prenom,
           lastName: nom,
           representantLegal: representantLegal,
-          phone: telephone,
+          phone: formattedPhone,
           role: 'artisan',
           businessName: entreprise,
           siret: siret,
@@ -336,26 +377,25 @@ export default function InscriptionPage() {
             onChange={(e) => setTelephone(e.target.value)}
             required
             placeholder="06 12 34 56 78"
+            helperText="10 chiffres commençant par 0"
           />
-
-          {role === 'artisan' && (
-            <Input
-              label="Représentant légal"
-              value={representantLegal}
-              onChange={(e) => setRepresentantLegal(e.target.value)}
-              required
-              placeholder="Nom complet (ex: Pierre DUPONT)"
-              helperText="Doit correspondre au nom figurant sur votre KBIS"
-            />
-          )}
 
           {role === 'artisan' && (
             <>
               <Input
-                label="Nom de l'entreprise"
+                label="Raison Sociale"
                 value={entreprise}
                 onChange={(e) => setEntreprise(e.target.value)}
                 required
+              />
+
+              <Input
+                label="Représentant légal"
+                value={representantLegal}
+                onChange={(e) => setRepresentantLegal(e.target.value)}
+                required
+                placeholder="Nom complet (ex: Pierre DUPONT)"
+                helperText="Doit correspondre au nom figurant sur votre KBIS"
               />
 
               <Input

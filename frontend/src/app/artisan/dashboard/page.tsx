@@ -110,136 +110,7 @@ export default function ArtisanDashboardPage() {
 
         {/* Dashboard Cards */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Profil */}
-          <Link href="/artisan/profil">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-800">Mon Profil</h2>
-                    {!artisan?.verified && (
-                      <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
-                        En attente de vérification
-                      </span>
-                    )}
-                    {artisan?.verified && (
-                      <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
-                        </svg>
-                        Vérifié
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600">SIRET, métiers, zones</p>
-                </div>
-              </div>
-              {artisan && (
-                <div className="text-sm text-gray-500">
-                  <p>📍 {artisan.zonesIntervention?.length || 0} zones d'intervention</p>
-                  <p>🔧 {artisan.metiers?.length || 0} métier(s)</p>
-                </div>
-              )}
-            </div>
-          </Link>
-
-          {/* Agenda */}
-          <Link href="/artisan/agenda">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-800">Mon Agenda</h2>
-                  <p className="text-sm text-gray-600">Disponibilités & créneaux</p>
-                </div>
-              </div>
-              {artisan && (
-                <div className="text-sm text-gray-500">
-                  <p>📅 {artisan.disponibilites?.length || 0} créneau(x) défini(s)</p>
-                  <p className="text-green-600 font-medium mt-1">✨ Nouveau !</p>
-                </div>
-              )}
-            </div>
-          </Link>
-
-          {/* Documents KBIS et Pièce d'identité */}
-          {artisan?.verified ? (
-            <Link href="/artisan/documents">
-              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-bold text-gray-800">Mes Documents</h2>
-                      {(!artisan?.verificationDocuments?.kbis?.verified || !artisan?.verificationDocuments?.idCard?.verified) && (
-                        <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
-                          À compléter
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600">KBIS & Pièce d'identité</p>
-                  </div>
-                </div>
-                {artisan && (
-                  <div className="text-sm space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className={artisan.verificationDocuments?.kbis?.verified ? "text-green-600" : "text-orange-600"}>
-                        {artisan.verificationDocuments?.kbis?.verified ? "✅" : "📄"}
-                      </span>
-                      <span className="text-gray-700">
-                        KBIS {artisan.verificationDocuments?.kbis?.verified ? "vérifié" : "requis"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={artisan.verificationDocuments?.idCard?.verified ? "text-green-600" : "text-orange-600"}>
-                        {artisan.verificationDocuments?.idCard?.verified ? "✅" : "🪪"}
-                      </span>
-                      <span className="text-gray-700">
-                        Pièce d'identité {artisan.verificationDocuments?.idCard?.verified ? "vérifiée" : "requise"}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Link>
-          ) : (
-            <div className="bg-gray-100 rounded-lg shadow-md p-6 border-2 border-gray-300 opacity-60 cursor-not-allowed">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-500">Mes Documents</h2>
-                    <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
-                      À compléter après la vérification de profil
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500">🔒 Débloqué après vérification du profil</p>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                Complétez la vérification de votre profil (SIRET, email, téléphone) pour débloquer l'upload de documents.
-              </div>
-            </div>
-          )}
-
-          {/* Vérification du Profil */}
+          {/* Vérification du Profil - Position 1 */}
           {!artisan?.verified && (
             <Link href="/artisan/verification">
               <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-orange-200 hover:border-[#FF6B00]">
@@ -267,21 +138,149 @@ export default function ArtisanDashboardPage() {
                     <span className="text-gray-700">Vérification SIRET</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className={artisan?.contactVerification?.email?.verified ? "text-green-600" : "text-orange-600"}>
-                      {artisan?.contactVerification?.email?.verified ? "✅" : "⏳"}
-                    </span>
-                    <span className="text-gray-700">Validation email</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className={artisan?.contactVerification?.telephone?.verified ? "text-green-600" : "text-orange-600"}>
-                      {artisan?.contactVerification?.telephone?.verified ? "✅" : "⏳"}
+                    <span className="text-green-600">
+                      ✅
                     </span>
                     <span className="text-gray-700">Validation téléphone</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={artisan?.verificationDocuments?.kbis?.verified ? "text-green-600" : "text-orange-600"}>
+                      {artisan?.verificationDocuments?.kbis?.verified ? "✅" : "⏳"}
+                    </span>
+                    <span className="text-gray-700">KBIS vérifié</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={artisan?.verificationDocuments?.idCard?.verified ? "text-green-600" : "text-orange-600"}>
+                      {artisan?.verificationDocuments?.idCard?.verified ? "✅" : "⏳"}
+                    </span>
+                    <span className="text-gray-700">Pièce d'identité vérifiée</span>
                   </div>
                 </div>
               </div>
             </Link>
           )}
+
+          {/* Profil - Position 2 */}
+          {artisan?.verified ? (
+            <Link href="/artisan/profil">
+              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-bold text-gray-800">Mon Profil</h2>
+                      <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                        </svg>
+                        Vérifié
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">SIRET, métiers, zones</p>
+                  </div>
+                </div>
+                {artisan && (
+                  <div className="text-sm text-gray-500">
+                    <p>📍 {artisan.zonesIntervention?.length || 0} zones d'intervention</p>
+                    <p>🔧 {artisan.metiers?.length || 0} métier(s)</p>
+                  </div>
+                )}
+              </div>
+            </Link>
+          ) : (
+            <div className="bg-gray-100 rounded-lg shadow-md p-6 border-2 border-gray-300 opacity-60 cursor-not-allowed">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-500">Mon Profil</h2>
+                    <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
+                      🔒 Bloqué
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">Débloqué après vérification</p>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500">
+                Pour compléter votre profil, vous devez d'abord vérifier votre identité (SIRET, téléphone) et uploader le KBIS et la pièce d'identité dans "Mes Documents".
+              </div>
+            </div>
+          )}
+
+          {/* Agenda - Position 3 */}
+          <Link href="/artisan/agenda">
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Mon Agenda</h2>
+                  <p className="text-sm text-gray-600">Disponibilités & créneaux</p>
+                </div>
+              </div>
+              {artisan && (
+                <div className="text-sm text-gray-500">
+                  <p>📅 {artisan.disponibilites?.length || 0} créneau(x) défini(s)</p>
+                  <p className="text-green-600 font-medium mt-1">✨ Nouveau !</p>
+                </div>
+              )}
+            </div>
+          </Link>
+
+          {/* Documents KBIS et Pièce d'identité - Position 4 */}
+          <Link href="/artisan/documents">
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-800">Mes Documents</h2>
+                    {(!artisan?.verificationDocuments?.kbis?.verified || !artisan?.verificationDocuments?.idCard?.verified) && (
+                      <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
+                        À compléter
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">KBIS & Pièce d'identité</p>
+                </div>
+              </div>
+                {artisan && (
+                  <div className="text-sm space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={artisan.verificationDocuments?.kbis?.verified ? "text-green-600" : "text-orange-600"}>
+                        {artisan.verificationDocuments?.kbis?.verified ? "✅" : "📄"}
+                      </span>
+                      <span className="text-gray-700">
+                        KBIS {artisan.verificationDocuments?.kbis?.verified ? "vérifié" : "requis"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={artisan.verificationDocuments?.idCard?.verified ? "text-green-600" : "text-orange-600"}>
+                        {artisan.verificationDocuments?.idCard?.verified ? "✅" : "🪪"}
+                      </span>
+                      <span className="text-gray-700">
+                        Pièce d'identité {artisan.verificationDocuments?.idCard?.verified ? "vérifiée" : "requise"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Link>
 
           {/* Demandes */}
           <div className="bg-gray-100 rounded-lg shadow-md p-6 opacity-50">

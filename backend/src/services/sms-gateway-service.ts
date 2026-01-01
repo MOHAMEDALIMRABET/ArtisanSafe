@@ -83,7 +83,7 @@ class TwilioSMSService {
         }
       );
 
-      const data = await response.json();
+      const data = await response.json() as any;
 
       // Vérifier la réponse
       if (response.ok && data.sid) {
@@ -146,10 +146,10 @@ class TwilioSMSService {
   }
 
   /**
-   * Vérifie que le service SMS Gateway est configuré
+   * Vérifie que le service Twilio est configuré
    */
   isConfigured(): boolean {
-    return !!(this.email && this.password);
+    return !!(this.accountSid && this.authToken && this.phoneNumber);
   }
 }
 

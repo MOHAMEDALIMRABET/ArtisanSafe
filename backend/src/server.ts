@@ -1,9 +1,11 @@
+import dotenv from 'dotenv';
+
+// Charger les variables d'environnement EN PREMIER
+dotenv.config();
+
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import smsRoutes from './routes/sms.routes';
-
-dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 5000;

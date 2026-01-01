@@ -250,14 +250,21 @@ async function uploadToStorage(
   file: File,
   documentType: 'kbis' | 'idCard'
 ): Promise<string> {
-  const timestamp = Date.now();
-  const fileName = `${documentType}_${timestamp}_${file.name}`;
-  const storageRef = ref(storage, `artisans/${userId}/documents/${fileName}`);
-  
-  await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
-  
-  return downloadURL;
+  try {
+    const timestamp = Date.now();
+    const fileName = `${documentType}_${timestamp}_${file.name}`;
+    const storageRef = ref(storage, `artisans/${userId}/documents/${fileName}`);
+    
+    console.log('📤 Upload vers Firebase Storage...', fileName);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+    console.log('✅ Upload réussi:', downloadURL);
+    
+    return downloadURL;
+  } catch (error) {
+    console.error('❌ Erreur upload Firebase Storage:', error);
+    throw new Error(`Erreur Firebase Storage: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+  }
 }
 
 /**
@@ -348,7 +355,18 @@ export async function uploadAndVerifyKbis(
           siren: parseResult.siren,
           companyName: parseResult.companyName,
           legalForm: parseResult.legalForm,
-          representantLegal: parseResult.representantLegal
+          representantLegal: parseResult.representantLegal,
+          emissionDate: parseResult.emissionDate,
+          qrCodeData: parseResult.qrCodeData,
+          qrCodeValid: parseResult.qrCodeValid,
+          hasInpiLogo: parseResult.hasInpiLogo,
+          hasOfficialHeader: parseResult.hasOfficialHeader,
+          hasSeal: parseResult.hasSeal,
+          hasSignature: parseResult.hasSignature,
+          sealQuality: parseResult.sealQuality,
+          signatureQuality: parseResult.signatureQuality,
+          documentQuality: parseResult.documentQuality,
+          qualityScore: parseResult.qualityScore
         }
       }
     });
@@ -469,15 +487,14 @@ export async function calculateVerificationStatus(userId: string): Promise<Verif
   
   const artisan = artisanDoc.data() as Artisan;
   
-  // Vérifier les critères requis
+  // Vérifier les 4 critères requis pour la vérification complète
   const siretOk = artisan.siretVerified === true;
-  const emailOk = artisan.contactVerification?.email?.verified === true;
   const phoneOk = artisan.contactVerification?.telephone?.verified === true;
   const kbisOk = artisan.verificationDocuments?.kbis?.verified === true;
   const idCardOk = artisan.verificationDocuments?.idCard?.verified === true;
   
-  // Tous les critères remplis = approved
-  if (siretOk && emailOk && phoneOk && kbisOk && idCardOk) {
+  // Tous les 4 critères remplis = approved (profil vérifié)
+  if (siretOk && phoneOk && kbisOk && idCardOk) {
     return 'approved';
   }
   

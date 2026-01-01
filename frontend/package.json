@@ -12,8 +12,10 @@
   "dependencies": {
     "date-fns": "^4.1.0",
     "firebase": "^12.7.0",
+    "jsqr": "^1.4.0",
     "next": "16.1.0",
-    "pdfjs-dist": "^4.9.155",
+    "opencv.js": "^1.2.1",
+    "pdfjs-dist": "^4.10.38",
     "react": "19.2.3",
     "react-big-calendar": "^1.19.4",
     "react-dom": "19.2.3",

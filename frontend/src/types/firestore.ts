@@ -173,6 +173,17 @@ export interface VerificationDocuments {
       companyName?: string;
       legalForm?: string;
       representantLegal?: string;
+      emissionDate?: string; // Date d'émission du KBIS
+      qrCodeData?: string; // Données du QR code
+      qrCodeValid?: boolean; // QR code valide INPI
+      hasInpiLogo?: boolean; // Détection logo INPI
+      hasOfficialHeader?: boolean; // En-tête "Greffe du Tribunal de Commerce"
+      hasSeal?: boolean; // Détection cachet
+      hasSignature?: boolean; // Détection signature
+      sealQuality?: 'good' | 'medium' | 'poor'; // Qualité cachet
+      signatureQuality?: 'good' | 'medium' | 'poor'; // Qualité signature
+      documentQuality?: 'authentic' | 'suspicious' | 'altered'; // Qualité générale
+      qualityScore?: number; // Score d'authenticité 0-100
     };
   };
   idCard?: {
@@ -203,7 +214,6 @@ export interface Artisan {
   metiers: Categorie[]; // ['plomberie', 'electricite']
   zonesIntervention: ZoneIntervention[];
   disponibilites: DisponibiliteSlot[]; // Nouvelle structure
-  tarifHoraire?: number;
   notation: number; // 0-5
   nombreAvis: number;
   

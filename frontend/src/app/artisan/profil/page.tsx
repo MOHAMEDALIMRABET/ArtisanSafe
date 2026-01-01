@@ -54,7 +54,6 @@ export default function ProfilArtisanPage() {
   const [metiers, setMetiers] = useState<Categorie[]>([]);
   const [ville, setVille] = useState('');
   const [rayonKm, setRayonKm] = useState(30);
-  const [tarifHoraire, setTarifHoraire] = useState('');
   const [presentation, setPresentation] = useState('');
 
   useEffect(() => {
@@ -94,7 +93,6 @@ export default function ProfilArtisanPage() {
       
       console.log('Métiers après conversion:', metiersArray);
       setMetiers(metiersArray);
-      setTarifHoraire(artisanData.tarifHoraire?.toString() || '');
       setPresentation(artisanData.presentation || '');
       
       if (artisanData.zonesIntervention && artisanData.zonesIntervention.length > 0) {
@@ -173,7 +171,6 @@ export default function ProfilArtisanPage() {
         raisonSociale: raisonSociale.trim(),
         metiers,
         zonesIntervention,
-        tarifHoraire: tarifHoraire ? parseFloat(tarifHoraire) : undefined,
         presentation: presentation.trim() || undefined
       });
 
@@ -358,22 +355,6 @@ export default function ProfilArtisanPage() {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Tarif horaire (optionnel) */}
-          <div className="border-b border-gray-200 pb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Tarification</h2>
-            
-            <Input
-              label="Tarif horaire (€/h)"
-              type="number"
-              value={tarifHoraire}
-              onChange={(e) => setTarifHoraire(e.target.value)}
-              placeholder="45"
-              min="0"
-              step="0.01"
-              helper="Optionnel - Indicatif pour les clients"
-            />
           </div>
 
           {/* Présentation */}

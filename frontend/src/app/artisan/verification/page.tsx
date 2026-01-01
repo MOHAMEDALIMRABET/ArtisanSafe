@@ -172,7 +172,8 @@ export default function VerificationPage() {
 
   const siretVerified = artisan.siretVerified === true;
   const emailVerified = artisan.contactVerification?.email?.verified === true;
-  const phoneVerified = artisan.contactVerification?.telephone?.verified === true;
+  // Temporairement : téléphone toujours vérifié (fonctionnalité à implémenter)
+  const phoneVerified = true; // artisan.contactVerification?.telephone?.verified === true;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -227,17 +228,25 @@ export default function VerificationPage() {
             {!siretVerified && (
               <div>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                  <p className="text-sm text-blue-700">
+                  <p className="text-sm text-blue-700 mb-2">
                     <strong>SIRET actuel :</strong> {artisan.siret}
                   </p>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Cliquez sur "Vérifier" pour valider automatiquement votre SIRET
+                  <p className="text-sm text-blue-700 mb-2">
+                    <strong>Vérifications effectuées :</strong>
                   </p>
+                  <ul className="text-sm text-blue-700 list-disc list-inside ml-2 space-y-1">
+                    <li>Format valide (14 chiffres)</li>
+                    <li>Existence dans la base SIRENE</li>
+                    <li>Statut de l'entreprise</li>
+                  </ul>
                 </div>
 
                 {siretError && (
                   <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-                    <p className="text-sm text-red-700">❌ {siretError}</p>
+                    <p className="text-sm text-red-700 font-semibold">❌ {siretError}</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      Vérifiez que votre SIRET est correct et que votre entreprise est active.
+                    </p>
                   </div>
                 )}
 
@@ -252,139 +261,29 @@ export default function VerificationPage() {
             )}
           </div>
 
-          {/* 2. EMAIL */}
+          {/* 2. TÉLÉPHONE */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  emailVerified ? 'bg-green-100' : 'bg-orange-100'
-                }`}>
-                  {emailVerified ? (
-                    <span className="text-2xl">✅</span>
-                  ) : (
-                    <span className="text-2xl">📧</span>
-                  )}
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-100">
+                  <span className="text-2xl">✅</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">2. Vérification Email</h3>
-                  <p className="text-sm text-gray-600">Confirmez votre adresse email</p>
-                </div>
-              </div>
-              
-              {emailVerified && (
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  Vérifié
-                </span>
-              )}
-            </div>
-
-            {!emailVerified && (
-              <div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Un email de vérification sera envoyé à votre adresse. Cliquez sur le lien pour confirmer.
-                </p>
-
-                <button
-                  onClick={handleSendEmailVerification}
-                  disabled={emailSending}
-                  className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50"
-                >
-                  {emailSending ? 'Envoi en cours...' : 'Envoyer l\'email de vérification'}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* 3. TÉLÉPHONE */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  phoneVerified ? 'bg-green-100' : 'bg-orange-100'
-                }`}>
-                  {phoneVerified ? (
-                    <span className="text-2xl">✅</span>
-                  ) : (
-                    <span className="text-2xl">📱</span>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">3. Vérification Téléphone</h3>
+                  <h3 className="font-bold text-lg">2. Vérification Téléphone</h3>
                   <p className="text-sm text-gray-600">Code SMS de validation</p>
                 </div>
               </div>
               
-              {phoneVerified && (
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  Vérifié
-                </span>
-              )}
+              <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                Vérifié
+              </span>
             </div>
 
-            {!phoneVerified && (
-              <div>
-                {!phoneSent ? (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Un code de vérification sera envoyé par SMS à votre numéro de téléphone.
-                    </p>
-
-                    {phoneError && (
-                      <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-                        <p className="text-sm text-red-700">❌ {phoneError}</p>
-                      </div>
-                    )}
-
-                    <button
-                      onClick={handleSendPhoneCode}
-                      className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100]"
-                    >
-                      Envoyer le code SMS
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-sm text-green-600 mb-4">
-                      ✅ Code envoyé ! Consultez vos SMS et entrez le code à 6 chiffres ci-dessous.
-                    </p>
-
-                    {phoneError && (
-                      <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-                        <p className="text-sm text-red-700">❌ {phoneError}</p>
-                      </div>
-                    )}
-
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={phoneCode}
-                      onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, ''))}
-                      placeholder="000000"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl font-bold tracking-widest mb-4"
-                    />
-
-                    <button
-                      onClick={handleVerifyPhoneCode}
-                      disabled={phoneCode.length !== 6 || phoneVerifying}
-                      className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50"
-                    >
-                      {phoneVerifying ? 'Vérification...' : 'Vérifier le code'}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setPhoneSent(false);
-                        setPhoneCode('');
-                        setPhoneError('');
-                      }}
-                      className="w-full mt-2 text-gray-600 hover:text-[#FF6B00] text-sm"
-                    >
-                      Renvoyer un code
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+              <p className="text-sm text-blue-700">
+                ℹ️ La vérification par SMS sera implémentée prochainement. Pour le moment, cette étape est automatiquement validée.
+              </p>
+            </div>
           </div>
 
           {/* Étapes suivantes */}

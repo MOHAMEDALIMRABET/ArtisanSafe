@@ -169,49 +169,6 @@ export default function DocumentsUploadPage() {
 
   if (!artisan) return null;
 
-  // Bloquer l'accès si le profil n'est pas vérifié
-  if (!artisan.verified) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">🔒 Accès restreint</h1>
-            <p className="text-gray-600 mb-6">
-              Vous devez d'abord compléter la vérification de votre profil (SIRET, email, téléphone) avant de pouvoir uploader vos documents justificatifs.
-            </p>
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 text-left">
-              <p className="text-sm text-blue-700 mb-2">
-                <strong>📋 Étapes à compléter :</strong>
-              </p>
-              <ul className="text-sm text-blue-700 list-disc list-inside space-y-1">
-                <li className={artisan?.siretVerified ? 'line-through' : ''}>
-                  {artisan?.siretVerified ? '✅' : '⏳'} Vérification SIRET
-                </li>
-                <li className={artisan?.contactVerification?.email?.verified ? 'line-through' : ''}>
-                  {artisan?.contactVerification?.email?.verified ? '✅' : '⏳'} Validation email
-                </li>
-                <li className={artisan?.contactVerification?.telephone?.verified ? 'line-through' : ''}>
-                  {artisan?.contactVerification?.telephone?.verified ? '✅' : '⏳'} Validation téléphone
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={() => router.push('/artisan/verification')}
-              className="bg-[#FF6B00] text-white px-6 py-3 rounded-lg hover:bg-[#E56100] transition-colors"
-            >
-              → Compléter la vérification du profil
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const kbisVerified = artisan.verificationDocuments?.kbis?.verified === true;
   const idVerified = artisan.verificationDocuments?.idCard?.verified === true;
   const kbisUploaded = !!artisan.verificationDocuments?.kbis?.url;
@@ -239,7 +196,7 @@ export default function DocumentsUploadPage() {
         </div>
 
         {/* Prérequis */}
-        {(!artisan.siretVerified || !artisan.contactVerification?.email?.verified || !artisan.contactVerification?.telephone?.verified) && (
+        {(!artisan.siretVerified) && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
             <div className="flex">
               <svg className="h-5 w-5 text-yellow-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -247,7 +204,7 @@ export default function DocumentsUploadPage() {
               </svg>
               <div>
                 <p className="text-sm text-yellow-700">
-                  <strong>Attention :</strong> Complétez d'abord les vérifications SIRET, email et téléphone avant d'uploader vos documents.
+                  <strong>Attention :</strong> Complétez d'abord la vérification SIRET avant d'uploader vos documents.
                 </p>
                 <button
                   onClick={() => router.push('/artisan/verification')}
@@ -278,7 +235,7 @@ export default function DocumentsUploadPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-lg">Extrait Kbis</h3>
-                  <p className="text-sm text-gray-600">Moins de 3 mois - Vérification automatique SIRET</p>
+                  <p className="text-sm text-gray-600">Moins de 3 mois</p>
                 </div>
               </div>
 
@@ -296,17 +253,6 @@ export default function DocumentsUploadPage() {
 
             {!kbisVerified && (
               <div>
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                  <p className="text-sm text-blue-700 mb-2">
-                    <strong>📋 Ce qui sera vérifié automatiquement :</strong>
-                  </p>
-                  <ul className="text-sm text-blue-700 list-disc list-inside space-y-1">
-                    <li>Extraction automatique du SIRET du document</li>
-                    <li>Comparaison avec le SIRET de votre profil : <strong>{artisan.siret}</strong></li>
-                    <li>Si les SIRET correspondent → Validation automatique ✅</li>
-                  </ul>
-                </div>
-
                 {kbisError && (
                   <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
                     <p className="text-sm text-red-700">❌ {kbisError}</p>
@@ -368,7 +314,7 @@ export default function DocumentsUploadPage() {
                         Traitement en cours...
                       </span>
                     ) : (
-                      '📤 Analyser et Uploader le Kbis'
+                      '📤 Uploader le Kbis'
                     )}
                   </button>
                 </div>
@@ -417,7 +363,6 @@ export default function DocumentsUploadPage() {
                   </p>
                   <ul className="text-sm text-blue-700 list-disc list-inside space-y-1 mt-2">
                     <li>Photo ou scan recto-verso de votre CNI/Passeport</li>
-                    <li>Document en cours de validité</li>
                     <li>Image claire et lisible</li>
                     <li>Format : JPG, PNG ou PDF (max 5MB)</li>
                   </ul>
@@ -472,56 +417,6 @@ export default function DocumentsUploadPage() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Statut global */}
-        <div className="mt-8 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-6">
-          <h3 className="font-bold text-lg mb-4">📊 Statut de la Vérification</h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">SIRET vérifié</span>
-              <span className={artisan.siretVerified ? "text-green-600 font-semibold" : "text-gray-400"}>
-                {artisan.siretVerified ? "✅" : "⏳"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">Email vérifié</span>
-              <span className={artisan.contactVerification?.email?.verified ? "text-green-600 font-semibold" : "text-gray-400"}>
-                {artisan.contactVerification?.email?.verified ? "✅" : "⏳"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">Téléphone vérifié</span>
-              <span className={artisan.contactVerification?.telephone?.verified ? "text-green-600 font-semibold" : "text-gray-400"}>
-                {artisan.contactVerification?.telephone?.verified ? "✅" : "⏳"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">Kbis vérifié</span>
-              <span className={kbisVerified ? "text-green-600 font-semibold" : "text-gray-400"}>
-                {kbisVerified ? "✅" : "⏳"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">Pièce d'identité vérifiée</span>
-              <span className={idVerified ? "text-green-600 font-semibold" : "text-gray-400"}>
-                {idVerified ? "✅" : "⏳"}
-              </span>
-            </div>
-          </div>
-
-          {kbisVerified && idVerified && artisan.siretVerified && 
-           artisan.contactVerification?.email?.verified && 
-           artisan.contactVerification?.telephone?.verified && (
-            <div className="mt-4 bg-green-100 border-2 border-green-500 rounded-lg p-4">
-              <p className="text-green-800 font-bold text-center">
-                🎉 Félicitations ! Votre profil est entièrement vérifié !
-              </p>
-              <p className="text-green-700 text-sm text-center mt-1">
-                Vous pouvez maintenant recevoir des demandes de devis
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>

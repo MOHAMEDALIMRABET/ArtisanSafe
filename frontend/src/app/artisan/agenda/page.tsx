@@ -703,21 +703,27 @@ export default function AgendaPage() {
 
       {/* Contenu principal */}
       <div className="container mx-auto px-4 py-8">
-        {/* Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h2 className="font-semibold text-blue-900 mb-2">💡 Comment utiliser l'agenda ?</h2>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• <strong>Sélection rapide</strong> : Cliquez sur "Sélection rapide par dates" pour marquer vos indisponibilités sur plusieurs mois</li>
-            <li>• <strong>Vue Agenda</strong> : Pratique pour lister vos indisponibilités</li>
-            <li>• <strong>Vue Calendrier</strong> : Cliquez et faites glisser pour sélectionner plusieurs jours consécutifs - Idéale pour gérer vos indisponibilités
-              <ul className="ml-6 mt-1 space-y-1">
-                <li>◦ <strong>Cliquez sur un jour</strong> dans le calendrier pour marquer une indisponibilité</li>
-                <li>◦ <strong>Cliquez sur un événement</strong> pour le renommer ou le supprimer (sauf les contrats 🔒)</li>
-                <li>◦ <strong>Rouge</strong> = Indisponible (Occupé) | Les jours sans couleur = Disponible</li>
-              </ul>
-            </li>
-            <li>• <strong>🔒 Contrats signés</strong> : Créent automatiquement des indisponibilités (non supprimables)</li>
-          </ul>
+        {/* Instructions - Tooltip au survol */}
+        <div className="mb-6 relative group">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 cursor-help">
+            <h2 className="font-semibold text-blue-900">💡 Comment utiliser l'agenda ?</h2>
+          </div>
+          
+          {/* Tooltip qui s'affiche au survol */}
+          <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-blue-300 rounded-lg p-5 shadow-2xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+            <ul className="text-sm text-gray-800 space-y-2">
+              <li>• <strong>Sélection rapide</strong> : Cliquez sur "Sélection rapide par dates" pour marquer vos indisponibilités sur plusieurs mois</li>
+              <li>• <strong>Vue Agenda</strong> : Pratique pour lister vos indisponibilités</li>
+              <li>• <strong>Vue Calendrier</strong> : Cliquez et faites glisser pour sélectionner plusieurs jours consécutifs - Idéale pour gérer vos indisponibilités
+                <ul className="ml-6 mt-1 space-y-1">
+                  <li>◦ <strong>Cliquez sur un jour</strong> dans le calendrier pour marquer une indisponibilité</li>
+                  <li>◦ <strong>Cliquez sur un événement</strong> pour le renommer ou le supprimer (sauf les contrats 🔒)</li>
+                  <li>◦ <strong>Rouge</strong> = Indisponible (Occupé) | Les jours sans couleur = Disponible</li>
+                </ul>
+              </li>
+              <li>• <strong>🔒 Contrats signés</strong> : Créent automatiquement des indisponibilités (non supprimables)</li>
+            </ul>
+          </div>
         </div>
 
         {/* Calendrier */}
