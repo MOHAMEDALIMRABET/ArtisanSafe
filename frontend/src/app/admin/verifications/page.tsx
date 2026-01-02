@@ -337,10 +337,26 @@ export default function AdminVerificationsPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(kbisStatus)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(kbisStatus)}
+                        {artisan.verificationDocuments?.kbis?.uploadHistory && 
+                         artisan.verificationDocuments.kbis.uploadHistory.length > 3 && (
+                          <span className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded" title={`${artisan.verificationDocuments.kbis.uploadHistory.length} uploads`}>
+                            {artisan.verificationDocuments.kbis.uploadHistory.length}×
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(idStatus)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(idStatus)}
+                        {artisan.verificationDocuments?.idCard?.uploadHistory && 
+                         artisan.verificationDocuments.idCard.uploadHistory.length > 3 && (
+                          <span className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded" title={`${artisan.verificationDocuments.idCard.uploadHistory.length} uploads`}>
+                            {artisan.verificationDocuments.idCard.uploadHistory.length}×
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -527,6 +543,49 @@ export default function AdminVerificationsPage() {
                                 }
                               </p>
                             </div>
+
+                            {/* Historique des uploads */}
+                            {selectedArtisan.verificationDocuments.kbis.uploadHistory && selectedArtisan.verificationDocuments.kbis.uploadHistory.length > 0 && (
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase flex items-center gap-2">
+                                  Historique des uploads ({selectedArtisan.verificationDocuments.kbis.uploadHistory.length})
+                                  {selectedArtisan.verificationDocuments.kbis.uploadHistory.length > 5 && (
+                                    <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                      ⚠️ SUSPECT
+                                    </span>
+                                  )}
+                                </label>
+                                <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-1 max-h-40 overflow-y-auto">
+                                  {selectedArtisan.verificationDocuments.kbis.uploadHistory.map((upload, idx) => (
+                                    <div key={idx} className="text-xs text-gray-700 mb-1 pb-1 border-b border-yellow-200 last:border-0">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">
+                                          {new Date(upload.uploadedAt.toDate()).toLocaleDateString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                        <span className="text-gray-500">•</span>
+                                        <span className="truncate max-w-[150px]" title={upload.fileName}>
+                                          {upload.fileName}
+                                        </span>
+                                        <span className="text-gray-500">•</span>
+                                        <span className="text-gray-500">
+                                          {(upload.fileSize / 1024).toFixed(0)} KB
+                                        </span>
+                                      </div>
+                                      {upload.previouslyRejected && (
+                                        <p className="text-red-600 text-xs mt-0.5">
+                                          ↻ Re-upload après rejet: {upload.rejectionReason}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             
                             {selectedArtisan.verificationDocuments.kbis.parsedData && (
                               <div>
@@ -648,6 +707,49 @@ export default function AdminVerificationsPage() {
                                 }
                               </p>
                             </div>
+
+                            {/* Historique des uploads */}
+                            {selectedArtisan.verificationDocuments.idCard.uploadHistory && selectedArtisan.verificationDocuments.idCard.uploadHistory.length > 0 && (
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase flex items-center gap-2">
+                                  Historique des uploads ({selectedArtisan.verificationDocuments.idCard.uploadHistory.length})
+                                  {selectedArtisan.verificationDocuments.idCard.uploadHistory.length > 5 && (
+                                    <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                      ⚠️ SUSPECT
+                                    </span>
+                                  )}
+                                </label>
+                                <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-1 max-h-40 overflow-y-auto">
+                                  {selectedArtisan.verificationDocuments.idCard.uploadHistory.map((upload, idx) => (
+                                    <div key={idx} className="text-xs text-gray-700 mb-1 pb-1 border-b border-yellow-200 last:border-0">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">
+                                          {new Date(upload.uploadedAt.toDate()).toLocaleDateString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                        <span className="text-gray-500">•</span>
+                                        <span className="truncate max-w-[150px]" title={upload.fileName}>
+                                          {upload.fileName}
+                                        </span>
+                                        <span className="text-gray-500">•</span>
+                                        <span className="text-gray-500">
+                                          {(upload.fileSize / 1024).toFixed(0)} KB
+                                        </span>
+                                      </div>
+                                      {upload.previouslyRejected && (
+                                        <p className="text-red-600 text-xs mt-0.5">
+                                          ↻ Re-upload après rejet: {upload.rejectionReason}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             
                             {selectedArtisan.verificationDocuments.idCard.parsedData && (
                               <div>
