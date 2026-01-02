@@ -402,7 +402,7 @@ export default function DocumentsUploadPage() {
               </div>
             )}
 
-            {!kbisVerified && !kbisUploaded && !kbisSuccess && !kbisRejected && (
+            {(!kbisVerified && !kbisUploaded && !kbisSuccess) && (
               <div>
                 {kbisError && (
                   <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
@@ -523,7 +523,7 @@ export default function DocumentsUploadPage() {
               </div>
             )}
 
-            {!idVerified && !idUploaded && !idSuccess && !idRejected && (
+            {(!idVerified && !idUploaded && !idSuccess) && (
               <div>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
                   <p className="text-sm text-blue-700">
