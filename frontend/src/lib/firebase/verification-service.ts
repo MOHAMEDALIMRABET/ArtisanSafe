@@ -432,7 +432,11 @@ export async function uploadIdCard(
       'verificationDocuments.idCard': {
         url,
         uploadDate: Timestamp.now(),
-        verified: false // Nécessite validation admin
+        verified: false, // Nécessite validation admin
+        rejected: false, // Réinitialiser le statut de rejet
+        rejectionReason: null,
+        rejectedAt: null,
+        rejectedBy: null
       }
     });
     
@@ -488,7 +492,11 @@ export async function uploadKbisDocument(
     await updateDoc(artisanRef, {
       'verificationDocuments.kbis.url': url,
       'verificationDocuments.kbis.uploadDate': Timestamp.now(),
-      'verificationDocuments.kbis.verified': false // Nécessite validation admin
+      'verificationDocuments.kbis.verified': false, // Nécessite validation admin
+      'verificationDocuments.kbis.rejected': false, // Réinitialiser le statut de rejet
+      'verificationDocuments.kbis.rejectionReason': null,
+      'verificationDocuments.kbis.rejectedAt': null,
+      'verificationDocuments.kbis.rejectedBy': null
     });
     
     return {

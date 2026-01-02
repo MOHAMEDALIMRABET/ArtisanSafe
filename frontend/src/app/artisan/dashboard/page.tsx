@@ -432,13 +432,24 @@ export default function ArtisanDashboardPage() {
                       const idVerified = artisan?.verificationDocuments?.idCard?.verified === true;
                       const kbisUploaded = !!artisan?.verificationDocuments?.kbis?.url;
                       const idUploaded = !!artisan?.verificationDocuments?.idCard?.url;
+                      const kbisRejected = artisan?.verificationDocuments?.kbis?.rejected === true;
+                      const idRejected = artisan?.verificationDocuments?.idCard?.rejected === true;
                       
                       // Les deux vérifiés : pas de badge
                       if (kbisVerified && idVerified) {
                         return null;
                       }
                       
-                      // Les deux uploadés mais non vérifiés : badge "En cours de vérification"
+                      // Au moins un document rejeté : badge "À compléter"
+                      if (kbisRejected || idRejected) {
+                        return (
+                          <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
+                            À compléter
+                          </span>
+                        );
+                      }
+                      
+                      // Les deux uploadés mais non vérifiés et non rejetés : badge "En cours de vérification"
                       if (kbisUploaded && idUploaded && !kbisVerified && !idVerified) {
                         return (
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
