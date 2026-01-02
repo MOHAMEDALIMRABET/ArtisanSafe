@@ -451,6 +451,61 @@ export async function uploadIdCard(
 }
 
 /**
+ * Upload un Kbis (sans parsing complexe, juste stockage)
+ */
+export async function uploadKbisDocument(
+  userId: string,
+  file: File
+): Promise<{
+  success: boolean;
+  url?: string;
+  error?: string;
+}> {
+  try {
+    // Vérifier le type de fichier
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      return {
+        success: false,
+        error: 'Format non supporté. Utilisez JPG, PNG ou PDF.'
+      };
+    }
+    
+    // Vérifier la taille (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return {
+        success: false,
+        error: 'Fichier trop volumineux (max 5MB)'
+      };
+    }
+    
+    // Upload vers Firebase Storage
+    const url = await uploadToStorage(userId, file, 'kbis');
+    
+    // Sauvegarder dans Firestore (admin devra vérifier)
+    const artisanRef = doc(db, 'artisans', userId);
+    await updateDoc(artisanRef, {
+      'verificationDocuments.kbis.url': url,
+      'verificationDocuments.kbis.uploadDate': Timestamp.now(),
+      'verificationDocuments.kbis.verified': false // Nécessite validation admin
+    });
+    
+    return {
+      success: true,
+      url
+    };
+    
+  } catch (error) {
+    console.error('Erreur upload Kbis:', error);
+    return {
+      success: false,
+      error: 'Erreur lors de l\'upload'
+    };
+  }
+}
+
+/**
  * Met à jour l'URL d'un document vérifié
  * Note: L'upload vers Firebase Storage se fait côté client
  */

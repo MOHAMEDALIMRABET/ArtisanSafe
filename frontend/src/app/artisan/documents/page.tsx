@@ -5,9 +5,35 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { getUserById } from '@/lib/firebase/user-service';
-import { uploadAndVerifyKbis, uploadIdCard } from '@/lib/firebase/verification-service';
+import { uploadAndVerifyKbis, uploadIdCard, uploadKbisDocument } from '@/lib/firebase/verification-service';
 import type { Artisan } from '@/types/firestore';
 import type { KbisParseResult } from '@/lib/firebase/document-parser';
+
+// Fonction pour créer une notification admin
+async function createAdminNotification(artisanId: string, notification: {
+  type: string;
+  message: string;
+  artisanName: string;
+  priority: 'low' | 'medium' | 'high';
+}) {
+  try {
+    const { getFirestore, collection, addDoc, Timestamp } = await import('firebase/firestore');
+    const db = getFirestore();
+    
+    await addDoc(collection(db, 'admin_notifications'), {
+      artisanId,
+      type: notification.type,
+      message: notification.message,
+      artisanName: notification.artisanName,
+      priority: notification.priority,
+      createdAt: Timestamp.now(),
+      read: false,
+      resolved: false,
+    });
+  } catch (error) {
+    console.error('Erreur création notification admin:', error);
+  }
+}
 
 export default function DocumentsUploadPage() {
   const router = useRouter();
@@ -75,44 +101,107 @@ export default function DocumentsUploadPage() {
     setKbisSuccess(false);
 
     try {
-      // Récupérer le représentant légal depuis le profil utilisateur
-      const user = authService.getCurrentUser();
-      const userData = user ? await getUserById(user.uid) : null;
-      const representantLegal = userData?.representantLegal;
-      
-      const result = await uploadAndVerifyKbis(
-        artisan.userId,
-        kbisFile,
-        artisan.siret,
-        representantLegal
-      );
+      // Étape 1 : Parser le document via l'API backend
+      console.log('📄 Envoi du KBIS au serveur pour parsing...');
+      const formData = new FormData();
+      formData.append('file', kbisFile);
+
+      let parseResult: any = null;
+      try {
+        const parseResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents/parse-kbis`, {
+          method: 'POST',
+          body: formData,
+        });
+        parseResult = await parseResponse.json();
+        console.log('📊 Résultat du parsing:', parseResult);
+      } catch (parseError) {
+        console.warn('⚠️ Parsing échoué, on continue l\'upload:', parseError);
+        // On continue même si le parsing échoue
+      }
+
+      // Étape 2 : Upload du fichier dans Firebase Storage
+      const result = await uploadKbisDocument(artisan.userId, kbisFile);
 
       if (result.success) {
-        setKbisSuccess(true);
-        setKbisParseResult(result.parseResult || null);
-        await loadArtisan();
-        
-        // Afficher les informations extraites et warnings
-        let message = '✅ KBIS vérifié avec succès !\n\n';
-        if (result.parseResult) {
-          message += `SIRET trouvé : ${result.parseResult.siret}\n`;
-          message += `Entreprise : ${result.parseResult.companyName || 'N/A'}\n`;
-          if (result.parseResult.representantLegal) {
-            message += `Représentant légal : ${result.parseResult.representantLegal}\n`;
+        // Étape 3 : Sauvegarder les infos parsées dans Firestore pour l'admin
+        if (parseResult?.success) {
+          try {
+            const { getFirestore, doc, updateDoc, arrayUnion, Timestamp } = await import('firebase/firestore');
+            const db = getFirestore();
+            
+            // Créer l'objet parseResult en filtrant les valeurs undefined
+            const currentParseResult: any = {
+              parsedAt: Timestamp.now(),
+              qualityScore: parseResult.qualityScore,
+            };
+
+            // Ajouter uniquement les champs définis
+            if (parseResult.siret !== undefined) currentParseResult.siret = parseResult.siret;
+            if (parseResult.siren !== undefined) currentParseResult.siren = parseResult.siren;
+            if (parseResult.companyName !== undefined) currentParseResult.companyName = parseResult.companyName;
+            if (parseResult.representantLegal !== undefined) currentParseResult.representantLegal = parseResult.representantLegal;
+            if (parseResult.warnings !== undefined) currentParseResult.warnings = parseResult.warnings;
+            if (parseResult.metadata?.fileSize !== undefined) currentParseResult.fileSize = parseResult.metadata.fileSize;
+            if (parseResult.metadata?.fileName !== undefined) currentParseResult.fileName = parseResult.metadata.fileName;
+            if (parseResult.documentQuality !== undefined) currentParseResult.documentQuality = parseResult.documentQuality;
+
+            // Vérifier si le SIRET parsé correspond au SIRET déclaré
+            const siretMatched = parseResult.siret ? parseResult.siret === artisan.siret : null;
+            
+            await updateDoc(doc(db, 'artisans', artisan.userId), {
+              'verificationDocuments.kbis.parseResult': currentParseResult,
+              'verificationDocuments.kbis.parseHistory': arrayUnion(currentParseResult), // Historique
+              ...(siretMatched !== null && { 'verificationDocuments.kbis.siretMatched': siretMatched }),
+            });
+
+            // Si SIRET ne correspond pas, créer notification admin
+            if (!siretMatched && parseResult.siret) {
+              await createAdminNotification(artisan.userId, {
+                type: 'siret_mismatch',
+                message: `SIRET parsé (${parseResult.siret}) différent du SIRET déclaré (${artisan.siret})`,
+                artisanName: `${artisan.nom} ${artisan.prenom}`,
+                priority: 'high',
+              });
+              console.warn('⚠️ SIRET ne correspond pas, notification admin créée');
+            }
+
+            // Si score de qualité faible, créer notification admin
+            if (parseResult.qualityScore && parseResult.qualityScore < 40) {
+              await createAdminNotification(artisan.userId, {
+                type: 'quality_score_low',
+                message: `Score de qualité très faible (${parseResult.qualityScore}%) - Document potentiellement suspect`,
+                artisanName: `${artisan.nom} ${artisan.prenom}`,
+                priority: 'high',
+              });
+              console.warn('⚠️ Score de qualité faible, notification admin créée');
+            }
+
+            // Si warnings présents, créer notification admin
+            if (parseResult.warnings && parseResult.warnings.length > 0) {
+              await createAdminNotification(artisan.userId, {
+                type: 'suspicious_document',
+                message: `Avertissements détectés: ${parseResult.warnings.join(', ')}`,
+                artisanName: `${artisan.nom} ${artisan.prenom}`,
+                priority: 'medium',
+              });
+            }
+
+            console.log('✅ Informations parsées sauvegardées pour l\'admin');
+          } catch (firestoreError) {
+            console.warn('⚠️ Impossible de sauvegarder les infos parsées:', firestoreError);
           }
         }
-        
-        if (result.warnings && result.warnings.length > 0) {
-          message += '\n⚠️ Avertissements :\n' + result.warnings.join('\n');
-        }
-        
-        alert(message);
+
+        setKbisSuccess(true);
+        await loadArtisan();
+        // Reset le succès après 3 secondes pour montrer le badge "En cours de vérification"
+        setTimeout(() => setKbisSuccess(false), 3000);
       } else {
-        setKbisError(result.error || 'Erreur inconnue');
+        setKbisError(result.error || 'Erreur lors de l\'upload');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur upload Kbis:', error);
-      setKbisError('Erreur technique');
+      setKbisError(error?.message || 'Erreur technique lors de l\'upload');
     } finally {
       setKbisUploading(false);
     }
@@ -144,7 +233,8 @@ export default function DocumentsUploadPage() {
       if (result.success) {
         setIdSuccess(true);
         await loadArtisan();
-        alert('✅ Pièce d\'identité uploadée avec succès !\n\nElle sera vérifiée par notre équipe sous 24-48h.');
+        // Reset le succès après 3 secondes pour montrer le badge "En cours de vérification"
+        setTimeout(() => setIdSuccess(false), 3000);
       } else {
         setIdError(result.error || 'Erreur inconnue');
       }
@@ -244,35 +334,26 @@ export default function DocumentsUploadPage() {
                   ✓ Vérifié
                 </span>
               )}
-              {kbisUploaded && !kbisVerified && (
+              {kbisUploaded && !kbisVerified && !kbisSuccess && (
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  En attente
+                  En cours de vérification
                 </span>
               )}
             </div>
 
-            {!kbisVerified && (
+            {kbisSuccess && (
+              <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+                <p className="text-sm text-green-700 font-semibold">
+                  ✅ Document uploadé ! Il sera vérifié par notre équipe sous 24-48h.
+                </p>
+              </div>
+            )}
+
+            {!kbisVerified && !kbisSuccess && (
               <div>
                 {kbisError && (
                   <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
                     <p className="text-sm text-red-700">❌ {kbisError}</p>
-                  </div>
-                )}
-
-                {kbisSuccess && kbisParseResult && (
-                  <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
-                    <p className="text-sm text-green-700 font-semibold mb-2">
-                      ✅ Document vérifié avec succès !
-                    </p>
-                    <div className="text-sm text-green-700 space-y-1">
-                      <p><strong>SIRET trouvé :</strong> {kbisParseResult.siret}</p>
-                      {kbisParseResult.companyName && (
-                        <p><strong>Entreprise :</strong> {kbisParseResult.companyName}</p>
-                      )}
-                      {kbisParseResult.legalForm && (
-                        <p><strong>Forme juridique :</strong> {kbisParseResult.legalForm}</p>
-                      )}
-                    </div>
                   </div>
                 )}
 
@@ -348,14 +429,22 @@ export default function DocumentsUploadPage() {
                   ✓ Vérifié
                 </span>
               )}
-              {idUploaded && !idVerified && (
+              {idUploaded && !idVerified && !idSuccess && (
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  En attente
+                  En cours de vérification
                 </span>
               )}
             </div>
 
-            {!idVerified && (
+            {idSuccess && (
+              <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+                <p className="text-sm text-green-700">
+                  ✅ Document uploadé ! Il sera vérifié par notre équipe sous 24-48h.
+                </p>
+              </div>
+            )}
+
+            {!idVerified && !idSuccess && (
               <div>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
                   <p className="text-sm text-blue-700">
@@ -371,14 +460,6 @@ export default function DocumentsUploadPage() {
                 {idError && (
                   <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
                     <p className="text-sm text-red-700">❌ {idError}</p>
-                  </div>
-                )}
-
-                {idSuccess && (
-                  <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
-                    <p className="text-sm text-green-700">
-                      ✅ Document uploadé ! Il sera vérifié par notre équipe sous 24-48h.
-                    </p>
                   </div>
                 )}
 

@@ -6,6 +6,7 @@ dotenv.config();
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import smsRoutes from './routes/sms.routes';
+import documentsRoutes from './routes/documents.routes';
 
 const app: Express = express();
 const port = process.env.PORT || 5000;
@@ -26,6 +27,9 @@ app.get('/api/v1/health', (req: Request, res: Response) => {
 
 // Routes SMS
 app.use('/api/v1/sms', smsRoutes);
+
+// Routes Documents
+app.use('/api/v1/documents', documentsRoutes);
 
 // Gestion des erreurs 404
 app.use((req: Request, res: Response) => {

@@ -16,7 +16,7 @@ import {
   getVerificationStats,
   isAdmin,
 } from '@/lib/firebase/admin-service';
-import { AdminVerificationRequest } from '@/types/firestore';
+import { AdminVerificationRequest, AdminNotification } from '@/types/firestore';
 
 type FilterType = 'all' | 'documents' | 'incomplete';
 
@@ -54,6 +54,10 @@ export default function AdminVerificationsPage() {
     incomplete: 0,
   });
 
+  // Notifications admin
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
   // Vérification admin au chargement
   useEffect(() => {
     const checkAdmin = async () => {
@@ -82,19 +86,81 @@ export default function AdminVerificationsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [allRequests, statsData] = await Promise.all([
+      const [allRequests, statsData, notificationsData] = await Promise.all([
         getPendingVerifications(),
         getVerificationStats(),
+        loadAdminNotifications(),
       ]);
 
       setRequests(allRequests);
       setStats(statsData);
+      setNotifications(notificationsData);
       applyFilter(selectedFilter, allRequests);
     } catch (error) {
       console.error('Erreur chargement données:', error);
       alert('Erreur lors du chargement des données');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Charger les notifications admin
+  const loadAdminNotifications = async (): Promise<AdminNotification[]> => {
+    try {
+      const { getFirestore, collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
+      const db = getFirestore();
+      
+      const q = query(
+        collection(db, 'admin_notifications'),
+        where('resolved', '==', false),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      } as AdminNotification));
+    } catch (error) {
+      console.error('Erreur chargement notifications:', error);
+      return [];
+    }
+  };
+
+  // Marquer une notification comme lue
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      const { getFirestore, doc, updateDoc, Timestamp } = await import('firebase/firestore');
+      const db = getFirestore();
+      
+      await updateDoc(doc(db, 'admin_notifications', notificationId), {
+        read: true,
+        readAt: Timestamp.now(),
+        readBy: auth.currentUser?.uid,
+      });
+      
+      await loadData();
+    } catch (error) {
+      console.error('Erreur marquage notification:', error);
+    }
+  };
+
+  // Résoudre une notification
+  const resolveNotification = async (notificationId: string, note?: string) => {
+    try {
+      const { getFirestore, doc, updateDoc, Timestamp } = await import('firebase/firestore');
+      const db = getFirestore();
+      
+      await updateDoc(doc(db, 'admin_notifications', notificationId), {
+        resolved: true,
+        resolvedAt: Timestamp.now(),
+        resolvedBy: auth.currentUser?.uid,
+        resolutionNote: note || 'Résolu',
+      });
+      
+      await loadData();
+    } catch (error) {
+      console.error('Erreur résolution notification:', error);
     }
   };
 
@@ -255,6 +321,82 @@ export default function AdminVerificationsPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Notifications Admin */}
+        {notifications.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-white rounded-lg shadow-lg border-l-4 border-red-500">
+              <div className="p-4 flex items-center justify-between cursor-pointer" onClick={() => setShowNotifications(!showNotifications)}>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🔔</span>
+                  <div>
+                    <h3 className="font-bold text-lg text-red-700">Alertes ({notifications.filter(n => !n.read).length} non lues)</h3>
+                    <p className="text-sm text-gray-600">Problèmes nécessitant votre attention</p>
+                  </div>
+                </div>
+                <span className="text-2xl">{showNotifications ? '▼' : '▶'}</span>
+              </div>
+
+              {showNotifications && (
+                <div className="border-t border-gray-200 max-h-96 overflow-y-auto">
+                  {notifications.map(notif => (
+                    <div
+                      key={notif.id}
+                      className={`p-4 border-b border-gray-100 ${!notif.read ? 'bg-red-50' : 'bg-white'}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${
+                              notif.priority === 'high' ? 'bg-red-100 text-red-800' :
+                              notif.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {notif.priority === 'high' ? '🚨 URGENT' : notif.priority === 'medium' ? '⚠️ ATTENTION' : 'ℹ️ INFO'}
+                            </span>
+                            <span className="font-semibold text-gray-900">{notif.artisanName}</span>
+                            <span className="text-xs text-gray-500">
+                              {notif.createdAt.toDate().toLocaleString('fr-FR')}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 mb-2">{notif.message}</p>
+                          <div className="flex gap-2">
+                            {!notif.read && (
+                              <button
+                                onClick={() => markNotificationAsRead(notif.id)}
+                                className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+                              >
+                                Marquer comme lu
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                const note = prompt('Note de résolution (optionnel):');
+                                resolveNotification(notif.id, note || undefined);
+                              }}
+                              className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200"
+                            >
+                              Résoudre
+                            </button>
+                            <button
+                              onClick={() => {
+                                const artisan = requests.find(r => r.artisanId === notif.artisanId);
+                                if (artisan) openModal(artisan);
+                              }}
+                              className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded hover:bg-gray-200"
+                            >
+                              Voir dossier
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Statistiques */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
@@ -500,6 +642,158 @@ export default function AdminVerificationsPage() {
                     <h3 className="font-bold text-lg mb-3 text-[#2C3E50]">
                       📄 Extrait Kbis
                     </h3>
+
+                    {/* Informations extraites automatiquement (parseResult) */}
+                    {selectedArtisan.verificationDocuments.kbis.parseResult && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                        <h4 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
+                          <span className="text-lg">✨</span>
+                          Informations extraites automatiquement
+                          <span className="text-xs font-normal text-green-700">
+                            ({selectedArtisan.verificationDocuments.kbis.parseResult.parsedAt 
+                              ? new Date(selectedArtisan.verificationDocuments.kbis.parseResult.parsedAt.toMillis()).toLocaleString('fr-FR')
+                              : 'Date inconnue'})
+                          </span>
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          {selectedArtisan.verificationDocuments.kbis.parseResult.siret && (
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-600">📋</span>
+                              <div>
+                                <p className="font-medium text-green-900">SIRET extrait</p>
+                                <p className="text-green-800 font-mono text-lg">
+                                  {selectedArtisan.verificationDocuments.kbis.parseResult.siret}
+                                </p>
+                                {selectedArtisan.verificationDocuments.kbis.parseResult.siret === selectedArtisan.entreprise.siret ? (
+                                  <p className="text-green-600 text-xs mt-1">✅ Correspond au SIRET déclaré</p>
+                                ) : (
+                                  <p className="text-red-600 text-xs mt-1">
+                                    ⚠️ Différent du SIRET déclaré : {selectedArtisan.entreprise.siret}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {selectedArtisan.verificationDocuments.kbis.parseResult.companyName && (
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-600">🏢</span>
+                              <div>
+                                <p className="font-medium text-green-900">Nom de l'entreprise</p>
+                                <p className="text-green-800">{selectedArtisan.verificationDocuments.kbis.parseResult.companyName}</p>
+                                {selectedArtisan.verificationDocuments.kbis.parseResult.companyName !== selectedArtisan.entreprise.nom && (
+                                  <p className="text-yellow-600 text-xs mt-1">
+                                    ⚠️ Déclaré : {selectedArtisan.entreprise.nom}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {selectedArtisan.verificationDocuments.kbis.parseResult.representantLegal && (
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-600">👤</span>
+                              <div>
+                                <p className="font-medium text-green-900">Représentant légal</p>
+                                <p className="text-green-800">{selectedArtisan.verificationDocuments.kbis.parseResult.representantLegal}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {selectedArtisan.verificationDocuments.kbis.parseResult.qualityScore !== undefined && (
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-600">📊</span>
+                              <div>
+                                <p className="font-medium text-green-900">Score de qualité du parsing</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                    <div
+                                      className={`h-2 rounded-full ${
+                                        selectedArtisan.verificationDocuments.kbis.parseResult.qualityScore >= 70
+                                          ? 'bg-green-500'
+                                          : selectedArtisan.verificationDocuments.kbis.parseResult.qualityScore >= 40
+                                          ? 'bg-yellow-500'
+                                          : 'bg-red-500'
+                                      }`}
+                                      style={{ width: `${selectedArtisan.verificationDocuments.kbis.parseResult.qualityScore}%` }}
+                                    />
+                                  </div>
+                                  <span className="font-mono text-green-800">
+                                    {selectedArtisan.verificationDocuments.kbis.parseResult.qualityScore}%
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-green-700 mt-3 italic">
+                          💡 Ces informations ont été extraites automatiquement pour faciliter votre vérification manuelle.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Historique des parsing (multi-upload) */}
+                    {selectedArtisan.verificationDocuments.kbis.parseHistory && selectedArtisan.verificationDocuments.kbis.parseHistory.length > 1 && (
+                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                        <h4 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                          <span className="text-lg">📜</span>
+                          Historique des parsing ({selectedArtisan.verificationDocuments.kbis.parseHistory.length} versions)
+                        </h4>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {selectedArtisan.verificationDocuments.kbis.parseHistory
+                            .sort((a, b) => b.parsedAt.toMillis() - a.parsedAt.toMillis())
+                            .map((parse, index) => (
+                              <div key={index} className="bg-white p-3 rounded border border-purple-200 text-sm">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-semibold text-purple-800">
+                                    Version {selectedArtisan.verificationDocuments.kbis.parseHistory!.length - index}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {parse.parsedAt.toDate().toLocaleString('fr-FR')}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  {parse.siret && (
+                                    <div>
+                                      <span className="text-gray-600">SIRET:</span>
+                                      <span className="font-mono ml-1">{parse.siret}</span>
+                                    </div>
+                                  )}
+                                  {parse.companyName && (
+                                    <div>
+                                      <span className="text-gray-600">Entreprise:</span>
+                                      <span className="ml-1">{parse.companyName}</span>
+                                    </div>
+                                  )}
+                                  {parse.qualityScore !== undefined && (
+                                    <div>
+                                      <span className="text-gray-600">Score:</span>
+                                      <span className={`ml-1 font-semibold ${
+                                        parse.qualityScore >= 70 ? 'text-green-600' :
+                                        parse.qualityScore >= 40 ? 'text-yellow-600' : 'text-red-600'
+                                      }`}>{parse.qualityScore}%</span>
+                                    </div>
+                                  )}
+                                  {parse.fileName && (
+                                    <div className="col-span-2">
+                                      <span className="text-gray-600">Fichier:</span>
+                                      <span className="ml-1 text-gray-500 truncate">{parse.fileName}</span>
+                                    </div>
+                                  )}
+                                  {parse.warnings && parse.warnings.length > 0 && (
+                                    <div className="col-span-2">
+                                      <span className="text-orange-600">⚠️ {parse.warnings.join(', ')}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                        <p className="text-xs text-purple-700 mt-3 italic">
+                          💡 L'artisan a téléchargé le document plusieurs fois. Vérifiez les différences.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Points de contrôle KBIS */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">

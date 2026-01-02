@@ -5,10 +5,12 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User,
-  updateProfile
+  updateProfile,
+  sendEmailVerification
 } from 'firebase/auth';
 import { createUser } from './firebase/user-service';
 import { createArtisan } from './firebase/artisan-service';
+import { syncEmailVerificationStatus } from './firebase/email-verification-sync';
 import type { User as UserType, Artisan } from '@/types/firestore';
 import { Timestamp } from 'firebase/firestore';
 
@@ -78,6 +80,21 @@ export const authService = {
       };
 
       await createUser(user.uid, userData);
+
+      // Synchroniser le statut emailVerified dans Firestore
+      await syncEmailVerificationStatus(user.uid);
+
+      // Envoyer l'email de vérification
+      try {
+        await sendEmailVerification(user, {
+          url: `${window.location.origin}/email-verified`,
+          handleCodeInApp: false,
+        });
+        console.log('✅ Email de vérification envoyé à', data.email);
+      } catch (emailError) {
+        console.error('⚠️ Erreur envoi email de vérification:', emailError);
+        // Ne pas bloquer l'inscription si l'email échoue
+      }
 
       return user;
     } catch (error) {
@@ -150,6 +167,21 @@ export const authService = {
 
       await createArtisan(artisanData);
 
+      // Synchroniser le statut emailVerified dans Firestore
+      await syncEmailVerificationStatus(user.uid);
+
+      // Envoyer l'email de vérification (OBLIGATOIRE pour artisans)
+      try {
+        await sendEmailVerification(user, {
+          url: `${window.location.origin}/email-verified`,
+          handleCodeInApp: false,
+        });
+        console.log('✅ Email de vérification envoyé à', data.email);
+      } catch (emailError) {
+        console.error('⚠️ Erreur envoi email de vérification:', emailError);
+        // Ne pas bloquer l'inscription si l'email échoue
+      }
+
       return user;
     } catch (error) {
       console.error('Error signing up artisan:', error);
@@ -163,6 +195,10 @@ export const authService = {
   async signIn(email: string, password: string) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Synchroniser le statut emailVerified
+      await syncEmailVerificationStatus(userCredential.user.uid);
+      
       return userCredential.user;
     } catch (error) {
       console.error('Error signing in:', error);
@@ -195,6 +231,31 @@ export const authService = {
   getCurrentUser() {
     return auth.currentUser;
   },
+
+  /**
+   * Renvoyer l'email de vérification
+   */
+  async resendVerificationEmail() {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error('Aucun utilisateur connecté');
+    }
+
+    if (user.emailVerified) {
+      throw new Error('Email déjà vérifié');
+    }
+
+    try {
+      await sendEmailVerification(user, {
+        url: `${window.location.origin}/email-verified`,
+        handleCodeInApp: false,
+      });
+      console.log('✅ Email de vérification renvoyé');
+    } catch (error) {
+      console.error('Erreur renvoi email:', error);
+      throw error;
+    }
+  },
 };
 
 // Exports individuels pour faciliter l'import
@@ -203,5 +264,6 @@ export const signUpArtisan = authService.signUpArtisan.bind(authService);
 export const signIn = authService.signIn.bind(authService);
 export const signOut = authService.signOut.bind(authService);
 export const getCurrentUser = authService.getCurrentUser.bind(authService);
+export const resendVerificationEmail = authService.resendVerificationEmail.bind(authService);
 export const onAuthChanged = authService.onAuthStateChanged.bind(authService);
 

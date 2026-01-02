@@ -193,7 +193,8 @@ export async function searchArtisansByMetier(metier: Categorie): Promise<Artisan
   const q = query(
     artisansRef,
     where('metiers', 'array-contains', metier),
-    where('badgeVerifie', '==', true)
+    where('badgeVerifie', '==', true),
+    where('emailVerified', '==', true) // Email vérifié OBLIGATOIRE
   );
   const querySnapshot = await getDocs(q);
   
@@ -208,7 +209,11 @@ export async function searchArtisansByMetier(metier: Categorie): Promise<Artisan
  */
 export async function getVerifiedArtisans(): Promise<Artisan[]> {
   const artisansRef = collection(db, COLLECTION_NAME);
-  const q = query(artisansRef, where('badgeVerifie', '==', true));
+  const q = query(
+    artisansRef,
+    where('badgeVerifie', '==', true),
+    where('emailVerified', '==', true) // Email vérifié OBLIGATOIRE
+  );
   const querySnapshot = await getDocs(q);
   
   return querySnapshot.docs.map(doc => ({

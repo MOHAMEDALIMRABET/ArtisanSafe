@@ -36,8 +36,6 @@ export default function InscriptionPage() {
   // Champs spécifiques artisan
   const [entreprise, setEntreprise] = useState('');
   const [siret, setSiret] = useState('');
-  const [metiers, setMetiers] = useState<string[]>([]);
-  const [metierInput, setMetierInput] = useState('');
 
   // Fonction pour formater le téléphone au format international
   const formatPhoneNumber = (phone: string): string => {
@@ -92,11 +90,6 @@ export default function InscriptionPage() {
       return;
     }
 
-    if (role === 'artisan' && metiers.length === 0) {
-      setError('Veuillez sélectionner au moins un métier');
-      return;
-    }
-
     if (role === 'artisan' && !representantLegal.trim()) {
       setError('Le nom du représentant légal est obligatoire pour vérifier votre KBIS');
       return;
@@ -129,7 +122,7 @@ export default function InscriptionPage() {
           role: 'artisan',
           businessName: entreprise,
           siret: siret,
-          metiers,
+          metiers: [],
           location: {
             address: '',
             city: '',
@@ -145,17 +138,6 @@ export default function InscriptionPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const addMetier = () => {
-    if (metierInput && !metiers.includes(metierInput)) {
-      setMetiers([...metiers, metierInput]);
-      setMetierInput('');
-    }
-  };
-
-  const removeMetier = (metier: string) => {
-    setMetiers(metiers.filter(m => m !== metier));
   };
 
   // Mapping métiers : valeur technique -> label affichage
@@ -406,45 +388,6 @@ export default function InscriptionPage() {
                 placeholder="14 chiffres"
                 helperText="Votre numéro SIRET sera vérifié"
               />
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Métiers <span className="text-red-500">*</span>
-                </label>
-                <div className="flex gap-2 mb-2">
-                  <select
-                    value={metierInput}
-                    onChange={(e) => setMetierInput(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00] bg-white text-base font-normal appearance-none"
-                    style={{ color: '#1F2937', minHeight: '42px' }}
-                  >
-                    <option value="" style={{ color: '#6B7280' }}>Sélectionner un métier</option>
-                    {metiersDisponibles.map((m) => (
-                      <option key={m} value={m} style={{ color: '#1F2937' }}>{METIERS_MAP[m]}</option>
-                    ))}
-                  </select>
-                  <Button type="button" onClick={addMetier} variant="outline">
-                    Ajouter
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {metiers.map((metier) => (
-                    <span
-                      key={metier}
-                      className="inline-flex items-center px-3 py-1 bg-[#FF6B00] text-white rounded-full text-sm font-medium"
-                    >
-                      {METIERS_MAP[metier as Categorie] || metier}
-                      <button
-                        type="button"
-                        onClick={() => removeMetier(metier)}
-                        className="ml-2 text-white hover:text-gray-200"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
             </>
           )}
 

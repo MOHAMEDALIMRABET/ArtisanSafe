@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authService } from '@/lib/auth-service';
+import { authService, resendVerificationEmail } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { Logo } from '@/components/ui';
@@ -13,6 +13,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [emailVerified, setEmailVerified] = useState(true);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+  const [canResend, setCanResend] = useState(true);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   useEffect(() => {
     loadUserData();
@@ -25,6 +30,9 @@ export default function DashboardPage() {
         router.push('/connexion');
         return;
       }
+
+      // Vérifier le statut de l'email
+      setEmailVerified(currentUser.emailVerified);
 
       const userData = await getUserById(currentUser.uid);
       if (!userData) {
@@ -44,6 +52,52 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Erreur chargement utilisateur:', error);
       setIsLoading(false);
+    }
+  }
+
+  async function handleResendEmail() {
+    if (!canResend) {
+      setResendMessage(`⏳ Veuillez attendre ${cooldownSeconds}s avant de renvoyer un email.`);
+      return;
+    }
+
+    setResendingEmail(true);
+    setResendMessage('');
+    
+    try {
+      await resendVerificationEmail();
+      setResendMessage('✅ Email renvoyé ! Consultez votre boîte mail.');
+      
+      // Activer le cooldown de 60 secondes
+      setCanResend(false);
+      setCooldownSeconds(60);
+      
+      const interval = setInterval(() => {
+        setCooldownSeconds(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error('Erreur renvoi email:', error);
+      
+      // Messages d'erreur conviviaux
+      if (error.code === 'auth/too-many-requests') {
+        setResendMessage('⚠️ Trop de tentatives. Veuillez attendre 15 minutes avant de réessayer.');
+        setCanResend(false);
+        setCooldownSeconds(900); // 15 minutes
+      } else if (error.message?.includes('déjà vérifié')) {
+        setResendMessage('✅ Votre email est déjà vérifié ! Rafraîchissez la page.');
+      } else {
+        setResendMessage('❌ Erreur : Veuillez réessayer dans quelques instants.');
+      }
+    } finally {
+      setResendingEmail(false);
     }
   }
 
@@ -82,6 +136,37 @@ export default function DashboardPage() {
       </nav>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Bannière email non vérifié (Client) */}
+        {!emailVerified && (
+          <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="font-bold text-blue-800 mb-1">
+                  📧 Validez votre email pour débloquer toutes les fonctionnalités
+                </h3>
+                <p className="text-blue-700 text-sm mb-3">
+                  Certaines fonctionnalités sont limitées jusqu'à validation de votre email (signature de contrat, paiement sécurisé).
+                </p>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <button
+                    onClick={handleResendEmail}
+                    disabled={resendingEmail || !canResend}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition"
+                  >
+                    {resendingEmail ? 'Envoi...' : !canResend && cooldownSeconds > 0 ? `Attendre ${cooldownSeconds}s` : 'Renvoyer l\'email'}
+                  </button>
+                  {resendMessage && (
+                    <span className="text-sm font-medium">{resendMessage}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* En-tête */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">

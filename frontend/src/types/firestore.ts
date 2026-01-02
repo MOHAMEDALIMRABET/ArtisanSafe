@@ -109,6 +109,7 @@ export interface UserAdresse {
 export interface User {
   uid: string;
   email: string;
+  emailVerified?: boolean; // Statut de vérification email (synchronisé depuis Firebase Auth)
   role: UserRole;
   nom: string;
   prenom: string;
@@ -158,15 +159,38 @@ export interface CompteBancaire {
 
 export type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'incomplete';
 
+export interface ParseResultHistory {
+  siret?: string;
+  siren?: string;
+  companyName?: string;
+  representantLegal?: string;
+  qualityScore?: number;
+  warnings?: string[];
+  parsedAt: Timestamp;
+  fileSize?: number;
+  fileName?: string;
+}
+
 export interface VerificationDocuments {
   kbis?: {
     url: string;
     uploadDate: Timestamp;
     verified: boolean;
     siretMatched?: boolean;
+    siretMismatchNotified?: boolean; // Notification admin envoyée si SIRET ne correspond pas
     representantMatched?: boolean;
     representantConfidence?: 'high' | 'medium' | 'low';
     requiresManualReview?: boolean;
+    parseResult?: {
+      siret?: string;
+      siren?: string;
+      companyName?: string;
+      representantLegal?: string;
+      qualityScore?: number;
+      warnings?: string[];
+      parsedAt?: Timestamp; // Date du parsing automatique
+    };
+    parseHistory?: ParseResultHistory[]; // Historique de tous les parsing (multi-upload)
     extractedData?: {
       siret?: string;
       siren?: string;
@@ -208,6 +232,7 @@ export interface ContactVerification {
 
 export interface Artisan {
   userId: string;
+  emailVerified?: boolean; // Statut de vérification email (synchronisé depuis Firebase Auth)
   siret: string;
   raisonSociale: string;
   formeJuridique: FormeJuridique;
@@ -585,4 +610,28 @@ export interface AdminPermissions {
   canViewFinances: boolean;
   canManageLitige: boolean;
   isSuperAdmin: boolean;
+}
+
+// ============================================
+// COLLECTION: admin_notifications
+// ============================================
+
+/**
+ * Notification pour les administrateurs
+ */
+export interface AdminNotification {
+  id: string;
+  artisanId: string;
+  artisanName: string;
+  type: 'siret_mismatch' | 'document_uploaded' | 'quality_score_low' | 'suspicious_document';
+  message: string;
+  priority: 'low' | 'medium' | 'high';
+  createdAt: Timestamp;
+  read: boolean;
+  readAt?: Timestamp;
+  readBy?: string; // Admin ID
+  resolved: boolean;
+  resolvedAt?: Timestamp;
+  resolvedBy?: string; // Admin ID
+  resolutionNote?: string;
 }

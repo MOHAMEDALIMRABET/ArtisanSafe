@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authService } from '@/lib/auth-service';
+import { authService, resendVerificationEmail } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { Logo } from '@/components/ui';
@@ -14,6 +14,11 @@ export default function ArtisanDashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [emailVerified, setEmailVerified] = useState(true);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+  const [canResend, setCanResend] = useState(true);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   useEffect(() => {
     loadUserData();
@@ -26,6 +31,9 @@ export default function ArtisanDashboardPage() {
         router.push('/connexion');
         return;
       }
+
+      // Vérifier le statut de l'email
+      setEmailVerified(currentUser.emailVerified);
 
       const userData = await getUserById(currentUser.uid);
       if (!userData) {
@@ -52,6 +60,52 @@ export default function ArtisanDashboardPage() {
     } catch (error) {
       console.error('Erreur chargement utilisateur:', error);
       setIsLoading(false);
+    }
+  }
+
+  async function handleResendEmail() {
+    if (!canResend) {
+      setResendMessage(`⏳ Veuillez attendre ${cooldownSeconds}s avant de renvoyer un email.`);
+      return;
+    }
+
+    setResendingEmail(true);
+    setResendMessage('');
+    
+    try {
+      await resendVerificationEmail();
+      setResendMessage('✅ Email renvoyé ! Consultez votre boîte mail.');
+      
+      // Activer le cooldown de 60 secondes
+      setCanResend(false);
+      setCooldownSeconds(60);
+      
+      const interval = setInterval(() => {
+        setCooldownSeconds(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error('Erreur renvoi email:', error);
+      
+      // Messages d'erreur conviviaux
+      if (error.code === 'auth/too-many-requests') {
+        setResendMessage('⚠️ Trop de tentatives. Veuillez attendre 15 minutes avant de réessayer.');
+        setCanResend(false);
+        setCooldownSeconds(900); // 15 minutes
+      } else if (error.message?.includes('déjà vérifié')) {
+        setResendMessage('✅ Votre email est déjà vérifié ! Rafraîchissez la page.');
+      } else {
+        setResendMessage('❌ Erreur : Veuillez réessayer dans quelques instants.');
+      }
+    } finally {
+      setResendingEmail(false);
     }
   }
 
@@ -90,6 +144,38 @@ export default function ArtisanDashboardPage() {
       </nav>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Bannière email non vérifié (Artisan - OBLIGATOIRE) */}
+        {!emailVerified && (
+          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="font-bold text-red-800 mb-1">
+                  ⚠️ Validation de votre email OBLIGATOIRE
+                </h3>
+                <p className="text-red-700 text-sm mb-3">
+                  <strong>Votre profil est invisible</strong> tant que votre email n'est pas validé. Les clients ne peuvent pas vous trouver.
+                  Consultez votre boîte mail et cliquez sur le lien de validation.
+                </p>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <button
+                    onClick={handleResendEmail}
+                    disabled={resendingEmail || !canResend}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed transition"
+                  >
+                    {resendingEmail ? 'Envoi...' : !canResend && cooldownSeconds > 0 ? `Attendre ${cooldownSeconds}s` : 'Renvoyer l\'email'}
+                  </button>
+                  {resendMessage && (
+                    <span className="text-sm font-medium">{resendMessage}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* En-tête */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">
@@ -250,11 +336,33 @@ export default function ArtisanDashboardPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold text-gray-800">Mes Documents</h2>
-                    {(!artisan?.verificationDocuments?.kbis?.verified || !artisan?.verificationDocuments?.idCard?.verified) && (
-                      <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
-                        À compléter
-                      </span>
-                    )}
+                    {(() => {
+                      const kbisVerified = artisan?.verificationDocuments?.kbis?.verified === true;
+                      const idVerified = artisan?.verificationDocuments?.idCard?.verified === true;
+                      const kbisUploaded = !!artisan?.verificationDocuments?.kbis?.url;
+                      const idUploaded = !!artisan?.verificationDocuments?.idCard?.url;
+                      
+                      // Les deux vérifiés : pas de badge
+                      if (kbisVerified && idVerified) {
+                        return null;
+                      }
+                      
+                      // Les deux uploadés mais non vérifiés : badge "En cours de vérification"
+                      if (kbisUploaded && idUploaded && !kbisVerified && !idVerified) {
+                        return (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                            En cours de vérification
+                          </span>
+                        );
+                      }
+                      
+                      // Sinon : badge "À compléter"
+                      return (
+                        <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
+                          À compléter
+                        </span>
+                      );
+                    })()}
                   </div>
                   <p className="text-sm text-gray-600">KBIS & Pièce d'identité</p>
                 </div>

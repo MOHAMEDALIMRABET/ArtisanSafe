@@ -19,8 +19,20 @@ export default function ConnexionPage() {
     setIsLoading(true);
 
     try {
-      await authService.signIn(email, password);
-      router.push('/dashboard');
+      const firebaseUser = await authService.signIn(email, password);
+      
+      // Récupérer les données utilisateur pour déterminer le rôle
+      const { getUserById } = await import('@/lib/firebase/user-service');
+      const userData = await getUserById(firebaseUser.uid);
+      
+      // Rediriger vers le bon dashboard selon le rôle
+      if (userData?.role === 'artisan') {
+        router.push('/artisan/dashboard');
+      } else if (userData?.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/dashboard'); // Client par défaut
+      }
     } catch (err: any) {
       setError(err.message || 'Email ou mot de passe incorrect');
     } finally {

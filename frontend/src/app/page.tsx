@@ -148,7 +148,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-semibold mb-2 text-[#2C3E50]">Artisans vérifiés</h3>
             <p className="text-gray-600">
-              Tous nos artisans sont vérifiés (SIRET, certifications) pour votre sécurité
+              Tous nos artisans sont vérifiés (Pièce d'identité, Statut de l'entreprise) pour votre sécurité
             </p>
           </div>
 
