@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
       }
 
       // Redirection vers dashboard admin
-      router.push('/admin/verifications');
+      router.push('/admin/dashboard');
     } catch (err: any) {
       console.error('Erreur connexion admin:', err);
 
