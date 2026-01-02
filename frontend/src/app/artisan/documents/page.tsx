@@ -280,10 +280,16 @@ export default function DocumentsUploadPage() {
 
   if (!artisan) return null;
 
+  // Déterminer les statuts des documents
   const kbisVerified = artisan.verificationDocuments?.kbis?.verified === true;
+  const kbisRejected = artisan.verificationDocuments?.kbis?.rejected === true;
+  const kbisRejectionReason = artisan.verificationDocuments?.kbis?.rejectionReason || '';
+  const kbisUploaded = !!(artisan.verificationDocuments?.kbis?.url && !kbisVerified && !kbisRejected);
+
   const idVerified = artisan.verificationDocuments?.idCard?.verified === true;
-  const kbisUploaded = !!artisan.verificationDocuments?.kbis?.url;
-  const idUploaded = !!artisan.verificationDocuments?.idCard?.url;
+  const idRejected = artisan.verificationDocuments?.idCard?.rejected === true;
+  const idRejectionReason = artisan.verificationDocuments?.idCard?.rejectionReason || '';
+  const idUploaded = !!(artisan.verificationDocuments?.idCard?.url && !idVerified && !idRejected);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -334,10 +340,12 @@ export default function DocumentsUploadPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  kbisVerified ? 'bg-green-100' : kbisUploaded ? 'bg-blue-100' : 'bg-orange-100'
+                  kbisVerified ? 'bg-green-100' : kbisRejected ? 'bg-red-100' : kbisUploaded ? 'bg-blue-100' : 'bg-orange-100'
                 }`}>
                   {kbisVerified ? (
                     <span className="text-2xl">✅</span>
+                  ) : kbisRejected ? (
+                    <span className="text-2xl">❌</span>
                   ) : kbisUploaded ? (
                     <span className="text-2xl">⏳</span>
                   ) : (
@@ -355,6 +363,11 @@ export default function DocumentsUploadPage() {
                   ✓ Vérifié
                 </span>
               )}
+              {kbisRejected && (
+                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  ✗ Rejeté
+                </span>
+              )}
               {kbisUploaded && !kbisVerified && !kbisSuccess && (
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
                   En cours de vérification
@@ -370,7 +383,26 @@ export default function DocumentsUploadPage() {
               </div>
             )}
 
-            {!kbisVerified && !kbisSuccess && (
+            {kbisRejected && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">❌</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-red-800 mb-2">
+                      Document rejeté par notre équipe
+                    </p>
+                    <p className="text-sm text-red-700 mb-3">
+                      <strong>Raison :</strong> {kbisRejectionReason || 'Non spécifiée'}
+                    </p>
+                    <p className="text-sm text-red-600">
+                      📤 Veuillez uploader un nouveau document conforme aux exigences.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!kbisVerified && !kbisUploaded && !kbisSuccess && !kbisRejected && (
               <div>
                 {kbisError && (
                   <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
@@ -429,10 +461,12 @@ export default function DocumentsUploadPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  idVerified ? 'bg-green-100' : idUploaded ? 'bg-blue-100' : 'bg-orange-100'
+                  idVerified ? 'bg-green-100' : idRejected ? 'bg-red-100' : idUploaded ? 'bg-blue-100' : 'bg-orange-100'
                 }`}>
                   {idVerified ? (
                     <span className="text-2xl">✅</span>
+                  ) : idRejected ? (
+                    <span className="text-2xl">❌</span>
                   ) : idUploaded ? (
                     <span className="text-2xl">⏳</span>
                   ) : (
@@ -450,6 +484,11 @@ export default function DocumentsUploadPage() {
                   ✓ Vérifié
                 </span>
               )}
+              {idRejected && (
+                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  ✗ Rejeté
+                </span>
+              )}
               {idUploaded && !idVerified && !idSuccess && (
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
                   En cours de vérification
@@ -465,7 +504,26 @@ export default function DocumentsUploadPage() {
               </div>
             )}
 
-            {!idVerified && !idSuccess && (
+            {idRejected && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">❌</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-red-800 mb-2">
+                      Document rejeté par notre équipe
+                    </p>
+                    <p className="text-sm text-red-700 mb-3">
+                      <strong>Raison :</strong> {idRejectionReason || 'Non spécifiée'}
+                    </p>
+                    <p className="text-sm text-red-600">
+                      📤 Veuillez uploader un nouveau document conforme aux exigences.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!idVerified && !idUploaded && !idSuccess && !idRejected && (
               <div>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
                   <p className="text-sm text-blue-700">

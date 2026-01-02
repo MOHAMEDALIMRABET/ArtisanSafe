@@ -217,6 +217,50 @@ export default function ArtisanDashboardPage() {
           </p>
         </div>
 
+        {/* Alerte : Documents rejetés */}
+        {(artisan?.verificationDocuments?.kbis?.rejected || artisan?.verificationDocuments?.idCard?.rejected) && (
+          <div className="mb-6 bg-red-50 border-l-4 border-red-500 rounded-lg p-5 shadow-md">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-red-800 mb-2">
+                  ⚠️ Document(s) rejeté(s) - Action requise
+                </h3>
+                {artisan?.verificationDocuments?.kbis?.rejected && (
+                  <div className="mb-3 bg-white bg-opacity-60 rounded p-3">
+                    <p className="text-sm font-semibold text-red-700">
+                      📄 KBIS rejeté
+                    </p>
+                    <p className="text-sm text-red-600 mt-1">
+                      <strong>Raison :</strong> {artisan.verificationDocuments.kbis.rejectionReason || 'Non spécifiée'}
+                    </p>
+                  </div>
+                )}
+                {artisan?.verificationDocuments?.idCard?.rejected && (
+                  <div className="mb-3 bg-white bg-opacity-60 rounded p-3">
+                    <p className="text-sm font-semibold text-red-700">
+                      🆔 Pièce d'identité rejetée
+                    </p>
+                    <p className="text-sm text-red-600 mt-1">
+                      <strong>Raison :</strong> {artisan.verificationDocuments.idCard.rejectionReason || 'Non spécifiée'}
+                    </p>
+                  </div>
+                )}
+                <button
+                  onClick={() => router.push('/artisan/documents')}
+                  className="mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  📤 Uploader un nouveau document
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Dashboard Cards */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Vérification du Profil - Position 1 */}
@@ -253,16 +297,40 @@ export default function ArtisanDashboardPage() {
                     <span className="text-gray-700">Validation téléphone</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className={artisan?.verificationDocuments?.kbis?.verified ? "text-green-600" : "text-orange-600"}>
-                      {artisan?.verificationDocuments?.kbis?.verified ? "✅" : "⏳"}
+                    <span className={
+                      artisan?.verificationDocuments?.kbis?.verified 
+                        ? "text-green-600" 
+                        : artisan?.verificationDocuments?.kbis?.rejected 
+                          ? "text-red-600" 
+                          : "text-orange-600"
+                    }>
+                      {artisan?.verificationDocuments?.kbis?.verified 
+                        ? "✅" 
+                        : artisan?.verificationDocuments?.kbis?.rejected 
+                          ? "❌" 
+                          : "⏳"}
                     </span>
-                    <span className="text-gray-700">KBIS vérifié</span>
+                    <span className="text-gray-700">
+                      KBIS {artisan?.verificationDocuments?.kbis?.rejected ? "rejeté" : "vérifié"}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className={artisan?.verificationDocuments?.idCard?.verified ? "text-green-600" : "text-orange-600"}>
-                      {artisan?.verificationDocuments?.idCard?.verified ? "✅" : "⏳"}
+                    <span className={
+                      artisan?.verificationDocuments?.idCard?.verified 
+                        ? "text-green-600" 
+                        : artisan?.verificationDocuments?.idCard?.rejected 
+                          ? "text-red-600" 
+                          : "text-orange-600"
+                    }>
+                      {artisan?.verificationDocuments?.idCard?.verified 
+                        ? "✅" 
+                        : artisan?.verificationDocuments?.idCard?.rejected 
+                          ? "❌" 
+                          : "⏳"}
                     </span>
-                    <span className="text-gray-700">Pièce d'identité vérifiée</span>
+                    <span className="text-gray-700">
+                      Pièce d'identité {artisan?.verificationDocuments?.idCard?.rejected ? "rejetée" : "vérifiée"}
+                    </span>
                   </div>
                 </div>
               </div>
