@@ -28,6 +28,19 @@ export default function VerificationPage() {
         return;
       }
 
+      // Charger depuis le cache d'abord pour affichage immédiat
+      const cachedData = localStorage.getItem(`artisan_${user.uid}`);
+      if (cachedData) {
+        try {
+          const cached = JSON.parse(cachedData);
+          setArtisan(cached);
+          setLoading(false); // Afficher immédiatement les données en cache
+        } catch (e) {
+          console.warn('Cache invalide, rechargement depuis Firestore');
+        }
+      }
+
+      // Puis recharger depuis Firestore en arrière-plan
       const artisanData = await getArtisanByUserId(user.uid);
       if (!artisanData) {
         router.push('/artisan/profil');
@@ -35,6 +48,8 @@ export default function VerificationPage() {
       }
 
       setArtisan(artisanData);
+      // Mettre à jour le cache
+      localStorage.setItem(`artisan_${user.uid}`, JSON.stringify(artisanData));
     } catch (error) {
       console.error('Erreur chargement artisan:', error);
     } finally {
@@ -56,6 +71,11 @@ export default function VerificationPage() {
           companyName: result.companyName || '',
           legalForm: result.legalForm || ''
         });
+        // Invalider le cache après mise à jour
+        const user = authService.getCurrentUser();
+        if (user) {
+          localStorage.removeItem(`artisan_${user.uid}`);
+        }
         setSiretStatus('success');
         await loadArtisan();
       } else {
@@ -112,23 +132,81 @@ export default function VerificationPage() {
           
           {/* 1. SIRET */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-100">
-                {siretVerified ? (
-                  <span className="text-2xl">✅</span>
-                ) : (
-                  <span className="text-2xl">📋</span>
-                )}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  siretVerified ? 'bg-green-100' : 'bg-orange-100'
+                }`}>
+                  {siretVerified ? (
+                    <span className="text-2xl">✅</span>
+                  ) : (
+                    <span className="text-2xl">📋</span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Vérification SIRET</h3>
+                  <p className="text-sm text-gray-600">Validation automatique via la base SIRENE</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">Vérification SIRET</h3>
-                {siretVerified ? (
-                  <p className="text-sm text-green-600">Validé</p>
-                ) : (
-                  <p className="text-sm text-gray-600">En attente de validation</p>
-                )}
-              </div>
+              
+              {siretVerified && (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  Vérifié
+                </span>
+              )}
             </div>
+
+            {!siretVerified && (
+              <div>
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                  <p className="text-sm text-blue-700 mb-2">
+                    <strong>SIRET actuel :</strong> {artisan.siret}
+                  </p>
+                  <p className="text-sm text-blue-700 mb-2">
+                    <strong>Vérifications effectuées :</strong>
+                  </p>
+                  <ul className="text-sm text-blue-700 list-disc list-inside ml-2 space-y-1">
+                    <li>Format valide (14 chiffres)</li>
+                    <li>Statut de l'entreprise (Active/Inactive)</li>
+                    <li>Informations légales de l'entreprise</li>
+                  </ul>
+                </div>
+
+                {siretError && (
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                    <p className="text-sm text-red-700 font-semibold">❌ {siretError}</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      Vérifiez que votre SIRET est correct et que votre entreprise est active.
+                    </p>
+                  </div>
+                )}
+
+                {siretStatus === 'success' && (
+                  <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+                    <p className="text-sm text-green-700 font-semibold">✅ SIRET vérifié avec succès !</p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Votre entreprise est active dans la base SIRENE.
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleVerifySiret}
+                  disabled={siretStatus === 'verifying'}
+                  className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {siretStatus === 'verifying' ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Vérification en cours...
+                    </span>
+                  ) : 'Vérifier le SIRET'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 2. TÉLÉPHONE */}

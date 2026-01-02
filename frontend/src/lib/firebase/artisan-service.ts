@@ -251,6 +251,25 @@ export function isArtisanDisponible(
 }
 
 /**
+ * Récupérer tous les artisans (Admin uniquement)
+ * Pour la page de vérification des documents
+ */
+export async function getAllArtisansForAdmin(): Promise<Artisan[]> {
+  try {
+    const q = query(collection(db, COLLECTION_NAME));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      userId: doc.id,
+      ...doc.data(),
+    } as Artisan));
+  } catch (error) {
+    console.error('Erreur récupération artisans:', error);
+    throw error;
+  }
+}
+
+/**
  * Supprimer un profil artisan (admin uniquement)
  */
 export async function deleteArtisan(userId: string): Promise<void> {

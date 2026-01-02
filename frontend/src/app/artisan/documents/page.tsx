@@ -65,6 +65,18 @@ export default function DocumentsUploadPage() {
         return;
       }
 
+      // Cache d'abord
+      const cachedData = localStorage.getItem(`artisan_${user.uid}`);
+      if (cachedData) {
+        try {
+          const cached = JSON.parse(cachedData);
+          setArtisan(cached);
+          setLoading(false);
+        } catch (e) {
+          console.warn('Cache invalide');
+        }
+      }
+
       const artisanData = await getArtisanByUserId(user.uid);
       if (!artisanData) {
         router.push('/artisan/profil');
@@ -72,6 +84,7 @@ export default function DocumentsUploadPage() {
       }
 
       setArtisan(artisanData);
+      localStorage.setItem(`artisan_${user.uid}`, JSON.stringify(artisanData));
     } catch (error) {
       console.error('Erreur chargement:', error);
     } finally {
@@ -192,6 +205,10 @@ export default function DocumentsUploadPage() {
           }
         }
 
+        // Invalider le cache
+        const user = authService.getCurrentUser();
+        if (user) localStorage.removeItem(`artisan_${user.uid}`);
+        
         setKbisSuccess(true);
         await loadArtisan();
         // Reset le succès après 3 secondes pour montrer le badge "En cours de vérification"
@@ -231,6 +248,10 @@ export default function DocumentsUploadPage() {
       const result = await uploadIdCard(artisan.userId, idFile);
 
       if (result.success) {
+        // Invalider le cache
+        const user = authService.getCurrentUser();
+        if (user) localStorage.removeItem(`artisan_${user.uid}`);
+        
         setIdSuccess(true);
         await loadArtisan();
         // Reset le succès après 3 secondes pour montrer le badge "En cours de vérification"

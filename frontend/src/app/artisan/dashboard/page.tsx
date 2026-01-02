@@ -50,10 +50,24 @@ export default function ArtisanDashboardPage() {
 
       setUser(userData);
 
-      // Charger les données artisan
+      // Charger depuis le cache d'abord
+      const cachedData = localStorage.getItem(`artisan_${currentUser.uid}`);
+      if (cachedData) {
+        try {
+          const cached = JSON.parse(cachedData);
+          setArtisan(cached);
+          setIsLoading(false); // Afficher immédiatement
+        } catch (e) {
+          console.warn('Cache invalide');
+        }
+      }
+
+      // Charger les données artisan depuis Firestore
       const artisanData = await getArtisanByUserId(currentUser.uid);
       if (artisanData) {
         setArtisan(artisanData);
+        // Mettre à jour le cache
+        localStorage.setItem(`artisan_${currentUser.uid}`, JSON.stringify(artisanData));
       }
 
       setIsLoading(false);
