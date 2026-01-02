@@ -20,6 +20,12 @@ export default function ArtisanDashboardPage() {
   const [canResend, setCanResend] = useState(true);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
+  // Calculer si le profil est complètement vérifié
+  const isFullyVerified = 
+    artisan?.siretVerified && 
+    artisan?.verificationDocuments?.kbis?.verified && 
+    artisan?.verificationDocuments?.idCard?.verified;
+
   useEffect(() => {
     loadUserData();
   }, []);
@@ -211,7 +217,7 @@ export default function ArtisanDashboardPage() {
         {/* Dashboard Cards */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Vérification du Profil - Position 1 */}
-          {!artisan?.verified && (
+          {!isFullyVerified && (
             <Link href="/artisan/verification">
               <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-orange-200 hover:border-[#FF6B00]">
                 <div className="flex items-center gap-4 mb-4">
@@ -261,7 +267,7 @@ export default function ArtisanDashboardPage() {
           )}
 
           {/* Profil - Position 2 */}
-          {artisan?.verified ? (
+          {isFullyVerified ? (
             <Link href="/artisan/profil">
               <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
                 <div className="flex items-center gap-4 mb-4">
