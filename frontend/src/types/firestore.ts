@@ -176,6 +176,12 @@ export interface VerificationDocuments {
     url: string;
     uploadDate: Timestamp;
     verified: boolean;
+    rejected?: boolean;
+    validatedAt?: Timestamp;
+    validatedBy?: string;
+    rejectedAt?: Timestamp;
+    rejectedBy?: string;
+    rejectionReason?: string;
     siretMatched?: boolean;
     siretMismatchNotified?: boolean; // Notification admin envoyée si SIRET ne correspond pas
     representantMatched?: boolean;
@@ -191,6 +197,10 @@ export interface VerificationDocuments {
       parsedAt?: Timestamp; // Date du parsing automatique
     };
     parseHistory?: ParseResultHistory[]; // Historique de tous les parsing (multi-upload)
+    parsedData?: {
+      siret?: string;
+      raisonSociale?: string;
+    };
     extractedData?: {
       siret?: string;
       siren?: string;
@@ -214,6 +224,16 @@ export interface VerificationDocuments {
     url: string;
     uploadDate: Timestamp;
     verified: boolean;
+    rejected?: boolean;
+    validatedAt?: Timestamp;
+    validatedBy?: string;
+    rejectedAt?: Timestamp;
+    rejectedBy?: string;
+    rejectionReason?: string;
+    parsedData?: {
+      nom?: string;
+      prenom?: string;
+    };
   };
 }
 
@@ -232,6 +252,13 @@ export interface ContactVerification {
 
 export interface Artisan {
   userId: string;
+  nom?: string;
+  prenom?: string;
+  email?: string;
+  telephone?: string;
+  telephoneVerified?: boolean;
+  adresse?: string;
+  dateInscription?: Timestamp;
   emailVerified?: boolean; // Statut de vérification email (synchronisé depuis Firebase Auth)
   siret: string;
   raisonSociale: string;

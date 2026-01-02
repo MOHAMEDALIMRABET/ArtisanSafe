@@ -583,3 +583,75 @@ export async function updateVerificationStatus(
   
   await updateDoc(artisanRef, updateData);
 }
+
+/**
+ * Valide un document (KBIS ou Pièce d'identité)
+ * @param userId - ID de l'utilisateur artisan
+ * @param documentType - Type de document ('kbis' ou 'idCard')
+ * @param adminId - ID de l'admin qui valide
+ */
+export async function validateDocument(
+  userId: string,
+  documentType: 'kbis' | 'idCard',
+  adminId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const artisanRef = doc(db, 'artisans', userId);
+    const fieldPath = `verificationDocuments.${documentType}`;
+    
+    await updateDoc(artisanRef, {
+      [`${fieldPath}.verified`]: true,
+      [`${fieldPath}.rejected`]: false,
+      [`${fieldPath}.validatedBy`]: adminId,
+      [`${fieldPath}.validatedAt`]: Timestamp.now(),
+      [`${fieldPath}.rejectionReason`]: null
+    });
+
+    // TODO: Envoyer notification à l'artisan
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Erreur validation document:', error);
+    return {
+      success: false,
+      error: 'Erreur lors de la validation du document'
+    };
+  }
+}
+
+/**
+ * Rejette un document avec une raison
+ * @param userId - ID de l'utilisateur artisan
+ * @param documentType - Type de document ('kbis' ou 'idCard')
+ * @param adminId - ID de l'admin qui rejette
+ * @param reason - Raison du rejet
+ */
+export async function rejectDocument(
+  userId: string,
+  documentType: 'kbis' | 'idCard',
+  adminId: string,
+  reason: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const artisanRef = doc(db, 'artisans', userId);
+    const fieldPath = `verificationDocuments.${documentType}`;
+    
+    await updateDoc(artisanRef, {
+      [`${fieldPath}.verified`]: false,
+      [`${fieldPath}.rejected`]: true,
+      [`${fieldPath}.rejectedBy`]: adminId,
+      [`${fieldPath}.rejectedAt`]: Timestamp.now(),
+      [`${fieldPath}.rejectionReason`]: reason
+    });
+
+    // TODO: Envoyer notification à l'artisan
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Erreur rejet document:', error);
+    return {
+      success: false,
+      error: 'Erreur lors du rejet du document'
+    };
+  }
+}
