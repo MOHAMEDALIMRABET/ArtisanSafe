@@ -182,6 +182,13 @@ export interface VerificationDocuments {
     rejectedAt?: Timestamp;
     rejectedBy?: string;
     rejectionReason?: string;
+    uploadHistory?: Array<{
+      uploadedAt: Timestamp;
+      fileSize: number;
+      fileName: string;
+      previouslyRejected: boolean;
+      rejectionReason?: string | null;
+    }>;
     siretMatched?: boolean;
     siretMismatchNotified?: boolean; // Notification admin envoyée si SIRET ne correspond pas
     representantMatched?: boolean;
@@ -230,6 +237,13 @@ export interface VerificationDocuments {
     rejectedAt?: Timestamp;
     rejectedBy?: string;
     rejectionReason?: string;
+    uploadHistory?: Array<{
+      uploadedAt: Timestamp;
+      fileSize: number;
+      fileName: string;
+      previouslyRejected: boolean;
+      rejectionReason?: string | null;
+    }>;
     parsedData?: {
       nom?: string;
       prenom?: string;

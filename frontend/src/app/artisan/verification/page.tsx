@@ -277,7 +277,7 @@ export default function VerificationPage() {
               )}
               {artisan?.verificationDocuments?.kbis?.url && !artisan?.verificationDocuments?.kbis?.verified && !artisan?.verificationDocuments?.kbis?.rejected && (
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  En cours
+                  En cours de vérification
                 </span>
               )}
             </div>
@@ -357,7 +357,7 @@ export default function VerificationPage() {
               )}
               {artisan?.verificationDocuments?.idCard?.url && !artisan?.verificationDocuments?.idCard?.verified && !artisan?.verificationDocuments?.idCard?.rejected && (
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  En cours
+                  En cours de vérification
                 </span>
               )}
             </div>

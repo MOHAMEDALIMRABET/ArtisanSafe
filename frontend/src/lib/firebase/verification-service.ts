@@ -3,7 +3,7 @@
  * ArtisanDispo - Système de vérification
  */
 
-import { doc, updateDoc, Timestamp, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, Timestamp, getDoc, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
 import type { Artisan, VerificationStatus } from '@/types/firestore';
 
@@ -426,8 +426,12 @@ export async function uploadIdCard(
     // Upload vers Firebase Storage
     const url = await uploadToStorage(userId, file, 'idCard');
     
-    // Sauvegarder dans Firestore (admin devra vérifier)
+    // Récupérer l'état actuel pour l'historique
     const artisanRef = doc(db, 'artisans', userId);
+    const artisanSnap = await getDoc(artisanRef);
+    const currentDoc = artisanSnap.data()?.verificationDocuments?.idCard;
+    
+    // Sauvegarder dans Firestore (admin devra vérifier)
     await updateDoc(artisanRef, {
       'verificationDocuments.idCard': {
         url,
@@ -437,7 +441,15 @@ export async function uploadIdCard(
         rejectionReason: null,
         rejectedAt: null,
         rejectedBy: null
-      }
+      },
+      // Ajouter dans l'historique pour traçabilité
+      'verificationDocuments.idCard.uploadHistory': arrayUnion({
+        uploadedAt: Timestamp.now(),
+        fileSize: file.size,
+        fileName: file.name,
+        previouslyRejected: currentDoc?.rejected || false,
+        rejectionReason: currentDoc?.rejectionReason || null
+      })
     });
     
     return {
@@ -487,8 +499,12 @@ export async function uploadKbisDocument(
     // Upload vers Firebase Storage
     const url = await uploadToStorage(userId, file, 'kbis');
     
-    // Sauvegarder dans Firestore (admin devra vérifier)
+    // Récupérer l'état actuel pour l'historique
     const artisanRef = doc(db, 'artisans', userId);
+    const artisanSnap = await getDoc(artisanRef);
+    const currentDoc = artisanSnap.data()?.verificationDocuments?.kbis;
+    
+    // Sauvegarder dans Firestore (admin devra vérifier)
     await updateDoc(artisanRef, {
       'verificationDocuments.kbis.url': url,
       'verificationDocuments.kbis.uploadDate': Timestamp.now(),
@@ -496,7 +512,15 @@ export async function uploadKbisDocument(
       'verificationDocuments.kbis.rejected': false, // Réinitialiser le statut de rejet
       'verificationDocuments.kbis.rejectionReason': null,
       'verificationDocuments.kbis.rejectedAt': null,
-      'verificationDocuments.kbis.rejectedBy': null
+      'verificationDocuments.kbis.rejectedBy': null,
+      // Ajouter dans l'historique pour traçabilité
+      'verificationDocuments.kbis.uploadHistory': arrayUnion({
+        uploadedAt: Timestamp.now(),
+        fileSize: file.size,
+        fileName: file.name,
+        previouslyRejected: currentDoc?.rejected || false,
+        rejectionReason: currentDoc?.rejectionReason || null
+      })
     });
     
     return {
