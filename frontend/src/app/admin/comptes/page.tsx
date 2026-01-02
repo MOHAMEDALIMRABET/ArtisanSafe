@@ -606,6 +606,16 @@ export default function AdminComptesPage() {
               >
                 Annuler
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Note */}
+      {showNoteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4">Ajouter une note admin</h3>
             
             {/* Notes existantes */}
             {selectedAccount?.adminNotes && selectedAccount.adminNotes.length > 0 && (
@@ -794,17 +804,7 @@ export default function AdminComptesPage() {
               className="w-full bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C]"
             >
               Fermer
-            </buttontton
-                onClick={() => {
-                  setShowNoteDialog(false);
-                  setAdminNote('');
-                  setSelectedAccount(null);
-                }}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
-              >
-                Annuler
-              </button>
-            </div>
+            </button>
           </div>
         </div>
       )}

@@ -149,7 +149,7 @@ export default function AdminDashboardPage() {
           Tableau de bord administrateur
         </h1>
         <p className="text-gray-600">
-          Vue d'ensemble de la plateforme ArtisanSafe
+          Vue d'ensemble de la plateforme ArtisanDispo
         </p>
       </div>
 

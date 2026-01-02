@@ -84,7 +84,7 @@ export default function AdminLayout({
       <div className="fixed inset-y-0 left-0 w-64 bg-[#2C3E50] text-white">
         {/* Header */}
         <div className="p-6 border-b border-gray-700">
-          <h1 className="text-2xl font-bold text-[#FF6B00]">ArtisanSafe</h1>
+          <h1 className="text-2xl font-bold text-[#FF6B00]">ArtisanDispo</h1>
           <p className="text-sm text-gray-300 mt-1">Administration</p>
         </div>
 
