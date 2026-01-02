@@ -408,11 +408,16 @@ export default function AdminVerificationsPage() {
                     <div className="space-y-3">
                       <div>
                         <label className="text-xs text-gray-500 uppercase">Nom complet</label>
-                        <p className="text-gray-900 font-medium">{selectedArtisan.nom} {selectedArtisan.prenom}</p>
+                        <p className="text-gray-900 font-medium">
+                          {selectedArtisan.nom && selectedArtisan.prenom 
+                            ? `${selectedArtisan.nom} ${selectedArtisan.prenom}`
+                            : selectedArtisan.nom || selectedArtisan.prenom || '-'
+                          }
+                        </p>
                       </div>
                       <div>
                         <label className="text-xs text-gray-500 uppercase">Email</label>
-                        <p className="text-gray-900">{selectedArtisan.email}</p>
+                        <p className="text-gray-900">{selectedArtisan.email || '-'}</p>
                       </div>
                       <div>
                         <label className="text-xs text-gray-500 uppercase">Téléphone</label>
@@ -420,10 +425,6 @@ export default function AdminVerificationsPage() {
                         {selectedArtisan.telephoneVerified && (
                           <span className="text-xs text-green-600 ml-2">✓ Vérifié</span>
                         )}
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500 uppercase">Adresse</label>
-                        <p className="text-gray-900">{selectedArtisan.adresse || '-'}</p>
                       </div>
                     </div>
                   </div>

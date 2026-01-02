@@ -253,16 +253,49 @@ export function isArtisanDisponible(
 /**
  * Récupérer tous les artisans (Admin uniquement)
  * Pour la page de vérification des documents
+ * Enrichit les données avec les informations de la collection users
  */
 export async function getAllArtisansForAdmin(): Promise<Artisan[]> {
   try {
     const q = query(collection(db, COLLECTION_NAME));
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => ({
-      userId: doc.id,
-      ...doc.data(),
-    } as Artisan));
+    // Récupérer les données artisans avec enrichissement des données users
+    const artisansPromises = querySnapshot.docs.map(async (artisanDoc) => {
+      const artisanData = artisanDoc.data();
+      
+      // Récupérer les données utilisateur depuis la collection users
+      try {
+        const userRef = doc(db, 'users', artisanDoc.id);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          return {
+            userId: artisanDoc.id,
+            ...artisanData,
+            // Enrichir avec les données de users
+            nom: userData.nom,
+            prenom: userData.prenom,
+            email: userData.email,
+            telephone: userData.telephone,
+            telephoneVerified: userData.telephoneVerified,
+            adresse: userData.adresse,
+            dateInscription: userData.dateInscription,
+          } as Artisan;
+        }
+      } catch (error) {
+        console.error(`Erreur récupération user ${artisanDoc.id}:`, error);
+      }
+      
+      // Si pas de données user, retourner uniquement les données artisan
+      return {
+        userId: artisanDoc.id,
+        ...artisanData,
+      } as Artisan;
+    });
+    
+    return await Promise.all(artisansPromises);
   } catch (error) {
     console.error('Erreur récupération artisans:', error);
     throw error;
