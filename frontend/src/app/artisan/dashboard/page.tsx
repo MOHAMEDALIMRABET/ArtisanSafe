@@ -179,6 +179,9 @@ export default function ArtisanDashboardPage() {
                   <strong>Votre profil est invisible</strong> tant que votre email n'est pas validé. Les clients ne peuvent pas vous trouver.
                   Consultez votre boîte mail et cliquez sur le lien de validation.
                 </p>
+                <p className="text-red-600 text-sm mb-3 bg-red-50 p-2 rounded border-l-4 border-red-400">
+                  📧 <strong>Astuce :</strong> Vérifiez aussi votre dossier <strong>Spam/Courrier indésirable</strong> si vous ne trouvez pas l'email dans votre boîte de réception.
+                </p>
                 <div className="flex flex-wrap gap-2 items-center">
                   <button
                     onClick={handleResendEmail}
