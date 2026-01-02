@@ -449,8 +449,11 @@ export default function ArtisanDashboardPage() {
                         );
                       }
                       
-                      // Les deux uploadés mais non vérifiés et non rejetés : badge "En cours de vérification"
-                      if (kbisUploaded && idUploaded && !kbisVerified && !idVerified) {
+                      // Au moins un document uploadé et en attente de vérification : badge "En cours de vérification"
+                      const kbisEnCours = kbisUploaded && !kbisVerified && !kbisRejected;
+                      const idEnCours = idUploaded && !idVerified && !idRejected;
+                      
+                      if (kbisEnCours || idEnCours) {
                         return (
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
                             En cours de vérification
