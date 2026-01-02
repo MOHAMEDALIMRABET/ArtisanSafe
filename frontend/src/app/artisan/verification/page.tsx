@@ -211,41 +211,181 @@ export default function VerificationPage() {
 
           {/* 2. TÉLÉPHONE */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-100">
-                <span className="text-2xl">✅</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-100">
+                  <span className="text-2xl">✅</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Validation téléphone</h3>
+                  <p className="text-sm text-gray-600">Numéro vérifié par SMS</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">Validation téléphone</h3>
-                <p className="text-sm text-green-600">Validé</p>
-              </div>
+              
+              <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                Vérifié
+              </span>
             </div>
           </div>
 
           {/* 3. KBIS */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-100">
-                <span className="text-2xl">⏳</span>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  artisan?.verificationDocuments?.kbis?.verified 
+                    ? 'bg-green-100' 
+                    : artisan?.verificationDocuments?.kbis?.rejected 
+                      ? 'bg-red-100'
+                      : artisan?.verificationDocuments?.kbis?.url 
+                        ? 'bg-blue-100' 
+                        : 'bg-orange-100'
+                }`}>
+                  <span className="text-2xl">
+                    {artisan?.verificationDocuments?.kbis?.verified 
+                      ? '✅' 
+                      : artisan?.verificationDocuments?.kbis?.rejected 
+                        ? '❌'
+                        : artisan?.verificationDocuments?.kbis?.url 
+                          ? '⏳' 
+                          : '📄'}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">KBIS</h3>
+                  <p className="text-sm text-gray-600">
+                    {artisan?.verificationDocuments?.kbis?.verified 
+                      ? 'Extrait Kbis vérifié' 
+                      : artisan?.verificationDocuments?.kbis?.rejected 
+                        ? 'Document rejeté'
+                        : artisan?.verificationDocuments?.kbis?.url 
+                          ? 'Document en cours de vérification' 
+                          : 'Document non uploadé'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">KBIS vérifié</h3>
-                <p className="text-sm text-gray-600">En cours de développement</p>
-              </div>
+              
+              {artisan?.verificationDocuments?.kbis?.verified && (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  Vérifié
+                </span>
+              )}
+              {artisan?.verificationDocuments?.kbis?.rejected && (
+                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  Rejeté
+                </span>
+              )}
+              {artisan?.verificationDocuments?.kbis?.url && !artisan?.verificationDocuments?.kbis?.verified && !artisan?.verificationDocuments?.kbis?.rejected && (
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  En cours
+                </span>
+              )}
             </div>
+            
+            {artisan?.verificationDocuments?.kbis?.rejected && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-3 mb-4">
+                <p className="text-sm text-red-700">
+                  <strong>Raison du rejet :</strong> {artisan.verificationDocuments.kbis.rejectionReason || 'Non spécifiée'}
+                </p>
+              </div>
+            )}
+            
+            {!artisan?.verificationDocuments?.kbis?.url && (
+              <button
+                onClick={() => router.push('/artisan/documents')}
+                className="mt-2 w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
+              >
+                📤 Uploader le KBIS
+              </button>
+            )}
+            {artisan?.verificationDocuments?.kbis?.rejected && (
+              <button
+                onClick={() => router.push('/artisan/documents')}
+                className="w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
+              >
+                📤 Re-uploader le KBIS
+              </button>
+            )}
           </div>
 
           {/* 4. Pièce d'identité */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-100">
-                <span className="text-2xl">⏳</span>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  artisan?.verificationDocuments?.idCard?.verified 
+                    ? 'bg-green-100' 
+                    : artisan?.verificationDocuments?.idCard?.rejected 
+                      ? 'bg-red-100'
+                      : artisan?.verificationDocuments?.idCard?.url 
+                        ? 'bg-blue-100' 
+                        : 'bg-orange-100'
+                }`}>
+                  <span className="text-2xl">
+                    {artisan?.verificationDocuments?.idCard?.verified 
+                      ? '✅' 
+                      : artisan?.verificationDocuments?.idCard?.rejected 
+                        ? '❌'
+                        : artisan?.verificationDocuments?.idCard?.url 
+                          ? '⏳' 
+                          : '🆔'}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Pièce d'identité</h3>
+                  <p className="text-sm text-gray-600">
+                    {artisan?.verificationDocuments?.idCard?.verified 
+                      ? 'CNI ou Passeport vérifié' 
+                      : artisan?.verificationDocuments?.idCard?.rejected 
+                        ? 'Document rejeté'
+                        : artisan?.verificationDocuments?.idCard?.url 
+                          ? 'Document en cours de vérification' 
+                          : 'Document non uploadé'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">Pièce d'identité vérifiée</h3>
-                <p className="text-sm text-gray-600">En cours de développement</p>
-              </div>
+              
+              {artisan?.verificationDocuments?.idCard?.verified && (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  Vérifié
+                </span>
+              )}
+              {artisan?.verificationDocuments?.idCard?.rejected && (
+                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  Rejeté
+                </span>
+              )}
+              {artisan?.verificationDocuments?.idCard?.url && !artisan?.verificationDocuments?.idCard?.verified && !artisan?.verificationDocuments?.idCard?.rejected && (
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  En cours
+                </span>
+              )}
             </div>
+            
+            {artisan?.verificationDocuments?.idCard?.rejected && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-3 mb-4">
+                <p className="text-sm text-red-700">
+                  <strong>Raison du rejet :</strong> {artisan.verificationDocuments.idCard.rejectionReason || 'Non spécifiée'}
+                </p>
+              </div>
+            )}
+            
+            {!artisan?.verificationDocuments?.idCard?.url && (
+              <button
+                onClick={() => router.push('/artisan/documents')}
+                className="mt-2 w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
+              >
+                📤 Uploader la pièce d'identité
+              </button>
+            )}
+            {artisan?.verificationDocuments?.idCard?.rejected && (
+              <button
+                onClick={() => router.push('/artisan/documents')}
+                className="w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
+              >
+                📤 Re-uploader la pièce d'identité
+              </button>
+            )}
           </div>
         </div>
       </div>
