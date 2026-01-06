@@ -263,7 +263,7 @@ function ResultatsContent() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-[#2C3E50] text-sm">Score de compatibilité :</span>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5">
                           {(() => {
                             const stars = Math.round((result.score / 270) * 5 * 2) / 2; // Arrondi au 0.5
                             const fullStars = Math.floor(stars);
@@ -275,7 +275,12 @@ function ResultatsContent() {
                                 {[...Array(fullStars)].map((_, i) => (
                                   <span key={`full-${i}`} className="text-[#FFC107] text-xl">★</span>
                                 ))}
-                                {hasHalfStar && <span className="text-[#FFC107] text-xl">⯨</span>}
+                                {hasHalfStar && (
+                                  <span className="relative inline-block text-xl">
+                                    <span className="text-gray-300">★</span>
+                                    <span className="absolute top-0 left-0 text-[#FFC107] overflow-hidden w-1/2">★</span>
+                                  </span>
+                                )}
                                 {[...Array(emptyStars)].map((_, i) => (
                                   <span key={`empty-${i}`} className="text-gray-300 text-xl">★</span>
                                 ))}
