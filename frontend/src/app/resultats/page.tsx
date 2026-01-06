@@ -21,6 +21,12 @@ function ResultatsContent() {
   const [user, setUser] = useState<User | null>(null);
   const [dashboardUrl, setDashboardUrl] = useState('/');
   const [villeInput, setVilleInput] = useState<string>(searchParams.get('ville') || '');
+  const [codePostalInput, setCodePostalInput] = useState<string>(searchParams.get('codePostal') || '');
+  const [categorieInput, setCategorieInput] = useState<string>(searchParams.get('categorie') || 'plomberie');
+  const [dateInput, setDateInput] = useState<string>(searchParams.get('dates') ? JSON.parse(searchParams.get('dates')!)[0] : new Date().toISOString().slice(0, 10));
+  const [flexibiliteInput, setFlexibiliteInput] = useState<string>(searchParams.get('flexibiliteDays') || '0');
+  const [villeSuggestions, setVilleSuggestions] = useState<Array<{nom: string, codePostal: string, departement: string}>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -38,6 +44,65 @@ function ResultatsContent() {
       }
     } catch (error) {
       console.error('Erreur chargement utilisateur:', error);
+    }
+  }
+
+  async function searchVilles(query: string) {
+    if (query.length < 2) {
+      setVilleSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,codesPostaux,codeDepartement&boost=population&limit=10`
+      );
+      
+      if (!response.ok) return;
+      
+      const data = await response.json();
+      const suggestions = data.flatMap((commune: any) => 
+        commune.codesPostaux.map((cp: string) => ({
+          nom: commune.nom,
+          codePostal: cp,
+          departement: commune.codeDepartement
+        }))
+      );
+      
+      setVilleSuggestions(suggestions);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Erreur recherche villes:', error);
+    }
+  }
+
+  function selectVille(suggestion: {nom: string, codePostal: string, departement: string}) {
+    setVilleInput(suggestion.nom);
+    setCodePostalInput(suggestion.codePostal);
+    setShowSuggestions(false);
+    setVilleSuggestions([]);
+  }
+
+  async function searchByCodePostal(codePostal: string) {
+    if (codePostal.length < 5) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?codePostal=${codePostal}&fields=nom,codesPostaux,codeDepartement&limit=1`
+      );
+      
+      if (!response.ok) return;
+      
+      const data = await response.json();
+      if (data.length > 0) {
+        setVilleInput(data[0].nom);
+        console.log('🏙️ Ville trouvée pour CP', codePostal, ':', data[0].nom);
+      }
+    } catch (error) {
+      console.error('Erreur recherche par code postal:', error);
     }
   }
 
@@ -143,7 +208,21 @@ function ResultatsContent() {
 
   const categorie = searchParams.get('categorie') || defaultCategorie;
   const ville = searchParams.get('ville') || defaultVille;
-  const date = searchParams.get('date') || defaultDate;
+  
+  // Extraire la date depuis le paramètre 'dates' (format JSON array)
+  let date = defaultDate;
+  try {
+    const datesParam = searchParams.get('dates');
+    if (datesParam) {
+      const datesArray = JSON.parse(datesParam);
+      if (datesArray && datesArray.length > 0) {
+        date = datesArray[0];
+      }
+    }
+  } catch (e) {
+    console.error('Erreur parsing dates:', e);
+  }
+  
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
       {/* Header */}
@@ -192,8 +271,8 @@ function ResultatsContent() {
                 </svg>
                 <select 
                   className="flex-1 border-none outline-none bg-transparent text-[#2C3E50] font-medium cursor-pointer"
-                  value={categorie}
-                  onChange={e => router.push(`/resultats?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), categorie: e.target.value }).toString()}`)}
+                  value={categorieInput}
+                  onChange={e => setCategorieInput(e.target.value)}
                 >
                   <option value="plomberie">Plomberie</option>
                   <option value="electricite">Électricité</option>
@@ -216,7 +295,7 @@ function ResultatsContent() {
             <div className="w-px h-12 bg-[#E9ECEF]"></div>
 
             {/* Localisation */}
-            <div className="flex-1">
+            <div className="flex-1 relative">
               <label className="block text-xs text-[#6C757D] mb-1">Localisation</label>
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,26 +306,84 @@ function ResultatsContent() {
                   type="text" 
                   placeholder="Paris, Lyon..." 
                   className="flex-1 border-none outline-none bg-transparent text-[#2C3E50] font-medium placeholder-[#95A5A6]"
-                  value={ville}
-                  readOnly
+                  value={villeInput}
+                  onChange={(e) => {
+                    setVilleInput(e.target.value);
+                    searchVilles(e.target.value);
+                  }}
+                  onFocus={() => {
+                    if (villeSuggestions.length > 0) setShowSuggestions(true);
+                  }}
+                />
+              </div>
+              
+              {/* Liste des suggestions */}
+              {showSuggestions && villeSuggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-white border-2 border-[#FF6B00] rounded-lg shadow-lg max-h-60 overflow-y-auto top-full">
+                  {villeSuggestions.map((suggestion, index) => (
+                    <button
+                      key={`${suggestion.nom}-${suggestion.codePostal}-${index}`}
+                      type="button"
+                      onClick={() => selectVille(suggestion)}
+                      className="w-full text-left px-4 py-3 hover:bg-[#FFF3E0] transition-colors border-b border-[#E9ECEF] last:border-b-0"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-[#2C3E50]">{suggestion.nom}</span>
+                        <span className="text-sm text-[#6C757D]">{suggestion.codePostal}</span>
+                      </div>
+                      <span className="text-xs text-[#95A5A6]">Dépt. {suggestion.departement}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-12 bg-[#E9ECEF]"></div>
+            {/* Code postal */}
+            <div className="w-32">
+              <label className="block text-xs text-[#6C757D] mb-1">Code postal</label>
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <input 
+                  type="text" 
+                  placeholder="75000" 
+                  maxLength={5}
+                  className="w-full border-none outline-none bg-transparent text-[#2C3E50] font-medium placeholder-[#95A5A6]"
+                  value={codePostalInput}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ''); // Seulement chiffres
+                    setCodePostalInput(value);
+                    if (value.length === 5) {
+                      searchByCodePostal(value);
+                    }
+                  }}
                 />
               </div>
             </div>
 
             <div className="w-px h-12 bg-[#E9ECEF]"></div>
-
             {/* Date souhaitée */}
             <div className="flex-1">
               <label className="block text-xs text-[#6C757D] mb-1">Date souhaitée</label>
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-[#FF6B00] cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  onClick={(e) => {
+                    const input = e.currentTarget.parentElement?.querySelector('input[type="date"]') as HTMLInputElement;
+                    input?.showPicker?.();
+                  }}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <input 
                   type="date" 
-                  className="flex-1 border-none outline-none bg-transparent text-[#2C3E50] font-medium"
-                  value={date || new Date().toISOString().slice(0, 10)}
-                  onChange={e => router.push(`/resultats?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), date: e.target.value }).toString()}`)}
+                  className="flex-1 border-none outline-none bg-transparent text-[#2C3E50] font-medium cursor-pointer"
+                  value={dateInput}
+                  onChange={e => setDateInput(e.target.value)}
+                  onClick={(e) => {
+                    (e.target as HTMLInputElement).showPicker?.();
+                  }}
                 />
               </div>
             </div>
@@ -259,8 +396,8 @@ function ResultatsContent() {
               <div className="flex items-center gap-1">
                 <select 
                   className="border-none outline-none bg-transparent text-[#2C3E50] font-medium cursor-pointer pr-1"
-                  value={searchParams.get('flexibiliteDays') || '0'}
-                  onChange={e => router.push(`/resultats?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), flexibiliteDays: e.target.value, flexible: e.target.value !== '0' ? 'true' : 'false' }).toString()}`)}
+                  value={flexibiliteInput}
+                  onChange={e => setFlexibiliteInput(e.target.value)}
                 >
                   <option value="0">±0J</option>
                   <option value="1">±1J</option>
@@ -275,8 +412,71 @@ function ResultatsContent() {
 
             {/* Bouton Rechercher */}
             <button 
-              onClick={() => {
-                router.push(`/resultats?${new URLSearchParams(Object.fromEntries(searchParams.entries())).toString()}`);
+              onClick={async (e) => {
+                e.preventDefault();
+                console.log('🔍 CLIC BOUTON RECHERCHER');
+                console.log('📍 Critères:', { categorie: categorieInput, ville: villeInput, codePostal: codePostalInput, date: dateInput, flexibilite: flexibiliteInput });
+                
+                if (!villeInput.trim()) {
+                  alert('Veuillez saisir une ville');
+                  return;
+                }
+                
+                // Obtenir coordonnées GPS de la nouvelle ville
+                let coordonneesGPS = null;
+                let codePostal = codePostalInput;
+                
+                try {
+                  // Si on a déjà un code postal, l'utiliser pour géocoder précisément
+                  let apiUrl = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(villeInput)}&fields=centre,codesPostaux&limit=1`;
+                  if (codePostal) {
+                    apiUrl += `&codePostal=${codePostal}`;
+                  }
+                  
+                  console.log('🌍 Géocodage ville:', villeInput, 'avec codePostal:', codePostal || 'non défini');
+                  
+                  const response = await fetch(apiUrl);
+                  const data = await response.json();
+                  
+                  console.log('📍 Réponse API géocodage:', data);
+                  
+                  if (data.length > 0) {
+                    if (data[0].centre) {
+                      coordonneesGPS = {
+                        latitude: data[0].centre.coordinates[1],
+                        longitude: data[0].centre.coordinates[0]
+                      };
+                      console.log('✅ Coordonnées GPS:', coordonneesGPS);
+                    }
+                    // Ne changer le code postal que s'il n'existe pas déjà
+                    if (!codePostal && data[0].codesPostaux && data[0].codesPostaux.length > 0) {
+                      codePostal = data[0].codesPostaux[0];
+                      setCodePostalInput(codePostal);
+                      console.log('📮 Code postal attribué:', codePostal);
+                    }
+                  }
+                } catch (error) {
+                  console.error('❌ Impossible de géocoder la ville:', error);
+                }
+                
+                // Construire les nouveaux paramètres avec les valeurs des inputs locaux
+                const newParams = new URLSearchParams({
+                  categorie: categorieInput,
+                  ville: villeInput.trim(),
+                  codePostal: codePostal || '',
+                  dates: JSON.stringify([dateInput]),
+                  flexible: flexibiliteInput !== '0' ? 'true' : 'false',
+                  flexibiliteDays: flexibiliteInput,
+                  urgence: searchParams.get('urgence') || 'normale',
+                });
+                
+                if (coordonneesGPS) {
+                  newParams.append('lat', coordonneesGPS.latitude.toString());
+                  newParams.append('lon', coordonneesGPS.longitude.toString());
+                }
+                
+                console.log('🔄 Redirection avec params:', newParams.toString());
+                router.push(`/resultats?${newParams.toString()}`);
               }}
               className="bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-8 py-3 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
             >
@@ -349,20 +549,45 @@ function ResultatsContent() {
                     {/* Informations */}
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="text-xl font-bold text-[#2C3E50] mb-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-[#2C3E50]">
                             {result.artisan.raisonSociale || result.artisan.nom}
                           </h3>
-                          <div className="flex items-center gap-2 text-sm text-[#6C757D]">
-                            <span>{result.artisan.metiers?.join(' • ')}</span>
-                          </div>
+                          {/* Badge vérifié à côté du nom */}
+                          {result.artisan.verified && (
+                            <div className="bg-[#28A745] text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                              ✓ Vérifié
+                            </div>
+                          )}
                         </div>
-                        {/* Badge vérifié */}
-                        {result.artisan.verified && (
-                          <div className="bg-[#28A745] text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-                            ✓ Vérifié
-                          </div>
-                        )}
+                        
+                        {/* Bouton Demander un devis à côté du badge */}
+                        <div>
+                          {user ? (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/demande/nouvelle?artisan=${result.artisan.userId}`);
+                              }}
+                              className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
+                            >
+                              📩 Demander un devis
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push('/connexion');
+                              }}
+                              className="border-2 border-[#FF6B00] bg-white text-[#FF6B00] font-bold px-4 py-2 rounded-lg transition-all duration-200 hover:bg-[#FF6B00] hover:text-white hover:shadow-lg"
+                            >
+                              Se connecter pour demander un devis
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-[#6C757D] mb-1">
+                        <span>{result.artisan.metiers?.join(' • ')}</span>
                       </div>
 
                       {/* Notation */}
@@ -415,58 +640,34 @@ function ResultatsContent() {
                       </div>
 
                       {/* Score total */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-[#2C3E50] text-sm">Score de compatibilité :</span>
-                          <div className="flex items-center gap-0.5">
-                            {(() => {
-                              const stars = Math.round((result.score / 270) * 5 * 2) / 2; // Arrondi au 0.5
-                              const fullStars = Math.floor(stars);
-                              const hasHalfStar = stars % 1 !== 0;
-                              const emptyStars = 5 - Math.ceil(stars);
-                              return (
-                                <>
-                                {[...Array(fullStars)].map((_, i) => (
-                                  <span key={`full-${i}`} className="text-[#FFC107] text-xl">★</span>
-                                ))}
-                                {hasHalfStar && (
-                                  <span className="relative inline-block text-xl">
-                                    <span className="text-gray-300">★</span>
-                                    <span className="absolute top-0 left-0 text-[#FFC107] overflow-hidden w-1/2">★</span>
-                                  </span>
-                                )}
-                                {[...Array(emptyStars)].map((_, i) => (
-                                  <span key={`empty-${i}`} className="text-gray-300 text-xl">★</span>
-                                ))}
-                                <span className="text-[#6C757D] text-sm ml-1">({stars.toFixed(1)}/5)</span>
-                              </>
-                            );
-                          })()}
-                        </div>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-[#2C3E50] text-sm">Score de compatibilité :</span>
+                        <div className="flex items-center gap-0.5">
+                          {(() => {
+                            const stars = Math.round((result.score / 270) * 5 * 2) / 2; // Arrondi au 0.5
+                            const fullStars = Math.floor(stars);
+                            const hasHalfStar = stars % 1 !== 0;
+                            const emptyStars = 5 - Math.ceil(stars);
+                            return (
+                              <>
+                              {[...Array(fullStars)].map((_, i) => (
+                                <span key={`full-${i}`} className="text-[#FFC107] text-xl">★</span>
+                              ))}
+                              {hasHalfStar && (
+                                <span className="relative inline-block text-xl">
+                                  <span className="text-gray-300">★</span>
+                                  <span className="absolute top-0 left-0 text-[#FFC107] overflow-hidden w-1/2">★</span>
+                                </span>
+                              )}
+                              {[...Array(emptyStars)].map((_, i) => (
+                                <span key={`empty-${i}`} className="text-gray-300 text-xl">★</span>
+                              ))}
+                              <span className="text-[#6C757D] text-sm ml-1">({stars.toFixed(1)}/5)</span>
+                            </>
+                          );
+                        })()}
                       </div>
-
-                      {user ? (
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/demande/nouvelle?artisan=${result.artisan.userId}`);
-                          }}
-                          className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
-                        >
-                          📩 Demander un devis
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push('/connexion');
-                          }}
-                          className="border-2 border-[#FF6B00] bg-white text-[#FF6B00] font-bold px-4 py-2 rounded-lg transition-all duration-200 hover:bg-[#FF6B00] hover:text-white hover:shadow-lg"
-                        >
-                          Se connecter pour demander un devis
-                        </Button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </Card>

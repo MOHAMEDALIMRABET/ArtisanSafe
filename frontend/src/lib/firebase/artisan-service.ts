@@ -361,6 +361,35 @@ export async function checkSiretExists(siret: string): Promise<boolean> {
 }
 
 /**
+ * Récupérer plusieurs artisans par leurs IDs
+ */
+export async function getArtisansByIds(userIds: string[]): Promise<Artisan[]> {
+  if (!userIds || userIds.length === 0) return [];
+
+  try {
+    const artisans = await Promise.all(
+      userIds.map(async (userId) => {
+        const artisanRef = doc(db, COLLECTION_NAME, userId);
+        const artisanSnap = await getDoc(artisanRef);
+        
+        if (!artisanSnap.exists()) return null;
+        
+        return {
+          id: artisanSnap.id,
+          ...artisanSnap.data()
+        } as Artisan;
+      })
+    );
+
+    // Filtrer les null (artisans non trouvés)
+    return artisans.filter((a): a is Artisan => a !== null);
+  } catch (error) {
+    console.error('Erreur récupération artisans:', error);
+    return [];
+  }
+}
+
+/**
  * Supprimer un profil artisan (admin uniquement)
  */
 export async function deleteArtisan(userId: string): Promise<void> {

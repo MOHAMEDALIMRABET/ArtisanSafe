@@ -73,17 +73,24 @@ export async function getDemandeById(demandeId: string): Promise<Demande | null>
  */
 export async function getDemandesByClient(clientId: string): Promise<Demande[]> {
   const demandesRef = collection(db, COLLECTION_NAME);
+  // ⚠️ ÉVITER index composite : where() seul, tri en JavaScript après
   const q = query(
     demandesRef,
-    where('clientId', '==', clientId),
-    orderBy('dateCreation', 'desc')
+    where('clientId', '==', clientId)
   );
   const querySnapshot = await getDocs(q);
   
-  return querySnapshot.docs.map(doc => ({
+  const demandes = querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
   } as Demande));
+
+  // Tri côté client par date de création (décroissant)
+  return demandes.sort((a, b) => {
+    const dateA = a.dateCreation?.toMillis() || 0;
+    const dateB = b.dateCreation?.toMillis() || 0;
+    return dateB - dateA;
+  });
 }
 
 /**

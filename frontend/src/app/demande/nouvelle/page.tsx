@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { createDemande, publierDemande, addArtisansMatches } from '@/lib/firebase/demande-service';
 import { notifyArtisanNouvelDemande, sendBulkNotifications } from '@/lib/firebase/notification-service';
+import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import type { Artisan } from '@/types/firestore';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
@@ -16,8 +18,31 @@ function NouvelleDemandeContent() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
+  const [artisan, setArtisan] = useState<Artisan | null>(null);
+  const [searchCriteria, setSearchCriteria] = useState<any>(null);
 
   const artisanPreselect = searchParams.get('artisan');
+
+  useEffect(() => {
+    // Charger les critères de recherche
+    const savedCriteria = sessionStorage.getItem('searchCriteria');
+    if (savedCriteria) {
+      setSearchCriteria(JSON.parse(savedCriteria));
+    }
+
+    // Charger l'artisan pré-sélectionné
+    async function loadArtisan() {
+      if (artisanPreselect) {
+        try {
+          const artisanData = await getArtisanByUserId(artisanPreselect);
+          setArtisan(artisanData);
+        } catch (error) {
+          console.error('Erreur chargement artisan:', error);
+        }
+      }
+    }
+    loadArtisan();
+  }, [artisanPreselect]);
 
   const [formData, setFormData] = useState({
     titre: '',
@@ -65,22 +90,35 @@ function NouvelleDemandeContent() {
     }
 
     if (!formData.titre || !formData.description) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      alert('⚠️ Veuillez remplir tous les champs obligatoires (titre et description)');
+      return;
+    }
+
+    if (formData.titre.length < 10) {
+      alert('⚠️ Le titre doit contenir au moins 10 caractères');
+      return;
+    }
+
+    if (formData.description.length < 50) {
+      alert('⚠️ La description doit contenir au moins 50 caractères pour aider l\'artisan à comprendre votre besoin');
       return;
     }
 
     setLoading(true);
 
     try {
+      console.log('📤 Début création de la demande...');
+      
       // Récupérer les critères de recherche depuis sessionStorage
       const searchCriteria = sessionStorage.getItem('searchCriteria');
       if (!searchCriteria) {
-        alert('Critères de recherche manquants. Veuillez recommencer votre recherche.');
+        alert('❌ Critères de recherche manquants. Veuillez recommencer votre recherche.');
         router.push('/recherche');
         return;
       }
 
       const criteria = JSON.parse(searchCriteria);
+      console.log('✅ Critères récupérés:', criteria);
 
       // TODO: Upload photos vers Firebase Storage
       // Pour le MVP, on stockera juste les noms de fichiers
@@ -104,26 +142,33 @@ function NouvelleDemandeContent() {
           flexibiliteDays: criteria.flexibiliteDays,
         },
         urgence: criteria.urgence,
-        budget: formData.budget.max > 0 ? formData.budget : undefined,
+        budget: formData.budget.max > 0 ? formData.budget : null,
         photos: photoUrls,
         statut: 'brouillon' as const,
         devisRecus: 0,
         artisansMatches: artisanPreselect ? [artisanPreselect] : [],
       };
 
-      const demandeId = await createDemande(demandeData);
+      console.log('🔨 Création de la demande dans Firestore...');
+      const demande = await createDemande(demandeData);
+      const demandeId = demande.id;
+      console.log('✅ Demande créée avec ID:', demandeId);
 
       // Si artisan présélectionné, ajouter le match
       if (artisanPreselect) {
+        console.log('👷 Ajout de l\'artisan pré-sélectionné:', artisanPreselect);
         await addArtisansMatches(demandeId, [artisanPreselect]);
       }
 
       // Publier la demande (change statut brouillon → publiee ou matchee)
+      console.log('📢 Publication de la demande...');
       await publierDemande(demandeId);
+      console.log('✅ Demande publiée');
 
       // Envoyer notifications aux artisans matchés
       if (demandeData.artisansMatches.length > 0) {
         try {
+          console.log('🔔 Envoi des notifications aux artisans...');
           await sendBulkNotifications(
             demandeData.artisansMatches,
             {
@@ -133,19 +178,20 @@ function NouvelleDemandeContent() {
               lien: `/demande/${demandeId}`,
             }
           );
+          console.log('✅ Notifications envoyées');
         } catch (notifError) {
-          console.error('Erreur envoi notifications:', notifError);
+          console.error('⚠️ Erreur envoi notifications:', notifError);
           // Ne pas bloquer si notifications échouent
         }
       }
 
       // Rediriger vers tableau de bord
-      alert('✅ Votre demande a été créée ! Les artisans vont recevoir une notification.');
+      alert(`✅ Votre demande "${formData.titre}" a été créée avec succès !\n\n${artisan ? `${artisan.raisonSociale} a reçu une notification.` : 'Les artisans correspondants vont recevoir une notification.'}\n\nVous pouvez suivre l'état de votre demande depuis votre tableau de bord.`);
       router.push('/dashboard');
 
     } catch (error) {
-      console.error('Erreur création demande:', error);
-      alert('Erreur lors de la création de la demande. Veuillez réessayer.');
+      console.error('❌ Erreur création demande:', error);
+      alert(`❌ Erreur lors de la création de la demande.\n\nDétails: ${error instanceof Error ? error.message : 'Erreur inconnue'}\n\nVeuillez réessayer ou contacter le support.`);
     } finally {
       setLoading(false);
     }
@@ -163,6 +209,63 @@ function NouvelleDemandeContent() {
 
       {/* Formulaire */}
       <main className="container mx-auto px-4 py-8">
+        {/* Bandeau artisan sélectionné */}
+        {artisan && (
+          <Card className="p-6 mb-6 bg-[#FFF3E0] border-l-4 border-[#FF6B00]">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-[#E9ECEF] rounded-full flex items-center justify-center text-3xl flex-shrink-0">
+                {artisan.photoProfil ? (
+                  <img src={artisan.photoProfil} alt={artisan.raisonSociale} className="w-full h-full rounded-full object-cover" />
+                ) : '👷'}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-[#2C3E50] text-lg mb-1">
+                  Demande pour : {artisan.raisonSociale}
+                </h3>
+                <p className="text-[#6C757D] text-sm">
+                  {artisan.metiers?.join(' • ')}
+                </p>
+              </div>
+              {artisan.verified && (
+                <div className="bg-[#28A745] text-white px-3 py-1 rounded-full text-sm font-semibold">
+                  ✓ Vérifié
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {/* Critères de recherche */}
+        {searchCriteria && (
+          <Card className="p-6 mb-6 bg-[#E3F2FD]">
+            <h3 className="font-bold text-[#2C3E50] mb-3">📋 Informations de votre recherche</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+              <div>
+                <span className="text-[#6C757D]">Catégorie :</span>
+                <p className="font-semibold text-[#2C3E50]">{searchCriteria.categorie}</p>
+              </div>
+              <div>
+                <span className="text-[#6C757D]">Localisation :</span>
+                <p className="font-semibold text-[#2C3E50]">{searchCriteria.ville} ({searchCriteria.codePostal})</p>
+              </div>
+              <div>
+                <span className="text-[#6C757D]">Date souhaitée :</span>
+                <p className="font-semibold text-[#2C3E50]">{searchCriteria.dates?.[0] || 'Non précisée'}</p>
+              </div>
+              <div>
+                <span className="text-[#6C757D]">Flexibilité :</span>
+                <p className="font-semibold text-[#2C3E50]">±{searchCriteria.flexibiliteDays || 0}J</p>
+              </div>
+              <div>
+                <span className="text-[#6C757D]">Urgence :</span>
+                <p className="font-semibold text-[#2C3E50]">
+                  {searchCriteria.urgence === 'urgent' ? '⚡ Urgent' : searchCriteria.urgence === 'normale' ? '📅 Normal' : '🗓️ Flexible'}
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
           <Card className="p-8 mb-6">
             {/* Titre du projet */}
@@ -296,8 +399,7 @@ function NouvelleDemandeContent() {
                 </h3>
                 <p className="text-[#6C757D] text-sm">
                   • Vos coordonnées ne seront visibles qu'après signature du contrat<br />
-                  • Communication sécurisée via notre messagerie<br />
-                  • Paiement par escrow (8% de commission prélevée)
+                  • Communication sécurisée via notre messagerie
                 </p>
               </div>
             </div>
@@ -341,7 +443,7 @@ export default function NouvelleDemandePage() {
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF6B00] border-t-transparent"></div>
       </div>
     }>
-      <NouvelleDemande Content />
+      <NouvelleDemandeContent />
     </Suspense>
   );
 }

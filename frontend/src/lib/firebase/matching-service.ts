@@ -119,6 +119,8 @@ function calculateDistanceScore(artisan: Artisan, demande: Demande): number {
 
   // Score décroissant avec la distance (max 50 points)
   // 0-5km: 50 points, 5-10km: 40 points, 10-20km: 30 points, 20-30km: 20 points, 30+km: 10 points
+  console.log(`  📏 Distance minimale calculée: ${minDistance.toFixed(2)} km`);
+  
   if (minDistance <= 5) return 50;
   if (minDistance <= 10) return 40;
   if (minDistance <= 20) return 30;
@@ -201,8 +203,8 @@ function calculateDisponibiliteScore(artisan: Artisan, demande: Demande): number
     const extendedDates: Date[] = [];
 
     for (const date of dates) {
-      // Ajouter dates dans la fenêtre de flexibilité
-      for (let i = 0; i <= flexDays; i++) {
+      // Ajouter dates dans la fenêtre de flexibilité (AVANT et APRÈS)
+      for (let i = -flexDays; i <= flexDays; i++) {
         const newDate = new Date(date);
         newDate.setDate(newDate.getDate() + i);
         extendedDates.push(newDate);
@@ -321,6 +323,12 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
       const distanceScore = calculateDistanceScore(artisan, tempDemande as Demande);
       const disponibiliteScore = calculateDisponibiliteScore(artisan, tempDemande as Demande);
       const notationScore = calculateNotationScore(artisan);
+      
+      // ⚠️ FILTRE CRITIQUE: Ne pas afficher les artisans indisponibles
+      if (disponibiliteScore === 0) {
+        console.log(`❌ ${artisan.raisonSociale}: INDISPONIBLE (score=0/50)`);
+        continue;
+      }
       
       // Bonus urgence: si artisan a capacité disponible immédiatement
       let urgenceScore = 0;

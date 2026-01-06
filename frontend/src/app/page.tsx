@@ -116,16 +116,18 @@ export default function Home() {
                   ) : (
                     // Utilisateur non connecté : boutons Connexion/Inscription
                     <>
-                      <Link href="/connexion">
-                        <button className="text-[#2C3E50] hover:text-[#FF6B00] font-medium px-4 py-2 rounded-lg transition-colors">
-                          Connexion
-                        </button>
-                      </Link>
-                      <Link href="/inscription">
-                        <button className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg">
-                          Inscription
-                        </button>
-                      </Link>
+                      <button 
+                        onClick={() => router.push('/connexion')}
+                        className="text-[#2C3E50] hover:text-[#FF6B00] font-medium px-4 py-2 rounded-lg transition-colors"
+                      >
+                        Connexion
+                      </button>
+                      <button 
+                        onClick={() => router.push('/inscription')}
+                        className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        Inscription
+                      </button>
                     </>
                   )}
                 </>
