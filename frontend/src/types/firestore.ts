@@ -10,7 +10,7 @@ import { Timestamp } from 'firebase/firestore';
 // ============================================
 
 export type UserRole = 'client' | 'artisan' | 'admin';
-export type UserStatut = 'non_verifie' | 'verifie' | 'suspendu';
+export type UserStatut = 'non_verifie' | 'verifie' | 'suspendu' | 'inactif';
 
 export type Categorie = 
   | 'plomberie' 
@@ -25,6 +25,7 @@ export type Categorie =
   | 'toiture'
   | 'isolation'
   | 'serrurerie'
+  | 'renovation'
   | 'autre';
 
 export type Urgence = 'normal' | 'rapide' | 'urgent';
@@ -113,7 +114,7 @@ export interface User {
   role: UserRole;
   nom: string;
   prenom: string;
-  representantLegal?: string; // Nom du représentant légal (obligatoire artisan, pour vérification KBIS)
+  representantLegal?: string; // Nom du représentant légal (UNIQUEMENT pour artisans, pour vérification KBIS)
   telephone: string;
   adresse?: UserAdresse;
   dateCreation: Timestamp;
@@ -127,9 +128,12 @@ export interface User {
 
 export interface ZoneIntervention {
   ville: string;
-  rayon: number; // km
-  latitude: number;
-  longitude: number;
+  codePostal?: string; // Ajout code postal
+  rayon?: number; // km (deprecated - utiliser rayonKm)
+  rayonKm?: number; // km (nouveau champ standard)
+  latitude?: number; // Coordonnées GPS (auto-remplies)
+  longitude?: number; // Coordonnées GPS (auto-remplies)
+  departements?: string[]; // Départements couverts (optionnel)
 }
 
 // Structure simple pour compatibilité (deprecated)
@@ -293,11 +297,6 @@ export interface Artisan {
   verificationDate?: Timestamp; // Date de vérification complète
   rejectionReason?: string; // Raison si rejeté
   
-  // Anciens champs (à supprimer progressivement)
-  documentsVerifies: boolean;
-  badgeVerifie: boolean;
-  dateVerification?: Timestamp;
-  
   compteBancaire?: CompteBancaire;
   presentation?: string; // Description/bio
   photoProfil?: string; // URL Firebase Storage
@@ -311,13 +310,18 @@ export interface DemandeLocalisation {
   adresse: string;
   ville: string;
   codePostal: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number; // Optionnel (peut être dans coordonneesGPS)
+  longitude?: number; // Optionnel (peut être dans coordonneesGPS)
+  coordonneesGPS?: { // Alternative pour lat/lon
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export interface DatesSouhaitees {
   dateDebut: string; // YYYY-MM-DD
   dateFin?: string; // YYYY-MM-DD (optionnel)
+  dates: Timestamp[]; // Format Timestamp pour matching (liste de dates souhaitées)
   flexible: boolean;
   flexibiliteDays?: number; // +/- X jours
   urgence: Urgence;
@@ -555,6 +559,7 @@ export type UpdateDocument<T> = Partial<Omit<T, 'id'>> & { id: string };
  */
 export interface MatchingResult {
   artisanId: string;
+  artisan: Artisan; // Objet artisan complet pour affichage
   score: number;
   breakdown: {
     metierMatch: number; // 0-100
@@ -563,8 +568,15 @@ export interface MatchingResult {
     notationScore: number; // 0-50
     urgenceMatch: number; // 0-20
   };
-  distance: number; // km
-  disponible: boolean;
+  details: { // Alias pour breakdown (compatibilité)
+    metierMatch: number;
+    distanceScore: number;
+    disponibiliteScore: number;
+    notationScore: number;
+    urgenceMatch: number;
+  };
+  distance?: number; // km
+  disponible?: boolean;
 }
 
 /**
@@ -572,11 +584,17 @@ export interface MatchingResult {
  */
 export interface MatchingCriteria {
   categorie: Categorie;
-  localisation: {
+  ville: string;
+  codePostal: string;
+  adresse?: string;
+  coordonneesGPS?: {
     latitude: number;
     longitude: number;
   };
-  datesSouhaitees: DatesSouhaitees;
+  dates: string[]; // Dates au format "YYYY-MM-DD"
+  flexible: boolean;
+  flexibiliteDays?: number; // Nombre de jours de flexibilité (0, 7, 14, 30)
+  urgence: 'faible' | 'normale' | 'urgent';
   budgetMax?: number;
   rayonMax?: number; // km (défaut 50)
 }

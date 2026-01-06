@@ -1,7 +1,6 @@
 import { db } from './config';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { Artisan, Demande, MatchingResult, MatchingCriteria } from '@/types/firestore';
-import { isArtisanDisponible } from './artisan-service';
 
 /**
  * Calcule la distance entre deux points GPS (formule de Haversine)
@@ -36,32 +35,50 @@ function toRad(degrees: number): number {
  * @returns true si dans la zone
  */
 function isInZone(artisan: Artisan, demande: Demande): boolean {
+  console.log(`  🗺️  Vérif zone - Client à: ${demande.localisation.ville} ${demande.localisation.codePostal}`);
+  
   if (!artisan.zonesIntervention || artisan.zonesIntervention.length === 0) {
+    console.log(`  ❌ Pas de zone d'intervention définie`);
     return false;
   }
 
   // Vérifier si la ville correspond ou si dans le rayon
   for (const zone of artisan.zonesIntervention) {
+    console.log(`  🔍 Zone artisan: ${zone.ville}, rayon: ${zone.rayonKm || zone.rayon || 30}km`);
+    console.log(`  📍 Coords artisan: lat=${zone.latitude}, lon=${zone.longitude}`);
+    console.log(`  📍 Coords client:`, demande.localisation.coordonneesGPS);
+    
     // Match exacte de ville
     if (zone.ville.toLowerCase() === demande.localisation.ville.toLowerCase()) {
+      console.log(`  ✅ MATCH ville exacte: ${zone.ville}`);
       return true;
     }
 
     // Vérification par GPS si disponible
-    if (zone.coordonneesGPS && demande.localisation.coordonneesGPS) {
+    if (zone.latitude && zone.longitude && demande.localisation.coordonneesGPS) {
       const distance = calculateDistance(
-        zone.coordonneesGPS.latitude,
-        zone.coordonneesGPS.longitude,
+        zone.latitude,
+        zone.longitude,
         demande.localisation.coordonneesGPS.latitude,
         demande.localisation.coordonneesGPS.longitude
       );
       
-      if (distance <= zone.rayonKm) {
+      const rayonKm = zone.rayonKm || zone.rayon || 30;
+      
+      console.log(`  📏 Distance calculée: ${distance.toFixed(2)}km (rayon: ${rayonKm}km)`);
+      
+      if (distance <= rayonKm) {
+        console.log(`  ✅ MATCH GPS: dans le rayon`);
         return true;
+      } else {
+        console.log(`  ❌ Hors rayon: ${distance.toFixed(2)}km > ${rayonKm}km`);
       }
+    } else {
+      console.log(`  ⚠️  Coordonnées GPS manquantes`);
     }
   }
 
+  console.log(`  ❌ Aucune zone ne correspond`);
   return false;
 }
 
@@ -87,10 +104,10 @@ function calculateDistanceScore(artisan: Artisan, demande: Demande): number {
   // Trouver la zone la plus proche
   let minDistance = Infinity;
   for (const zone of artisan.zonesIntervention) {
-    if (zone.coordonneesGPS) {
+    if (zone.latitude && zone.longitude) {
       const distance = calculateDistance(
-        zone.coordonneesGPS.latitude,
-        zone.coordonneesGPS.longitude,
+        zone.latitude,
+        zone.longitude,
         demande.localisation.coordonneesGPS.latitude,
         demande.localisation.coordonneesGPS.longitude
       );
@@ -110,12 +127,66 @@ function calculateDistanceScore(artisan: Artisan, demande: Demande): number {
 }
 
 /**
- * Calcule le score de disponibilité (CORE FEATURE)
+ * Vérifie si un artisan est disponible à une date donnée (basé sur les slots d'agenda)
+ * LOGIQUE CORRECTE : Disponible PAR DÉFAUT, sauf si indisponibilité marquée
+ * @param artisan Profil artisan
+ * @param date Date à vérifier
+ * @returns true si disponible
+ */
+function isArtisanDisponibleDate(artisan: Artisan, date: Date): boolean {
+  console.log(`  📅 Vérif dispo pour ${date.toISOString().split('T')[0]}`);
+  
+  // Si pas de disponibilités définies → DISPONIBLE par défaut
+  if (!artisan.disponibilites || artisan.disponibilites.length === 0) {
+    console.log(`  ✅ Pas d'agenda défini → Disponible par défaut`);
+    return true;
+  }
+
+  const joursSemaine = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  const jourName = joursSemaine[date.getDay()] as any;
+  console.log(`  📆 Jour de la semaine: ${jourName} (${date.getDay()})`);
+
+  // Vérifier les créneaux INDISPONIBLES (disponible = false = occupé)
+  const creneauxOccupes = artisan.disponibilites.filter(slot => !slot.disponible);
+  console.log(`  🔒 ${creneauxOccupes.length} créneau(x) occupé(s) sur ${artisan.disponibilites.length}`);
+
+  // 1. Vérifier les indisponibilités ponctuelles
+  for (const slot of creneauxOccupes) {
+    if (slot.recurrence === 'ponctuel' && slot.date) {
+      const slotDate = slot.date.toDate();
+      const slotDateStr = slotDate.toISOString().split('T')[0];
+      const checkDateStr = date.toISOString().split('T')[0];
+      
+      console.log(`  🔍 Indisponibilité ponctuelle: ${slotDateStr} vs ${checkDateStr}`);
+      
+      if (slotDateStr === checkDateStr) {
+        console.log(`  ❌ INDISPONIBLE (créneau occupé trouvé)`);
+        return false;
+      }
+    }
+  }
+
+  // 2. Vérifier les indisponibilités hebdomadaires récurrentes
+  const creneauOccupeJour = creneauxOccupes.find(
+    slot => slot.recurrence === 'hebdomadaire' && slot.jour === jourName
+  );
+
+  if (creneauOccupeJour) {
+    console.log(`  ❌ INDISPONIBLE (${jourName} récurrent occupé)`);
+    return false;
+  }
+
+  console.log(`  ✅ DISPONIBLE (aucune indisponibilité trouvée)`);
+  return true;
+}
+
+/**
+ * Calcule le score de disponibilité (CORE FEATURE - basé sur agenda)
  * @param artisan Profil artisan
  * @param demande Demande client
  * @returns Score de 0 à 50
  */
-async function calculateDisponibiliteScore(artisan: Artisan, demande: Demande): Promise<number> {
+function calculateDisponibiliteScore(artisan: Artisan, demande: Demande): number {
   if (!demande.datesSouhaitees || demande.datesSouhaitees.dates.length === 0) {
     return 0;
   }
@@ -130,8 +201,8 @@ async function calculateDisponibiliteScore(artisan: Artisan, demande: Demande): 
     const extendedDates: Date[] = [];
 
     for (const date of dates) {
-      // Ajouter dates avant
-      for (let i = -flexDays; i <= flexDays; i++) {
+      // Ajouter dates dans la fenêtre de flexibilité
+      for (let i = 0; i <= flexDays; i++) {
         const newDate = new Date(date);
         newDate.setDate(newDate.getDate() + i);
         extendedDates.push(newDate);
@@ -140,8 +211,7 @@ async function calculateDisponibiliteScore(artisan: Artisan, demande: Demande): 
 
     // Vérifier combien de dates matchent
     for (const date of extendedDates) {
-      const dispo = await isArtisanDisponible(artisan, Timestamp.fromDate(date));
-      if (dispo) {
+      if (isArtisanDisponibleDate(artisan, date)) {
         matchCount++;
       }
     }
@@ -150,8 +220,7 @@ async function calculateDisponibiliteScore(artisan: Artisan, demande: Demande): 
   } else {
     // Dates fixes
     for (const date of dates) {
-      const dispo = await isArtisanDisponible(artisan, Timestamp.fromDate(date));
-      if (dispo) {
+      if (isArtisanDisponibleDate(artisan, date)) {
         matchCount++;
       }
     }
@@ -192,16 +261,19 @@ function calculateNotationScore(artisan: Artisan): number {
  */
 export async function matchArtisans(criteria: MatchingCriteria): Promise<MatchingResult[]> {
   try {
+    console.log('🔍 Lancement du matching avec critères:', criteria);
+
     // 1. Requête Firestore: artisans vérifiés + catégorie matching
     const artisansRef = collection(db, 'artisans');
     const q = query(
       artisansRef,
-      where('badgeVerifie', '==', true),
-      where('statut', '==', 'actif'),
+      where('verified', '==', true),
       where('metiers', 'array-contains', criteria.categorie)
     );
 
     const snapshot = await getDocs(q);
+    console.log(`📊 ${snapshot.docs.length} artisan(s) trouvé(s) pour ${criteria.categorie}`);
+    
     if (snapshot.empty) {
       return [];
     }
@@ -216,9 +288,11 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
         coordonneesGPS: criteria.coordonneesGPS,
       },
       datesSouhaitees: {
+        dateDebut: criteria.dates[0] || '',
         dates: criteria.dates.map(d => Timestamp.fromDate(new Date(d))),
         flexible: criteria.flexible,
         flexibiliteDays: criteria.flexibiliteDays,
+        urgence: criteria.urgence as any,
       },
       urgence: criteria.urgence,
     };
@@ -227,17 +301,25 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
     const results: MatchingResult[] = [];
 
     for (const doc of snapshot.docs) {
-      const artisan = { id: doc.id, ...doc.data() } as Artisan;
+      const artisan = { id: doc.id, userId: doc.id, ...doc.data() } as Artisan;
+
+      console.log(`\n🔍 Analyse artisan: ${artisan.raisonSociale}`);
+      console.log(`  - Métiers:`, artisan.metiers);
+      console.log(`  - Zones:`, artisan.zonesIntervention);
+      console.log(`  - Disponibilités:`, artisan.disponibilites?.length || 0, 'créneau(x)');
+      console.log(`  - Verified:`, artisan.verified);
 
       // Filtre: doit être dans la zone
       if (!isInZone(artisan, tempDemande as Demande)) {
+        console.log(`❌ ${artisan.raisonSociale}: HORS ZONE`);
         continue;
       }
+      console.log(`✅ ${artisan.raisonSociale}: dans la zone`);
 
       // Calcul des scores
       const metierScore = 100; // Match catégorie garanti par la query
       const distanceScore = calculateDistanceScore(artisan, tempDemande as Demande);
-      const disponibiliteScore = await calculateDisponibiliteScore(artisan, tempDemande as Demande);
+      const disponibiliteScore = calculateDisponibiliteScore(artisan, tempDemande as Demande);
       const notationScore = calculateNotationScore(artisan);
       
       // Bonus urgence: si artisan a capacité disponible immédiatement
@@ -248,8 +330,7 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
         for (let i = 0; i < 3; i++) {
           const checkDate = new Date(today);
           checkDate.setDate(checkDate.getDate() + i);
-          const dispo = await isArtisanDisponible(artisan, Timestamp.fromDate(checkDate));
-          if (dispo) {
+          if (isArtisanDisponibleDate(artisan, checkDate)) {
             urgenceScore = 20;
             break;
           }
@@ -260,7 +341,7 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
         urgenceScore = 5;
       }
 
-      // Score total (max 320 points)
+      // Score total (max 270 points)
       const scoreTotal = 
         metierScore + 
         distanceScore + 
@@ -268,25 +349,33 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
         notationScore + 
         urgenceScore;
 
+      console.log(`✅ ${artisan.raisonSociale}: score=${scoreTotal} (distance=${distanceScore}, dispo=${disponibiliteScore}, note=${notationScore})`);
+
+      const details = {
+        metierMatch: metierScore,
+        distanceScore,
+        disponibiliteScore,
+        notationScore,
+        urgenceMatch: urgenceScore,
+      };
+
       results.push({
+        artisanId: artisan.userId,
         artisan,
         score: scoreTotal,
-        details: {
-          metierMatch: metierScore,
-          distanceScore,
-          disponibiliteScore,
-          notationScore,
-          urgenceMatch: urgenceScore,
-        },
+        breakdown: details,
+        details, // Alias pour compatibilité avec l'interface existante
       });
     }
 
     // 4. Trier par score décroissant et retourner top 10
     results.sort((a, b) => b.score - a.score);
+    console.log(`🎯 ${results.length} artisan(s) matchés (après filtres)`);
+    
     return results.slice(0, 10);
 
   } catch (error) {
-    console.error('Erreur matching artisans:', error);
+    console.error('❌ Erreur matching artisans:', error);
     throw new Error('Impossible de trouver des artisans correspondants');
   }
 }
@@ -306,7 +395,7 @@ export async function getArtisansDisponibles(
   const artisansRef = collection(db, 'artisans');
   const q = query(
     artisansRef,
-    where('badgeVerifie', '==', true),
+    where('verified', '==', true),
     where('statut', '==', 'actif'),
     where('metiers', 'array-contains', categorie)
   );
@@ -315,7 +404,7 @@ export async function getArtisansDisponibles(
   const disponibles: Artisan[] = [];
 
   for (const doc of snapshot.docs) {
-    const artisan = { id: doc.id, ...doc.data() } as Artisan;
+    const artisan = { id: doc.id, userId: doc.id, ...doc.data() } as Artisan;
     
     // Vérifier zone
     const inZone = artisan.zonesIntervention?.some(
@@ -324,7 +413,7 @@ export async function getArtisansDisponibles(
     if (!inZone) continue;
 
     // Vérifier disponibilité
-    const dispo = await isArtisanDisponible(artisan, Timestamp.fromDate(date));
+    const dispo = isArtisanDisponibleDate(artisan, date);
     if (dispo) {
       disponibles.push(artisan);
     }
@@ -351,10 +440,10 @@ export function getDistanceToArtisan(
 
   let minDistance = Infinity;
   for (const zone of artisan.zonesIntervention) {
-    if (zone.coordonneesGPS) {
+    if (zone.latitude && zone.longitude) { // Corrigé: utiliser zone.latitude/longitude
       const distance = calculateDistance(
-        zone.coordonneesGPS.latitude,
-        zone.coordonneesGPS.longitude,
+        zone.latitude,
+        zone.longitude,
         lat,
         lon
       );

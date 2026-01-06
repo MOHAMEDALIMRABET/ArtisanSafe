@@ -3,7 +3,7 @@
  * ArtisanDispo - Système de vérification
  */
 
-import { doc, updateDoc, Timestamp, getDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, Timestamp, getDoc, arrayUnion, collection } from 'firebase/firestore';
 import { db } from './config';
 import type { Artisan, VerificationStatus } from '@/types/firestore';
 
@@ -17,13 +17,17 @@ interface SiretValidationResult {
   legalForm?: string;
   active?: boolean;
   error?: string;
+  adresse?: string;
 }
 
 /**
- * Vérifie la validité d'un SIRET via l'API Recherche Entreprises
- * API Gratuite du gouvernement français
+ * Vérifie la validité d'un SIRET via l'API Backend (qui utilise l'API SIRENE)
+ * Vérifie aussi l'adéquation entre le SIRET et la raison sociale de l'artisan
  */
-export async function verifySiret(siret: string): Promise<SiretValidationResult> {
+export async function verifySiret(
+  siret: string, 
+  raisonSociale: string
+): Promise<SiretValidationResult> {
   try {
     // Nettoyer le SIRET (enlever espaces)
     const cleanSiret = siret.replace(/\s/g, '');
@@ -33,42 +37,61 @@ export async function verifySiret(siret: string): Promise<SiretValidationResult>
       return { valid: false, error: 'Format SIRET invalide (14 chiffres requis)' };
     }
     
-    // Appel à l'API Recherche Entreprises (gratuite)
+    // Vérification de la raison sociale
+    if (!raisonSociale || raisonSociale.trim().length < 2) {
+      return { valid: false, error: 'Raison sociale manquante ou invalide' };
+    }
+    
+    // Appel au backend pour vérification complète (SIRET + Raison sociale)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    console.log('🔍 [Frontend] Appel API vérification SIRET:', {
+      url: `${apiUrl}/sirene/verify`,
+      siret: cleanSiret,
+      raisonSociale: raisonSociale.trim()
+    });
+    
     const response = await fetch(
-      `https://recherche-entreprises.api.gouv.fr/search?q=${cleanSiret}`,
+      `${apiUrl}/sirene/verify`,
       {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          siret: cleanSiret,
+          raisonSociale: raisonSociale.trim()
+        })
       }
     );
     
-    if (!response.ok) {
-      return { valid: false, error: 'Erreur lors de la vérification SIRET' };
-    }
-    
     const data = await response.json();
+    console.log('📦 [Frontend] Réponse API reçue:', {
+      status: response.status,
+      ok: response.ok,
+      data: data
+    });
     
-    if (!data.results || data.results.length === 0) {
-      return { valid: false, error: 'SIRET non trouvé dans la base SIRENE' };
-    }
-    
-    const company = data.results[0];
-    
-    // Vérifier si l'entreprise est active
-    const isActive = company.etat_administratif === 'A'; // A = Actif
-    
-    if (!isActive) {
+    if (!response.ok || !data.success) {
+      console.error('❌ [Frontend] Échec vérification:', data.error);
       return { 
         valid: false, 
-        error: 'Cette entreprise est fermée ou radiée' 
+        error: data.error || 'Erreur lors de la vérification SIRET' 
       };
     }
     
+    // Succès : SIRET valide + entreprise active + raison sociale conforme
+    console.log('✅ [Frontend] Vérification réussie:', {
+      companyName: data.data?.raisonSociale,
+      adresse: data.data?.adresse,
+      activite: data.data?.activite
+    });
+    
     return {
       valid: true,
-      companyName: company.nom_complet || company.nom_raison_sociale,
-      legalForm: company.nature_juridique,
+      companyName: data.data?.raisonSociale || raisonSociale,
+      legalForm: data.data?.activite || '',
+      adresse: data.data?.adresse || '',
       active: true
     };
     
@@ -76,7 +99,7 @@ export async function verifySiret(siret: string): Promise<SiretValidationResult>
     console.error('Erreur vérification SIRET:', error);
     return { 
       valid: false, 
-      error: 'Erreur technique lors de la vérification' 
+      error: 'Erreur technique lors de la vérification. Vérifiez votre connexion.' 
     };
   }
 }
@@ -631,6 +654,7 @@ export async function validateDocument(
     const artisanRef = doc(db, 'artisans', userId);
     const fieldPath = `verificationDocuments.${documentType}`;
     
+    // Mettre à jour le document spécifique
     await updateDoc(artisanRef, {
       [`${fieldPath}.verified`]: true,
       [`${fieldPath}.rejected`]: false,
@@ -638,6 +662,33 @@ export async function validateDocument(
       [`${fieldPath}.validatedAt`]: Timestamp.now(),
       [`${fieldPath}.rejectionReason`]: null
     });
+
+    // ✅ VÉRIFIER SI TOUS LES DOCUMENTS SONT VALIDÉS
+    const artisanSnap = await getDoc(artisanRef);
+    if (artisanSnap.exists()) {
+      const data = artisanSnap.data();
+      const kbisVerified = data.verificationDocuments?.kbis?.verified || false;
+      const idVerified = data.verificationDocuments?.idCard?.verified || false;
+      
+      // Si les 2 documents sont validés → activer l'artisan dans les recherches
+      if (kbisVerified && idVerified) {
+        await updateDoc(artisanRef, {
+          verified: true,  // ← CHAMP PRINCIPAL pour les recherches
+          verificationStatus: 'approved',
+          verificationDate: Timestamp.now(),
+        });
+        
+        // ✅ METTRE À JOUR LE STATUT DANS LA COLLECTION USERS
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+          statut: 'verifie'
+        });
+        
+        console.log(`✅ Artisan ${userId} complètement vérifié et activé !`);
+      } else {
+        console.log(`⏳ Artisan ${userId} partiellement vérifié (${documentType} validé)`);
+      }
+    }
 
     // TODO: Envoyer notification à l'artisan
     
@@ -673,8 +724,14 @@ export async function rejectDocument(
       [`${fieldPath}.rejected`]: true,
       [`${fieldPath}.rejectedBy`]: adminId,
       [`${fieldPath}.rejectedAt`]: Timestamp.now(),
-      [`${fieldPath}.rejectionReason`]: reason
+      [`${fieldPath}.rejectionReason`]: reason,
+      
+      // ❌ Si un document est rejeté → désactiver l'artisan
+      verified: false,
+      verificationStatus: 'rejected',
     });
+
+    console.log(`❌ Document ${documentType} rejeté pour l'artisan ${userId} - Artisan désactivé`);
 
     // TODO: Envoyer notification à l'artisan
     

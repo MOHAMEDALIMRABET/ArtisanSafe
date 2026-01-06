@@ -25,6 +25,8 @@ function ResultatsContent() {
         const flexible = searchParams.get('flexible') === 'true';
         const flexibiliteDays = parseInt(searchParams.get('flexibiliteDays') || '0');
         const urgence = searchParams.get('urgence') as 'faible' | 'normale' | 'urgent';
+        const lat = searchParams.get('lat');
+        const lon = searchParams.get('lon');
 
         if (!categorie || !ville || !codePostal || !datesStr) {
           setError('Critères de recherche manquants');
@@ -34,10 +36,20 @@ function ResultatsContent() {
 
         const dates = JSON.parse(datesStr) as string[];
 
+        // Construire coordonnées GPS si disponibles
+        let coordonneesGPS = undefined;
+        if (lat && lon) {
+          coordonneesGPS = {
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lon)
+          };
+        }
+
         const criteria: MatchingCriteria = {
           categorie: categorie as any,
           ville,
           codePostal,
+          coordonneesGPS,
           dates,
           flexible,
           flexibiliteDays: flexible ? flexibiliteDays : undefined,
@@ -191,7 +203,7 @@ function ResultatsContent() {
                       </div>
                       
                       {/* Badge vérifié */}
-                      {result.artisan.badgeVerifie && (
+                      {result.artisan.verified && (
                         <div className="bg-[#28A745] text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                           ✓ Vérifié
                         </div>
@@ -249,9 +261,29 @@ function ResultatsContent() {
 
                     {/* Score total */}
                     <div className="flex items-center justify-between">
-                      <div className="text-sm text-[#6C757D]">
-                        <span className="font-semibold text-[#2C3E50]">Score de compatibilité :</span>{' '}
-                        <span className="text-[#FF6B00] font-bold text-lg">{result.score}/320</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-[#2C3E50] text-sm">Score de compatibilité :</span>
+                        <div className="flex items-center gap-1">
+                          {(() => {
+                            const stars = Math.round((result.score / 270) * 5 * 2) / 2; // Arrondi au 0.5
+                            const fullStars = Math.floor(stars);
+                            const hasHalfStar = stars % 1 !== 0;
+                            const emptyStars = 5 - Math.ceil(stars);
+                            
+                            return (
+                              <>
+                                {[...Array(fullStars)].map((_, i) => (
+                                  <span key={`full-${i}`} className="text-[#FFC107] text-xl">★</span>
+                                ))}
+                                {hasHalfStar && <span className="text-[#FFC107] text-xl">⯨</span>}
+                                {[...Array(emptyStars)].map((_, i) => (
+                                  <span key={`empty-${i}`} className="text-gray-300 text-xl">★</span>
+                                ))}
+                                <span className="text-[#6C757D] text-sm ml-1">({stars.toFixed(1)}/5)</span>
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                       
                       <Button
