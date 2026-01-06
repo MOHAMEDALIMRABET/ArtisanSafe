@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
@@ -9,64 +9,137 @@ import type { Artisan } from '@/types/firestore';
 
 export default function VerificationPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changé à false pour affichage immédiat
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   
   // États pour la vérification SIRET
   const [siretStatus, setSiretStatus] = useState<'pending' | 'verifying' | 'success' | 'error'>('pending');
   const [siretError, setSiretError] = useState('');
+  const [sireneData, setSireneData] = useState<{
+    raisonSociale?: string;
+    adresse?: string;
+    activite?: string;
+    siret?: string;
+  } | null>(null);
+
+  // ✅ Protection contre appels multiples
+  const isLoadingRef = useRef(false);
 
   useEffect(() => {
-    loadArtisan();
-  }, []);
+    // ✅ Protection contre double chargement
+    if (!isLoadingRef.current) {
+      isLoadingRef.current = true;
+      loadArtisan();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Exécuter une seule fois au montage
 
   const loadArtisan = async () => {
     try {
       const user = authService.getCurrentUser();
       if (!user) {
         router.push('/connexion');
+        isLoadingRef.current = false;
         return;
       }
 
-      // Charger depuis le cache d'abord pour affichage immédiat
+      // Charger depuis le cache d'abord pour affichage IMMÉDIAT
       const cachedData = localStorage.getItem(`artisan_${user.uid}`);
       if (cachedData) {
         try {
           const cached = JSON.parse(cachedData);
           setArtisan(cached);
-          setLoading(false); // Afficher immédiatement les données en cache
+          // Ne pas mettre setLoading(false) ici car déjà à false par défaut
         } catch (e) {
           console.warn('Cache invalide, rechargement depuis Firestore');
         }
       }
 
-      // Puis recharger depuis Firestore en arrière-plan
-      const artisanData = await getArtisanByUserId(user.uid);
-      if (!artisanData) {
-        router.push('/artisan/profil');
-        return;
+      // Si pas de cache, on affiche quand même la page avec un skeleton
+      if (!cachedData) {
+        setLoading(true); // Seulement si pas de cache
       }
 
-      setArtisan(artisanData);
-      // Mettre à jour le cache
-      localStorage.setItem(`artisan_${user.uid}`, JSON.stringify(artisanData));
+      // Puis recharger depuis Firestore en arrière-plan avec timeout
+      const timeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 10000) // Timeout de 10s
+      );
+      
+      try {
+        const artisanData = await Promise.race([
+          getArtisanByUserId(user.uid),
+          timeoutPromise
+        ]);
+
+        if (!artisanData) {
+          router.push('/artisan/profil');
+          isLoadingRef.current = false;
+          return;
+        }
+
+        setArtisan(artisanData);
+        // Mettre à jour le cache
+        localStorage.setItem(`artisan_${user.uid}`, JSON.stringify(artisanData));
+      } catch (error: any) {
+        if (error.message === 'Timeout') {
+          console.warn('Timeout chargement Firestore, utilisation du cache');
+          // Si timeout et pas de cache, afficher un message d'erreur
+          if (!cachedData) {
+            setSiretError('Erreur de chargement. Veuillez rafraîchir la page.');
+          }
+        } else {
+          console.error('Erreur chargement artisan:', error);
+        }
+      } finally {
+        setLoading(false);
+        isLoadingRef.current = false;
+      }
     } catch (error) {
-      console.error('Erreur chargement artisan:', error);
-    } finally {
+      console.error('Erreur critique:', error);
       setLoading(false);
+      isLoadingRef.current = false;
     }
   };
 
   const handleVerifySiret = async () => {
     if (!artisan) return;
     
+    // Vérifier que la raison sociale est présente
+    if (!artisan.raisonSociale || artisan.raisonSociale.trim().length < 2) {
+      setSiretStatus('error');
+      setSiretError('Raison sociale manquante dans votre profil. Veuillez compléter votre profil.');
+      return;
+    }
+    
+    console.log('🔍 [Page] Lancement vérification SIRET:', {
+      siret: artisan.siret,
+      raisonSociale: artisan.raisonSociale,
+      userId: artisan.userId
+    });
+    
     setSiretStatus('verifying');
     setSiretError('');
     
     try {
-      const result = await verifySiret(artisan.siret);
+      // Vérification complète : SIRET + Raison sociale
+      const result = await verifySiret(artisan.siret, artisan.raisonSociale);
+      
+      console.log('📊 [Page] Résultat vérification:', result);
       
       if (result.valid) {
+        console.log('✅ [Page] Mise à jour Firestore avec:', {
+          companyName: result.companyName,
+          legalForm: result.legalForm
+        });
+        
+        // Stocker les données SIRENE pour affichage
+        setSireneData({
+          raisonSociale: result.companyName,
+          adresse: result.adresse,
+          activite: result.legalForm,
+          siret: artisan.siret
+        });
+        
         await updateSiretVerification(artisan.userId, true, {
           companyName: result.companyName || '',
           legalForm: result.legalForm || ''
@@ -77,34 +150,66 @@ export default function VerificationPage() {
           localStorage.removeItem(`artisan_${user.uid}`);
         }
         setSiretStatus('success');
-        await loadArtisan();
+        // Mise à jour locale de l'état sans recharger Firestore
+        setArtisan(prev => prev ? {
+          ...prev,
+          siretVerified: true,
+          raisonSociale: result.companyName || prev.raisonSociale,
+          // formeJuridique est de type FormeJuridique, on doit caster
+          formeJuridique: (result.legalForm || prev.formeJuridique) as any
+        } as Artisan : null);
       } else {
+        console.error('❌ [Page] Vérification échouée:', result.error);
         setSiretStatus('error');
         setSiretError(result.error || 'SIRET invalide');
       }
     } catch (error) {
-      console.error('Erreur vérification SIRET:', error);
+      console.error('❌ [Page] Erreur vérification SIRET:', error);
       setSiretStatus('error');
       setSiretError('Erreur technique');
     }
   };
 
-  if (loading) {
+  // Afficher un skeleton si chargement ET pas de données en cache
+  if (loading && !artisan) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="mb-8 animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </div>
+          <div className="space-y-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!artisan) {
-    return null;
+  // Si pas de données après chargement, rediriger ou afficher erreur
+  if (!artisan && !loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Impossible de charger les données</p>
+          <button
+            onClick={() => router.push('/artisan/dashboard')}
+            className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg hover:bg-[#E56100]"
+          >
+            Retour au tableau de bord
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  const siretVerified = artisan.siretVerified === true;
+  const siretVerified = artisan?.siretVerified === true;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -156,19 +261,23 @@ export default function VerificationPage() {
               )}
             </div>
 
-            {!siretVerified && (
+            {!siretVerified && artisan && (
               <div>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
                   <p className="text-sm text-blue-700 mb-2">
                     <strong>SIRET actuel :</strong> {artisan.siret}
                   </p>
-                  <p className="text-sm text-blue-700 mb-2">
-                    <strong>Vérifications effectuées :</strong>
+                  <p className="text-sm text-blue-700 mb-3">
+                    <strong>Raison sociale déclarée :</strong> {artisan.raisonSociale}
+                  </p>
+                  <p className="text-sm text-blue-700 font-semibold mb-2">
+                    Vérifications effectuées :
                   </p>
                   <ul className="text-sm text-blue-700 list-disc list-inside ml-2 space-y-1">
                     <li>Format valide (14 chiffres)</li>
-                    <li>Statut de l'entreprise (Active/Inactive)</li>
+                    <li>Statut de l'entreprise</li>
                     <li>Informations légales de l'entreprise</li>
+                    <li>Adéquation raison sociale / SIRET</li>
                   </ul>
                 </div>
 
@@ -183,10 +292,30 @@ export default function VerificationPage() {
 
                 {siretStatus === 'success' && (
                   <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
-                    <p className="text-sm text-green-700 font-semibold">✅ SIRET vérifié avec succès !</p>
-                    <p className="text-xs text-green-600 mt-1">
+                    <p className="text-sm text-green-700 font-semibold mb-3">✅ SIRET vérifié avec succès !</p>
+                    <p className="text-xs text-green-600 mb-3">
                       Votre entreprise est active dans la base SIRENE.
                     </p>
+                    
+                    {sireneData && (
+                      <div className="mt-3 pt-3 border-t border-green-200">
+                        <p className="text-xs font-semibold text-green-800 mb-2">📊 Informations retournées par SIRENE :</p>
+                        <div className="space-y-1">
+                          <p className="text-xs text-green-700">
+                            <strong>SIRET :</strong> {sireneData.siret}
+                          </p>
+                          <p className="text-xs text-green-700">
+                            <strong>Raison sociale :</strong> {sireneData.raisonSociale || 'Non renseigné'}
+                          </p>
+                          <p className="text-xs text-green-700">
+                            <strong>Adresse :</strong> {sireneData.adresse || 'Non renseigné'}
+                          </p>
+                          <p className="text-xs text-green-700">
+                            <strong>Activité (APE) :</strong> {sireneData.activite || 'Non renseigné'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

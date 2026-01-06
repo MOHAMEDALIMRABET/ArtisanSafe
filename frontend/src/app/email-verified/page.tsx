@@ -1,36 +1,84 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase/config';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { auth, db } from '@/lib/firebase/config';
+import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { Logo } from '@/components/ui';
 import Link from 'next/link';
 
 export default function EmailVerifiedPage() {
   const router = useRouter();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const searchParams = useSearchParams();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'expired'>('loading');
   const [message, setMessage] = useState('Vérification de votre email en cours...');
 
   useEffect(() => {
     const checkEmailVerification = async () => {
       try {
+        const token = searchParams.get('token');
+        const uid = searchParams.get('uid');
+
+        // Validation du token personnalisé (si présent)
+        if (token && uid) {
+          const userRef = doc(db, 'users', uid);
+          const userDoc = await getDoc(userRef);
+
+          if (!userDoc.exists()) {
+            setStatus('error');
+            setMessage('Utilisateur introuvable.');
+            return;
+          }
+
+          const userData = userDoc.data();
+          
+          // Vérifier si le token correspond
+          if (userData.verificationToken !== token) {
+            setStatus('error');
+            setMessage('Lien de vérification invalide.');
+            return;
+          }
+
+          // Vérifier l'expiration (1 heure)
+          const expiresAt = userData.verificationTokenExpires?.toDate();
+          if (!expiresAt || expiresAt < new Date()) {
+            setStatus('expired');
+            setMessage('Ce lien de vérification a expiré (validité : 1 heure). Veuillez demander un nouveau lien.');
+            return;
+          }
+
+          // Token valide → Supprimer le token et marquer comme vérifié
+          await updateDoc(userRef, {
+            verificationToken: null,
+            verificationTokenExpires: null,
+            emailVerified: true,
+            emailVerifiedDate: Timestamp.now()
+          });
+
+          setStatus('success');
+          setMessage('✅ Votre email a été vérifié avec succès ! Redirection dans 3 secondes...');
+          
+          setTimeout(() => {
+            router.push('/connexion');
+          }, 3000);
+          return;
+        }
+
+        // Ancienne méthode (Firebase standard)
         const user = auth.currentUser;
 
         if (!user) {
-          // L'utilisateur n'est pas connecté après avoir cliqué sur le lien
           setStatus('success');
           setMessage('Votre email a été vérifié avec succès ! Veuillez vous reconnecter pour accéder à votre compte.');
           return;
         }
 
-        // Recharger les données utilisateur pour obtenir le statut à jour
         await user.reload();
 
         if (user.emailVerified) {
           setStatus('success');
           setMessage('Votre email a été vérifié avec succès !');
 
-          // Redirection automatique après 3 secondes
           setTimeout(() => {
             router.push('/dashboard');
           }, 3000);
@@ -46,7 +94,7 @@ export default function EmailVerifiedPage() {
     };
 
     checkEmailVerification();
-  }, [router]);
+  }, [router, searchParams]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] flex items-center justify-center p-4">
@@ -67,10 +115,16 @@ export default function EmailVerifiedPage() {
               </svg>
             </div>
           )}
-          {status === 'error' && (
-            <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
-              <svg className="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          {(status === 'error' || status === 'expired') && (
+            <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${
+              status === 'expired' ? 'bg-yellow-100' : 'bg-red-100'
+            }`}>
+              <svg className={`w-12 h-12 ${status === 'expired' ? 'text-yellow-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {status === 'expired' ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                )}
               </svg>
             </div>
           )}
@@ -79,11 +133,13 @@ export default function EmailVerifiedPage() {
         {/* Message */}
         <h1 className={`text-2xl font-bold mb-3 ${
           status === 'success' ? 'text-green-600' : 
+          status === 'expired' ? 'text-yellow-600' :
           status === 'error' ? 'text-red-600' : 
           'text-[#2C3E50]'
         }`}>
           {status === 'loading' && 'Vérification en cours'}
           {status === 'success' && '✅ Email vérifié !'}
+          {status === 'expired' && '⏱️ Lien expiré'}
           {status === 'error' && '❌ Échec de vérification'}
         </h1>
 
@@ -97,6 +153,19 @@ export default function EmailVerifiedPage() {
             <p className="text-sm text-gray-500">
               Redirection automatique vers votre dashboard dans 3 secondes...
             </p>
+          )}
+
+          {status === 'expired' && (
+            <>
+              <p className="text-sm text-yellow-700 bg-yellow-50 p-3 rounded-lg mb-4">
+                ⏱️ Votre lien de vérification a expiré après 1 heure. Pour des raisons de sécurité, les liens d'activation ont une durée de validité limitée.
+              </p>
+              <Link href="/connexion">
+                <button className="w-full bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#E56100] transition">
+                  Se connecter pour renvoyer un email
+                </button>
+              </Link>
+            </>
           )}
 
           {status === 'error' && (

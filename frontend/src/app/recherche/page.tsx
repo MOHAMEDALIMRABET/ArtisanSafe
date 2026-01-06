@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Logo } from '@/components/ui';
 import { Input } from '@/components/ui/Input';
+import { METIERS_AVEC_ICONES } from '@/lib/constants/metiers';
+import { authService } from '@/lib/auth-service';
+import { getUserById } from '@/lib/firebase/user-service';
+import type { Categorie, User } from '@/types/firestore';
 
-type Categorie = 'plomberie' | 'electricite' | 'menuiserie' | 'maconnerie' | 'peinture' | 'autre';
 type Urgence = 'faible' | 'normale' | 'urgent';
 
 interface SearchCriteria {
@@ -24,17 +27,18 @@ interface SearchCriteria {
   description: string;
 }
 
-const categories: { value: Categorie; label: string; icon: string }[] = [
-  { value: 'plomberie', label: 'Plomberie', icon: '🔧' },
-  { value: 'electricite', label: 'Électricité', icon: '⚡' },
-  { value: 'menuiserie', label: 'Menuiserie', icon: '🪵' },
-  { value: 'maconnerie', label: 'Maçonnerie', icon: '🧱' },
-  { value: 'peinture', label: 'Peinture', icon: '🎨' },
-  { value: 'autre', label: 'Autre', icon: '🛠️' },
-];
+interface VilleSuggestion {
+  nom: string;
+  codePostal: string;
+  departement: string;
+}
 
 export default function RecherchePage() {
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [dashboardUrl, setDashboardUrl] = useState('/');
+  const [villeSuggestions, setVilleSuggestions] = useState<VilleSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [criteria, setCriteria] = useState<SearchCriteria>({
     categorie: '',
     localisation: {
@@ -50,21 +54,110 @@ export default function RecherchePage() {
     description: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  async function loadUserData() {
+    try {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        const userData = await getUserById(currentUser.uid);
+        if (userData) {
+          setUser(userData);
+          // Définir l'URL du dashboard selon le rôle
+          setDashboardUrl(userData.role === 'artisan' ? '/artisan/dashboard' : '/dashboard');
+        }
+      }
+    } catch (error) {
+      console.error('Erreur chargement utilisateur:', error);
+    }
+  }
+
+  // Recherche de villes avec autocomplétion
+  async function searchVilles(query: string) {
+    if (query.length < 2) {
+      setVilleSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,codesPostaux,codeDepartement&boost=population&limit=10`
+      );
+      
+      if (!response.ok) return;
+      
+      const data = await response.json();
+      const suggestions: VilleSuggestion[] = data.flatMap((commune: any) => 
+        commune.codesPostaux.map((cp: string) => ({
+          nom: commune.nom,
+          codePostal: cp,
+          departement: commune.codeDepartement
+        }))
+      );
+      
+      setVilleSuggestions(suggestions);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Erreur recherche villes:', error);
+    }
+  }
+
+  function selectVille(suggestion: VilleSuggestion) {
+    setCriteria({
+      ...criteria,
+      localisation: {
+        ...criteria.localisation,
+        ville: suggestion.nom,
+        codePostal: suggestion.codePostal
+      }
+    });
+    setShowSuggestions(false);
+    setVilleSuggestions([]);
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('🔍 Soumission du formulaire de recherche');
+    console.log('Critères:', criteria);
     
     // Validation basique
     if (!criteria.categorie) {
+      console.error('❌ Catégorie manquante');
       alert('Veuillez sélectionner une catégorie');
       return;
     }
     if (!criteria.localisation.ville || !criteria.localisation.codePostal) {
+      console.error('❌ Localisation manquante');
       alert('Veuillez renseigner votre localisation');
       return;
     }
     if (criteria.datesSouhaitees.dates[0] === '') {
+      console.error('❌ Date manquante');
       alert('Veuillez sélectionner au moins une date');
       return;
+    }
+
+    console.log('✅ Validation passée');
+
+    // Obtenir les coordonnées GPS de la ville (pour meilleure précision)
+    let coordonneesGPS = null;
+    try {
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(criteria.localisation.ville)}&codePostal=${criteria.localisation.codePostal}&fields=centre&limit=1`
+      );
+      const data = await response.json();
+      if (data.length > 0 && data[0].centre) {
+        coordonneesGPS = {
+          latitude: data[0].centre.coordinates[1],
+          longitude: data[0].centre.coordinates[0]
+        };
+      }
+    } catch (error) {
+      console.warn('Impossible de géocoder la ville:', error);
     }
 
     // Encoder les critères et rediriger vers la page résultats
@@ -78,6 +171,13 @@ export default function RecherchePage() {
       urgence: criteria.urgence,
     });
 
+    // Ajouter coordonnées GPS si disponibles
+    if (coordonneesGPS) {
+      searchParams.append('lat', coordonneesGPS.latitude.toString());
+      searchParams.append('lon', coordonneesGPS.longitude.toString());
+    }
+
+    console.log('🚀 Redirection vers:', `/resultats?${searchParams.toString()}`);
     router.push(`/resultats?${searchParams.toString()}`);
   };
 
@@ -120,12 +220,34 @@ export default function RecherchePage() {
     <div className="min-h-screen bg-[#F8F9FA]">
       {/* Header */}
       <header className="bg-[#2C3E50] text-white py-6 shadow-lg">
-        <div className="container mx-auto px-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Trouvez votre artisan</h1>
-            <p className="text-[#95A5A6] mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push(dashboardUrl)}
+                className="text-white hover:text-[#FF6B00] transition-colors"
+                title="Retour au dashboard"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold">Trouvez votre artisan</h1>
+                <p className="text-[#95A5A6] mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
+              </div>
+            </div>
+            <Logo size="md" href={dashboardUrl} />
           </div>
-          <Logo size="md" href="/" />
+          
+          {/* Message de bienvenue */}
+          {user && (
+            <div className="bg-[#1A3A5C] rounded-lg px-4 py-3 mt-4">
+              <p className="text-white">
+                👋 Bienvenue <span className="font-semibold text-[#FF6B00]">{user.prenom} {user.nom}</span>
+              </p>
+            </div>
+          )}
         </div>
       </header>
 
@@ -138,24 +260,28 @@ export default function RecherchePage() {
             <h2 className="text-2xl font-bold text-[#2C3E50] mb-4">
               1. Quel type de travaux ?
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {categories.map((cat) => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => setCriteria({ ...criteria, categorie: cat.value })}
-                  className={`
-                    p-4 rounded-lg border-2 transition-all
-                    ${criteria.categorie === cat.value
-                      ? 'border-[#FF6B00] bg-[#FF6B00] text-white'
-                      : 'border-[#E9ECEF] hover:border-[#FF6B00] text-[#2C3E50]'
-                    }
-                  `}
-                >
-                  <div className="text-3xl mb-2">{cat.icon}</div>
-                  <div className="font-semibold">{cat.label}</div>
-                </button>
-              ))}
+            <div className="relative">
+              <label className="block text-sm font-medium text-[#2C3E50] mb-2">
+                Sélectionnez le type de travaux
+              </label>
+              <select
+                value={criteria.categorie}
+                onChange={(e) => setCriteria({ ...criteria, categorie: e.target.value as any })}
+                required
+                className="w-full px-4 py-3 border-2 border-[#E9ECEF] rounded-lg text-[#2C3E50] bg-white focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00] focus:ring-opacity-20 transition-all appearance-none cursor-pointer"
+              >
+                <option value="">-- Choisissez un métier --</option>
+                {METIERS_AVEC_ICONES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.icon} {cat.label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 pt-7 text-[#6C757D]">
+                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
             </div>
           </section>
 
@@ -165,18 +291,50 @@ export default function RecherchePage() {
               2. Où se situe le chantier ?
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Ville"
-                value={criteria.localisation.ville}
-                onChange={(e) =>
-                  setCriteria({
-                    ...criteria,
-                    localisation: { ...criteria.localisation, ville: e.target.value },
-                  })
-                }
-                placeholder="Paris, Lyon, Marseille..."
-                required
-              />
+              {/* Champ Ville avec autocomplétion */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-[#2C3E50] mb-2">
+                  Ville *
+                </label>
+                <input
+                  type="text"
+                  value={criteria.localisation.ville}
+                  onChange={(e) => {
+                    setCriteria({
+                      ...criteria,
+                      localisation: { ...criteria.localisation, ville: e.target.value },
+                    });
+                    searchVilles(e.target.value);
+                  }}
+                  onFocus={() => {
+                    if (villeSuggestions.length > 0) setShowSuggestions(true);
+                  }}
+                  placeholder="Paris, Lyon, Marseille..."
+                  required
+                  className="w-full px-4 py-3 border-2 border-[#E9ECEF] rounded-lg text-[#2C3E50] bg-white focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00] focus:ring-opacity-20 transition-all"
+                />
+                
+                {/* Liste des suggestions */}
+                {showSuggestions && villeSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border-2 border-[#FF6B00] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {villeSuggestions.map((suggestion, index) => (
+                      <button
+                        key={`${suggestion.nom}-${suggestion.codePostal}-${index}`}
+                        type="button"
+                        onClick={() => selectVille(suggestion)}
+                        className="w-full text-left px-4 py-3 hover:bg-[#FFF3E0] transition-colors border-b border-[#E9ECEF] last:border-b-0"
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-[#2C3E50]">{suggestion.nom}</span>
+                          <span className="text-sm text-[#6C757D]">{suggestion.codePostal}</span>
+                        </div>
+                        <span className="text-xs text-[#95A5A6]">Dépt. {suggestion.departement}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Input
                 label="Code postal"
                 value={criteria.localisation.codePostal}
@@ -211,95 +369,87 @@ export default function RecherchePage() {
               3. Quand souhaitez-vous réaliser les travaux ?
             </h2>
             
-            {/* Toggle flexibilité */}
-            <div className="mb-4 p-4 bg-[#FFF3E0] border-l-4 border-[#FF6B00] rounded">
-              <label className="flex items-center cursor-pointer">
+            {/* Calendrier et flexibilité côte à côte */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Calendrier */}
+              <div>
+                <label className="block text-sm font-medium text-[#2C3E50] mb-2">
+                  Date souhaitée *
+                </label>
                 <input
-                  type="checkbox"
-                  checked={criteria.datesSouhaitees.flexible}
-                  onChange={(e) =>
-                    setCriteria({
-                      ...criteria,
-                      datesSouhaitees: {
-                        ...criteria.datesSouhaitees,
-                        flexible: e.target.checked,
-                        flexibiliteDays: e.target.checked ? 3 : undefined,
-                      },
-                    })
-                  }
-                  className="w-5 h-5 text-[#FF6B00] rounded focus:ring-[#FF6B00]"
+                  type="date"
+                  value={criteria.datesSouhaitees.dates[0]}
+                  onChange={(e) => updateDate(0, e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                  className="w-full px-4 py-3 border-2 border-[#E9ECEF] rounded-lg text-[#2C3E50] bg-white focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00] focus:ring-opacity-20 transition-all"
                 />
-                <span className="ml-3 text-[#2C3E50] font-semibold">
-                  Mes dates sont flexibles
-                </span>
-                <span className="ml-2 text-sm text-[#6C757D]">
-                  (Augmente vos chances de trouver un artisan disponible !)
-                </span>
-              </label>
+              </div>
 
-              {criteria.datesSouhaitees.flexible && (
-                <div className="mt-3">
-                  <label className="block text-sm text-[#2C3E50] mb-2">
-                    Flexibilité : ± {criteria.datesSouhaitees.flexibiliteDays} jours
-                  </label>
+              {/* Toggle flexibilité */}
+              <div className="border border-[#E9ECEF] bg-gradient-to-br from-white to-[#FAFBFC] rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                <label className="flex items-start cursor-pointer group">
                   <input
-                    type="range"
-                    min="1"
-                    max="14"
-                    value={criteria.datesSouhaitees.flexibiliteDays || 3}
+                    type="checkbox"
+                    checked={criteria.datesSouhaitees.flexible}
                     onChange={(e) =>
                       setCriteria({
                         ...criteria,
                         datesSouhaitees: {
                           ...criteria.datesSouhaitees,
-                          flexibiliteDays: parseInt(e.target.value),
+                          flexible: e.target.checked,
+                          flexibiliteDays: e.target.checked ? 3 : undefined,
                         },
                       })
                     }
-                    className="w-full accent-[#FF6B00]"
+                    className="w-4 h-4 text-[#FF6B00] rounded border-[#E9ECEF] focus:ring-2 focus:ring-[#FF6B00] focus:ring-opacity-20 mt-0.5 flex-shrink-0 cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-[#6C757D] mt-1">
-                    <span>1 jour</span>
-                    <span>14 jours</span>
+                  <div className="ml-3">
+                    <span className="text-[#2C3E50] font-semibold text-base block group-hover:text-[#FF6B00] transition-colors">
+                      Mes dates sont flexibles
+                    </span>
+                    <span className="text-xs text-[#6C757D] mt-1 block leading-relaxed">
+                      Augmente vos chances de trouver un artisan disponible
+                    </span>
                   </div>
-                </div>
-              )}
-            </div>
+                </label>
 
-            {/* Sélection de dates */}
-            <div className="space-y-3">
-              {criteria.datesSouhaitees.dates.map((date, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    type="date"
-                    label={index === 0 ? 'Date souhaitée' : `Alternative ${index}`}
-                    value={date}
-                    onChange={(e) => updateDate(index, e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    required={index === 0}
-                    className="flex-1"
-                  />
-                  {index > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => removeDate(index)}
-                      className="mt-6 px-3 text-[#DC3545] hover:bg-[#DC3545] hover:text-white rounded border border-[#DC3545] transition-colors"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              {criteria.datesSouhaitees.dates.length < 3 && (
-                <button
-                  type="button"
-                  onClick={addDateField}
-                  className="text-[#FF6B00] hover:underline text-sm"
-                >
-                  + Ajouter une date alternative
-                </button>
-              )}
+                {criteria.datesSouhaitees.flexible && (
+                  <div className="mt-4 pt-4 border-t border-[#E9ECEF]">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm text-[#2C3E50] font-medium">
+                        Flexibilité
+                      </label>
+                      <span className="text-sm font-semibold text-[#FF6B00] bg-[#FFF3E0] px-2 py-1 rounded">
+                        ± {criteria.datesSouhaitees.flexibiliteDays} jour{(criteria.datesSouhaitees.flexibiliteDays || 0) > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="14"
+                      value={criteria.datesSouhaitees.flexibiliteDays || 3}
+                      onChange={(e) =>
+                        setCriteria({
+                          ...criteria,
+                          datesSouhaitees: {
+                            ...criteria.datesSouhaitees,
+                            flexibiliteDays: parseInt(e.target.value),
+                          },
+                        })
+                      }
+                      className="w-full h-2 bg-[#E9ECEF] rounded-lg appearance-none cursor-pointer accent-[#FF6B00] slider"
+                      style={{
+                        background: `linear-gradient(to right, #FF6B00 0%, #FF6B00 ${((criteria.datesSouhaitees.flexibiliteDays || 3) - 1) / 13 * 100}%, #E9ECEF ${((criteria.datesSouhaitees.flexibiliteDays || 3) - 1) / 13 * 100}%, #E9ECEF 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-[#6C757D] mt-2">
+                      <span>1 jour</span>
+                      <span>14 jours</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 

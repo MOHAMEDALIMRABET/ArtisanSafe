@@ -247,5 +247,44 @@ service cloud.firestore {
       // Validation statut
       allow write: if request.resource.data.statut in ['pending', 'succeeded', 'failed', 'refunded'];
     }
+    
+    // ============================================
+    // 12. COLLECTION: email_notifications
+    // ============================================
+    // Gestion des emails en attente d'envoi
+    // Accessible uniquement par Cloud Functions et admin
+    
+    match /email_notifications/{emailId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // Créé par les services
+      allow update: if false; // Uniquement Cloud Function
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // 13. COLLECTION: scheduled_deletions
+    // ============================================
+    // Suppressions de compte programmées
+    // Accessible uniquement par admin
+    
+    match /scheduled_deletions/{userId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // 14. COLLECTION: deleted_accounts
+    // ============================================
+    // Archives des comptes supprimés
+    // Accessible uniquement par admin en lecture seule
+    
+    match /deleted_accounts/{userId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // Créé lors de la suppression
+      allow update: if false; // Pas de modification après création
+      allow delete: if isAdmin();
+    }
   }
 }

@@ -6,39 +6,14 @@ import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId, updateArtisan } from '@/lib/firebase/artisan-service';
 import { Button, Input, Logo } from '@/components/ui';
+import { METIERS_MAP, METIERS_DISPONIBLES } from '@/lib/constants/metiers';
 import type { Categorie, Artisan, ZoneIntervention } from '@/types/firestore';
 
-// Mapping métiers : valeur technique -> label affichage
-const METIERS_MAP: Record<Categorie, string> = {
-  'plomberie': 'Plomberie',
-  'electricite': 'Électricité',
-  'menuiserie': 'Menuiserie',
-  'maconnerie': 'Maçonnerie',
-  'peinture': 'Peinture',
-  'carrelage': 'Carrelage',
-  'toiture': 'Toiture',
-  'chauffage': 'Chauffage',
-  'climatisation': 'Climatisation',
-  'placo': 'Placo',
-  'isolation': 'Isolation',
-  'serrurerie': 'Serrurerie',
-  'autre': 'Autre'
-};
-
-const METIERS_DISPONIBLES: Categorie[] = [
-  'plomberie',
-  'electricite',
-  'menuiserie',
-  'maconnerie',
-  'peinture',
-  'placo',
-  'carrelage',
-  'chauffage',
-  'climatisation',
-  'toiture',
-  'isolation',
-  'serrurerie'
-];
+interface VilleSuggestion {
+  nom: string;
+  codePostal: string;
+  departement: string;
+}
 
 export default function ProfilArtisanPage() {
   const router = useRouter();
@@ -48,11 +23,16 @@ export default function ProfilArtisanPage() {
   const [success, setSuccess] = useState('');
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   
+  // Autocomplétion ville
+  const [villeSuggestions, setVilleSuggestions] = useState<VilleSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
   // Formulaire
   const [siret, setSiret] = useState('');
   const [raisonSociale, setRaisonSociale] = useState('');
   const [metiers, setMetiers] = useState<Categorie[]>([]);
   const [ville, setVille] = useState('');
+  const [codePostal, setCodePostal] = useState('');
   const [rayonKm, setRayonKm] = useState(30);
   const [presentation, setPresentation] = useState('');
 
@@ -97,7 +77,8 @@ export default function ProfilArtisanPage() {
       
       if (artisanData.zonesIntervention && artisanData.zonesIntervention.length > 0) {
         setVille(artisanData.zonesIntervention[0].ville);
-        setRayonKm(artisanData.zonesIntervention[0].rayonKm);
+        setCodePostal(artisanData.zonesIntervention[0].codePostal || '');
+        setRayonKm(artisanData.zonesIntervention[0].rayonKm || artisanData.zonesIntervention[0].rayon || 30);
       }
 
       setIsLoading(false);
@@ -106,6 +87,42 @@ export default function ProfilArtisanPage() {
       setError('Impossible de charger le profil');
       setIsLoading(false);
     }
+  }
+
+  // Recherche de villes via API
+  async function searchVilles(query: string) {
+    if (query.length < 2) {
+      setVilleSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,codesPostaux,departement&limit=10`
+      );
+      const data = await response.json();
+      
+      const suggestions: VilleSuggestion[] = data.flatMap((commune: any) => 
+        commune.codesPostaux.map((cp: string) => ({
+          nom: commune.nom,
+          codePostal: cp,
+          departement: commune.departement.nom
+        }))
+      );
+      
+      setVilleSuggestions(suggestions);
+    } catch (error) {
+      console.error('Erreur recherche villes:', error);
+      setVilleSuggestions([]);
+    }
+  }
+
+  // Sélection d'une ville
+  function selectVille(suggestion: VilleSuggestion) {
+    setVille(suggestion.nom);
+    setCodePostal(suggestion.codePostal);
+    setVilleSuggestions([]);
+    setShowSuggestions(false);
   }
 
   function toggleMetier(metier: Categorie) {
@@ -159,6 +176,7 @@ export default function ProfilArtisanPage() {
     try {
       const zonesIntervention: ZoneIntervention[] = [{
         ville: ville.trim(),
+        codePostal: codePostal.trim(),
         rayonKm,
         departements: [] // À implémenter plus tard
       }];
@@ -208,18 +226,14 @@ export default function ProfilArtisanPage() {
             <Logo size="md" href="/dashboard" />
             
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                {artisan?.badgeVerifie ? (
-                  <span className="flex items-center gap-1 text-green-600 font-medium">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Vérifié
-                  </span>
-                ) : (
-                  <span className="text-orange-600 font-medium">En attente de vérification</span>
-                )}
-              </span>
+              {artisan?.verified && (
+                <span className="flex items-center gap-1 text-green-600 font-medium text-sm">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Profil Vérifié
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -326,14 +340,45 @@ export default function ProfilArtisanPage() {
             <h2 className="text-xl font-bold text-gray-800 mb-4">Zone d'Intervention</h2>
             
             <div className="grid md:grid-cols-2 gap-4">
-              <Input
-                label="Ville principale"
-                type="text"
-                value={ville}
-                onChange={(e) => setVille(e.target.value)}
-                placeholder="Paris"
-                required
-              />
+              {/* Ville principale avec autocomplétion */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ville principale <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={ville}
+                  onChange={(e) => {
+                    setVille(e.target.value);
+                    searchVilles(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  placeholder="Paris, Lyon, Marseille..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                  required
+                />
+                
+                {/* Suggestions de villes */}
+                {showSuggestions && villeSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {villeSuggestions.map((suggestion, index) => (
+                      <button
+                        key={`${suggestion.nom}-${suggestion.codePostal}-${index}`}
+                        type="button"
+                        onClick={() => selectVille(suggestion)}
+                        className="w-full px-4 py-2 text-left hover:bg-orange-50 hover:text-[#FF6B00] transition-colors border-b border-gray-100 last:border-0"
+                      >
+                        <div className="font-medium text-gray-900">{suggestion.nom}</div>
+                        <div className="text-sm text-gray-500">
+                          {suggestion.codePostal} - {suggestion.departement}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -399,22 +444,6 @@ export default function ProfilArtisanPage() {
             </Link>
           </div>
         </form>
-
-        {/* Informations complémentaires */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            <div>
-              <h3 className="font-medium text-blue-900 mb-1">Vérification du profil</h3>
-              <p className="text-sm text-blue-800">
-                Une fois votre profil complété, notre équipe vérifiera vos informations (SIRET, documents).
-                Vous recevrez une notification une fois votre profil validé et vous pourrez recevoir des demandes.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

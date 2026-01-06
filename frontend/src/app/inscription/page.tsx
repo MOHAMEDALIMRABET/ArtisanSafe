@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
+import { checkSiretExists } from '@/lib/firebase/artisan-service';
 import { Button, Input, Card, Logo } from '@/components/ui';
+import { METIERS_MAP, METIERS_DISPONIBLES } from '@/lib/constants/metiers';
 import type { Categorie } from '@/types/firestore';
 
 type UserRole = 'client' | 'artisan';
@@ -95,6 +97,54 @@ export default function InscriptionPage() {
       return;
     }
 
+    // Vérifier l'unicité du SIRET pour les artisans
+    if (role === 'artisan' && siret.trim()) {
+      // 1. Vérifier que le SIRET n'existe pas déjà dans notre base
+      try {
+        const siretExists = await checkSiretExists(siret.trim());
+        if (siretExists) {
+          setError('Ce numéro SIRET est déjà utilisé par un autre artisan. Veuillez vérifier votre saisie.');
+          return;
+        }
+      } catch (error) {
+        console.error('Erreur vérification SIRET:', error);
+        setError('Impossible de vérifier le SIRET. Veuillez réessayer.');
+        return;
+      }
+
+      // 2. Vérifier l'adéquation SIRET + Raison Sociale via API SIRENE publique
+      // ⚠️ Vérification optionnelle - L'artisan pourra compléter la vérification plus tard
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+        console.log('🔍 Tentative de vérification SIRET lors de l\'inscription...');
+        
+        const response = await fetch(`${apiUrl}/sirene/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            siret: siret.trim(),
+            raisonSociale: entreprise.trim()
+          })
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+          console.warn('⚠️ Vérification SIRET échouée à l\'inscription:', result.error);
+          // Ne pas bloquer l'inscription - l'artisan pourra vérifier plus tard
+          console.log('ℹ️ L\'artisan pourra vérifier son SIRET depuis la page de vérification');
+        } else {
+          console.log('✅ SIRET vérifié à l\'inscription:', result.data);
+        }
+      } catch (error) {
+        console.error('⚠️ Erreur vérification SIRENE lors de l\'inscription:', error);
+        // Ne pas bloquer l'inscription en cas d'erreur réseau
+        console.log('ℹ️ Vérification SIRET ignorée - L\'artisan pourra vérifier plus tard');
+      }
+    }
+
     // Formater le téléphone au format international
     const formattedPhone = formatPhoneNumber(telephone);
 
@@ -107,7 +157,6 @@ export default function InscriptionPage() {
           password, 
           firstName: prenom,
           lastName: nom,
-          representantLegal: representantLegal || undefined,
           phone: formattedPhone,
           role: 'client'
         });
@@ -140,24 +189,7 @@ export default function InscriptionPage() {
     }
   };
 
-  // Mapping métiers : valeur technique -> label affichage
-  const METIERS_MAP: Record<Categorie, string> = {
-    'plomberie': 'Plomberie',
-    'electricite': 'Électricité',
-    'menuiserie': 'Menuiserie',
-    'maconnerie': 'Maçonnerie',
-    'peinture': 'Peinture',
-    'carrelage': 'Carrelage',
-    'toiture': 'Toiture',
-    'chauffage': 'Chauffage',
-    'climatisation': 'Climatisation',
-    'placo': 'Placo',
-    'isolation': 'Isolation',
-    'serrurerie': 'Serrurerie',
-    'autre': 'Autre'
-  };
-
-  const metiersDisponibles = Object.keys(METIERS_MAP) as Categorie[];
+  const metiersDisponibles = METIERS_DISPONIBLES;
 
   // Étape 1 : Choix du rôle
   if (!role) {

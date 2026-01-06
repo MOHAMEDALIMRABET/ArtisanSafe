@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { Timestamp } from 'firebase/firestore';
 
-function NouvelleDemande Content() {
+function NouvelleDemandeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();

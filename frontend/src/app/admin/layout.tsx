@@ -39,8 +39,8 @@ export default function AdminLayout({
     }
   };
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await authService.signOut();
     router.push('/admin/login');
   };
 

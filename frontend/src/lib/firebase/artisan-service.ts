@@ -18,6 +18,7 @@ import {
   arrayRemove,
 } from 'firebase/firestore';
 import { db } from './config';
+import { withTimeout } from './firestore-utils';
 import type { 
   Artisan, 
   CreateDocument, 
@@ -46,8 +47,6 @@ export async function createArtisan(
     ...cleanData,
     notation: 0,
     nombreAvis: 0,
-    documentsVerifies: false,
-    badgeVerifie: false,
     disponibilites: artisanData.disponibilites || [],
   } as Artisan;
 
@@ -60,7 +59,9 @@ export async function createArtisan(
  */
 export async function getArtisanByUserId(userId: string): Promise<Artisan | null> {
   const artisanRef = doc(db, COLLECTION_NAME, userId);
-  const artisanSnap = await getDoc(artisanRef);
+  
+  // Ajouter un timeout de 8 secondes
+  const artisanSnap = await withTimeout(getDoc(artisanRef), 8000);
 
   if (!artisanSnap.exists()) {
     return null;
@@ -73,6 +74,29 @@ export async function getArtisanByUserId(userId: string): Promise<Artisan | null
 }
 
 /**
+ * Obtenir les coordonnées géographiques d'une ville via API française
+ */
+async function getCoordinatesFromCity(ville: string, codePostal: string): Promise<{ latitude: number; longitude: number } | null> {
+  try {
+    const response = await fetch(
+      `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(ville)}&codePostal=${codePostal}&fields=centre&limit=1`
+    );
+    const data = await response.json();
+    
+    if (data.length > 0 && data[0].centre) {
+      return {
+        latitude: data[0].centre.coordinates[1],
+        longitude: data[0].centre.coordinates[0]
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Erreur géocodage:', error);
+    return null;
+  }
+}
+
+/**
  * Mettre à jour un profil artisan
  */
 export async function updateArtisan(
@@ -80,6 +104,32 @@ export async function updateArtisan(
   updates: Partial<Artisan>
 ): Promise<void> {
   const artisanRef = doc(db, COLLECTION_NAME, userId);
+  
+  // Si zonesIntervention est mis à jour, enrichir avec coordonnées GPS
+  if (updates.zonesIntervention && updates.zonesIntervention.length > 0) {
+    const enrichedZones: ZoneIntervention[] = [];
+    
+    for (const zone of updates.zonesIntervention) {
+      let enrichedZone = { ...zone };
+      
+      // Si coordonnées GPS manquantes, les récupérer
+      if (!zone.latitude || !zone.longitude) {
+        const coords = await getCoordinatesFromCity(zone.ville, zone.codePostal || '');
+        if (coords) {
+          enrichedZone = {
+            ...enrichedZone,
+            latitude: coords.latitude,
+            longitude: coords.longitude
+          };
+          console.log(`📍 Coordonnées ajoutées pour ${zone.ville}: ${coords.latitude}, ${coords.longitude}`);
+        }
+      }
+      
+      enrichedZones.push(enrichedZone);
+    }
+    
+    updates.zonesIntervention = enrichedZones;
+  }
   
   // Filtrer les valeurs undefined
   const cleanUpdates = Object.fromEntries(
@@ -153,18 +203,6 @@ export async function addDisponibilite(
 }
 
 /**
- * Marquer un artisan comme vérifié
- */
-export async function verifyArtisan(userId: string): Promise<void> {
-  const artisanRef = doc(db, COLLECTION_NAME, userId);
-  await updateDoc(artisanRef, {
-    badgeVerifie: true,
-    documentsVerifies: true,
-    dateVerification: Timestamp.now(),
-  });
-}
-
-/**
  * Mettre à jour la notation d'un artisan
  */
 export async function updateNotation(
@@ -193,7 +231,7 @@ export async function searchArtisansByMetier(metier: Categorie): Promise<Artisan
   const q = query(
     artisansRef,
     where('metiers', 'array-contains', metier),
-    where('badgeVerifie', '==', true),
+    where('verified', '==', true),
     where('emailVerified', '==', true) // Email vérifié OBLIGATOIRE
   );
   const querySnapshot = await getDocs(q);
@@ -211,7 +249,7 @@ export async function getVerifiedArtisans(): Promise<Artisan[]> {
   const artisansRef = collection(db, COLLECTION_NAME);
   const q = query(
     artisansRef,
-    where('badgeVerifie', '==', true),
+    where('verified', '==', true),
     where('emailVerified', '==', true) // Email vérifié OBLIGATOIRE
   );
   const querySnapshot = await getDocs(q);
@@ -229,7 +267,7 @@ export async function getPendingArtisans(): Promise<Artisan[]> {
   const artisansRef = collection(db, COLLECTION_NAME);
   const q = query(
     artisansRef,
-    where('documentsVerifies', '==', false)
+    where('verified', '==', false)
   );
   const querySnapshot = await getDocs(q);
   
@@ -298,6 +336,26 @@ export async function getAllArtisansForAdmin(): Promise<Artisan[]> {
     return await Promise.all(artisansPromises);
   } catch (error) {
     console.error('Erreur récupération artisans:', error);
+    throw error;
+  }
+}
+
+/**
+ * Vérifier si un SIRET existe déjà
+ */
+export async function checkSiretExists(siret: string): Promise<boolean> {
+  try {
+    if (!siret || siret.trim() === '') {
+      return false;
+    }
+
+    const artisansRef = collection(db, COLLECTION_NAME);
+    const q = query(artisansRef, where('siret', '==', siret.trim()));
+    const querySnapshot = await getDocs(q);
+    
+    return !querySnapshot.empty;
+  } catch (error) {
+    console.error('Erreur vérification SIRET:', error);
     throw error;
   }
 }

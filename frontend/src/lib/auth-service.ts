@@ -14,6 +14,36 @@ import { syncEmailVerificationStatus } from './firebase/email-verification-sync'
 import type { User as UserType, Artisan } from '@/types/firestore';
 import { Timestamp } from 'firebase/firestore';
 
+/**
+ * Traduire les erreurs Firebase Auth en français
+ */
+function translateAuthError(error: any): string {
+  const errorCode = error?.code || '';
+  
+  switch (errorCode) {
+    case 'auth/email-already-in-use':
+      return 'Cette adresse email est déjà utilisée par un autre compte. Veuillez vous connecter ou utiliser une autre adresse email.';
+    case 'auth/invalid-email':
+      return 'L\'adresse email n\'est pas valide.';
+    case 'auth/operation-not-allowed':
+      return 'L\'inscription par email/mot de passe n\'est pas activée.';
+    case 'auth/weak-password':
+      return 'Le mot de passe est trop faible. Utilisez au moins 6 caractères.';
+    case 'auth/user-disabled':
+      return 'Ce compte a été désactivé.';
+    case 'auth/user-not-found':
+      return 'Aucun compte ne correspond à cette adresse email.';
+    case 'auth/wrong-password':
+      return 'Mot de passe incorrect.';
+    case 'auth/too-many-requests':
+      return 'Trop de tentatives. Veuillez réessayer plus tard.';
+    case 'auth/network-request-failed':
+      return 'Erreur de connexion. Vérifiez votre connexion internet.';
+    default:
+      return error?.message || 'Une erreur est survenue lors de l\'inscription';
+  }
+}
+
 export interface SignUpData {
   email: string;
   password: string;
@@ -64,7 +94,6 @@ export const authService = {
         email: data.email,
         nom: data.lastName,
         prenom: data.firstName,
-        representantLegal: data.representantLegal,
         telephone: data.phone || '',
         role: 'client',
         statut: 'verifie', // Client vérifié par défaut
@@ -97,9 +126,10 @@ export const authService = {
       }
 
       return user;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing up client:', error);
-      throw error;
+      const errorMessage = translateAuthError(error);
+      throw new Error(errorMessage);
     }
   },
 
@@ -160,8 +190,15 @@ export const authService = {
         disponibilites: [], // À remplir dans l'agenda
         notation: 0,
         nombreAvis: 0,
-        badgeVerifie: false,
-        documentsVerifies: false,
+        
+        // Vérification SIRET
+        siretVerified: false,
+        
+        // Nouveau système de vérification
+        verified: false, // Sera mis à true après vérification admin
+        verificationStatus: 'pending' as const,
+
+        
         statut: 'inactif' as const, // Inactif jusqu'à vérification
       };
 
@@ -183,9 +220,10 @@ export const authService = {
       }
 
       return user;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing up artisan:', error);
-      throw error;
+      const errorMessage = translateAuthError(error);
+      throw new Error(errorMessage);
     }
   },
 
@@ -200,9 +238,10 @@ export const authService = {
       await syncEmailVerificationStatus(userCredential.user.uid);
       
       return userCredential.user;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in:', error);
-      throw error;
+      const errorMessage = translateAuthError(error);
+      throw new Error(errorMessage);
     }
   },
 
@@ -246,8 +285,22 @@ export const authService = {
     }
 
     try {
+      // Générer nouveau token (validité 1h)
+      const verificationToken = Math.random().toString(36).substring(2, 15) + 
+                                Math.random().toString(36).substring(2, 15);
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1);
+
+      // Stocker le token dans Firestore
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        verificationToken,
+        verificationTokenExpires: Timestamp.fromDate(expiresAt)
+      });
+
+      const verificationUrl = `${window.location.origin}/email-verified?token=${verificationToken}&uid=${user.uid}`;
       await sendEmailVerification(user, {
-        url: `${window.location.origin}/email-verified`,
+        url: verificationUrl,
         handleCodeInApp: false,
       });
       console.log('✅ Email de vérification renvoyé');

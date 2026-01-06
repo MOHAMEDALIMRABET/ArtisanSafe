@@ -168,13 +168,16 @@ export default function DashboardPage() {
         )}
 
         {/* En-tête */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">
-            Tableau de bord {user?.role === 'artisan' ? 'Artisan' : 'Client'}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h1 className="text-3xl font-bold text-[#2C3E50] mb-3">
+            Tableau de bord Client
           </h1>
-          <p className="text-gray-600">
-            Bienvenue {user?.prenom} {user?.nom}
-          </p>
+          <div className="flex items-center gap-2 text-lg">
+            <span className="text-2xl">👋</span>
+            <p className="text-gray-700">
+              Bienvenue <span className="font-semibold text-[#FF6B00]">{user?.prenom} {user?.nom}</span>
+            </p>
+          </div>
         </div>
 
         {/* Dashboard Artisan */}

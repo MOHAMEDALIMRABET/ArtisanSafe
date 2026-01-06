@@ -1,8 +1,79 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Button, Logo } from '@/components/ui';
+import { authService } from '@/lib/auth-service';
+import { getUserById } from '@/lib/firebase/user-service';
+import type { User, Categorie } from '@/types/firestore';
 
 export default function Home() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // État du formulaire de recherche
+  const [searchForm, setSearchForm] = useState({
+    metier: 'plomberie' as Categorie,
+    ville: '',
+    date: new Date().toISOString().slice(0, 10)
+  });
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  async function checkAuthStatus() {
+    try {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        const userData = await getUserById(currentUser.uid);
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Erreur vérification authentification:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleSearch() {
+    // Validation
+    if (!searchForm.ville.trim()) {
+      alert('Veuillez entrer une ville');
+      return;
+    }
+
+    if (!searchForm.date) {
+      alert('Veuillez sélectionner une date');
+      return;
+    }
+
+    // Construire l'URL avec les paramètres de recherche
+    const params = new URLSearchParams({
+      categorie: searchForm.metier,
+      ville: searchForm.ville.trim(),
+      codePostal: '', // À améliorer avec API de géocodage
+      dates: JSON.stringify([searchForm.date]),
+      flexible: 'true',
+      flexibiliteDays: '3',
+      urgence: 'normale'
+    });
+
+    // Rediriger vers la page de résultats
+    router.push(`/resultats?${params.toString()}`);
+  }
+
+  function handleDashboardRedirect() {
+    if (user?.role === 'artisan') {
+      router.push('/artisan/dashboard');
+    } else {
+      router.push('/dashboard');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] via-[#3D5A73] to-[#2C3E50]">
       {/* Navigation Header */}
@@ -25,18 +96,40 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Boutons Connexion/Inscription */}
+            {/* Boutons Connexion/Inscription OU Dashboard si connecté */}
             <div className="flex items-center gap-3">
-              <Link href="/connexion">
-                <button className="text-[#2C3E50] hover:text-[#FF6B00] font-medium px-4 py-2 rounded-lg transition-colors">
-                  Connexion
-                </button>
-              </Link>
-              <Link href="/inscription">
-                <button className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg">
-                  Inscription
-                </button>
-              </Link>
+              {!isLoading && (
+                <>
+                  {user ? (
+                    // Utilisateur connecté : afficher message + bouton dashboard
+                    <div className="flex items-center gap-3">
+                      <span className="text-[#2C3E50] font-medium hidden md:block">
+                        👋 {user.prenom} {user.nom}
+                      </span>
+                      <button
+                        onClick={handleDashboardRedirect}
+                        className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        Mon espace
+                      </button>
+                    </div>
+                  ) : (
+                    // Utilisateur non connecté : boutons Connexion/Inscription
+                    <>
+                      <Link href="/connexion">
+                        <button className="text-[#2C3E50] hover:text-[#FF6B00] font-medium px-4 py-2 rounded-lg transition-colors">
+                          Connexion
+                        </button>
+                      </Link>
+                      <Link href="/inscription">
+                        <button className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg">
+                          Inscription
+                        </button>
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -80,23 +173,33 @@ export default function Home() {
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <select className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer">
-                      <option>Plomberie</option>
-                      <option>Électricité</option>
-                      <option>Menuiserie</option>
-                      <option>Maçonnerie</option>
-                      <option>Peinture</option>
-                      <option>Chauffage</option>
+                    <select 
+                      className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer"
+                      value={searchForm.metier}
+                      onChange={(e) => setSearchForm({...searchForm, metier: e.target.value as Categorie})}
+                    >
+                      <option value="plomberie">Plomberie</option>
+                      <option value="electricite">Électricité</option>
+                      <option value="peinture">Peinture</option>
+                      <option value="menuiserie">Menuiserie</option>
+                      <option value="maconnerie">Maçonnerie</option>
+                      <option value="placo">Placo</option>
+                      <option value="carrelage">Carrelage</option>
+                      <option value="chauffage">Chauffage</option>
+                      <option value="climatisation">Climatisation</option>
+                      <option value="toiture">Toiture</option>
+                      <option value="isolation">Isolation</option>
+                      <option value="serrurerie">Serrurerie</option>
+                      <option value="renovation">Rénovation</option>
+                      <option value="autre">Autre</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Ville */}
                 <div className="relative">
-                  <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
-                    Localisation
-                  </label>
-                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-4 py-3 hover:bg-[#E9ECEF] transition-colors">
+                  <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Localisation</label>
+                  <div className={`flex items-center rounded-xl px-4 py-3 transition-colors ${searchForm.ville.trim() === '' ? 'bg-[#6C757D]/30' : 'bg-[#F8F9FA] hover:bg-[#E9ECEF]'}`}>
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -104,7 +207,9 @@ export default function Home() {
                     <input 
                       type="text" 
                       placeholder="Paris, Lyon..." 
-                      className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium placeholder-[#95A5A6]"
+                      className={`bg-transparent border-none outline-none w-full font-medium placeholder-[#95A5A6] ${searchForm.ville.trim() === '' ? 'text-[#6C757D]' : 'text-[#2C3E50]'}`}
+                      value={searchForm.ville}
+                      onChange={(e) => setSearchForm({...searchForm, ville: e.target.value})}
                     />
                   </div>
                 </div>
@@ -119,15 +224,21 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <input 
-                      type="text" 
+                      type="date" 
                       placeholder="Dès que possible" 
                       className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium placeholder-[#95A5A6]"
+                      value={searchForm.date}
+                      onChange={(e) => setSearchForm({...searchForm, date: e.target.value})}
                     />
                   </div>
                 </div>
 
                 {/* Bouton Rechercher */}
-                <button className="bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 mt-6 md:mt-0">
+                <button 
+                  onClick={handleSearch}
+                  className={`bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 mt-6 md:mt-0 ${searchForm.ville.trim() === '' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={searchForm.ville.trim() === ''}
+                >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>

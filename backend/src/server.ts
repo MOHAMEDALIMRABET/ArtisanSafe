@@ -7,6 +7,10 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import smsRoutes from './routes/sms.routes';
 import documentsRoutes from './routes/documents.routes';
+import emailRoutes from './routes/email.routes';
+import authRoutes from './routes/auth.routes';
+import sireneRoutes from './routes/sirene.routes';
+import { startEmailWatcher } from './services/email-service';
 
 const app: Express = express();
 const port = process.env.PORT || 5000;
@@ -31,6 +35,15 @@ app.use('/api/v1/sms', smsRoutes);
 // Routes Documents
 app.use('/api/v1/documents', documentsRoutes);
 
+// Routes Emails
+app.use('/api/v1/emails', emailRoutes);
+
+// Routes Auth (gestion utilisateurs Firebase)
+app.use('/api/v1/auth', authRoutes);
+
+// Routes SIRENE (vérification SIRET)
+app.use('/api/v1/sirene', sireneRoutes);
+
 // Gestion des erreurs 404
 app.use((req: Request, res: Response) => {
   res.status(404).json({
@@ -41,9 +54,22 @@ app.use((req: Request, res: Response) => {
   });
 });
 
-app.listen(port, () => {
+// Démarrer le serveur
+app.listen(port, async () => {
   console.log(`🚀 Serveur démarré sur http://localhost:${port}`);
   console.log(`📍 API disponible sur http://localhost:${port}/api/v1`);
+  console.log(`🔧 MODE BYPASS SIRENE: ${process.env.SIRENE_BYPASS_VERIFICATION === 'true' ? '✅ ACTIVÉ' : '❌ DÉSACTIVÉ'}`);
+  
+  // Démarrer la surveillance des emails APRÈS l'initialisation complète
+  if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+    // Attendre 2 secondes pour s'assurer que Firebase est initialisé
+    setTimeout(() => {
+      startEmailWatcher(5).catch(console.error);
+      console.log('✅ Service email configuré - Envoi automatique activé');
+    }, 2000);
+  } else {
+    console.log('⚠️ Configuration SMTP manquante - Envoi d\'emails désactivé');
+  }
 });
 
 export default app;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, dateFnsLocalizer, Views, SlotInfo, Navigate, ToolbarProps } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, addDays, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, eachWeekOfInterval, addMonths, subMonths } from 'date-fns';
@@ -8,8 +8,7 @@ import { fr } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
-import { disponibiliteService } from '@/lib/firebase/disponibilite-service';
-import { getContratsByArtisan } from '@/lib/firebase/contrat-service';
+import { useAgendaData, invalidateAgendaCache } from '@/hooks/useAgendaData';
 import type { DisponibiliteSlot, Artisan } from '@/types/firestore';
 import { Timestamp } from 'firebase/firestore';
 
@@ -40,7 +39,6 @@ interface CalendarEvent {
 export default function AgendaPage() {
   const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
   const [artisanId, setArtisanId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showRangeModal, setShowRangeModal] = useState(false);
@@ -60,9 +58,20 @@ export default function AgendaPage() {
   const [searchStartDate, setSearchStartDate] = useState('');
   const [searchEndDate, setSearchEndDate] = useState('');
 
+  // ⚡ Hook optimisé avec cache
+  const { disponibilites, contrats, loading: dataLoading, error } = useAgendaData(artisanId);
+  const [initialLoading, setInitialLoading] = useState(true);
+
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Effet pour générer les événements du calendrier
+  useEffect(() => {
+    if (!disponibilites && !contrats) return;
+    
+    generateCalendarEvents();
+  }, [disponibilites, contrats]);
 
   // Effet pour appliquer automatiquement le filtrage par dates
   useEffect(() => {
@@ -78,46 +87,33 @@ export default function AgendaPage() {
       return;
     }
     
-    // TODO: Charger les disponibilités depuis Firestore
-    loadDisponibilites();
+    await loadArtisanProfile();
   };
 
-  const loadDisponibilites = async () => {
+  const loadArtisanProfile = async () => {
     try {
       const currentUser = authService.getCurrentUser();
-      if (!currentUser) {
-        console.log('Aucun utilisateur connecté');
-        return;
-      }
+      if (!currentUser) return;
 
-      console.log('Chargement du profil artisan pour userId:', currentUser.uid);
-
-      // Charger les données artisan
       const artisanData = await getArtisanByUserId(currentUser.uid);
       
-      console.log('Données artisan récupérées:', artisanData);
-
-      if (!artisanData) {
-        console.error('Artisan non trouvé dans Firestore - Le profil n\'existe pas encore');
-        alert('Vous devez d\'abord compléter votre profil artisan avant d\'accéder à l\'agenda.');
+      if (!artisanData || !artisanData.id) {
+        alert('Vous devez d\'abord compléter votre profil artisan.');
         router.push('/artisan/profil');
-        setLoading(false);
-        return;
-      }
-
-      if (!artisanData.id) {
-        console.error('L\'objet artisan n\'a pas d\'ID:', artisanData);
-        setLoading(false);
         return;
       }
 
       setArtisanId(artisanData.id);
+    } catch (error) {
+      console.error('Erreur chargement profil:', error);
+    } finally {
+      setInitialLoading(false);
+    }
+  };
 
-      // Charger les disponibilités depuis Firestore (journées complètes uniquement)
-      const disponibilites = await disponibiliteService.getDisponibilites(artisanData.id);
-      
-      // Charger les contrats signés de l'artisan
-      const contrats = await getContratsByArtisan(artisanData.id);
+  const generateCalendarEvents = () => {
+    console.log('⚡ Génération des événements calendrier...');
+    const startTime = Date.now();
       
       // Convertir DisponibiliteSlot[] en CalendarEvent[] (journées complètes)
       const calendarEvents: CalendarEvent[] = disponibilites.map(dispo => {
@@ -156,18 +152,24 @@ export default function AgendaPage() {
       });
       
       // Ajouter les contrats signés comme indisponibilités automatiques
+      // ⚡ OPTIMISATION: Limiter aux 6 prochains mois pour éviter surcharge
+      const sixMonthsFromNow = addMonths(new Date(), 6);
       const contratEvents: CalendarEvent[] = contrats
         .filter(contrat => 
           contrat.statut === 'signe' && 
           contrat.dateDebut && 
-          contrat.dateFin
+          contrat.dateFin &&
+          contrat.dateDebut.toDate() <= sixMonthsFromNow // Limite temporelle
         )
         .flatMap(contrat => {
           const dateDebut = contrat.dateDebut!.toDate();
           const dateFin = contrat.dateFin!.toDate();
           
+          // ⚡ OPTIMISATION: Limiter à 100 jours par contrat maximum
+          const actualDateFin = new Date(Math.min(dateFin.getTime(), addDays(dateDebut, 100).getTime()));
+          
           // Créer un événement pour chaque jour du contrat
-          const daysInRange = eachDayOfInterval({ start: dateDebut, end: dateFin });
+          const daysInRange = eachDayOfInterval({ start: dateDebut, end: actualDateFin });
           
           return daysInRange.map((day, index) => {
             const eventStart = new Date(day);
@@ -188,13 +190,12 @@ export default function AgendaPage() {
           });
         });
       
-      // Combiner les événements de disponibilités et les contrats
-      setEvents([...calendarEvents, ...contratEvents]);
-      setLoading(false);
-    } catch (error) {
-      console.error('Erreur chargement disponibilités:', error);
-      setLoading(false);
-    }
+    // Combiner les événements de disponibilités et les contrats
+    const totalEvents = [...calendarEvents, ...contratEvents];
+    console.log(`✅ Total événements créés: ${totalEvents.length}`);
+    console.log(`⏱️  Temps génération: ${Date.now() - startTime}ms`);
+    
+    setEvents(totalEvents);
   };
 
   const handleSelectSlot = (slotInfo: SlotInfo) => {
@@ -446,6 +447,8 @@ export default function AgendaPage() {
 
     setSaving(true);
     try {
+      const { disponibiliteService } = await import('@/lib/firebase/disponibilite-service');
+      
       // Filtrer les événements de contrat (ne pas les sauvegarder)
       const userEvents = events.filter(event => !event.id.startsWith('contrat_'));
       
@@ -469,6 +472,9 @@ export default function AgendaPage() {
 
       await disponibiliteService.setDisponibilites(artisanId, disponibilites);
       
+      // Invalider le cache après sauvegarde
+      invalidateAgendaCache(artisanId);
+      
       alert('✅ Disponibilités sauvegardées avec succès !');
       router.push('/artisan/dashboard');
     } catch (error) {
@@ -479,12 +485,32 @@ export default function AgendaPage() {
     }
   };
 
+  const loading = initialLoading || dataLoading;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
           <p className="text-gray-600">Chargement de l'agenda...</p>
+          {dataLoading && <p className="text-sm text-gray-500 mt-2">Chargement des données...</p>}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center text-red-600">
+          <p className="text-xl font-bold mb-2">❌ Erreur</p>
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100]"
+          >
+            Réessayer
+          </button>
         </div>
       </div>
     );
