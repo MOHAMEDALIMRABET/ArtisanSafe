@@ -3,34 +3,40 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authService } from '@/lib/auth-service';
+import { useAuth } from '@/hooks/useAuth';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getDemandesForArtisan, removeArtisanFromDemande } from '@/lib/firebase/demande-service';
 import { createNotification } from '@/lib/firebase/notification-service';
+import { getFileMetadata } from '@/lib/firebase/storage-service';
 import { Logo } from '@/components/ui';
 import type { User, Demande } from '@/types/firestore';
 
 export default function ArtisanDemandesPage() {
   const router = useRouter();
+  const { user: authUser, loading: authLoading } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'acceptees' | 'refusees'>('nouvelles');
+  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'devis_envoyes' | 'refusees'>('nouvelles');
   const [refusingDemandeId, setRefusingDemandeId] = useState<string | null>(null);
+  const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
+    if (authLoading) return; // Attendre que l'auth soit chargée
+    
+    if (!authUser) {
+      router.push('/connexion');
+      return;
+    }
+
     loadData();
-  }, []);
+  }, [authUser, authLoading, router]);
 
   async function loadData() {
-    try {
-      const currentUser = authService.getCurrentUser();
-      if (!currentUser) {
-        router.push('/connexion');
-        return;
-      }
+    if (!authUser) return;
 
-      const userData = await getUserById(currentUser.uid);
+    try {
+      const userData = await getUserById(authUser.uid);
       if (!userData || userData.role !== 'artisan') {
         router.push('/dashboard');
         return;
@@ -39,8 +45,30 @@ export default function ArtisanDemandesPage() {
       setUser(userData);
 
       // Charger les demandes pour cet artisan
-      const demandesData = await getDemandesForArtisan(currentUser.uid);
+      const demandesData = await getDemandesForArtisan(authUser.uid);
+      console.log('📋 Demandes récupérées:', demandesData.map(d => ({
+        id: d.id,
+        titre: d.titre,
+        photosUrls: d.photosUrls,
+        photos: d.photos,
+      })));
       setDemandes(demandesData);
+      
+      // Charger les métadonnées des photos (noms originaux)
+      const metadata = new Map<string, string>();
+      for (const demande of demandesData) {
+        const photos = demande.photosUrls || demande.photos || [];
+        for (const url of photos) {
+          if (url && url.startsWith('http')) {
+            const meta = await getFileMetadata(url);
+            if (meta?.originalName) {
+              metadata.set(url, meta.originalName);
+            }
+          }
+        }
+      }
+      setPhotoMetadata(metadata);
+      
       setIsLoading(false);
     } catch (error) {
       console.error('Erreur chargement demandes:', error);
@@ -49,6 +77,7 @@ export default function ArtisanDemandesPage() {
   }
 
   async function handleSignOut() {
+    const { authService } = await import('@/lib/auth-service');
     await authService.signOut();
     router.push('/');
   }
@@ -124,7 +153,7 @@ export default function ArtisanDemandesPage() {
   const filteredDemandes = demandes.filter(demande => {
     if (filter === 'toutes') return true;
     if (filter === 'nouvelles') return demande.statut === 'publiee';
-    if (filter === 'acceptees') return demande.statut === 'acceptee';
+    if (filter === 'devis_envoyes') return demande.devisRecus && demande.devisRecus > 0;
     if (filter === 'refusees') return demande.statut === 'annulee'; // Les demandes refusées ont statut 'annulee'
     return true;
   });
@@ -206,14 +235,14 @@ export default function ArtisanDemandesPage() {
               🆕 Nouvelles ({demandes.filter(d => d.statut === 'publiee').length})
             </button>
             <button
-              onClick={() => setFilter('acceptees')}
+              onClick={() => setFilter('devis_envoyes')}
               className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'acceptees'
+                filter === 'devis_envoyes'
                   ? 'bg-[#FF6B00] text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ✅ Acceptées ({demandes.filter(d => d.statut === 'acceptee').length})
+              📤 Devis envoyés ({demandes.filter(d => d.devisRecus && d.devisRecus > 0).length})
             </button>
             <button
               onClick={() => setFilter('refusees')}
@@ -301,7 +330,6 @@ export default function ArtisanDemandesPage() {
                 {/* Photos */}
                 {(() => {
                   const photosList = demande.photosUrls || demande.photos || [];
-                  // Filtrer uniquement les URLs valides (commence par http)
                   const validPhotos = photosList.filter((url: string) => url && url.startsWith('http'));
                   
                   if (validPhotos.length === 0) return null;
@@ -312,25 +340,44 @@ export default function ArtisanDemandesPage() {
                         📸 Photos du projet ({validPhotos.length})
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {validPhotos.map((url: string, idx: number) => (
-                          <div key={idx} className="relative group">
-                            <img 
-                              src={url} 
-                              alt={`Photo ${idx + 1}`}
-                              className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 hover:border-[#FF6B00] transition cursor-pointer shadow-sm"
+                        {validPhotos.map((url: string, idx: number) => {
+                          // Récupérer le nom original depuis les métadonnées ou utiliser le nom technique
+                          const originalName = photoMetadata.get(url);
+                          const displayName = originalName || `Photo ${idx + 1}`;
+                          
+                          return (
+                            <div
+                              key={idx} 
+                              className="relative cursor-pointer bg-white rounded-lg h-32 overflow-hidden border-2 border-gray-300 hover:border-[#FF6B00] transition shadow-sm"
                               onClick={() => window.open(url, '_blank')}
-                              onError={(e) => {
-                                // Masquer l'image si elle ne charge pas
-                                (e.target as HTMLElement).style.display = 'none';
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
-                              <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                              </svg>
+                              title={displayName}
+                            >
+                              <img 
+                                src={url} 
+                                alt={`Photo ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                                style={{ backgroundColor: '#f3f4f6' }}
+                                onError={(e) => {
+                                  const img = e.target as HTMLImageElement;
+                                  img.style.display = 'none';
+                                  const parent = img.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = `
+                                      <div class="flex flex-col items-center justify-center h-full bg-gradient-to-br from-orange-50 to-orange-100 p-4">
+                                        <svg class="w-12 h-12 text-orange-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <p class="text-xs text-orange-600 font-semibold text-center">Photo ${idx + 1}</p>
+                                        <p class="text-xs text-orange-500 mt-1">Cliquer pour ouvrir</p>
+                                      </div>
+                                    `;
+                                    parent.onclick = () => window.open(url, '_blank');
+                                  }
+                                }}
+                              />
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -341,7 +388,7 @@ export default function ArtisanDemandesPage() {
                   {demande.statut === 'publiee' && (
                     <>
                       <button
-                        onClick={() => router.push(`/demande/${demande.id}`)}
+                        onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`)}
                         className="flex-1 bg-[#FF6B00] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
                       >
                         📝 Envoyer un devis

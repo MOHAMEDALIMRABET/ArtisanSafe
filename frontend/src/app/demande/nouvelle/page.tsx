@@ -170,9 +170,12 @@ function NouvelleDemandeContent() {
         try {
           photoUrls = await uploadMultiplePhotos(photos, 'demandes', user.uid);
           console.log(`✅ Photos uploadées:`, photoUrls);
-        } catch (error) {
+        } catch (error: any) {
           console.error('❌ Erreur upload photos:', error);
-          alert('⚠️ Erreur lors de l\'upload des photos. La demande sera créée sans photos.');
+          console.error('Détails erreur:', error.message, error.code);
+          alert(`⚠️ Erreur lors de l'upload des photos: ${error.message || 'Erreur inconnue'}. La demande sera créée sans photos.`);
+          // Continuer sans photos
+          photoUrls = [];
         }
       }
 

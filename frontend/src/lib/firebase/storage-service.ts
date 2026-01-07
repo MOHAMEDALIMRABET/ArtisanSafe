@@ -27,9 +27,18 @@ export async function uploadPhoto(
     // Créer la référence Storage
     const storageRef = ref(storage, `${folder}/${userId}/${fileName}`);
     
-    // Upload le fichier
+    // Métadonnées avec le nom original
+    const metadata = {
+      customMetadata: {
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+      },
+      contentType: file.type,
+    };
+    
+    // Upload le fichier avec métadonnées
     console.log(`📤 Upload de ${file.name} vers ${folder}/${userId}/${fileName}...`);
-    await uploadBytes(storageRef, file);
+    await uploadBytes(storageRef, file, metadata);
     
     // Récupérer l'URL de téléchargement
     const downloadURL = await getDownloadURL(storageRef);
@@ -68,7 +77,28 @@ export async function uploadMultiplePhotos(
     throw error;
   }
 }
-
+/**
+ * Récupérer les métadonnées d'un fichier (incluant le nom original)
+ */
+export async function getFileMetadata(url: string): Promise<{ originalName?: string } | null> {
+  try {
+    // Extraire le chemin du fichier depuis l'URL
+    const pathMatch = url.match(/\/o\/(.+?)\?/);
+    if (!pathMatch) return null;
+    
+    const filePath = decodeURIComponent(pathMatch[1]);
+    const fileRef = ref(storage, filePath);
+    
+    const metadata = await import('firebase/storage').then(m => m.getMetadata(fileRef));
+    
+    return {
+      originalName: metadata.customMetadata?.originalName,
+    };
+  } catch (error) {
+    console.error('Erreur récupération métadonnées:', error);
+    return null;
+  }
+}
 /**
  * Supprimer une photo de Firebase Storage
  * @param photoUrl - URL de la photo à supprimer

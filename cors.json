@@ -1,0 +1,7 @@
+[
+  {
+    "origin": ["http://localhost:3000", "https://artisansafe.web.app", "https://artisansafe.firebaseapp.com"],
+    "method": ["GET", "HEAD"],
+    "maxAgeSeconds": 3600
+  }
+]

@@ -138,6 +138,9 @@ export default function MesDemandesPage() {
             </div>
             
             <div className="flex items-center gap-3">
+              <span className="text-[#2C3E50] font-medium hidden md:block">
+                👋 {user?.displayName || 'Utilisateur'}
+              </span>
               <button
                 onClick={() => router.push('/dashboard')}
                 className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors"

@@ -41,9 +41,13 @@ service cloud.firestore {
     // ============================================
     // Accès privé uniquement par l'utilisateur authentifié
     // Admin peut tout lire
+    // Artisans peuvent lire les profils clients (nécessaire pour créer des devis)
     
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      // Lecture : propriétaire, admin, ou artisan lisant un profil client
+      allow read: if isOwner(userId) || 
+                     isAdmin() ||
+                     (isArtisan() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'client');
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();

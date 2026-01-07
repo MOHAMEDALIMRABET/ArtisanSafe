@@ -38,6 +38,7 @@ export async function createDemande(
     ...demandeData,
     statut: demandeData.statut || 'brouillon' as DemandeStatut,
     photos: demandeData.photos || [],
+    photosUrls: demandeData.photosUrls || [], // URLs Firebase Storage
     devisRecus: 0,
     dateCreation: Timestamp.now(),
     dateModification: Timestamp.now(),
