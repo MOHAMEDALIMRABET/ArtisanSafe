@@ -38,20 +38,35 @@ function isInZone(artisan: Artisan, demande: Demande): boolean {
   console.log(`  🗺️  Vérif zone - Client à: ${demande.localisation.ville} ${demande.localisation.codePostal}`);
   
   if (!artisan.zonesIntervention || artisan.zonesIntervention.length === 0) {
-    console.log(`  ❌ Pas de zone d'intervention définie`);
-    return false;
+    console.log(`  ⚠️  Pas de zone d'intervention définie → ACCEPTER par défaut (artisan disponible partout)`);
+    return true; // ✅ CHANGEMENT: Accepter par défaut si pas de zones définies
   }
 
-  // Vérifier si la ville correspond ou si dans le rayon
+  const clientVille = demande.localisation.ville.toLowerCase().trim();
+  const clientCP = demande.localisation.codePostal?.trim() || '';
+
+  // Vérifier si la ville/CP correspond ou si dans le rayon
   for (const zone of artisan.zonesIntervention) {
     console.log(`  🔍 Zone artisan: ${zone.ville}, rayon: ${zone.rayonKm || zone.rayon || 30}km`);
     console.log(`  📍 Coords artisan: lat=${zone.latitude}, lon=${zone.longitude}`);
     console.log(`  📍 Coords client:`, demande.localisation.coordonneesGPS);
     
+    const zoneVille = zone.ville.toLowerCase().trim();
+    
     // Match exacte de ville
-    if (zone.ville.toLowerCase() === demande.localisation.ville.toLowerCase()) {
+    if (zoneVille === clientVille) {
       console.log(`  ✅ MATCH ville exacte: ${zone.ville}`);
       return true;
+    }
+
+    // ✅ NOUVEAU: Match par code postal (département)
+    if (clientCP.length >= 2 && zone.codePostal) {
+      const departementClient = clientCP.substring(0, 2);
+      const departementZone = zone.codePostal.substring(0, 2);
+      if (departementClient === departementZone) {
+        console.log(`  ✅ MATCH département: ${departementClient}`);
+        return true;
+      }
     }
 
     // Vérification par GPS si disponible
@@ -189,11 +204,15 @@ function isArtisanDisponibleDate(artisan: Artisan, date: Date): boolean {
  * @returns Score de 0 à 50
  */
 function calculateDisponibiliteScore(artisan: Artisan, demande: Demande): number {
+  console.log(`  📅 Calcul score disponibilité...`);
+  
   if (!demande.datesSouhaitees || demande.datesSouhaitees.dates.length === 0) {
+    console.log(`  ⚠️  Pas de dates souhaitées → score=0`);
     return 0;
   }
 
   const dates = demande.datesSouhaitees.dates.map(ts => ts.toDate());
+  console.log(`  📆 Dates à vérifier:`, dates.map(d => d.toISOString().split('T')[0]));
   let matchCount = 0;
   let totalDates = dates.length;
 
@@ -230,7 +249,17 @@ function calculateDisponibiliteScore(artisan: Artisan, demande: Demande): number
 
   // Score proportionnel au taux de match
   const matchRate = matchCount / totalDates;
-  return Math.round(matchRate * 50);
+  const score = Math.round(matchRate * 50);
+  
+  console.log(`  📊 Résultat: ${matchCount}/${totalDates} dates matchées → score=${score}/50`);
+  
+  // ✅ BONUS: Si aucune dispo définie ou score=0, donner un score minimum (25) pour afficher quand même
+  if (score === 0 && (!artisan.disponibilites || artisan.disponibilites.length === 0)) {
+    console.log(`  ⚠️  Pas d'agenda → score bonus=25 (artisan joignable)`);
+    return 25; // Score minimum pour artisans sans agenda défini
+  }
+  
+  return score;
 }
 
 /**
@@ -267,16 +296,35 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
 
     // 1. Requête Firestore: artisans vérifiés + catégorie matching
     const artisansRef = collection(db, 'artisans');
+    
+    // ✅ SIMPLIFICATION: D'abord récupérer tous les artisans vérifiés, puis filtrer manuellement
+    // Car le where('metiers', 'array-contains') peut échouer si le champ n'existe pas ou est mal formaté
     const q = query(
       artisansRef,
-      where('verified', '==', true),
-      where('metiers', 'array-contains', criteria.categorie)
+      where('verified', '==', true)
     );
 
     const snapshot = await getDocs(q);
-    console.log(`📊 ${snapshot.docs.length} artisan(s) trouvé(s) pour ${criteria.categorie}`);
+    console.log(`📊 ${snapshot.docs.length} artisan(s) vérifié(s) au total`);
     
     if (snapshot.empty) {
+      console.log('❌ Aucun artisan vérifié dans la base de données');
+      return [];
+    }
+    
+    // Filtrer manuellement par catégorie
+    const artisansWithMetier = snapshot.docs.filter(doc => {
+      const data = doc.data();
+      const metiers = data.metiers as string[] | undefined;
+      console.log(`🔍 ${data.raisonSociale || 'Artisan'}: métiers =`, metiers);
+      return metiers && Array.isArray(metiers) && metiers.includes(criteria.categorie);
+    });
+    
+    console.log(`📊 ${artisansWithMetier.length} artisan(s) trouvé(s) pour la catégorie "${criteria.categorie}"`);
+    
+    if (artisansWithMetier.length === 0) {
+      console.log(`⚠️ Aucun artisan trouvé pour la catégorie "${criteria.categorie}". Catégories disponibles:`, 
+        snapshot.docs.map(doc => doc.data().metiers).filter(Boolean));
       return [];
     }
 
@@ -302,7 +350,7 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
     // 3. Calculer le score pour chaque artisan
     const results: MatchingResult[] = [];
 
-    for (const doc of snapshot.docs) {
+    for (const doc of artisansWithMetier) {
       const artisan = { id: doc.id, userId: doc.id, ...doc.data() } as Artisan;
 
       console.log(`\n🔍 Analyse artisan: ${artisan.raisonSociale}`);
@@ -324,11 +372,14 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
       const disponibiliteScore = calculateDisponibiliteScore(artisan, tempDemande as Demande);
       const notationScore = calculateNotationScore(artisan);
       
-      // ⚠️ FILTRE CRITIQUE: Ne pas afficher les artisans indisponibles
-      if (disponibiliteScore === 0) {
-        console.log(`❌ ${artisan.raisonSociale}: INDISPONIBLE (score=0/50)`);
-        continue;
-      }
+      console.log(`📊 Scores détaillés:`);
+      console.log(`   - Métier: ${metierScore}/100`);
+      console.log(`   - Distance: ${distanceScore}/50`);
+      console.log(`   - Disponibilité: ${disponibiliteScore}/50`);
+      console.log(`   - Notation: ${notationScore}/50`);
+      
+      // ✅ CHANGEMENT: Accepter même avec disponibiliteScore=0 (artisan peut être contacté)
+      // Si score dispo = 0, on affiche quand même l'artisan avec un score réduit
       
       // Bonus urgence: si artisan a capacité disponible immédiatement
       let urgenceScore = 0;

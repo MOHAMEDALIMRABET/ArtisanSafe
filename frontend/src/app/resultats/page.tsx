@@ -514,6 +514,41 @@ function ResultatsContent() {
           </Card>
         ) : (
           <div className="space-y-4">
+            {/* Bandeau pour visiteurs non connectés - MASQUÉ */}
+            {/* {!user && (
+              <div className="bg-gradient-to-r from-[#2C3E50] to-[#34495E] border-2 border-[#FF6B00] p-6 rounded-lg shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 bg-[#FF6B00] rounded-full p-3">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-white mb-2">
+                      🔍 Recherche publique - Créez un compte pour contacter les artisans
+                    </h3>
+                    <p className="text-gray-200 mb-4">
+                      Vous consultez les résultats en mode visiteur. Pour demander un devis et contacter directement les artisans, créez votre compte gratuitement.
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => router.push('/inscription?type=client')}
+                        className="bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold"
+                      >
+                        📝 Créer un compte gratuit
+                      </Button>
+                      <Button
+                        onClick={() => router.push('/connexion')}
+                        className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#2C3E50] font-semibold"
+                      >
+                        🔑 Se connecter
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )} */}
+
             {/* Bandeau info */}
             <div className="bg-[#FFF3E0] border-l-4 border-[#FF6B00] p-4 rounded">
               <p className="text-[#2C3E50]">
@@ -571,18 +606,21 @@ function ResultatsContent() {
                               }}
                               className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
                             >
-                              📩 Demander un devis
+                              Demander un devis
                             </Button>
                           ) : (
-                            <Button
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push('/connexion');
                               }}
-                              className="border-2 border-[#FF6B00] bg-white text-[#FF6B00] font-bold px-4 py-2 rounded-lg transition-all duration-200 hover:bg-[#FF6B00] hover:text-white hover:shadow-lg"
+                              className="bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                             >
-                              Se connecter pour demander un devis
-                            </Button>
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span>Demander un devis</span>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -673,8 +711,8 @@ function ResultatsContent() {
                 </Card>
             ))}
 
-            {/* Section "Pas trouvé l'artisan idéal ?" */}
-            <div className="mt-12 bg-gradient-to-r from-[#2C3E50] to-[#1A3A5C] rounded-2xl shadow-2xl p-8 text-center">
+            {/* Section "Pas trouvé l'artisan idéal ?" - MASQUÉE */}
+            {/* <div className="mt-12 bg-gradient-to-r from-[#2C3E50] to-[#1A3A5C] rounded-2xl shadow-2xl p-8 text-center">
               <h2 className="text-3xl font-bold text-white mb-3">
                 Vous n'avez pas trouvé l'artisan idéal ?
               </h2>
@@ -687,7 +725,7 @@ function ResultatsContent() {
               >
                 Nouvelle recherche
               </Button>
-            </div>
+            </div> */}
           </div>
         )}
       </main>

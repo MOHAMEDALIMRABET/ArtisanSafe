@@ -18,7 +18,9 @@ export default function Home() {
   const [searchForm, setSearchForm] = useState({
     metier: 'plomberie' as Categorie,
     ville: '',
-    date: new Date().toISOString().slice(0, 10)
+    date: new Date().toISOString().slice(0, 10),
+    flexible: false,
+    flexibiliteDays: '0'
   });
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function Home() {
     }
   }
 
-  function handleSearch() {
+  async function handleSearch() {
     // Validation
     if (!searchForm.ville.trim()) {
       alert('Veuillez entrer une ville');
@@ -51,14 +53,31 @@ export default function Home() {
       return;
     }
 
+    // ✅ Récupérer le code postal via l'API geo.gouv.fr
+    let codePostal = '';
+    try {
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(searchForm.ville.trim())}&fields=codesPostaux&limit=1`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.length > 0 && data[0].codesPostaux && data[0].codesPostaux.length > 0) {
+          codePostal = data[0].codesPostaux[0];
+          console.log(`📮 Code postal trouvé pour ${searchForm.ville}: ${codePostal}`);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur récupération code postal:', error);
+    }
+
     // Construire l'URL avec les paramètres de recherche
     const params = new URLSearchParams({
       categorie: searchForm.metier,
       ville: searchForm.ville.trim(),
-      codePostal: '', // À améliorer avec API de géocodage
+      codePostal: codePostal,
       dates: JSON.stringify([searchForm.date]),
-      flexible: 'true',
-      flexibiliteDays: '3',
+      flexible: searchForm.flexible.toString(),
+      flexibiliteDays: searchForm.flexibiliteDays,
       urgence: 'normale'
     });
 
@@ -85,13 +104,20 @@ export default function Home() {
 
             {/* Menu de navigation */}
             <div className="hidden md:flex items-center gap-8">
-              <Link href="#" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
+              <a 
+                href="#recherche-section" 
+                className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('recherche-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
                 Trouver un artisan
-              </Link>
-              <Link href="#" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
+              </a>
+              <Link href="/inscription?role=artisan" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
                 Devenir artisan
               </Link>
-              <Link href="#" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
+              <Link href="/comment-ca-marche" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
                 Comment ça marche
               </Link>
             </div>
@@ -138,7 +164,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section avec Bannière de Recherche */}
-      <div className="container mx-auto px-4 py-16">
+      <div id="recherche-section" className="container mx-auto px-4 py-16">
         {/* Bannière principale avec image de fond */}
         <div className="relative rounded-3xl overflow-hidden shadow-2xl mb-16 h-[500px]">
           {/* Image de fond */}
@@ -164,8 +190,8 @@ export default function Home() {
             </p>
 
             {/* Formulaire de recherche */}
-            <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-4">
-              <div className="grid md:grid-cols-4 gap-3">
+            <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl p-4">
+              <div className="grid md:grid-cols-5 gap-3">
                 {/* Type de travaux */}
                 <div className="relative">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
@@ -232,6 +258,31 @@ export default function Home() {
                       value={searchForm.date}
                       onChange={(e) => setSearchForm({...searchForm, date: e.target.value})}
                     />
+                  </div>
+                </div>
+
+                {/* Flexibilité */}
+                <div className="relative">
+                  <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
+                    Flexibilité
+                  </label>
+                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-4 py-3 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
+                    <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <select 
+                      className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer"
+                      value={searchForm.flexibiliteDays}
+                      onChange={(e) => {
+                        setSearchForm({...searchForm, flexible: e.target.value !== '0', flexibiliteDays: e.target.value});
+                      }}
+                    >
+                      <option value="0">±0 jour</option>
+                      <option value="1">± 1 jour</option>
+                      <option value="3">± 3 jours</option>
+                      <option value="7">± 1 semaine</option>
+                      <option value="14">± 2 semaines</option>
+                    </select>
                   </div>
                 </div>
 

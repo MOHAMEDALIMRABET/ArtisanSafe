@@ -19,13 +19,18 @@ export default function MesDemandesPage() {
 
   useEffect(() => {
     // Attendre que l'auth soit chargée
-    if (authLoading) return;
+    if (authLoading) {
+      console.log('⏳ Auth en cours de chargement...');
+      return;
+    }
 
     if (!user) {
+      console.log('❌ Utilisateur non connecté, redirection vers /connexion');
       router.push('/connexion');
       return;
     }
 
+    console.log('✅ Utilisateur connecté:', user.uid);
     loadDemandes();
   }, [user, authLoading, router]);
 
