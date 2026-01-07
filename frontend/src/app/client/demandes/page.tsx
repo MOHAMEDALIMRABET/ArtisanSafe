@@ -17,6 +17,8 @@ export default function MesDemandesPage() {
   const [artisansMap, setArtisansMap] = useState<Map<string, Artisan>>(new Map());
   const [loading, setLoading] = useState(true);
   const [showAnnulees, setShowAnnulees] = useState(false);
+  const [filtreStatut, setFiltreStatut] = useState<'toutes' | 'publiee' | 'annulee' | 'brouillon'>('toutes');
+  const [filtreDateTravaux, setFiltreDateTravaux] = useState<string>('');
 
   useEffect(() => {
     // Attendre que l'auth soit chargée
@@ -94,7 +96,7 @@ export default function MesDemandesPage() {
       matchee: '🤝 Artisan trouvé',
       en_cours: '⏳ En cours',
       terminee: '✅ Terminée',
-      annulee: '❌ Annulée',
+      annulee: '❌ Refusée',
     };
 
     return (
@@ -113,20 +115,15 @@ export default function MesDemandesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
-      {/* Header */}
-      <header className="bg-[#2C3E50] text-white py-6 shadow-lg">
-        <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      {/* Navigation */}
+      <nav className="bg-white shadow-md">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => router.push('/dashboard')} className="hover:opacity-80">
-                <Logo size="md" />
-              </button>
-              <div>
-                <h1 className="text-3xl font-bold">Mes demandes de devis</h1>
-                <p className="text-[#95A5A6] mt-1">Suivez l'état de vos demandes</p>
-              </div>
-            </div>
+            <button onClick={() => router.push('/dashboard')} className="hover:opacity-80">
+              <Logo size="md" />
+            </button>
+            
             <Button
               onClick={() => router.push('/recherche')}
               className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
@@ -135,25 +132,70 @@ export default function MesDemandesPage() {
             </Button>
           </div>
         </div>
-      </header>
+      </nav>
 
       {/* Contenu */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Filtre demandes annulées */}
-        {demandes.some(d => d.statut === 'annulee') && (
-          <div className="mb-6 flex items-center gap-3 bg-white p-4 rounded-lg shadow-sm">
-            <input
-              type="checkbox"
-              id="showAnnulees"
-              checked={showAnnulees}
-              onChange={(e) => setShowAnnulees(e.target.checked)}
-              className="w-4 h-4 text-[#FF6B00] border-gray-300 rounded focus:ring-[#FF6B00]"
-            />
-            <label htmlFor="showAnnulees" className="text-sm font-medium text-[#6C757D] cursor-pointer">
-              Afficher les demandes annulées ({demandes.filter(d => d.statut === 'annulee').length})
-            </label>
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* En-tête */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">
+            Mes demandes de devis
+          </h1>
+          <p className="text-gray-700">
+            Suivez l'état de vos demandes et gérez vos projets
+          </p>
+        </div>
+
+        {/* Filtres */}
+        <div className="mb-6 bg-white p-6 rounded-lg shadow-sm space-y-4">
+          <h3 className="font-semibold text-[#2C3E50] mb-3">Filtrer les demandes</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Filtre par statut */}
+            <div>
+              <label className="block text-sm font-medium text-[#6C757D] mb-2">
+                Statut
+              </label>
+              <select
+                value={filtreStatut}
+                onChange={(e) => setFiltreStatut(e.target.value as any)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+              >
+                <option value="toutes">Toutes les demandes</option>
+                <option value="brouillon">📝 Brouillons</option>
+                <option value="publiee">📢 Publiées</option>
+                <option value="annulee">❌ Refusées</option>
+              </select>
+            </div>
+
+            {/* Filtre date début travaux */}
+            <div>
+              <label className="block text-sm font-medium text-[#6C757D] mb-2">
+                Date de début des travaux
+              </label>
+              <input
+                type="date"
+                value={filtreDateTravaux}
+                onChange={(e) => setFiltreDateTravaux(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+              />
+            </div>
           </div>
-        )}
+
+          {/* Bouton réinitialiser */}
+          {(filtreStatut !== 'toutes' || filtreDateTravaux) && (
+            <button
+              onClick={() => {
+                setFiltreStatut('toutes');
+                setFiltreDateTravaux('');
+              }}
+              className="text-sm text-[#FF6B00] hover:underline font-medium"
+            >
+              ↺ Réinitialiser les filtres
+            </button>
+          )}
+        </div>
+
         {demandes.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="text-6xl mb-4">📋</div>
@@ -173,7 +215,28 @@ export default function MesDemandesPage() {
         ) : (
           <div className="space-y-4">
             {demandes
-              .filter(demande => showAnnulees || demande.statut !== 'annulee')
+              .filter(demande => {
+                // Filtre par statut
+                if (filtreStatut !== 'toutes' && demande.statut !== filtreStatut) {
+                  return false;
+                }
+
+                // Filtre par date de début des travaux
+                if (filtreDateTravaux) {
+                  const dateTravaux = demande.datesSouhaitees?.dates?.[0]?.toDate();
+                  const dateFiltre = new Date(filtreDateTravaux);
+                  if (!dateTravaux || dateTravaux.toDateString() !== dateFiltre.toDateString()) {
+                    return false;
+                  }
+                }
+                
+                // Exclure les demandes sans artisan assigné (Non assigné)
+                const hasArtisan = 
+                  (demande.statut === 'annulee' && demande.artisanRefuseNom) || // Refusée avec artisan
+                  (demande.artisansMatches && demande.artisansMatches.length > 0); // Avec artisan assigné
+                
+                return hasArtisan;
+              })
               .map((demande) => (
               <Card
                 key={demande.id}
@@ -193,11 +256,13 @@ export default function MesDemandesPage() {
                       <div className="flex items-center gap-3 text-xs text-[#6C757D]">
                         <div className="flex items-center gap-1">
                           <span>📅</span>
+                          <span className="font-medium">Créée le</span>
                           <span>{demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}</span>
                         </div>
                         {demande.datesSouhaitees?.dates?.[0] && (
                           <div className="flex items-center gap-1">
                             <span>🗓️</span>
+                            <span className="font-medium">Début souhaité le</span>
                             <span>{demande.datesSouhaitees.dates[0].toDate().toLocaleDateString('fr-FR')}</span>
                           </div>
                         )}

@@ -72,41 +72,34 @@ export default function ArtisanDemandesPage() {
         throw new Error('Demande non trouvée');
       }
 
-      // Retirer l'artisan de la liste des matches
-      await removeArtisanFromDemande(demandeId, user.uid);
-
-      // Récupérer les infos de l'artisan qui refuse AVANT de retirer
+      // Récupérer les infos de l'artisan qui refuse
       const { getArtisanByUserId: getArtisan } = await import('@/lib/firebase/artisan-service');
       const artisanRefusant = await getArtisan(user.uid);
 
-      // Vérifier si c'était le dernier artisan matché
-      const artisansRestants = (demande.artisansMatches || []).length - 1;
-      const dernierArtisan = artisansRestants === 0;
+      // Retirer l'artisan de la liste des matches
+      await removeArtisanFromDemande(demandeId, user.uid);
 
-      // Si c'était le dernier artisan, passer la demande en "annulée" et stocker l'info de refus
-      if (dernierArtisan) {
-        const { updateDemande } = await import('@/lib/firebase/demande-service');
-        const { Timestamp } = await import('firebase/firestore');
-        
-        await updateDemande(demandeId, {
-          statut: 'annulee',
-          artisanRefuseId: user.uid,
-          artisanRefuseNom: artisanRefusant?.raisonSociale || 'Artisan inconnu',
-          dateRefus: Timestamp.now(),
-        });
-        console.log('✅ Demande passée en statut "annulée" avec infos artisan refusant:', {
-          artisanId: user.uid,
-          artisanNom: artisanRefusant?.raisonSociale,
-        });
-      }
+      // Toujours passer la demande en "annulée" quand l'artisan refuse
+      // (car il n'y a qu'un seul artisan par demande)
+      const { updateDemande } = await import('@/lib/firebase/demande-service');
+      const { Timestamp } = await import('firebase/firestore');
+      
+      await updateDemande(demandeId, {
+        statut: 'annulee',
+        artisanRefuseId: user.uid,
+        artisanRefuseNom: artisanRefusant?.raisonSociale || 'Artisan inconnu',
+        dateRefus: Timestamp.now(),
+      });
+      console.log('✅ Demande passée en statut "annulée" avec infos artisan refusant:', {
+        artisanId: user.uid,
+        artisanNom: artisanRefusant?.raisonSociale,
+      });
 
       // Notifier le client du refus
       await createNotification(demande.clientId, {
         type: 'demande_refusee',
-        titre: dernierArtisan ? 'Votre demande a été annulée' : 'Un artisan a refusé votre demande',
-        message: dernierArtisan 
-          ? `L'artisan a décliné votre demande "${demande.categorie}" à ${demande.localisation?.ville || 'votre localisation'}. Vous pouvez relancer une recherche avec les mêmes critères.`
-          : `Un artisan a décliné votre demande "${demande.categorie}" à ${demande.localisation?.ville || 'votre localisation'}. D'autres artisans peuvent encore y répondre.`,
+        titre: 'Votre demande a été refusée',
+        message: `L'artisan a décliné votre demande "${demande.categorie}" à ${demande.localisation?.ville || 'votre localisation'}. Vous pouvez relancer une recherche avec les mêmes critères.`,
         lien: `/client/demandes`,
       });
 
