@@ -16,6 +16,7 @@ export default function MesDemandesPage() {
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [artisansMap, setArtisansMap] = useState<Map<string, Artisan>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [showAnnulees, setShowAnnulees] = useState(false);
 
   useEffect(() => {
     // Attendre que l'auth soit chargée
@@ -138,6 +139,21 @@ export default function MesDemandesPage() {
 
       {/* Contenu */}
       <main className="container mx-auto px-4 py-8">
+        {/* Filtre demandes annulées */}
+        {demandes.some(d => d.statut === 'annulee') && (
+          <div className="mb-6 flex items-center gap-3 bg-white p-4 rounded-lg shadow-sm">
+            <input
+              type="checkbox"
+              id="showAnnulees"
+              checked={showAnnulees}
+              onChange={(e) => setShowAnnulees(e.target.checked)}
+              className="w-4 h-4 text-[#FF6B00] border-gray-300 rounded focus:ring-[#FF6B00]"
+            />
+            <label htmlFor="showAnnulees" className="text-sm font-medium text-[#6C757D] cursor-pointer">
+              Afficher les demandes annulées ({demandes.filter(d => d.statut === 'annulee').length})
+            </label>
+          </div>
+        )}
         {demandes.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="text-6xl mb-4">📋</div>
@@ -156,7 +172,9 @@ export default function MesDemandesPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {demandes.map((demande) => (
+            {demandes
+              .filter(demande => showAnnulees || demande.statut !== 'annulee')
+              .map((demande) => (
               <Card
                 key={demande.id}
                 className="p-6 hover:border-[#FF6B00] transition-all"
@@ -193,44 +211,112 @@ export default function MesDemandesPage() {
                     </p>
                   </div>
                   
-                  {/* Bouton Supprimer pour brouillon */}
-                  {demande.statut === 'brouillon' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteDemande(demande.id, demande.titre);
-                      }}
-                      className="ml-4 px-4 py-2.5 border-2 border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-                      title="Supprimer cette demande"
-                    >
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-5 w-5" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
+                  {/* Boutons d'action pour brouillon et annulée */}
+                  <div className="flex gap-3 ml-4">
+                    {/* Bouton Compléter pour brouillon uniquement */}
+                    {demande.statut === 'brouillon' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/demande/nouvelle?brouillonId=${demande.id}`);
+                        }}
+                        className="px-4 py-2.5 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                        title="Compléter et publier ce brouillon"
                       >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
-                        />
-                      </svg>
-                      Supprimer
-                    </button>
-                  )}
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="h-5 w-5" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
+                          />
+                        </svg>
+                        Compléter ce brouillon
+                      </button>
+                    )}
+                    
+                    {/* Bouton Supprimer pour brouillon et annulée */}
+                    {(demande.statut === 'brouillon' || demande.statut === 'annulee') && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDemande(demande.id, demande.titre);
+                        }}
+                        className="px-4 py-2.5 border-2 border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                        title="Supprimer cette demande"
+                      >
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="h-5 w-5" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                          />
+                        </svg>
+                        Supprimer
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-4">
                   <div>
-                    <span className="text-[#6C757D]">Artisans matchés :</span>
-                    {demande.artisansMatches && demande.artisansMatches.length > 0 ? (
-                      <div className="mt-1 space-y-1">
-                        {demande.artisansMatches.slice(0, 2).map(artisanId => {
+                    <span className="text-[#6C757D]">Artisan :</span>
+                    {demande.statut === 'annulee' && demande.artisanRefuseNom ? (
+                      <div className="mt-1">
+                        <p className="font-semibold text-[#2C3E50] flex items-center gap-1">
+                          <span className="text-gray-400">👷</span>
+                          <span className="truncate" title={demande.artisanRefuseNom}>
+                            {demande.artisanRefuseNom}
+                          </span>
+                        </p>
+                        <p className="text-xs text-[#DC3545] mt-1 font-medium">❌ A refusé cette demande</p>
+                        {demande.dateRefus && (
+                          <p className="text-xs text-[#6C757D] mt-0.5">
+                            Le {demande.dateRefus.toDate().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          </p>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const searchCriteria = {
+                              categorie: demande.categorie,
+                              ville: demande.localisation?.ville || '',
+                              codePostal: demande.localisation?.codePostal || '',
+                              dates: demande.datesSouhaitees?.dates?.map(d => d.toDate().toISOString().split('T')[0]) || [],
+                              flexible: demande.datesSouhaitees?.flexible || false,
+                              flexibiliteDays: demande.datesSouhaitees?.flexibiliteDays || 0,
+                              urgence: demande.urgence || false,
+                            };
+                            sessionStorage.setItem('searchCriteria', JSON.stringify(searchCriteria));
+                            router.push('/recherche');
+                          }}
+                          className="mt-2 px-3 py-1.5 bg-[#FF6B00] text-white text-xs rounded-lg hover:bg-[#E56100] font-medium transition flex items-center gap-1"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Relancer cette recherche
+                        </button>
+                      </div>
+                    ) : demande.artisansMatches && demande.artisansMatches.length > 0 ? (
+                      <div className="mt-1">
+                        {demande.artisansMatches.slice(0, 1).map(artisanId => {
                           const artisan = artisansMap.get(artisanId);
                           return (
-                            <p key={artisanId} className="font-semibold text-[#2C3E50] flex items-center gap-1 text-xs">
+                            <p key={artisanId} className="font-semibold text-[#2C3E50] flex items-center gap-1">
                               <span className="text-[#FF6B00]">👷</span>
                               <span className="truncate" title={artisan?.raisonSociale}>
                                 {artisan?.raisonSociale || `${artisanId.substring(0, 8)}...`}
@@ -238,14 +324,14 @@ export default function MesDemandesPage() {
                             </p>
                           );
                         })}
-                        {demande.artisansMatches.length > 2 && (
-                          <p className="text-xs text-[#6C757D] italic">
-                            +{demande.artisansMatches.length - 2} autre{demande.artisansMatches.length - 2 > 1 ? 's' : ''}
-                          </p>
+                        {demande.statut === 'brouillon' ? (
+                          <p className="text-xs text-[#6C757D] mt-1 font-medium">📋 Brouillon non publié</p>
+                        ) : (
+                          <p className="text-xs text-green-600 mt-1 font-medium">✅ En attente de réponse</p>
                         )}
                       </div>
                     ) : (
-                      <p className="font-semibold text-[#6C757D]">0</p>
+                      <p className="font-semibold text-[#6C757D] mt-1">Non assigné</p>
                     )}
                   </div>
                   <div>
@@ -263,15 +349,6 @@ export default function MesDemandesPage() {
                     <p className="font-semibold text-[#2C3E50]">{demande.devisRecus || 0}</p>
                   </div>
                 </div>
-
-                {demande.budget && (
-                  <div className="bg-[#FFF3E0] px-4 py-2 rounded-lg inline-block mt-4">
-                    <span className="text-sm text-[#6C757D]">Budget : </span>
-                    <span className="font-semibold text-[#FF6B00]">
-                      {demande.budget.min}€ - {demande.budget.max}€
-                    </span>
-                  </div>
-                )}
               </Card>
             ))}
           </div>

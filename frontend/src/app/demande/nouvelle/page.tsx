@@ -3,8 +3,9 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { createDemande, publierDemande, addArtisansMatches } from '@/lib/firebase/demande-service';
+import { createDemande, publierDemande, addArtisansMatches, getDemandeById, updateDemande } from '@/lib/firebase/demande-service';
 import { notifyArtisanNouvelDemande, sendBulkNotifications } from '@/lib/firebase/notification-service';
+import { uploadMultiplePhotos } from '@/lib/firebase/storage-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import type { Artisan } from '@/types/firestore';
 import { Button } from '@/components/ui/Button';
@@ -20,8 +21,10 @@ function NouvelleDemandeContent() {
   const [photos, setPhotos] = useState<File[]>([]);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [searchCriteria, setSearchCriteria] = useState<any>(null);
+  const [isEditingBrouillon, setIsEditingBrouillon] = useState(false);
 
   const artisanPreselect = searchParams.get('artisan');
+  const brouillonId = searchParams.get('brouillonId');
 
   useEffect(() => {
     // Charger les critères de recherche
@@ -42,7 +45,47 @@ function NouvelleDemandeContent() {
       }
     }
     loadArtisan();
-  }, [artisanPreselect]);
+
+    // Charger le brouillon si brouillonId est présent
+    async function loadBrouillon() {
+      if (brouillonId && user) {
+        try {
+          const brouillon = await getDemandeById(brouillonId);
+          if (brouillon && brouillon.clientId === user.uid && brouillon.statut === 'brouillon') {
+            setIsEditingBrouillon(true);
+            
+            // Pré-remplir le formulaire avec les données du brouillon
+            setFormData({
+              titre: brouillon.titre,
+              description: brouillon.description,
+              budget: brouillon.budget || { min: 0, max: 0 },
+            });
+
+            // Pré-remplir les critères de recherche depuis le brouillon
+            const brouillonCriteria = {
+              categorie: brouillon.categorie,
+              ville: brouillon.localisation.ville,
+              codePostal: brouillon.localisation.codePostal,
+              adresse: brouillon.localisation.adresse || '',
+              coordonneesGPS: brouillon.localisation.coordonneesGPS,
+              dates: brouillon.datesSouhaitees?.dates?.map(d => 
+                d.toDate().toISOString().split('T')[0]
+              ) || [],
+              flexible: brouillon.datesSouhaitees?.flexible || false,
+              flexibiliteDays: brouillon.datesSouhaitees?.flexibiliteDays || 0,
+              urgence: brouillon.urgence,
+            };
+            setSearchCriteria(brouillonCriteria);
+            sessionStorage.setItem('searchCriteria', JSON.stringify(brouillonCriteria));
+          }
+        } catch (error) {
+          console.error('❌ Erreur chargement brouillon:', error);
+          alert('Erreur lors du chargement du brouillon');
+        }
+      }
+    }
+    loadBrouillon();
+  }, [artisanPreselect, brouillonId, user]);
 
   const [formData, setFormData] = useState({
     titre: '',
@@ -120,9 +163,18 @@ function NouvelleDemandeContent() {
       const criteria = JSON.parse(searchCriteria);
       console.log('✅ Critères récupérés:', criteria);
 
-      // TODO: Upload photos vers Firebase Storage
-      // Pour le MVP, on stockera juste les noms de fichiers
-      const photoUrls: string[] = photos.map(p => p.name);
+      // Upload des photos vers Firebase Storage
+      let photoUrls: string[] = [];
+      if (photos.length > 0) {
+        console.log(`📤 Upload de ${photos.length} photo(s) vers Firebase Storage...`);
+        try {
+          photoUrls = await uploadMultiplePhotos(photos, 'demandes', user.uid);
+          console.log(`✅ Photos uploadées:`, photoUrls);
+        } catch (error) {
+          console.error('❌ Erreur upload photos:', error);
+          alert('⚠️ Erreur lors de l\'upload des photos. La demande sera créée sans photos.');
+        }
+      }
 
       // Créer la demande
       const demandeData = {
@@ -138,21 +190,33 @@ function NouvelleDemandeContent() {
         },
         datesSouhaitees: {
           dates: criteria.dates.map((d: string) => Timestamp.fromDate(new Date(d))),
-          flexible: criteria.flexible,
-          flexibiliteDays: criteria.flexibiliteDays,
+          flexible: criteria.flexible || false,
+          flexibiliteDays: criteria.flexible ? (criteria.flexibiliteDays || 0) : 0,
         },
         urgence: criteria.urgence,
         budget: formData.budget.max > 0 ? formData.budget : null,
-        photos: photoUrls,
+        photosUrls: photoUrls, // URLs Firebase Storage au lieu des noms de fichiers
         statut: 'brouillon' as const,
         devisRecus: 0,
         artisansMatches: artisanPreselect ? [artisanPreselect] : [],
       };
 
-      console.log('🔨 Création de la demande dans Firestore...');
-      const demande = await createDemande(demandeData);
-      const demandeId = demande.id;
-      console.log('✅ Demande créée avec ID:', demandeId);
+      // Créer ou mettre à jour la demande
+      let demandeId: string;
+      
+      if (isEditingBrouillon && brouillonId) {
+        // Mise à jour du brouillon existant
+        console.log('📝 Mise à jour du brouillon existant:', brouillonId);
+        await updateDemande(brouillonId, demandeData);
+        demandeId = brouillonId;
+        console.log('✅ Brouillon mis à jour');
+      } else {
+        // Création d'une nouvelle demande
+        console.log('🔨 Création de la demande dans Firestore...');
+        const demande = await createDemande(demandeData);
+        demandeId = demande.id;
+        console.log('✅ Demande créée avec ID:', demandeId);
+      }
 
       // Si artisan présélectionné, ajouter le match
       if (artisanPreselect) {
@@ -186,7 +250,11 @@ function NouvelleDemandeContent() {
       }
 
       // Rediriger vers tableau de bord
-      alert(`✅ Votre demande "${formData.titre}" a été créée avec succès !\n\n${artisan ? `${artisan.raisonSociale} a reçu une notification.` : 'Les artisans correspondants vont recevoir une notification.'}\n\nVous pouvez suivre l'état de votre demande depuis votre tableau de bord.`);
+      const successMessage = isEditingBrouillon
+        ? `✅ Votre brouillon "${formData.titre}" a été complété et publié avec succès !\n\n${artisan ? `${artisan.raisonSociale} a reçu une notification.` : 'Les artisans correspondants vont recevoir une notification.'}\n\nVous pouvez suivre l'état de votre demande depuis votre tableau de bord.`
+        : `✅ Votre demande "${formData.titre}" a été créée avec succès !\n\n${artisan ? `${artisan.raisonSociale} a reçu une notification.` : 'Les artisans correspondants vont recevoir une notification.'}\n\nVous pouvez suivre l'état de votre demande depuis votre tableau de bord.`;
+      
+      alert(successMessage);
       router.push('/dashboard');
 
     } catch (error) {
@@ -202,8 +270,12 @@ function NouvelleDemandeContent() {
       {/* Header */}
       <header className="bg-[#2C3E50] text-white py-6 shadow-lg">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold">Créer votre demande de devis</h1>
-          <p className="text-[#95A5A6] mt-2">Complétez les détails de votre projet</p>
+          <h1 className="text-3xl font-bold">
+            {isEditingBrouillon ? 'Compléter votre brouillon' : 'Créer votre demande de devis'}
+          </h1>
+          <p className="text-[#95A5A6] mt-2">
+            {isEditingBrouillon ? 'Finalisez et publiez votre demande' : 'Complétez les détails de votre projet'}
+          </p>
         </div>
       </header>
 

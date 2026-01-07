@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { authService, resendVerificationEmail } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
 import { Logo } from '@/components/ui';
 import type { User, Artisan } from '@/types/firestore';
 
@@ -19,6 +20,7 @@ export default function ArtisanDashboardPage() {
   const [resendMessage, setResendMessage] = useState('');
   const [canResend, setCanResend] = useState(true);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [nouvellesDemandes, setNouvellesDemandes] = useState(0);
 
   // Calculer si le profil est complètement vérifié
   const isFullyVerified = 
@@ -74,6 +76,15 @@ export default function ArtisanDashboardPage() {
         setArtisan(artisanData);
         // Mettre à jour le cache
         localStorage.setItem(`artisan_${currentUser.uid}`, JSON.stringify(artisanData));
+      }
+
+      // Charger les demandes pour compter les nouvelles
+      try {
+        const demandes = await getDemandesForArtisan(currentUser.uid);
+        const nouvellesCount = demandes.filter(d => d.statut === 'publiee').length;
+        setNouvellesDemandes(nouvellesCount);
+      } catch (error) {
+        console.error('Erreur chargement demandes:', error);
       }
 
       setIsLoading(false);
@@ -499,19 +510,41 @@ export default function ArtisanDashboardPage() {
             </Link>
 
           {/* Demandes */}
-          <div className="bg-gray-100 rounded-lg shadow-md p-6 opacity-50">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                </svg>
+          <Link href="/artisan/demandes">
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00] relative">
+              {/* Badge notification */}
+              {nouvellesDemandes > 0 && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg animate-pulse">
+                  {nouvellesDemandes}
+                </div>
+              )}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-800">Demandes Clients</h2>
+                    {nouvellesDemandes > 0 && (
+                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
+                        {nouvellesDemandes} nouvelle{nouvellesDemandes > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">Nouvelles demandes de devis</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Demandes Clients</h2>
-                <p className="text-sm text-gray-600">À venir</p>
+              <div className="text-sm text-gray-500">
+                {nouvellesDemandes > 0 ? (
+                  <p className="text-green-600 font-medium">🔔 {nouvellesDemandes} demande{nouvellesDemandes > 1 ? 's' : ''} en attente</p>
+                ) : (
+                  <p className="text-gray-500">📬 Aucune nouvelle demande</p>
+                )}
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Devis */}
           <div className="bg-gray-100 rounded-lg shadow-md p-6 opacity-50">
@@ -534,7 +567,7 @@ export default function ArtisanDashboardPage() {
           <h3 className="text-lg font-bold text-gray-800 mb-4">Aperçu rapide</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-3xl font-bold text-[#FF6B00]">0</div>
+              <div className="text-3xl font-bold text-[#FF6B00]">{nouvellesDemandes}</div>
               <div className="text-sm text-gray-600">Demandes en attente</div>
             </div>
             <div className="text-center">

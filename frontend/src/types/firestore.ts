@@ -336,10 +336,15 @@ export interface Demande {
   localisation: DemandeLocalisation;
   datesSouhaitees: DatesSouhaitees;
   budgetIndicatif?: number;
-  photos: string[]; // URLs Firebase Storage
+  photos?: string[]; // URLs Firebase Storage (ancienne version - pour rétrocompatibilité)
+  photosUrls?: string[]; // URLs Firebase Storage (nouvelle version)
   statut: DemandeStatut;
   artisansMatches?: string[]; // IDs artisans matchés
   devisRecus?: number;
+  urgence?: boolean;
+  artisanRefuseId?: string; // ID de l'artisan qui a refusé (pour historique)
+  artisanRefuseNom?: string; // Raison sociale de l'artisan qui a refusé
+  dateRefus?: Timestamp; // Date du refus
   dateCreation: Timestamp;
   dateModification: Timestamp;
 }

@@ -95,21 +95,29 @@ export async function getDemandesByClient(clientId: string): Promise<Demande[]> 
 
 /**
  * Récupérer les demandes matchées pour un artisan
+ * ⚠️ ÉVITER index composite : where() seul, tri en JavaScript après
  */
 export async function getDemandesForArtisan(artisanId: string): Promise<Demande[]> {
   const demandesRef = collection(db, COLLECTION_NAME);
   const q = query(
     demandesRef,
-    where('artisansMatches', 'array-contains', artisanId),
-    where('statut', 'in', ['matchee', 'publiee']),
-    orderBy('dateCreation', 'desc')
+    where('artisansMatches', 'array-contains', artisanId)
   );
   const querySnapshot = await getDocs(q);
   
-  return querySnapshot.docs.map(doc => ({
+  const demandes = querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
   } as Demande));
+
+  // Filtrage et tri côté client
+  return demandes
+    .filter(d => d.statut === 'publiee' || d.statut === 'matchee')
+    .sort((a, b) => {
+      const dateA = a.dateCreation?.toMillis() || 0;
+      const dateB = b.dateCreation?.toMillis() || 0;
+      return dateB - dateA; // Ordre décroissant (plus récent en premier)
+    });
 }
 
 /**
@@ -181,6 +189,30 @@ export async function publierDemande(demandeId: string): Promise<void> {
  */
 export async function annulerDemande(demandeId: string): Promise<void> {
   await updateDemandeStatut(demandeId, 'annulee');
+}
+
+/**
+ * Retirer un artisan de la liste des artisans matchés (refus de la demande)
+ */
+export async function removeArtisanFromDemande(
+  demandeId: string,
+  artisanId: string
+): Promise<void> {
+  const demande = await getDemandeById(demandeId);
+  if (!demande) {
+    throw new Error('Demande non trouvée');
+  }
+
+  // Retirer l'artisan de la liste
+  const updatedMatches = (demande.artisansMatches || []).filter(id => id !== artisanId);
+  
+  const demandeRef = doc(db, COLLECTION_NAME, demandeId);
+  await updateDoc(demandeRef, {
+    artisansMatches: updatedMatches,
+    dateModification: Timestamp.now(),
+  });
+
+  console.log(`✅ Artisan ${artisanId} retiré de la demande ${demandeId}`);
 }
 
 /**
