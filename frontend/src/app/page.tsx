@@ -13,6 +13,7 @@ export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [blinkingFields, setBlinkingFields] = useState<{ville: boolean, date: boolean}>({ ville: false, date: false });
   
   // État du formulaire de recherche
   const [searchForm, setSearchForm] = useState({
@@ -42,18 +43,25 @@ export default function Home() {
   }
 
   async function handleSearch() {
-    // Validation
-    if (!searchForm.ville.trim()) {
-      alert('Veuillez entrer une ville');
+    // Vérifier quels champs sont vides
+    const emptyFields = {
+      ville: !searchForm.ville.trim(),
+      date: !searchForm.date
+    };
+
+    // Si des champs sont vides, les faire clignoter
+    if (emptyFields.ville || emptyFields.date) {
+      setBlinkingFields(emptyFields);
+      
+      // Arrêter le clignotement après 600ms
+      setTimeout(() => {
+        setBlinkingFields({ ville: false, date: false });
+      }, 600);
+      
       return;
     }
 
-    if (!searchForm.date) {
-      alert('Veuillez sélectionner une date');
-      return;
-    }
-
-    // ✅ Récupérer le code postal via l'API geo.gouv.fr
+    // Tous les champs sont remplis, continuer avec la recherche
     let codePostal = '';
     try {
       const response = await fetch(
@@ -104,16 +112,9 @@ export default function Home() {
 
             {/* Menu de navigation */}
             <div className="hidden md:flex items-center gap-8">
-              <a 
-                href="#recherche-section" 
-                className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('recherche-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Trouver un artisan
-              </a>
+              <Link href="/inscription?role=client" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
+                Je suis particulier
+              </Link>
               <Link href="/inscription?role=artisan" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
                 Devenir artisan
               </Link>
@@ -127,16 +128,26 @@ export default function Home() {
               {!isLoading && (
                 <>
                   {user ? (
-                    // Utilisateur connecté : afficher message + bouton dashboard
+                    // Utilisateur connecté : afficher message + bouton dashboard + déconnexion
                     <div className="flex items-center gap-3">
                       <span className="text-[#2C3E50] font-medium hidden md:block">
                         👋 {user.prenom} {user.nom}
                       </span>
                       <button
                         onClick={handleDashboardRedirect}
-                        className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+                        className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg w-[140px]"
                       >
                         Mon espace
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await authService.signOut();
+                          setUser(null);
+                          router.push('/');
+                        }}
+                        className="border-2 border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545] hover:text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg w-[140px]"
+                      >
+                        Déconnexion
                       </button>
                     </div>
                   ) : (
@@ -227,7 +238,21 @@ export default function Home() {
                 {/* Ville */}
                 <div className="relative">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Localisation</label>
-                  <div className={`flex items-center rounded-xl px-4 py-3 transition-colors ${searchForm.ville.trim() === '' ? 'bg-[#6C757D]/30' : 'bg-[#F8F9FA] hover:bg-[#E9ECEF]'}`}>
+                  <div className={`flex items-center rounded-xl px-4 py-3 transition-colors ${
+                    blinkingFields.ville 
+                      ? 'animate-blink-once' 
+                      : 'bg-[#F8F9FA] hover:bg-[#E9ECEF]'
+                  }`}>
+                    <style jsx>{`
+                      @keyframes blink-once {
+                        0%, 100% { background-color: #F8F9FA; }
+                        50% { background-color: #D1D5DB; }
+                      }
+                      .animate-blink-once {
+                        animation: blink-once 0.6s ease-in-out 1;
+                        background-color: #F8F9FA;
+                      }
+                    `}</style>
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -235,7 +260,7 @@ export default function Home() {
                     <input 
                       type="text" 
                       placeholder="Paris, Lyon..." 
-                      className={`bg-transparent border-none outline-none w-full font-medium placeholder-[#95A5A6] ${searchForm.ville.trim() === '' ? 'text-[#6C757D]' : 'text-[#2C3E50]'}`}
+                      className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium placeholder-[#95A5A6]"
                       value={searchForm.ville}
                       onChange={(e) => setSearchForm({...searchForm, ville: e.target.value})}
                     />
@@ -247,7 +272,11 @@ export default function Home() {
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
                     Date souhaitée
                   </label>
-                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-4 py-3 hover:bg-[#E9ECEF] transition-colors">
+                  <div className={`flex items-center rounded-xl px-4 py-3 transition-colors ${
+                    blinkingFields.date 
+                      ? 'animate-blink-once' 
+                      : 'bg-[#F8F9FA] hover:bg-[#E9ECEF]'
+                  }`}>
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -287,16 +316,20 @@ export default function Home() {
                 </div>
 
                 {/* Bouton Rechercher */}
-                <button 
-                  onClick={handleSearch}
-                  className={`bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 mt-6 md:mt-0 ${searchForm.ville.trim() === '' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={searchForm.ville.trim() === ''}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <span className="hidden md:inline">Rechercher</span>
-                </button>
+                <div className="relative">
+                  <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3 opacity-0">
+                    Recherche
+                  </label>
+                  <button 
+                    onClick={handleSearch}
+                    className="w-full bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span className="hidden md:inline">Rechercher</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

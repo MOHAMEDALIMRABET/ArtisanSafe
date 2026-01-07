@@ -105,10 +105,14 @@ export default function ArtisanDemandesPage() {
 
       console.log('✅ Notification envoyée au client');
 
-      // Mettre à jour l'état local (retirer la demande de la liste)
-      setDemandes(prev => prev.filter(d => d.id !== demandeId));
+      // Mettre à jour l'état local (marquer comme annulée)
+      setDemandes(prev => prev.map(d => 
+        d.id === demandeId 
+          ? { ...d, statut: 'annulee' as const, artisanRefuseId: user.uid, artisanRefuseNom: artisanRefusant?.raisonSociale || 'Artisan inconnu' }
+          : d
+      ));
 
-      alert('✅ Demande refusée avec succès. Elle a été retirée de votre liste.');
+      alert('✅ Demande refusée avec succès. Elle apparaîtra dans l\'onglet "Refusées".');
     } catch (error) {
       console.error('❌ Erreur refus demande:', error);
       alert('❌ Erreur lors du refus de la demande. Veuillez réessayer.');
@@ -121,7 +125,7 @@ export default function ArtisanDemandesPage() {
     if (filter === 'toutes') return true;
     if (filter === 'nouvelles') return demande.statut === 'publiee';
     if (filter === 'acceptees') return demande.statut === 'acceptee';
-    if (filter === 'refusees') return demande.statut === 'refusee';
+    if (filter === 'refusees') return demande.statut === 'annulee'; // Les demandes refusées ont statut 'annulee'
     return true;
   });
 
@@ -219,7 +223,7 @@ export default function ArtisanDemandesPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ❌ Refusées ({demandes.filter(d => d.statut === 'refusee').length})
+              ❌ Refusées ({demandes.filter(d => d.statut === 'annulee').length})
             </button>
           </div>
         </div>

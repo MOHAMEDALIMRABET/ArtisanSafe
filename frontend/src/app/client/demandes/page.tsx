@@ -100,7 +100,7 @@ export default function MesDemandesPage() {
     };
 
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${badges[statut]}`}>
+      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${badges[statut]}`}>
         {labels[statut]}
       </span>
     );
@@ -120,32 +120,43 @@ export default function MesDemandesPage() {
       <nav className="bg-white shadow-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <button onClick={() => router.push('/dashboard')} className="hover:opacity-80">
-              <Logo size="md" />
-            </button>
+            <div className="flex items-center gap-4">
+              <button onClick={() => router.push('/')} className="hover:opacity-80">
+                <Logo size="md" />
+              </button>
+              
+              <div className="border-l border-gray-300 h-12 mx-2"></div>
+              
+              <div>
+                <h1 className="text-xl font-bold text-[#2C3E50]">
+                  Mes demandes de devis
+                </h1>
+                <p className="text-sm text-[#6C757D]">
+                  Suivez l'état de vos demandes et gérez vos projets
+                </p>
+              </div>
+            </div>
             
-            <Button
-              onClick={() => router.push('/recherche')}
-              className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
-            >
-              + Nouvelle recherche
-            </Button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors"
+              >
+                ← Tableau de bord
+              </button>
+              <Button
+                onClick={() => router.push('/recherche')}
+                className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
+              >
+                + Nouvelle recherche
+              </Button>
+            </div>
           </div>
         </div>
       </nav>
 
       {/* Contenu */}
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* En-tête */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">
-            Mes demandes de devis
-          </h1>
-          <p className="text-gray-700">
-            Suivez l'état de vos demandes et gérez vos projets
-          </p>
-        </div>
-
         {/* Filtres */}
         <div className="mb-6 bg-white p-6 rounded-lg shadow-sm space-y-4">
           <h3 className="font-semibold text-[#2C3E50] mb-3">Filtrer les demandes</h3>
@@ -285,12 +296,12 @@ export default function MesDemandesPage() {
                           e.stopPropagation();
                           router.push(`/demande/nouvelle?brouillonId=${demande.id}`);
                         }}
-                        className="px-4 py-2.5 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                        className="px-3 py-2 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
                         title="Compléter et publier ce brouillon"
                       >
                         <svg 
                           xmlns="http://www.w3.org/2000/svg" 
-                          className="h-5 w-5" 
+                          className="h-4 w-4" 
                           fill="none" 
                           viewBox="0 0 24 24" 
                           stroke="currentColor"
@@ -306,6 +317,33 @@ export default function MesDemandesPage() {
                       </button>
                     )}
                     
+                    {/* Bouton Relancer pour demande annulée */}
+                    {demande.statut === 'annulee' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const searchCriteria = {
+                            categorie: demande.categorie,
+                            ville: demande.localisation?.ville || '',
+                            codePostal: demande.localisation?.codePostal || '',
+                            dates: demande.datesSouhaitees?.dates?.map(d => d.toDate().toISOString().split('T')[0]) || [],
+                            flexible: demande.datesSouhaitees?.flexible || false,
+                            flexibiliteDays: demande.datesSouhaitees?.flexibiliteDays || 0,
+                            urgence: demande.urgence || false,
+                          };
+                          sessionStorage.setItem('searchCriteria', JSON.stringify(searchCriteria));
+                          router.push('/recherche');
+                        }}
+                        className="px-3 py-2 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
+                        title="Relancer une recherche avec les mêmes critères"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Relancer cette recherche
+                      </button>
+                    )}
+                    
                     {/* Bouton Supprimer pour brouillon et annulée */}
                     {(demande.statut === 'brouillon' || demande.statut === 'annulee') && (
                       <button
@@ -313,12 +351,12 @@ export default function MesDemandesPage() {
                           e.stopPropagation();
                           handleDeleteDemande(demande.id, demande.titre);
                         }}
-                        className="px-4 py-2.5 border-2 border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                        className="px-3 py-2 border-2 border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545] hover:text-white rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
                         title="Supprimer cette demande"
                       >
                         <svg 
                           xmlns="http://www.w3.org/2000/svg" 
-                          className="h-5 w-5" 
+                          className="h-4 w-4" 
                           fill="none" 
                           viewBox="0 0 24 24" 
                           stroke="currentColor"
@@ -353,28 +391,6 @@ export default function MesDemandesPage() {
                             Le {demande.dateRefus.toDate().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                           </p>
                         )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const searchCriteria = {
-                              categorie: demande.categorie,
-                              ville: demande.localisation?.ville || '',
-                              codePostal: demande.localisation?.codePostal || '',
-                              dates: demande.datesSouhaitees?.dates?.map(d => d.toDate().toISOString().split('T')[0]) || [],
-                              flexible: demande.datesSouhaitees?.flexible || false,
-                              flexibiliteDays: demande.datesSouhaitees?.flexibiliteDays || 0,
-                              urgence: demande.urgence || false,
-                            };
-                            sessionStorage.setItem('searchCriteria', JSON.stringify(searchCriteria));
-                            router.push('/recherche');
-                          }}
-                          className="mt-2 px-3 py-1.5 bg-[#FF6B00] text-white text-xs rounded-lg hover:bg-[#E56100] font-medium transition flex items-center gap-1"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                          Relancer cette recherche
-                        </button>
                       </div>
                     ) : demande.artisansMatches && demande.artisansMatches.length > 0 ? (
                       <div className="mt-1">
