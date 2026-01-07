@@ -152,7 +152,7 @@ export default function ArtisanDemandesPage() {
 
   const filteredDemandes = demandes.filter(demande => {
     if (filter === 'toutes') return true;
-    if (filter === 'nouvelles') return demande.statut === 'publiee';
+    if (filter === 'nouvelles') return demande.statut === 'publiee' && (!demande.devisRecus || demande.devisRecus === 0);
     if (filter === 'devis_envoyes') return demande.devisRecus && demande.devisRecus > 0;
     if (filter === 'refusees') return demande.statut === 'annulee'; // Les demandes refusées ont statut 'annulee'
     return true;
@@ -232,7 +232,7 @@ export default function ArtisanDemandesPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🆕 Nouvelles ({demandes.filter(d => d.statut === 'publiee').length})
+              🆕 Nouvelles ({demandes.filter(d => d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)).length})
             </button>
             <button
               onClick={() => setFilter('devis_envoyes')}

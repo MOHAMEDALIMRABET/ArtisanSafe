@@ -15,6 +15,7 @@ import {
   query,
   where,
   Timestamp,
+  increment,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { 
@@ -78,6 +79,19 @@ export async function createDevis(
   };
 
   const docRef = await addDoc(devisRef, newDevis);
+  
+  // Mettre à jour le compteur devisRecus de la demande associée
+  if (devisData.demandeId) {
+    try {
+      const demandeRef = doc(db, 'demandes', devisData.demandeId);
+      await updateDoc(demandeRef, {
+        devisRecus: increment(1)
+      });
+    } catch (error) {
+      console.error('Erreur mise à jour compteur devisRecus:', error);
+      // Ne pas bloquer la création du devis si la mise à jour échoue
+    }
+  }
   
   return {
     ...newDevis,
