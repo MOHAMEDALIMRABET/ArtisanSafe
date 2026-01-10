@@ -97,13 +97,6 @@ export default function Header() {
                   Comment ça marche
                 </Link>
                 
-                <Link
-                  href="/recherche"
-                  className="text-gray-700 hover:text-[#FF6B00] font-medium transition-colors"
-                >
-                  Trouver un artisan
-                </Link>
-                
                 {user?.role === 'artisan' && (
                   <Link
                     href="/artisan/demandes"
