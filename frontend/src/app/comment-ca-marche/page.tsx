@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Button, Logo } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { Card } from '@/components/ui/Card';
 import Link from 'next/link';
 
@@ -10,29 +10,6 @@ export default function CommentCaMarchePage() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
-      {/* Header */}
-      <header className="bg-[#2C3E50] text-white py-6 shadow-lg">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <Logo size="md" href="/" />
-            <div className="flex gap-3">
-              <Button
-                onClick={() => router.push('/connexion')}
-                className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#2C3E50]"
-              >
-                Connexion
-              </Button>
-              <Button
-                onClick={() => router.push('/inscription')}
-                className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
-              >
-                Inscription
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#2C3E50] to-[#3D5A73] text-white py-16">
         <div className="container mx-auto px-4 text-center">
