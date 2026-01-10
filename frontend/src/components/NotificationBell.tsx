@@ -168,22 +168,28 @@ export default function NotificationBell() {
                 <div
                   key={notif.id}
                   onClick={() => handleNotificationClick(notif)}
-                  className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition ${
-                    !notif.lue ? 'bg-blue-50' : ''
+                  className={`relative px-4 py-3 border-b border-gray-100 cursor-pointer transition ${
+                    !notif.lue 
+                      ? 'bg-white hover:bg-orange-50' 
+                      : 'bg-gray-50/50 hover:bg-gray-100 opacity-80'
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  {/* Point orange pour les non lues */}
+                  {!notif.lue && (
+                    <span className="absolute left-2 top-5 w-2 h-2 bg-[#FF6B00] rounded-full"></span>
+                  )}
+                  
+                  <div className="flex items-start gap-3 pl-2">
                     <span className="text-2xl flex-shrink-0">
                       {getNotificationIcon(notif.type)}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-semibold text-sm text-[#2C3E50]">
+                        <h4 className={`font-semibold text-sm ${
+                          !notif.lue ? 'text-[#2C3E50]' : 'text-gray-600'
+                        }`}>
                           {notif.titre}
                         </h4>
-                        {!notif.lue && (
-                          <span className="w-2 h-2 bg-[#FF6B00] rounded-full flex-shrink-0 mt-1"></span>
-                        )}
                       </div>
                       {notif.message && (
                         <p className="text-sm text-gray-600 mt-1 line-clamp-2">
