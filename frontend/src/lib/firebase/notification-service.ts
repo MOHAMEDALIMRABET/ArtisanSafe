@@ -140,7 +140,7 @@ export async function notifyArtisanNouvelDemande(
     type: 'nouvelle_demande',
     titre: `Nouvelle demande: ${categorie}`,
     message: `Un client recherche un artisan à ${ville}. Consultez la demande pour envoyer un devis.`,
-    lien: `/demande/${demandeId}`,
+    lien: `/artisan/demandes`,
   });
 }
 
@@ -154,7 +154,7 @@ export async function notifyClientNouveauDevis(
     type: 'nouveau_devis',
     titre: 'Nouveau devis reçu',
     message: `${artisanNom} vous a envoyé un devis. Consultez-le maintenant.`,
-    lien: `/devis/${devisId}`,
+    lien: `/client/devis/${devisId}`,
   });
 }
 
@@ -225,7 +225,7 @@ export async function notifyContratSigne(
     message: isArtisan
       ? 'Le contrat a été signé. Vous pouvez commencer les travaux.'
       : 'Le contrat a été signé. Les travaux vont commencer.',
-    lien: `/contrat/${contratId}`,
+    lien: isArtisan ? '/artisan/dashboard' : '/dashboard',
   });
 }
 
@@ -239,7 +239,7 @@ export async function notifyPaiementLibere(
     type: 'paiement_libere',
     titre: '💰 Paiement libéré',
     message: `Le paiement de ${montant.toFixed(2)}€ a été libéré sur votre compte.`,
-    lien: `/contrat/${contratId}`,
+    lien: '/artisan/dashboard',
   });
 }
 
@@ -253,6 +253,6 @@ export async function notifyNouvelAvis(
     type: 'nouvel_avis',
     titre: `Nouvel avis : ${note}⭐`,
     message: 'Un client a laissé un avis sur votre profil.',
-    lien: `/avis/${avisId}`,
+    lien: '/artisan/profil',
   });
 }
