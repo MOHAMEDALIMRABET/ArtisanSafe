@@ -8,6 +8,7 @@ import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { Logo } from '@/components/ui';
 import NotificationBell from '@/components/NotificationBell';
+import UserMenu from '@/components/UserMenu';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { User } from '@/types/firestore';
 
@@ -137,13 +138,7 @@ export default function DashboardPage() {
             
             <div className="flex items-center gap-4">
               <NotificationBell />
-              
-              <button
-                onClick={handleSignOut}
-                className="text-gray-600 hover:text-gray-800 font-medium"
-              >
-                Déconnexion
-              </button>
+              {user && <UserMenu user={user} isArtisan={false} />}
             </div>
           </div>
         </div>
