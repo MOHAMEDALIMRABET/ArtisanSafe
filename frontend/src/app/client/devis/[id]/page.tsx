@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { notifyArtisanDevisAccepte, notifyArtisanDevisRefuse } from '@/lib/firebase/notification-service';
+import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
 
@@ -275,7 +276,13 @@ export default function ClientDevisDetailPage() {
             {/* En-tête */}
             <div className="border-b-2 border-[#FF6B00] pb-6 mb-6">
               <div className="flex justify-between items-start">
-                <div>
+                {/* Logo à gauche */}
+                <div className="flex-shrink-0">
+                  <Logo size="sm" variant="full" />
+                </div>
+
+                {/* Titre DEVIS au centre */}
+                <div className="flex-1 text-center">
                   <h2 className="text-3xl font-bold text-[#2C3E50] mb-2">DEVIS</h2>
                   <p className="text-gray-600">N° {devis.numeroDevis}</p>
                   <p className="text-sm text-gray-500">
@@ -285,8 +292,10 @@ export default function ClientDevisDetailPage() {
                     Valable jusqu'au : {devis.dateValidite?.toDate().toLocaleDateString('fr-FR')}
                   </p>
                 </div>
+
+                {/* Info demande à droite */}
                 {demande && (
-                  <div className="text-right text-sm">
+                  <div className="text-right text-sm flex-shrink-0">
                     <p className="text-gray-600 font-semibold">Demande N° {demande.id?.slice(-6).toUpperCase()}</p>
                     <p className="text-gray-500">{demande.titre || demande.categorie}</p>
                   </div>

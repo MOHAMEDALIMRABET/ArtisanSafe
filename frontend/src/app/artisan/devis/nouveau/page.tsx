@@ -12,6 +12,7 @@ import { getDemandeById } from '@/lib/firebase/demande-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { createDevis, updateDevis, genererProchainNumeroDevis } from '@/lib/firebase/devis-service';
+import { Logo } from '@/components/ui';
 import type { Demande } from '@/types/firestore';
 import type { Devis, LigneDevis, TVARate, calculerLigne, calculerTotaux } from '@/types/devis';
 import { Timestamp } from 'firebase/firestore';
@@ -617,11 +618,19 @@ export default function NouveauDevisPage() {
           {/* En-tête devis */}
           <div className="mb-8">
             <div className="flex justify-between items-start mb-8">
-              <div>
+              {/* Logo à gauche */}
+              <div className="flex-shrink-0">
+                <Logo size="sm" variant="full" />
+              </div>
+
+              {/* Titre DEVIS au centre */}
+              <div className="flex-1 text-center">
                 <h1 className="text-4xl font-bold text-[#2C3E50] mb-2">DEVIS</h1>
                 <p className="text-[#6C757D]">N° {numeroDevisPreview}</p>
               </div>
-              <div className="text-right">
+
+              {/* Dates à droite */}
+              <div className="text-right flex-shrink-0">
                 <p className="text-sm text-[#6C757D]">Date</p>
                 <p className="font-semibold">{dateCreation.toLocaleDateString('fr-FR')}</p>
                 <p className="text-sm text-[#6C757D] mt-2">Validité</p>

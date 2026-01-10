@@ -10,6 +10,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
 
 export default function VoirDevisPage() {
@@ -118,12 +119,21 @@ export default function VoirDevisPage() {
         <div className="bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto">
           {/* En-tête du devis */}
           <div className="mb-8">
+            {/* Logo + Titre DEVIS + Dates */}
             <div className="flex justify-between items-start mb-8">
-              <div>
+              {/* Logo à gauche */}
+              <div className="flex-shrink-0">
+                <Logo size="sm" variant="full" />
+              </div>
+
+              {/* Titre DEVIS au centre */}
+              <div className="flex-1 text-center">
                 <h2 className="text-4xl font-bold text-[#2C3E50] mb-2">DEVIS</h2>
                 <p className="text-[#6C757D]">N° {devis.numeroDevis}</p>
               </div>
-              <div className="text-right">
+
+              {/* Dates à droite */}
+              <div className="text-right flex-shrink-0">
                 <p className="text-sm text-[#6C757D]">Date</p>
                 <p className="font-semibold">{devis.dateCreation?.toDate().toLocaleDateString('fr-FR')}</p>
                 {devis.dateValidite && (
