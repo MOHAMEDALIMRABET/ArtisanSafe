@@ -7,7 +7,6 @@ import { getDemandesByClient, deleteDemande } from '@/lib/firebase/demande-servi
 import { getArtisansByIds } from '@/lib/firebase/artisan-service';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Logo } from '@/components/ui';
 import type { Demande, Artisan } from '@/types/firestore';
 
 export default function MesDemandesPage() {
@@ -116,47 +115,28 @@ export default function MesDemandesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-md">
-        <div className="container mx-auto px-4 py-4">
+      {/* Titre de la page */}
+      <div className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => router.push('/')} className="hover:opacity-80">
-                <Logo size="md" />
-              </button>
-              
-              <div className="border-l border-gray-300 h-12 mx-2"></div>
-              
-              <div>
-                <h1 className="text-xl font-bold text-[#2C3E50]">
-                  Mes demandes de devis
-                </h1>
-                <p className="text-sm text-[#6C757D]">
-                  Suivez l'état de vos demandes et gérez vos projets
-                </p>
-              </div>
+            <div>
+              <h1 className="text-3xl font-bold text-[#2C3E50]">
+                Mes demandes de devis
+              </h1>
+              <p className="text-sm text-[#6C757D] mt-1">
+                Suivez l'état de vos demandes et gérez vos projets
+              </p>
             </div>
             
-            <div className="flex items-center gap-3">
-              <span className="text-[#2C3E50] font-medium hidden md:block">
-                👋 {user?.displayName || 'Utilisateur'}
-              </span>
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors"
-              >
-                ← Tableau de bord
-              </button>
-              <Button
-                onClick={() => router.push('/recherche')}
-                className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
-              >
-                + Nouvelle recherche
-              </Button>
-            </div>
+            <Button
+              onClick={() => router.push('/recherche')}
+              className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
+            >
+              + Nouvelle recherche
+            </Button>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Contenu */}
       <main className="container mx-auto px-4 py-8 max-w-6xl">
