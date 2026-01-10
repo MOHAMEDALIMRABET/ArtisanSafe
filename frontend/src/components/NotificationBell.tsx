@@ -101,7 +101,7 @@ export default function NotificationBell() {
       {/* Bouton cloche */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-white hover:text-[#FF6B00] transition-colors"
+        className="relative p-2 text-[#FF6B00] hover:text-[#E56100] transition-colors"
         aria-label="Notifications"
       >
         <svg
