@@ -6,10 +6,6 @@ import Link from 'next/link';
 import { authService, resendVerificationEmail } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
-import { Logo } from '@/components/ui';
-import NotificationBell from '@/components/NotificationBell';
-import UserMenu from '@/components/UserMenu';
-import { useNotifications } from '@/hooks/useNotifications';
 import type { User } from '@/types/firestore';
 
 export default function DashboardPage() {
@@ -130,20 +126,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-md">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Logo size="md" />
-            
-            <div className="flex items-center gap-4">
-              <NotificationBell />
-              {user && <UserMenu user={user} isArtisan={false} />}
-            </div>
-          </div>
-        </div>
-      </nav>
-
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Bannière email non vérifié (Client) */}
         {!emailVerified && (
