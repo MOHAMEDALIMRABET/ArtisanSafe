@@ -18,7 +18,7 @@ export default function ClientDevisDetailPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [devis, setDevis] = useState<Devis | null>(null);
   const [demande, setDemande] = useState<Demande | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,8 +30,14 @@ export default function ClientDevisDetailPage() {
   const action = searchParams.get('action');
 
   useEffect(() => {
+    // Attendre que l'auth soit chargée et que l'utilisateur soit défini
+    if (authLoading) return;
+    if (!user) {
+      router.push('/connexion');
+      return;
+    }
     loadDevis();
-  }, [devisId]);
+  }, [devisId, user, authLoading]);
 
   useEffect(() => {
     if (action === 'accepter' && devis?.statut === 'envoye') {
@@ -51,8 +57,16 @@ export default function ClientDevisDetailPage() {
 
       const devisData = { id: devisDoc.id, ...devisDoc.data() } as Devis;
 
+      console.log('🔍 Devis chargé:', {
+        devisId: devisData.id,
+        clientIdDevis: devisData.clientId,
+        userUid: user?.uid,
+        match: devisData.clientId === user?.uid
+      });
+
       // Vérifier que le devis appartient au client
       if (devisData.clientId !== user?.uid) {
+        console.error('❌ Devis refusé: clientId ne correspond pas');
         router.push('/client/devis');
         return;
       }
@@ -337,10 +351,7 @@ export default function ClientDevisDetailPage() {
                     {devis.lignes.map((ligne, index) => (
                       <tr key={index}>
                         <td className="border border-gray-300 px-4 py-2">
-                          {ligne.designation}
-                          {ligne.description && (
-                            <p className="text-sm text-gray-600 mt-1">{ligne.description}</p>
-                          )}
+                          {ligne.description}
                         </td>
                         <td className="border border-gray-300 px-4 py-2 text-center">
                           {ligne.quantite} {ligne.unite}
@@ -371,7 +382,7 @@ export default function ClientDevisDetailPage() {
                   </div>
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-700">TVA:</span>
-                    <span className="font-semibold">{devis.totaux.totalTVA.toFixed(2)} €</span>
+                    <span className="font-semibold">{devis.totaux.totalTVAGlobal.toFixed(2)} €</span>
                   </div>
                   <div className="flex justify-between text-xl font-bold text-[#FF6B00] pt-2 border-t-2 border-[#FF6B00]">
                     <span>Total TTC:</span>
@@ -382,7 +393,7 @@ export default function ClientDevisDetailPage() {
             </div>
 
             {/* Informations complémentaires */}
-            {(devis.delaiRealisation || devis.conditionsPaiement || devis.notes) && (
+            {(devis.delaiRealisation || devis.conditions || devis.notes) && (
               <div className="border-t pt-6">
                 <h3 className="font-bold text-[#2C3E50] mb-4">Informations complémentaires</h3>
                 
@@ -393,10 +404,10 @@ export default function ClientDevisDetailPage() {
                   </div>
                 )}
 
-                {devis.conditionsPaiement && (
+                {devis.conditions && (
                   <div className="mb-4">
-                    <p className="text-sm font-semibold text-gray-700">Conditions de paiement :</p>
-                    <p className="text-gray-600 whitespace-pre-wrap">{devis.conditionsPaiement}</p>
+                    <p className="text-sm font-semibold text-gray-700">Conditions :</p>
+                    <p className="text-gray-600 whitespace-pre-wrap">{devis.conditions}</p>
                   </div>
                 )}
 

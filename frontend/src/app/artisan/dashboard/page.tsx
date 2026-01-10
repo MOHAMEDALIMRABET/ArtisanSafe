@@ -8,6 +8,8 @@ import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
 import { Logo } from '@/components/ui';
+import NotificationBell from '@/components/NotificationBell';
+import { useNotifications } from '@/hooks/useNotifications';
 import type { User, Artisan } from '@/types/firestore';
 
 export default function ArtisanDashboardPage() {
@@ -21,6 +23,14 @@ export default function ArtisanDashboardPage() {
   const [canResend, setCanResend] = useState(true);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [nouvellesDemandes, setNouvellesDemandes] = useState(0);
+
+  // Hook pour les notifications
+  const { notifications, unreadCount } = useNotifications(user?.uid);
+
+  // Compter les notifications de devis acceptés/refusés
+  const devisNotifications = notifications.filter(
+    n => n.type === 'devis_accepte' || n.type === 'devis_refuse'
+  ).length;
 
   // Calculer si le profil est complètement vérifié
   const isFullyVerified = 
@@ -167,12 +177,16 @@ export default function ArtisanDashboardPage() {
           <div className="flex items-center justify-between">
             <Logo size="md" />
             
-            <button
-              onClick={handleSignOut}
-              className="text-gray-600 hover:text-gray-800 font-medium"
-            >
-              Déconnexion
-            </button>
+            <div className="flex items-center gap-4">
+              <NotificationBell />
+              
+              <button
+                onClick={handleSignOut}
+                className="text-gray-600 hover:text-gray-800 font-medium"
+              >
+                Déconnexion
+              </button>
+            </div>
           </div>
         </div>
       </nav>
@@ -553,13 +567,25 @@ export default function ArtisanDashboardPage() {
           <Link href="/artisan/devis">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center relative">
                   <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
+                  {devisNotifications > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-[#FF6B00] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {devisNotifications}
+                    </span>
+                  )}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Mes Devis - Mes Factures</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-800">Mes Devis - Mes Factures</h2>
+                    {devisNotifications > 0 && (
+                      <span className="bg-[#FF6B00] text-white text-xs px-2 py-1 rounded-full font-semibold">
+                        {devisNotifications} nouvelle(s)
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-600">Gérer vos devis et factures</p>
                 </div>
               </div>

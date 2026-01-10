@@ -33,17 +33,20 @@ export default function ClientDevisPage() {
     try {
       setLoading(true);
       
-      // Charger tous les devis du client
+      // Charger tous les devis du client (SAUF les brouillons)
       const q = query(
         collection(db, 'devis'),
         where('clientId', '==', user.uid)
       );
 
       const querySnapshot = await getDocs(q);
-      const devisData = querySnapshot.docs.map(doc => ({
+      const allDevis = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       } as Devis));
+
+      // Filtrer pour exclure les brouillons (le client ne doit voir que les devis envoyés)
+      const devisData = allDevis.filter(d => d.statut !== 'brouillon');
 
       // Trier par date de création décroissante
       devisData.sort((a, b) => {
@@ -263,26 +266,39 @@ export default function ClientDevisPage() {
 
                   {/* Boutons d'action */}
                   <div className="flex gap-3 pt-4 border-t">
-                    <Link href={`/client/devis/${d.id}`} className="flex-1">
-                      <button className="w-full bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition">
-                        📄 Voir le détail
-                      </button>
-                    </Link>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const targetUrl = `/client/devis/${d.id}`;
+                        console.log('🔗 Navigation vers:', targetUrl);
+                        router.push(targetUrl);
+                      }}
+                      className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
+                    >
+                      📄 Voir le détail
+                    </div>
                     
                     {d.statut === 'envoye' && (
                       <>
-                        <button 
-                          onClick={() => router.push(`/client/devis/${d.id}?action=accepter`)}
-                          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?action=accepter`);
+                          }}
+                          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-center font-medium cursor-pointer"
                         >
                           ✅ Accepter
-                        </button>
-                        <button 
-                          onClick={() => router.push(`/client/devis/${d.id}?action=refuser`)}
-                          className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                        </div>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?action=refuser`);
+                          }}
+                          className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-center font-medium cursor-pointer"
                         >
                           ❌ Refuser
-                        </button>
+                        </div>
                       </>
                     )}
 
