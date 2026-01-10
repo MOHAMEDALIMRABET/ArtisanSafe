@@ -24,9 +24,9 @@ export default function DashboardPage() {
   // Hook pour les notifications
   const { notifications, unreadCount } = useNotifications(user?.uid);
 
-  // Compter les notifications de devis reçus
+  // Compter les notifications de devis reçus NON LUES
   const devisNotifications = notifications.filter(
-    n => n.type === 'devis_recu' || n.type === 'nouveau_devis'
+    n => (n.type === 'devis_recu' || n.type === 'nouveau_devis') && !n.lue
   ).length;
 
   useEffect(() => {

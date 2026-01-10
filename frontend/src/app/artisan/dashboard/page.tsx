@@ -27,9 +27,9 @@ export default function ArtisanDashboardPage() {
   // Hook pour les notifications
   const { notifications, unreadCount } = useNotifications(user?.uid);
 
-  // Compter les notifications de devis acceptés/refusés
+  // Compter les notifications de devis acceptés/refusés NON LUES
   const devisNotifications = notifications.filter(
-    n => n.type === 'devis_accepte' || n.type === 'devis_refuse'
+    n => (n.type === 'devis_accepte' || n.type === 'devis_refuse') && !n.lue
   ).length;
 
   // Calculer si le profil est complètement vérifié
