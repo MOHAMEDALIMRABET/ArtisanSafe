@@ -22,7 +22,7 @@ export default function Header() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Pages où le header ne doit PAS s'afficher
-  const hiddenRoutes = ['/admin', '/connexion', '/inscription'];
+  const hiddenRoutes = ['/admin', '/connexion'];
   const shouldHideHeader = hiddenRoutes.some(route => pathname?.startsWith(route));
 
   useEffect(() => {
