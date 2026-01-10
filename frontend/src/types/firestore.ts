@@ -74,14 +74,17 @@ export type LitigeMotif =
   | 'autre';
 
 export type NotificationType = 
-  | 'nouvelle_demande' 
+  | 'nouvelle_demande'
+  | 'demande_refusee'    // ✅ Ajouté - utilisé dans artisan/demandes
+  | 'nouveau_devis'      // ✅ Ajouté - utilisé dans notification-service
   | 'devis_recu' 
   | 'devis_accepte'
   | 'devis_refuse'
   | 'contrat_signe'
   | 'paiement' 
   | 'paiement_libere'
-  | 'message' 
+  | 'nouveau_message'    // ✅ Ajouté - utilisé dans NotificationBell
+  | 'message'            // Gardé pour compatibilité
   | 'avis'
   | 'nouvel_avis'
   | 'litige';
@@ -518,10 +521,9 @@ export interface Notification {
   userId: string;
   type: NotificationType;
   titre: string;
-  message?: string; // Alias pour contenu (compatibilité)
-  contenu?: string; // Déprécié, utiliser message
-  lien?: string; // Deep link vers l'élément concerné
-  lue: boolean; // Changé de "lu" à "lue" pour correspondre au service
+  message: string;        // Requis maintenant (toujours utilisé)
+  lien?: string;          // Deep link vers l'élément concerné
+  lue: boolean;           // État de lecture
   dateCreation: Timestamp;
   dateLecture?: Timestamp;
 }

@@ -11,6 +11,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import type { Notification } from '@/types/firestore';
+import type { Timestamp } from 'firebase/firestore';
 
 export default function NotificationBell() {
   const { user } = useAuth();
@@ -36,7 +38,7 @@ export default function NotificationBell() {
     };
   }, [isOpen]);
 
-  const handleNotificationClick = async (notif: any) => {
+  const handleNotificationClick = async (notif: Notification) => {
     // Marquer comme lue
     if (!notif.lue) {
       await markAsRead(notif.id);
@@ -55,6 +57,10 @@ export default function NotificationBell() {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
+      case 'nouvelle_demande':
+        return '📋';
+      case 'demande_refusee':
+        return '🚫';
       case 'devis_recu':
       case 'nouveau_devis':
         return '📄';
@@ -63,19 +69,24 @@ export default function NotificationBell() {
       case 'devis_refuse':
         return '❌';
       case 'nouveau_message':
+      case 'message':
         return '💬';
       case 'contrat_signe':
         return '📝';
+      case 'paiement':
       case 'paiement_libere':
         return '💰';
+      case 'avis':
       case 'nouvel_avis':
         return '⭐';
+      case 'litige':
+        return '⚠️';
       default:
         return '🔔';
     }
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: Timestamp | undefined) => {
     if (!timestamp) return '';
     try {
       const date = timestamp.toDate();
@@ -174,9 +185,11 @@ export default function NotificationBell() {
                           <span className="w-2 h-2 bg-[#FF6B00] rounded-full flex-shrink-0 mt-1"></span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                        {notif.message}
-                      </p>
+                      {notif.message && (
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                          {notif.message}
+                        </p>
+                      )}
                       <p className="text-xs text-gray-400 mt-1">
                         {formatDate(notif.dateCreation)}
                       </p>
