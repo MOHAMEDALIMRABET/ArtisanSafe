@@ -66,9 +66,10 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href={user ? (user.role === 'artisan' ? '/artisan/dashboard' : '/dashboard') : '/'}>
-            <Logo size="md" />
-          </Link>
+          <Logo 
+            size="md" 
+            href={user ? (user.role === 'artisan' ? '/artisan/dashboard' : '/dashboard') : '/'}
+          />
 
           {/* Menu navigation */}
           <div className="flex items-center gap-6">
