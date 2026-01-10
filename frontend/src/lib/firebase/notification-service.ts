@@ -162,15 +162,56 @@ export async function notifyClientNouveauDevis(
 export async function notifyArtisanDevisAccepte(
   artisanId: string,
   devisId: string,
-  clientNom: string
+  clientNom: string,
+  numeroDevis?: string
 ): Promise<void> {
   await createNotification(artisanId, {
     type: 'devis_accepte',
     titre: '✅ Devis accepté !',
-    message: `${clientNom} a accepté votre devis. Un contrat a été généré.`,
-    lien: `/devis/${devisId}`,
+    message: numeroDevis 
+      ? `${clientNom} a accepté votre devis ${numeroDevis}. Un contrat a été généré.`
+      : `${clientNom} a accepté votre devis. Un contrat a été généré.`,
+    lien: `/artisan/devis/${devisId}`,
   });
 }
+
+// Devis refusé pour artisan
+export async function notifyArtisanDevisRefuse(
+  artisanId: string,
+  devisId: string,
+  clientNom: string,
+  numeroDevis?: string,
+  motif?: string
+): Promise<void> {
+  const message = numeroDevis
+    ? `${clientNom} a refusé votre devis ${numeroDevis}.${motif ? ` Motif : ${motif}` : ''}`
+    : `${clientNom} a refusé votre devis.${motif ? ` Motif : ${motif}` : ''}`;
+
+  await createNotification(artisanId, {
+    type: 'devis_refuse',
+    titre: '❌ Devis refusé',
+    message,
+    lien: `/artisan/devis/${devisId}`,
+  });
+}
+
+// Devis reçu pour client
+export async function notifyClientDevisRecu(
+  clientId: string,
+  devisId: string,
+  artisanNom: string,
+  numeroDevis?: string
+): Promise<void> {
+  await createNotification(clientId, {
+    type: 'devis_recu',
+    titre: '📄 Nouveau devis reçu',
+    message: numeroDevis
+      ? `${artisanNom} vous a envoyé le devis ${numeroDevis}.`
+      : `${artisanNom} vous a envoyé un nouveau devis.`,
+    lien: `/client/devis/${devisId}`,
+  });
+}
+
 
 // Contrat signé
 export async function notifyContratSigne(

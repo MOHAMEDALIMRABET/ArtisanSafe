@@ -24,6 +24,7 @@ import type {
   UpdateDevis,
   DevisStatut,
 } from '@/types/devis';
+import { notifyClientDevisRecu } from './notification-service';
 
 const COLLECTION_NAME = 'devis';
 
@@ -80,6 +81,8 @@ export async function createDevis(
 
   const docRef = await addDoc(devisRef, newDevis);
   
+  const devisId = docRef.id;
+  
   // Mettre à jour le compteur devisRecus de la demande associée
   if (devisData.demandeId) {
     try {
@@ -93,9 +96,26 @@ export async function createDevis(
     }
   }
   
+  // Notifier le client si le devis est envoyé (pas un brouillon)
+  if (newDevis.statut === 'envoye') {
+    try {
+      const artisanNom = `${devisData.artisan.prenom} ${devisData.artisan.nom}`;
+      await notifyClientDevisRecu(
+        devisData.clientId,
+        devisId,
+        artisanNom,
+        numeroDevis
+      );
+      console.log('✅ Notification envoyée au client');
+    } catch (error) {
+      console.error('Erreur envoi notification client:', error);
+      // Ne pas bloquer la création si la notification échoue
+    }
+  }
+  
   return {
     ...newDevis,
-    id: docRef.id,
+    id: devisId,
   } as Devis;
 }
 

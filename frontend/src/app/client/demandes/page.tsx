@@ -431,6 +431,17 @@ export default function MesDemandesPage() {
                   <div>
                     <span className="text-[#6C757D]">Devis reçus :</span>
                     <p className="font-semibold text-[#2C3E50]">{demande.devisRecus || 0}</p>
+                    {demande.devisRecus && demande.devisRecus > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/client/devis?demandeId=${demande.id}`);
+                        }}
+                        className="mt-1 text-xs text-[#FF6B00] hover:underline font-medium flex items-center gap-1"
+                      >
+                        📄 Voir les devis
+                      </button>
+                    )}
                   </div>
                 </div>
               </Card>

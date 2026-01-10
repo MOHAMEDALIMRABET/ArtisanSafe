@@ -76,9 +76,14 @@ export type LitigeMotif =
 export type NotificationType = 
   | 'nouvelle_demande' 
   | 'devis_recu' 
+  | 'devis_accepte'
+  | 'devis_refuse'
+  | 'contrat_signe'
   | 'paiement' 
+  | 'paiement_libere'
   | 'message' 
-  | 'avis' 
+  | 'avis'
+  | 'nouvel_avis'
   | 'litige';
 
 export type MessageType = 'texte' | 'document' | 'image';
@@ -513,9 +518,10 @@ export interface Notification {
   userId: string;
   type: NotificationType;
   titre: string;
-  contenu: string;
+  message?: string; // Alias pour contenu (compatibilité)
+  contenu?: string; // Déprécié, utiliser message
   lien?: string; // Deep link vers l'élément concerné
-  lu: boolean;
+  lue: boolean; // Changé de "lu" à "lue" pour correspondre au service
   dateCreation: Timestamp;
   dateLecture?: Timestamp;
 }
