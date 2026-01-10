@@ -76,6 +76,27 @@ export default function Header() {
             {!isLoading && (
               <>
                 <Link
+                  href="/inscription?role=client"
+                  className="text-gray-700 hover:text-[#FF6B00] font-medium transition-colors hidden md:block"
+                >
+                  Je suis particulier
+                </Link>
+                
+                <Link
+                  href="/inscription?role=artisan"
+                  className="text-gray-700 hover:text-[#FF6B00] font-medium transition-colors hidden md:block"
+                >
+                  Devenir artisan
+                </Link>
+                
+                <Link
+                  href="/comment-ca-marche"
+                  className="text-gray-700 hover:text-[#FF6B00] font-medium transition-colors hidden md:block"
+                >
+                  Comment ça marche
+                </Link>
+                
+                <Link
                   href="/recherche"
                   className="text-gray-700 hover:text-[#FF6B00] font-medium transition-colors"
                 >

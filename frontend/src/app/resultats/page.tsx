@@ -225,62 +225,24 @@ function ResultatsContent() {
   
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
-      {/* Header */}
-      <header className="bg-white shadow-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
-            {/* Logo */}
-            <Logo size="md" href={dashboardUrl} />
-
-            {/* Titre au centre */}
-            <div className="flex-1 text-center">
-              <h1 className="text-2xl font-bold text-[#2C3E50]">Trouvez votre artisan</h1>
-              <p className="text-[#6C757D] text-sm">Décrivez votre projet, nous trouvons les artisans disponibles</p>
-            </div>
-
-            {/* Bouton Mon espace / Connexion */}
-            <div className="flex items-center gap-3">
-              {user ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-[#2C3E50] font-medium hidden md:block">
-                    👋 {user.prenom} {user.nom}
-                  </span>
-                  <button
-                    onClick={() => router.push(dashboardUrl)}
-                    className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
-                  >
-                    Mon espace
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <button 
-                    onClick={() => router.push('/connexion')}
-                    className="text-[#2C3E50] hover:text-[#FF6B00] font-medium px-4 py-2 rounded-lg transition-colors"
-                  >
-                    Connexion
-                  </button>
-                  <button 
-                    onClick={() => router.push('/inscription')}
-                    className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
-                  >
-                    Inscription
-                  </button>
-                </>
-              )}
-            </div>
+      {/* Titre de la page */}
+      <div className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center mb-3">
+            <h1 className="text-3xl font-bold text-[#2C3E50]">Trouvez votre artisan</h1>
+            <p className="text-[#6C757D] text-sm mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
           </div>
           
           {/* Message de bienvenue */}
           {user && (
-            <div className="bg-[#1A3A5C] rounded-lg px-4 py-3 mt-4">
+            <div className="bg-[#1A3A5C] rounded-lg px-4 py-3">
               <p className="text-white">
                 👋 Bienvenue <span className="font-semibold text-[#FF6B00]">{user.prenom} {user.nom}</span>
               </p>
             </div>
           )}
         </div>
-      </header>
+      </div>
 
       {/* Bannière de recherche rapide */}
       <div className="bg-white border-b border-[#E9ECEF] py-4 sticky top-0 z-40 shadow-sm">

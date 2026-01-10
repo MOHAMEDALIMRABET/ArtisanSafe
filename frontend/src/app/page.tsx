@@ -1,18 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Button, Logo } from '@/components/ui';
-import { authService } from '@/lib/auth-service';
-import { getUserById } from '@/lib/firebase/user-service';
-import type { User, Categorie } from '@/types/firestore';
+import { Button } from '@/components/ui';
+import type { Categorie } from '@/types/firestore';
 
 export default function Home() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [blinkingFields, setBlinkingFields] = useState<{ville: boolean, date: boolean}>({ ville: false, date: false });
   
   // État du formulaire de recherche
@@ -23,24 +19,6 @@ export default function Home() {
     flexible: false,
     flexibiliteDays: '0'
   });
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  async function checkAuthStatus() {
-    try {
-      const currentUser = authService.getCurrentUser();
-      if (currentUser) {
-        const userData = await getUserById(currentUser.uid);
-        setUser(userData);
-      }
-    } catch (error) {
-      console.error('Erreur vérification authentification:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   async function handleSearch() {
     // Vérifier quels champs sont vides
@@ -93,89 +71,8 @@ export default function Home() {
     router.push(`/resultats?${params.toString()}`);
   }
 
-  function handleDashboardRedirect() {
-    if (user?.role === 'artisan') {
-      router.push('/artisan/dashboard');
-    } else {
-      router.push('/dashboard');
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] via-[#3D5A73] to-[#2C3E50]">
-      {/* Navigation Header */}
-      <nav className="bg-white shadow-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <Logo size="md" />
-
-            {/* Menu de navigation */}
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="/inscription?role=client" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
-                Je suis particulier
-              </Link>
-              <Link href="/inscription?role=artisan" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
-                Devenir artisan
-              </Link>
-              <Link href="/comment-ca-marche" className="text-[#2C3E50] hover:text-[#FF6B00] font-medium transition-colors">
-                Comment ça marche
-              </Link>
-            </div>
-
-            {/* Boutons Connexion/Inscription OU Dashboard si connecté */}
-            <div className="flex items-center gap-3">
-              {!isLoading && (
-                <>
-                  {user ? (
-                    // Utilisateur connecté : afficher message + bouton dashboard + déconnexion
-                    <div className="flex items-center gap-3">
-                      <span className="text-[#2C3E50] font-medium hidden md:block">
-                        👋 {user.prenom} {user.nom}
-                      </span>
-                      <button
-                        onClick={handleDashboardRedirect}
-                        className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg w-[140px]"
-                      >
-                        Mon espace
-                      </button>
-                      <button
-                        onClick={async () => {
-                          await authService.signOut();
-                          setUser(null);
-                          router.push('/');
-                        }}
-                        className="border-2 border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545] hover:text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg w-[140px]"
-                      >
-                        Déconnexion
-                      </button>
-                    </div>
-                  ) : (
-                    // Utilisateur non connecté : boutons Connexion/Inscription
-                    <>
-                      <Link href="/connexion">
-                        <button 
-                          className="text-[#2C3E50] hover:text-[#FF6B00] font-medium px-4 py-2 rounded-lg transition-colors"
-                        >
-                          Connexion
-                        </button>
-                      </Link>
-                      <Link href="/inscription">
-                        <button 
-                          className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
-                        >
-                          Inscription
-                        </button>
-                      </Link>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section avec Bannière de Recherche */}
       <div id="recherche-section" className="container mx-auto px-4 py-16">
         {/* Bannière principale avec image de fond */}
