@@ -93,7 +93,7 @@ export default function Home() {
           <div className="relative z-10 py-12 px-6 md:px-12 h-full flex flex-col justify-center">
             {/* Slogan accrocheur */}
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 text-center drop-shadow-lg">
-              Vous avez vos projets, on a vos artisans.
+              Vous avez vos projets, nous avons vos artisans
             </h1>
             <p className="text-center text-white text-lg mb-8 drop-shadow-md">
               Trouvez le bon artisan pour vos travaux, en toute confiance
