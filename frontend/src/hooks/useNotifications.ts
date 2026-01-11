@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { markNotificationAsRead, markAllNotificationsAsRead } from '@/lib/firebase/notification-service';
+import { markNotificationAsRead, markAllNotificationsAsRead, markNotificationsByTypeAsRead } from '@/lib/firebase/notification-service';
 import type { Notification } from '@/types/firestore';
 
 export function useNotifications(userId: string | undefined, maxResults: number = 20) {
@@ -46,6 +46,13 @@ export function useNotifications(userId: string | undefined, maxResults: number 
         setLoading(false);
       },
       (error) => {
+        // Ignorer les erreurs de permission lors de la déconnexion
+        if (error.code === 'permission-denied') {
+          setNotifications([]);
+          setUnreadCount(0);
+          setLoading(false);
+          return;
+        }
         console.error('Erreur écoute notifications:', error);
         setLoading(false);
       }
@@ -72,11 +79,21 @@ export function useNotifications(userId: string | undefined, maxResults: number 
     }
   };
 
+  const markTypeAsRead = async (types: string[]) => {
+    if (!userId) return;
+    try {
+      await markNotificationsByTypeAsRead(userId, types);
+    } catch (error) {
+      console.error('Erreur marquage notifications par type:', error);
+    }
+  };
+
   return {
     notifications,
     unreadCount,
     loading,
     markAsRead,
     markAllAsRead,
+    markTypeAsRead,
   };
 }

@@ -524,7 +524,7 @@ export default function AgendaPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/artisan/dashboard')}
+                onClick={() => router.back()}
                 className="text-gray-600 hover:text-[#FF6B00] flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -889,7 +889,7 @@ export default function AgendaPage() {
         {/* Actions */}
         <div className="mt-6 flex justify-end gap-4">
           <button
-            onClick={() => router.push('/artisan/dashboard')}
+            onClick={() => router.back()}
             className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
             disabled={saving}
           >

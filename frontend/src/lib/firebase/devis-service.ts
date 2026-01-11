@@ -83,8 +83,8 @@ export async function createDevis(
   
   const devisId = docRef.id;
   
-  // Mettre à jour le compteur devisRecus de la demande associée
-  if (devisData.demandeId) {
+  // Mettre à jour le compteur devisRecus UNIQUEMENT si le devis est envoyé (pas brouillon)
+  if (devisData.demandeId && newDevis.statut === 'envoye') {
     try {
       const demandeRef = doc(db, 'demandes', devisData.demandeId);
       await updateDoc(demandeRef, {
@@ -128,6 +128,10 @@ export async function updateDevis(
 ): Promise<void> {
   const devisRef = doc(db, COLLECTION_NAME, devisId);
   
+  // Récupérer le devis actuel pour vérifier le changement de statut
+  const devisDoc = await getDoc(devisRef);
+  const devisActuel = devisDoc.data() as Devis;
+  
   const updateData: any = {
     ...updates,
     dateModification: Timestamp.now(),
@@ -135,9 +139,6 @@ export async function updateDevis(
   
   // Si le statut change, ajouter à l'historique
   if (updates.statut) {
-    const devisDoc = await getDoc(devisRef);
-    const devisActuel = devisDoc.data() as Devis;
-    
     updateData.historiqueStatuts = [
       ...(devisActuel.historiqueStatuts || []),
       {
@@ -153,8 +154,24 @@ export async function updateDevis(
     // Ajouter la date selon le statut
     if (updates.statut === 'envoye') {
       updateData.dateEnvoi = Timestamp.now();
+      
+      // Incrémenter devisRecus si le devis passe de brouillon à envoyé
+      if (devisActuel.statut === 'brouillon' && devisActuel.demandeId) {
+        try {
+          const demandeRef = doc(db, 'demandes', devisActuel.demandeId);
+          await updateDoc(demandeRef, {
+            devisRecus: increment(1)
+          });
+          console.log('✅ Compteur devisRecus incrémenté pour demande:', devisActuel.demandeId);
+        } catch (error) {
+          console.error('Erreur mise à jour compteur devisRecus:', error);
+        }
+      }
     } else if (updates.statut === 'accepte') {
       updateData.dateAcceptation = Timestamp.now();
+    } else if (updates.statut === 'refuse') {
+      updateData.dateRefus = Timestamp.now();
+      // Le motifRefus doit être passé dans updates si fourni
     }
   }
   
@@ -310,4 +327,40 @@ export async function marquerDevisExpires(artisanId: string): Promise<number> {
   }
   
   return compteur;
+}
+
+/**
+ * Dupliquer un devis existant en mode brouillon
+ * Utile pour créer une nouvelle version après refus
+ */
+export async function dupliquerDevis(devisId: string): Promise<string> {
+  const devisOriginal = await getDevisById(devisId);
+  
+  if (!devisOriginal) {
+    throw new Error('Devis introuvable');
+  }
+  
+  // Créer un nouveau devis basé sur l'original
+  const nouveauDevis: CreateDevis = {
+    demandeId: devisOriginal.demandeId,
+    clientId: devisOriginal.clientId,
+    artisanId: devisOriginal.artisanId,
+    statut: 'brouillon',
+    dateValidite: Timestamp.fromDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // +30 jours
+    client: { ...devisOriginal.client },
+    artisan: { ...devisOriginal.artisan },
+    titre: `${devisOriginal.titre} (Révision)`,
+    description: devisOriginal.description,
+    lignes: devisOriginal.lignes.map(ligne => ({ ...ligne })),
+    totaux: { ...devisOriginal.totaux },
+    delaiRealisation: devisOriginal.delaiRealisation,
+    dateDebutPrevue: devisOriginal.dateDebutPrevue,
+    conditions: devisOriginal.conditions,
+    notes: `Révision du devis ${devisOriginal.numeroDevis}${devisOriginal.motifRefus ? ` - Motif refus précédent: ${devisOriginal.motifRefus}` : ''}`,
+    numeroDevis: '', // Sera généré automatiquement
+  };
+  
+  const devis = await createDevis(nouveauDevis);
+  
+  return devis.id;
 }

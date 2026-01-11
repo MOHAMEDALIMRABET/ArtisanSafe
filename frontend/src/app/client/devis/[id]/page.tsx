@@ -10,7 +10,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { notifyArtisanDevisAccepte, notifyArtisanDevisRefuse } from '@/lib/firebase/notification-service';
+import { notifyArtisanDevisAccepte, notifyArtisanDevisRefuse, createNotification } from '@/lib/firebase/notification-service';
 import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
@@ -25,6 +25,7 @@ export default function ClientDevisDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showRefusalModal, setShowRefusalModal] = useState(false);
   const [refusalReason, setRefusalReason] = useState('');
+  const [refusalType, setRefusalType] = useState<'definitif' | 'revision'>('definitif');
   const [processing, setProcessing] = useState(false);
 
   const devisId = params.id as string;
@@ -143,9 +144,10 @@ export default function ClientDevisDetailPage() {
         motifRefus: refusalReason || 'Aucun motif précisé',
       });
 
-      // Notifier l'artisan
+      const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
+
+      // Notifier l'artisan du refus
       try {
-        const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
         await notifyArtisanDevisRefuse(
           devis.artisanId,
           devisId,
@@ -156,10 +158,28 @@ export default function ClientDevisDetailPage() {
         console.log('✅ Artisan notifié du refus');
       } catch (error) {
         console.error('Erreur notification artisan:', error);
-        // Ne pas bloquer le refus si la notification échoue
       }
 
-      alert('❌ Devis refusé. L\'artisan sera notifié.');
+      // Si demande de révision, envoyer une notification supplémentaire
+      if (refusalType === 'revision' && devis.demandeId) {
+        try {
+          await createNotification(devis.artisanId, {
+            type: 'nouvelle_demande',
+            titre: '🔄 Demande de révision de devis',
+            message: `${clientNom} souhaite une révision du devis ${devis.numeroDevis || ''}. Motif : ${refusalReason || 'Non précisé'}`,
+            lien: `/artisan/devis/nouveau?demandeId=${devis.demandeId}`,
+          });
+          console.log('✅ Notification de révision envoyée');
+        } catch (error) {
+          console.error('Erreur notification révision:', error);
+        }
+      }
+
+      const message = refusalType === 'revision'
+        ? '❌ Devis refusé. L\'artisan sera notifié et pourra vous envoyer un devis révisé.'
+        : '❌ Devis refusé. L\'artisan sera notifié.';
+      
+      alert(message);
       
       router.push('/client/devis');
     } catch (error) {
@@ -219,7 +239,7 @@ export default function ClientDevisDetailPage() {
         <div className="bg-[#2C3E50] text-white py-6 print:hidden">
           <div className="container mx-auto px-4">
             <button
-              onClick={() => router.push('/client/devis')}
+              onClick={() => router.back()}
               className="flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -464,19 +484,60 @@ export default function ClientDevisDetailPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-xl font-bold text-[#2C3E50] mb-4">Refuser ce devis</h3>
-            <p className="text-gray-600 mb-4">
-              Pourquoi refusez-vous ce devis ? (optionnel)
+            
+            <p className="text-gray-600 mb-3">
+              Motif du refus (optionnel) :
             </p>
             <textarea
               value={refusalReason}
               onChange={(e) => setRefusalReason(e.target.value)}
               className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-              rows={4}
+              rows={3}
               placeholder="Ex: Tarif trop élevé, délai trop long, prestation non adaptée..."
             />
+
+            <p className="text-gray-700 font-semibold mb-3">
+              Que souhaitez-vous faire ?
+            </p>
+
+            <div className="space-y-3 mb-6">
+              <label className="flex items-start gap-3 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-[#FF6B00] transition">
+                <input
+                  type="radio"
+                  name="refusalType"
+                  value="definitif"
+                  checked={refusalType === 'definitif'}
+                  onChange={(e) => setRefusalType(e.target.value as 'definitif' | 'revision')}
+                  className="mt-1 w-4 h-4 text-[#FF6B00] focus:ring-[#FF6B00]"
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Refuser définitivement</p>
+                  <p className="text-sm text-gray-600">L'artisan sera notifié du refus</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-[#FF6B00] transition">
+                <input
+                  type="radio"
+                  name="refusalType"
+                  value="revision"
+                  checked={refusalType === 'revision'}
+                  onChange={(e) => setRefusalType(e.target.value as 'definitif' | 'revision')}
+                  className="mt-1 w-4 h-4 text-[#FF6B00] focus:ring-[#FF6B00]"
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">Refuser et demander une révision</p>
+                  <p className="text-sm text-gray-600">L'artisan pourra vous envoyer un nouveau devis amélioré</p>
+                </div>
+              </label>
+            </div>
+
             <div className="flex gap-3">
               <button
-                onClick={() => setShowRefusalModal(false)}
+                onClick={() => {
+                  setShowRefusalModal(false);
+                  setRefusalType('definitif');
+                }}
                 disabled={processing}
                 className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition"
               >

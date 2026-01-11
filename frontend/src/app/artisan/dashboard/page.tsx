@@ -22,8 +22,9 @@ export default function ArtisanDashboardPage() {
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [nouvellesDemandes, setNouvellesDemandes] = useState(0);
 
-  // Hook pour les notifications
-  const { notifications, unreadCount } = useNotifications(user?.uid);
+  // Hook pour les notifications (seulement si user existe)
+  const shouldLoadNotifications = !!user?.uid;
+  const { notifications, unreadCount } = useNotifications(shouldLoadNotifications ? user.uid : undefined);
 
   // Compter les notifications de devis acceptés/refusés NON LUES
   const devisNotifications = notifications.filter(

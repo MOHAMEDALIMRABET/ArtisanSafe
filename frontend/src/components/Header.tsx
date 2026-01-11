@@ -9,16 +9,17 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Logo } from '@/components/ui';
-import NotificationBell from '@/components/NotificationBell';
 import UserMenu from '@/components/UserMenu';
 import GuestMenu from '@/components/GuestMenu';
 import { authService } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
-import type { User } from '@/types/firestore';
+import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import type { User, Artisan } from '@/types/firestore';
 
 export default function Header() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Pages où le header ne doit PAS s'afficher
@@ -33,8 +34,17 @@ export default function Header() {
       if (firebaseUser) {
         const userData = await getUserById(firebaseUser.uid);
         setUser(userData);
+        
+        // Charger les données artisan si c'est un artisan
+        if (userData?.role === 'artisan') {
+          const artisanData = await getArtisanByUserId(firebaseUser.uid);
+          setArtisan(artisanData);
+        } else {
+          setArtisan(null);
+        }
       } else {
         setUser(null);
+        setArtisan(null);
       }
       setIsLoading(false);
     });
@@ -48,6 +58,12 @@ export default function Header() {
       if (currentUser) {
         const userData = await getUserById(currentUser.uid);
         setUser(userData);
+        
+        // Charger les données artisan si c'est un artisan
+        if (userData?.role === 'artisan') {
+          const artisanData = await getArtisanByUserId(currentUser.uid);
+          setArtisan(artisanData);
+        }
       }
     } catch (error) {
       console.error('Erreur chargement utilisateur:', error);
@@ -62,7 +78,7 @@ export default function Header() {
   }
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-40">
+    <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -73,8 +89,8 @@ export default function Header() {
 
           {/* Menu navigation */}
           <div className="flex items-center gap-6">
-            {/* Liens de navigation (affichés pour tous) */}
-            {!isLoading && (
+            {/* Liens de navigation (affichés uniquement pour visiteurs non connectés) */}
+            {!isLoading && !user && (
               <>
                 <Link
                   href="/inscription?role=client"
@@ -96,15 +112,6 @@ export default function Header() {
                 >
                   Comment ça marche
                 </Link>
-                
-                {user?.role === 'artisan' && (
-                  <Link
-                    href="/artisan/demandes"
-                    className="text-gray-700 hover:text-[#FF6B00] font-medium transition-colors"
-                  >
-                    Mes demandes
-                  </Link>
-                )}
               </>
             )}
 
@@ -114,8 +121,15 @@ export default function Header() {
                 <>
                   {user ? (
                     <>
-                      {/* Cloche notifications (uniquement si connecté) */}
-                      <NotificationBell />
+                      {/* Badge Profil Vérifié pour artisans */}
+                      {user.role === 'artisan' && artisan?.verified && (
+                        <span className="flex items-center gap-1 text-green-600 font-medium text-sm">
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Profil Vérifié
+                        </span>
+                      )}
                       
                       {/* Menu utilisateur connecté */}
                       <UserMenu user={user} isArtisan={user.role === 'artisan'} />

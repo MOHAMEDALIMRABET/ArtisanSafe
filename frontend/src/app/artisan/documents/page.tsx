@@ -297,7 +297,7 @@ export default function DocumentsUploadPage() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => router.push('/artisan/dashboard')}
+            onClick={() => router.back()}
             className="text-gray-600 hover:text-[#FF6B00] flex items-center gap-2 mb-4"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

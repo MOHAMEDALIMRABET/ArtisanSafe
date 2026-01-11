@@ -540,7 +540,10 @@ export default function NouveauDevisPage() {
                         <input
                           type="number"
                           value={ligne.prixUnitaireHT}
-                          onChange={(e) => mettreAJourLigne(ligne.id, { prixUnitaireHT: parseFloat(e.target.value) || 0 })}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            mettreAJourLigne(ligne.id, { prixUnitaireHT: isNaN(value) ? 0 : value });
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                           min="0"
                           step="0.01"

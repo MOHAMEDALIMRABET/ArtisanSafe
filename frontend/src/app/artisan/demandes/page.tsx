@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getDemandesForArtisan, removeArtisanFromDemande } from '@/lib/firebase/demande-service';
 import { createNotification } from '@/lib/firebase/notification-service';
 import { getFileMetadata } from '@/lib/firebase/storage-service';
-import { Logo } from '@/components/ui';
 import type { User, Demande } from '@/types/firestore';
 
 export default function ArtisanDemandesPage() {
@@ -74,12 +72,6 @@ export default function ArtisanDemandesPage() {
       console.error('Erreur chargement demandes:', error);
       setIsLoading(false);
     }
-  }
-
-  async function handleSignOut() {
-    const { authService } = await import('@/lib/auth-service');
-    await authService.signOut();
-    router.push('/');
   }
 
   async function handleRefuserDemande(demandeId: string) {
@@ -171,30 +163,6 @@ export default function ArtisanDemandesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-md">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Logo size="md" href="/artisan/dashboard" />
-              <nav className="hidden md:flex items-center gap-4">
-                <Link href="/artisan/dashboard" className="text-gray-600 hover:text-[#FF6B00] font-medium">
-                  Dashboard
-                </Link>
-                <span className="text-[#FF6B00] font-bold">Demandes</span>
-              </nav>
-            </div>
-            
-            <button
-              onClick={handleSignOut}
-              className="text-gray-600 hover:text-gray-800 font-medium"
-            >
-              Déconnexion
-            </button>
-          </div>
-        </div>
-      </nav>
-
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* En-tête */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -280,10 +248,16 @@ export default function ArtisanDemandesPage() {
                       <h3 className="text-xl font-bold text-gray-800">
                         {demande.categorie}
                       </h3>
-                      {demande.statut === 'publiee' && (
-                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                          🆕 Nouvelle
+                      {demande.devisRecus && demande.devisRecus > 0 ? (
+                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold border-2 border-blue-300">
+                          ✅ Devis envoyé
                         </span>
+                      ) : (
+                        demande.statut === 'publiee' && (
+                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                            🆕 Nouvelle
+                          </span>
+                        )
                       )}
                       {demande.urgence && (
                         <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">

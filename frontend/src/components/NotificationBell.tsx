@@ -16,10 +16,15 @@ import type { Timestamp } from 'firebase/firestore';
 
 export default function NotificationBell() {
   const { user } = useAuth();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(user?.uid);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Ne pas charger les notifications si pas d'utilisateur
+  const shouldLoadNotifications = !!user?.uid;
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(
+    shouldLoadNotifications ? user.uid : undefined
+  );
 
   // Fermer le dropdown au clic extérieur
   useEffect(() => {

@@ -93,6 +93,32 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
 }
 
 /**
+ * Marque les notifications d'un utilisateur par types comme lues
+ * @param userId ID de l'utilisateur
+ * @param types Types de notifications à marquer comme lues
+ */
+export async function markNotificationsByTypeAsRead(
+  userId: string,
+  types: string[]
+): Promise<void> {
+  const notificationsRef = collection(db, 'notifications');
+  const q = query(
+    notificationsRef,
+    where('userId', '==', userId),
+    where('lue', '==', false)
+  );
+
+  const snapshot = await getDocs(q);
+  
+  // Filtrer côté client pour les types spécifiques
+  const updates = snapshot.docs
+    .filter(doc => types.includes(doc.data().type))
+    .map(doc => updateDoc(doc.ref, { lue: true }));
+
+  await Promise.all(updates);
+}
+
+/**
  * Compte le nombre de notifications non lues
  * @param userId ID de l'utilisateur
  * @returns Nombre de notifications non lues

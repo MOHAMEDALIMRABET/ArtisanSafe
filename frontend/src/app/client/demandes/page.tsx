@@ -5,15 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getDemandesByClient, deleteDemande } from '@/lib/firebase/demande-service';
 import { getArtisansByIds } from '@/lib/firebase/artisan-service';
+import { getDevisByDemande } from '@/lib/firebase/devis-service';
+import { createNotification } from '@/lib/firebase/notification-service';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import type { Demande, Artisan } from '@/types/firestore';
+import type { Demande, Artisan, Devis } from '@/types/firestore';
 
 export default function MesDemandesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [artisansMap, setArtisansMap] = useState<Map<string, Artisan>>(new Map());
+  const [devisMap, setDevisMap] = useState<Map<string, Devis[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [showAnnulees, setShowAnnulees] = useState(false);
   const [filtreStatut, setFiltreStatut] = useState<'toutes' | 'publiee' | 'annulee' | 'brouillon'>('toutes');
@@ -56,10 +59,46 @@ export default function MesDemandesPage() {
         const map = new Map(artisans.map(a => [a.userId, a]));
         setArtisansMap(map);
       }
+
+      // Charger les devis pour chaque demande
+      const devisMapTemp = new Map<string, Devis[]>();
+      for (const demande of userDemandes) {
+        try {
+          const devisForDemande = await getDevisByDemande(demande.id);
+          devisMapTemp.set(demande.id, devisForDemande);
+        } catch (error) {
+          console.error(`Erreur chargement devis pour demande ${demande.id}:`, error);
+        }
+      }
+      setDevisMap(devisMapTemp);
     } catch (error) {
       console.error('Erreur chargement demandes:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDemanderRevision(demandeId: string, artisanId: string, artisanNom: string) {
+    const message = prompt(
+      'Pourquoi souhaitez-vous une révision du devis ?\n\nExemples: "Prix trop élevé", "Délai trop long", "Besoin de modifications"'
+    );
+
+    if (!message) return;
+
+    try {
+      const clientNom = user ? `${user.prenom} ${user.nom}` : 'Un client';
+      
+      await createNotification(artisanId, {
+        type: 'nouvelle_demande',
+        titre: '🔄 Demande de révision de devis',
+        message: `${clientNom} souhaite une révision du devis. Motif : ${message}`,
+        lien: `/artisan/devis/nouveau?demandeId=${demandeId}`,
+      });
+
+      alert(`✅ Demande envoyée à ${artisanNom}.\n\nL'artisan sera notifié et pourra vous envoyer un devis révisé.`);
+    } catch (error) {
+      console.error('Erreur envoi demande révision:', error);
+      alert('❌ Erreur lors de l\'envoi. Veuillez réessayer.');
     }
   }
 
@@ -388,11 +427,65 @@ export default function MesDemandesPage() {
                             </p>
                           );
                         })}
-                        {demande.statut === 'brouillon' ? (
-                          <p className="text-xs text-[#6C757D] mt-1 font-medium">📋 Brouillon non publié</p>
-                        ) : (
-                          <p className="text-xs text-green-600 mt-1 font-medium">✅ En attente de réponse</p>
-                        )}
+                        {(() => {
+                          // Analyser le statut des devis pour cette demande
+                          const devisForDemande = devisMap.get(demande.id) || [];
+                          const devisAccepte = devisForDemande.find(d => d.statut === 'accepte');
+                          const devisRefuse = devisForDemande.find(d => d.statut === 'refuse');
+                          const devisEnAttente = devisForDemande.find(d => d.statut === 'envoye');
+
+                          if (demande.statut === 'brouillon') {
+                            return <p className="text-xs text-[#6C757D] mt-1 font-medium">📋 Brouillon non publié</p>;
+                          } else if (devisAccepte) {
+                            return (
+                              <p className="text-xs text-green-600 mt-2 font-semibold bg-green-50 px-2 py-1 rounded">
+                                🎉 Devis accepté le {devisAccepte.dateAcceptation?.toDate().toLocaleDateString('fr-FR')}
+                              </p>
+                            );
+                          } else if (devisRefuse) {
+                            const artisanId = demande.artisansMatches?.[0];
+                            const artisan = artisanId ? artisansMap.get(artisanId) : null;
+                            return (
+                              <div className="mt-2">
+                                <p className="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded">
+                                  ❌ Devis refusé le {devisRefuse.dateRefus?.toDate().toLocaleDateString('fr-FR')}
+                                </p>
+                                <div className="flex gap-2 mt-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (artisanId && artisan) {
+                                        handleDemanderRevision(demande.id, artisanId, artisan.raisonSociale);
+                                      }
+                                    }}
+                                    className="text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg hover:bg-blue-600 transition font-medium flex items-center gap-1"
+                                  >
+                                    🔄 Demander révision
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/recherche?categorie=${demande.categorie}&ville=${demande.localisation.ville}&codePostal=${demande.localisation.codePostal}`);
+                                    }}
+                                    className="text-xs bg-[#FF6B00] text-white px-3 py-1.5 rounded-lg hover:bg-[#E56100] transition font-medium flex items-center gap-1"
+                                  >
+                                    🔍 Autre artisan
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          } else if (devisEnAttente) {
+                            return (
+                              <p className="text-xs text-blue-600 mt-2 font-semibold bg-blue-50 px-2 py-1 rounded">
+                                📩 {devisForDemande.length} devis reçu(s) en attente de votre réponse
+                              </p>
+                            );
+                          } else if (demande.devisRecus && demande.devisRecus > 0) {
+                            return <p className="text-xs text-blue-600 mt-1 font-medium">📩 Devis reçu(s) à consulter</p>;
+                          } else {
+                            return <p className="text-xs text-green-600 mt-1 font-medium">⏳ En attente de réponse de l'artisan</p>;
+                          }
+                        })()}
                       </div>
                     ) : (
                       <p className="font-semibold text-[#6C757D] mt-1">Non assigné</p>
@@ -404,14 +497,12 @@ export default function MesDemandesPage() {
                   </div>
                   <div>
                     <span className="text-[#6C757D]">Localisation :</span>
-                    <p className="font-semibold text-[#2C3E50]">
-                      {demande.localisation.ville}
-                    </p>
+                    <p className="font-semibold text-[#2C3E50]">{demande.localisation.ville}</p>
                   </div>
                   <div>
                     <span className="text-[#6C757D]">Devis reçus :</span>
-                    <p className="font-semibold text-[#2C3E50]">{demande.devisRecus || 0}</p>
-                    {demande.devisRecus && demande.devisRecus > 0 && (
+                    <span className="font-semibold text-[#2C3E50] ml-2">{demande.devisRecus || 0}</span>
+                    {(demande.devisRecus && demande.devisRecus > 0) ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -421,7 +512,7 @@ export default function MesDemandesPage() {
                       >
                         📄 Voir les devis
                       </button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </Card>

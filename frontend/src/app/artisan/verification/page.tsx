@@ -199,7 +199,7 @@ export default function VerificationPage() {
         <div className="text-center">
           <p className="text-gray-600 mb-4">Impossible de charger les données</p>
           <button
-            onClick={() => router.push('/artisan/dashboard')}
+            onClick={() => router.back()}
             className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg hover:bg-[#E56100]"
           >
             Retour au tableau de bord
@@ -217,7 +217,7 @@ export default function VerificationPage() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => router.push('/artisan/dashboard')}
+            onClick={() => router.back()}
             className="text-gray-600 hover:text-[#FF6B00] flex items-center gap-2 mb-4"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

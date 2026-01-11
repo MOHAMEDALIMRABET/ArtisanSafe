@@ -491,12 +491,6 @@ function ResultatsContent() {
             <p className="text-[#6C757D] mb-6">
               Essayez d'élargir vos critères de recherche ou d'activer la flexibilité des dates
             </p>
-            <Button
-              onClick={() => router.push('/recherche')}
-              className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
-            >
-              Modifier ma recherche
-            </Button>
           </Card>
         ) : (
           <div className="space-y-4">

@@ -23,9 +23,15 @@ export default function ClientDevisPage() {
   const [filter, setFilter] = useState<'tous' | 'en_attente' | 'acceptes' | 'refuses'>('en_attente');
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;
+    
+    if (!user) {
+      router.push('/connexion');
+      return;
+    }
+    
     loadDevis();
-  }, [user]);
+  }, [user, authLoading, router]);
 
   const loadDevis = async () => {
     if (!user) return;
@@ -114,7 +120,6 @@ export default function ClientDevisPage() {
   }
 
   if (!user) {
-    router.push('/connexion');
     return null;
   }
 

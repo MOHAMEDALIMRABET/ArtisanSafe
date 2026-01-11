@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
+import { useNotifications } from '@/hooks/useNotifications';
 import type { User } from '@/types/firestore';
 
 interface UserMenuProps {
@@ -19,6 +20,22 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Ne charger les notifications que si l'utilisateur existe
+  const shouldLoadNotifications = !!user?.uid;
+  const { notifications, markTypeAsRead } = useNotifications(shouldLoadNotifications ? user.uid : undefined);
+
+  // Compter les notifications par catégorie (non lues uniquement)
+  const notifDevis = notifications.filter(
+    n => !n.lue && (n.type === 'devis_accepte' || n.type === 'devis_refuse' || n.type === 'nouveau_devis')
+  ).length;
+
+  const notifDemandes = notifications.filter(
+    n => !n.lue && (n.type === 'nouvelle_demande' || n.type === 'demande_refusee')
+  ).length;
+
+  // Nombre total de notifications non lues
+  const totalNotifications = notifDevis + notifDemandes;
 
   // Fermer le dropdown au clic extérieur
   useEffect(() => {
@@ -38,11 +55,25 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
   }, [isOpen]);
 
   const handleSignOut = async () => {
+    // Fermer le menu immédiatement pour désinscrire les listeners
+    setIsOpen(false);
+    
+    // Attendre un court instant pour que le composant se démonte proprement
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Déconnecter
     await authService.signOut();
     router.push('/');
   };
 
   const handleNavigation = (path: string) => {
+    router.push(path);
+    setIsOpen(false);
+  };
+
+  const handleNavigationWithMarkRead = async (path: string, notificationTypes: string[]) => {
+    // Marquer les notifications du type spécifié comme lues
+    await markTypeAsRead(notificationTypes);
     router.push(path);
     setIsOpen(false);
   };
@@ -57,12 +88,21 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
       {/* Bouton avatar */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity relative"
         aria-label="Menu utilisateur"
       >
-        {/* Avatar avec initiales */}
-        <div className="w-10 h-10 rounded-full bg-[#FF6B00] text-white flex items-center justify-center font-semibold text-sm border-2 border-[#FF6B00] shadow-md">
-          {initials}
+        {/* Avatar avec icône utilisateur */}
+        <div className="w-10 h-10 rounded-full bg-[#FF6B00] text-white flex items-center justify-center font-semibold text-sm border-2 border-[#FF6B00] shadow-md relative">
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
+          </svg>
+          
+          {/* Badge notification total */}
+          {totalNotifications > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
+              {totalNotifications > 9 ? '9+' : totalNotifications}
+            </span>
+          )}
         </div>
 
         {/* Flèche */}
@@ -87,9 +127,11 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
           {/* En-tête avec info utilisateur */}
           <div className="bg-gradient-to-r from-[#2C3E50] to-[#34495E] text-white px-4 py-3">
             <div className="flex items-center gap-3">
-              {/* Avatar avec initiales */}
+              {/* Avatar avec icône utilisateur */}
               <div className="w-12 h-12 rounded-full bg-[#FF6B00] text-white flex items-center justify-center font-bold text-lg border-2 border-white shadow-md">
-                {initials}
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437.695z" clipRule="evenodd" />
+                </svg>
               </div>
               
               <div className="flex-1 min-w-0">
@@ -152,6 +194,100 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
               </svg>
               <span className="font-medium">Messages</span>
             </button>
+
+            {/* Liens spécifiques client */}
+            {!isArtisan && (
+              <>
+                {/* Mes Devis */}
+                <button
+                  onClick={() => handleNavigationWithMarkRead('/client/devis', ['devis_accepte', 'devis_refuse', 'nouveau_devis'])}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <span className="font-medium flex-1">Mes Devis</span>
+                  {notifDevis > 0 && (
+                    <span className="bg-[#FF6B00] text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {notifDevis}
+                    </span>
+                  )}
+                </button>
+
+                {/* Mes Demandes */}
+                <button
+                  onClick={() => handleNavigationWithMarkRead('/client/demandes', ['nouvelle_demande', 'demande_refusee'])}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                    />
+                  </svg>
+                  <span className="font-medium flex-1">Mes Demandes</span>
+                  {notifDemandes > 0 && (
+                    <span className="bg-[#FF6B00] text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {notifDemandes}
+                    </span>
+                  )}
+                </button>
+              </>
+            )}
+
+            {/* Liens spécifiques artisan */}
+            {isArtisan && (
+              <>
+                {/* Mes Devis - Mes Factures */}
+                <button
+                  onClick={() => handleNavigationWithMarkRead('/artisan/devis', ['devis_accepte', 'devis_refuse', 'nouveau_devis'])}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <span className="font-medium flex-1">Mes Devis - Mes Factures</span>
+                  {notifDevis > 0 && (
+                    <span className="bg-[#FF6B00] text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {notifDevis}
+                    </span>
+                  )}
+                </button>
+
+                {/* Mes Demandes Clients */}
+                <button
+                  onClick={() => handleNavigationWithMarkRead('/artisan/demandes', ['nouvelle_demande', 'demande_refusee'])}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                    />
+                  </svg>
+                  <span className="font-medium flex-1">Mes Demandes Clients</span>
+                  {notifDemandes > 0 && (
+                    <span className="bg-[#FF6B00] text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {notifDemandes}
+                    </span>
+                  )}
+                </button>
+              </>
+            )}
 
             <hr className="my-2 border-gray-200" />
 

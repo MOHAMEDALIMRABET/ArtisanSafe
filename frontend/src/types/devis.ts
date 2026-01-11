@@ -53,6 +53,8 @@ export interface Devis {
   dateEnvoi?: Timestamp;         // Date d'envoi au client
   dateValidite: Timestamp;       // Date limite de validité
   dateAcceptation?: Timestamp;   // Date d'acceptation par le client
+  dateRefus?: Timestamp;         // Date de refus par le client
+  motifRefus?: string;           // Motif de refus saisi par le client
   dateModification: Timestamp;
   
   // Informations client (snapshot pour le PDF)
