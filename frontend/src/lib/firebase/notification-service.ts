@@ -12,6 +12,7 @@ export async function createNotification(
   userId: string,
   notificationData: Omit<Notification, 'id' | 'userId' | 'dateCre ation' | 'lue'>
 ): Promise<string> {
+  console.log('💾 Création notification Firestore pour userId:', userId, 'type:', notificationData.type);
   const notificationsRef = collection(db, 'notifications');
   const docRef = await addDoc(notificationsRef, {
     userId,
@@ -20,6 +21,7 @@ export async function createNotification(
     dateCreation: Timestamp.now(),
   });
 
+  console.log('✅ Notification créée dans Firestore, ID:', docRef.id);
   return docRef.id;
 }
 
@@ -228,6 +230,7 @@ export async function notifyClientDevisRecu(
   artisanNom: string,
   numeroDevis?: string
 ): Promise<void> {
+  console.log('📨 Création notification devis_recu pour client:', clientId, 'devis:', numeroDevis);
   await createNotification(clientId, {
     type: 'devis_recu',
     titre: '📄 Nouveau devis reçu',
@@ -236,6 +239,7 @@ export async function notifyClientDevisRecu(
       : `${artisanNom} vous a envoyé un nouveau devis.`,
     lien: `/client/devis/${devisId}`,
   });
+  console.log('✅ Notification devis_recu créée avec succès');
 }
 
 

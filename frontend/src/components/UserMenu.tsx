@@ -27,7 +27,13 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
 
   // Compter les notifications par catégorie (non lues uniquement)
   const notifDevis = notifications.filter(
-    n => !n.lue && (n.type === 'devis_accepte' || n.type === 'devis_refuse' || n.type === 'nouveau_devis')
+    n => !n.lue && (
+      n.type === 'devis_accepte' || 
+      n.type === 'devis_refuse' || 
+      n.type === 'devis_recu' ||        // ✅ Pour les clients
+      n.type === 'nouveau_devis' ||     // Ancien type (migration progressive)
+      n.type === 'devis_revision'       // ✅ Demandes de révision
+    )
   ).length;
 
   const notifDemandes = notifications.filter(
@@ -200,7 +206,7 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
               <>
                 {/* Mes Devis */}
                 <button
-                  onClick={() => handleNavigationWithMarkRead('/client/devis', ['devis_accepte', 'devis_refuse', 'nouveau_devis'])}
+                  onClick={() => handleNavigationWithMarkRead('/client/devis', ['devis_accepte', 'devis_refuse', 'devis_recu', 'nouveau_devis', 'devis_revision'])}
                   className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
                 >
                   <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,7 +253,7 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
               <>
                 {/* Mes Devis - Mes Factures */}
                 <button
-                  onClick={() => handleNavigationWithMarkRead('/artisan/devis', ['devis_accepte', 'devis_refuse', 'nouveau_devis'])}
+                  onClick={() => handleNavigationWithMarkRead('/artisan/devis', ['devis_accepte', 'devis_refuse', 'devis_recu', 'nouveau_devis', 'devis_revision'])}
                   className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
                 >
                   <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

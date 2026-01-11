@@ -106,6 +106,7 @@ export default function MesDevisPage() {
   const devisEnvoyes = devis.filter(d => d.statut === 'envoye');
   const devisAcceptes = devis.filter(d => d.statut === 'accepte');
   const devisRefuses = devis.filter(d => d.statut === 'refuse');
+  const devisRevisionDemandee = devis.filter(d => d.statut === 'refuse' && d.typeRefus === 'revision');
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
@@ -155,7 +156,7 @@ export default function MesDevisPage() {
 
         {/* Statistiques rapides */}
         {activeTab === 'devis' && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-md p-4">
               <div className="text-2xl font-bold text-gray-600">{devisBrouillon.length}</div>
               <div className="text-sm text-gray-600">Brouillons</div>
@@ -167,6 +168,10 @@ export default function MesDevisPage() {
             <div className="bg-white rounded-lg shadow-md p-4">
               <div className="text-2xl font-bold text-green-600">{devisAcceptes.length}</div>
               <div className="text-sm text-gray-600">Acceptés</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-4 border-2 border-orange-400">
+              <div className="text-2xl font-bold text-orange-600">{devisRevisionDemandee.length}</div>
+              <div className="text-sm text-orange-700 font-semibold">🔄 Révisions</div>
             </div>
             <div className="bg-white rounded-lg shadow-md p-4">
               <div className="text-2xl font-bold text-red-600">{devisRefuses.length}</div>
@@ -234,18 +239,34 @@ export default function MesDevisPage() {
                         {d.totaux.totalTTC.toFixed(2)} €
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {getStatutBadge(d.statut)}
+                        {d.statut === 'refuse' && d.typeRefus === 'revision' ? (
+                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
+                            🔄 Révision demandée
+                          </span>
+                        ) : (
+                          getStatutBadge(d.statut)
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {d.dateCreation?.toDate().toLocaleDateString('fr-FR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => router.push(`/artisan/devis/${d.id}`)}
-                          className="text-[#FF6B00] hover:text-[#E56100]"
-                        >
-                          Voir
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => router.push(`/artisan/devis/${d.id}`)}
+                            className="text-[#FF6B00] hover:text-[#E56100]"
+                          >
+                            Voir
+                          </button>
+                          {d.statut === 'refuse' && d.typeRefus === 'revision' && d.demandeId && (
+                            <button
+                              onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${d.demandeId}`)}
+                              className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-xs font-semibold"
+                            >
+                              📝 Créer révision
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

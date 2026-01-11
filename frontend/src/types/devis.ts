@@ -55,6 +55,7 @@ export interface Devis {
   dateAcceptation?: Timestamp;   // Date d'acceptation par le client
   dateRefus?: Timestamp;         // Date de refus par le client
   motifRefus?: string;           // Motif de refus saisi par le client
+  typeRefus?: 'revision' | 'definitif'; // Type de refus
   dateModification: Timestamp;
   
   // Informations client (snapshot pour le PDF)

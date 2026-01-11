@@ -190,7 +190,7 @@ export default function ArtisanDemandesPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Toutes ({demandes.length})
+              Toutes les demandes ({demandes.length})
             </button>
             <button
               onClick={() => setFilter('nouvelles')}
@@ -200,7 +200,7 @@ export default function ArtisanDemandesPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🆕 Nouvelles ({demandes.filter(d => d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)).length})
+              🆕 Sans devis ({demandes.filter(d => d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)).length})
             </button>
             <button
               onClick={() => setFilter('devis_envoyes')}
@@ -210,7 +210,7 @@ export default function ArtisanDemandesPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              📤 Devis envoyés ({demandes.filter(d => d.devisRecus && d.devisRecus > 0).length})
+              📤 Avec devis envoyés ({demandes.filter(d => d.devisRecus && d.devisRecus > 0).length})
             </button>
             <button
               onClick={() => setFilter('refusees')}
@@ -249,13 +249,21 @@ export default function ArtisanDemandesPage() {
                         {demande.categorie}
                       </h3>
                       {demande.devisRecus && demande.devisRecus > 0 ? (
-                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold border-2 border-blue-300">
-                          ✅ Devis envoyé
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold border-2 border-blue-300">
+                            ✅ {demande.devisRecus} devis envoyé{demande.devisRecus > 1 ? 's' : ''}
+                          </span>
+                          <button
+                            onClick={() => router.push(`/artisan/devis`)}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline"
+                          >
+                            Voir l'historique
+                          </button>
+                        </div>
                       ) : (
                         demande.statut === 'publiee' && (
                           <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                            🆕 Nouvelle
+                            🆕 Nouvelle demande
                           </span>
                         )
                       )}

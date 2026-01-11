@@ -99,6 +99,7 @@ export async function createDevis(
   // Notifier le client si le devis est envoyé (pas un brouillon)
   if (newDevis.statut === 'envoye') {
     try {
+      console.log('🔔 Tentative d\'envoi notification au client:', devisData.clientId);
       const artisanNom = `${devisData.artisan.prenom} ${devisData.artisan.nom}`;
       await notifyClientDevisRecu(
         devisData.clientId,
@@ -106,9 +107,9 @@ export async function createDevis(
         artisanNom,
         numeroDevis
       );
-      console.log('✅ Notification envoyée au client');
+      console.log('✅ Notification envoyée au client:', devisData.clientId, 'pour devis:', numeroDevis);
     } catch (error) {
-      console.error('Erreur envoi notification client:', error);
+      console.error('❌ Erreur envoi notification client:', error);
       // Ne pas bloquer la création si la notification échoue
     }
   }
@@ -354,7 +355,7 @@ export async function dupliquerDevis(devisId: string): Promise<string> {
     lignes: devisOriginal.lignes.map(ligne => ({ ...ligne })),
     totaux: { ...devisOriginal.totaux },
     delaiRealisation: devisOriginal.delaiRealisation,
-    dateDebutPrevue: devisOriginal.dateDebutPrevue,
+    ...(devisOriginal.dateDebutPrevue && { dateDebutPrevue: devisOriginal.dateDebutPrevue }),
     conditions: devisOriginal.conditions,
     notes: `Révision du devis ${devisOriginal.numeroDevis}${devisOriginal.motifRefus ? ` - Motif refus précédent: ${devisOriginal.motifRefus}` : ''}`,
     numeroDevis: '', // Sera généré automatiquement

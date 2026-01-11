@@ -142,29 +142,17 @@ export default function ClientDevisDetailPage() {
         statut: 'refuse',
         dateRefus: Timestamp.now(),
         motifRefus: refusalReason || 'Aucun motif précisé',
+        typeRefus: refusalType, // 'revision' ou 'definitif'
       });
 
       const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
 
-      // Notifier l'artisan du refus
-      try {
-        await notifyArtisanDevisRefuse(
-          devis.artisanId,
-          devisId,
-          clientNom,
-          devis.numeroDevis,
-          refusalReason
-        );
-        console.log('✅ Artisan notifié du refus');
-      } catch (error) {
-        console.error('Erreur notification artisan:', error);
-      }
-
-      // Si demande de révision, envoyer une notification supplémentaire
+      // Notifier l'artisan selon le type de refus
       if (refusalType === 'revision' && devis.demandeId) {
+        // Refus avec demande de révision → notification spécifique
         try {
           await createNotification(devis.artisanId, {
-            type: 'nouvelle_demande',
+            type: 'devis_revision',
             titre: '🔄 Demande de révision de devis',
             message: `${clientNom} souhaite une révision du devis ${devis.numeroDevis || ''}. Motif : ${refusalReason || 'Non précisé'}`,
             lien: `/artisan/devis/nouveau?demandeId=${devis.demandeId}`,
@@ -172,6 +160,20 @@ export default function ClientDevisDetailPage() {
           console.log('✅ Notification de révision envoyée');
         } catch (error) {
           console.error('Erreur notification révision:', error);
+        }
+      } else {
+        // Refus définitif → notification de refus standard
+        try {
+          await notifyArtisanDevisRefuse(
+            devis.artisanId,
+            devisId,
+            clientNom,
+            devis.numeroDevis,
+            refusalReason
+          );
+          console.log('✅ Artisan notifié du refus définitif');
+        } catch (error) {
+          console.error('Erreur notification artisan:', error);
         }
       }
 
@@ -422,10 +424,24 @@ export default function ClientDevisDetailPage() {
             </div>
 
             {/* Informations complémentaires */}
-            {(devis.delaiRealisation || devis.conditions || devis.notes) && (
+            {(devis.dateDebutPrevue || devis.delaiRealisation || devis.conditions || devis.notes) && (
               <div className="border-t pt-6">
                 <h3 className="font-bold text-[#2C3E50] mb-4">Informations complémentaires</h3>
                 
+                {devis.dateDebutPrevue && (
+                  <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <p className="text-sm font-semibold text-blue-900">📅 Date de début prévue des travaux :</p>
+                    <p className="text-blue-800 font-semibold text-lg">
+                      {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                )}
+
                 {devis.delaiRealisation && (
                   <div className="mb-4">
                     <p className="text-sm font-semibold text-gray-700">Délai de réalisation :</p>

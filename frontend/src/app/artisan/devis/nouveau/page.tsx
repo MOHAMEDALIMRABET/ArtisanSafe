@@ -33,6 +33,7 @@ export default function NouveauDevisPage() {
   const [description, setDescription] = useState('');
   const [lignes, setLignes] = useState<LigneDevis[]>([]);
   const [delaiRealisation, setDelaiRealisation] = useState('');
+  const [dateDebutPrevue, setDateDebutPrevue] = useState('');
   const [dateValidite, setDateValidite] = useState(30); // Jours
   const [conditions, setConditions] = useState('');
 
@@ -167,6 +168,12 @@ export default function NouveauDevisPage() {
         // Pré-remplir le titre avec la description de la demande
         setTitre(`Devis - ${demandeData.titre || 'Travaux'}`);
         setDescription(demandeData.description || '');
+        
+        // Pré-remplir la date de début avec la première date souhaitée du client
+        if (demandeData.datesSouhaitees?.dates?.[0]) {
+          const dateClient = demandeData.datesSouhaitees.dates[0].toDate();
+          setDateDebutPrevue(dateClient.toISOString().split('T')[0]);
+        }
 
         // Charger le prochain numéro de devis pour la prévisualisation
         try {
@@ -307,6 +314,7 @@ export default function NouveauDevisPage() {
         lignes,
         totaux: calculerTotauxGlobaux(),
         delaiRealisation,
+        ...(dateDebutPrevue && { dateDebutPrevue: Timestamp.fromDate(new Date(dateDebutPrevue)) }),
         dateValidite: Timestamp.fromDate(
           new Date(Date.now() + dateValidite * 24 * 60 * 60 * 1000)
         ),
@@ -335,6 +343,37 @@ export default function NouveauDevisPage() {
       alert('Veuillez saisir un titre');
       return;
     }
+    if (!dateDebutPrevue) {
+      alert('Veuillez indiquer la date de début prévue des travaux');
+      return;
+    }
+    
+    // Vérifier que la date de début est dans les préférences du client
+    if (demande.datesSouhaitees?.dates?.[0]) {
+      const dateProposee = new Date(dateDebutPrevue);
+      const dateClient = demande.datesSouhaitees.dates[0].toDate();
+      const flexDays = demande.datesSouhaitees.flexibiliteDays || 0;
+      
+      const dateMin = new Date(dateClient);
+      dateMin.setDate(dateMin.getDate() - flexDays);
+      const dateMax = new Date(dateClient);
+      dateMax.setDate(dateMax.getDate() + flexDays);
+      
+      if (dateProposee < dateMin || dateProposee > dateMax) {
+        const confirmEnvoi = confirm(
+          `⚠️ ATTENTION : La date de début prévue (${dateProposee.toLocaleDateString('fr-FR')}) est en dehors des préférences du client.\n\n` +
+          `Le client souhaite : ${dateClient.toLocaleDateString('fr-FR')} (±${flexDays} jours)\n` +
+          `Plage acceptée : du ${dateMin.toLocaleDateString('fr-FR')} au ${dateMax.toLocaleDateString('fr-FR')}\n\n` +
+          `⚠️ Le client pourrait refuser ce devis.\n\n` +
+          `Voulez-vous vraiment envoyer ce devis avec une date hors préférences ?`
+        );
+        
+        if (!confirmEnvoi) {
+          return; // Annuler l'envoi
+        }
+      }
+    }
+    
     if (lignes.length === 0) {
       alert('Veuillez ajouter au moins une prestation');
       return;
@@ -358,6 +397,7 @@ export default function NouveauDevisPage() {
         lignes,
         totaux: calculerTotauxGlobaux(),
         delaiRealisation,
+        dateDebutPrevue: Timestamp.fromDate(new Date(dateDebutPrevue)),
         dateValidite: Timestamp.fromDate(
           new Date(Date.now() + dateValidite * 24 * 60 * 60 * 1000)
         ),
@@ -454,6 +494,52 @@ export default function NouveauDevisPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                     placeholder="Ex: 2 semaines"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C3E50] mb-1">
+                    Date de début prévue *
+                  </label>
+                  {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
+                    <p className="text-xs text-[#6C757D] mb-1">
+                      📅 Client souhaite : {demande.datesSouhaitees.dates[0].toDate().toLocaleDateString('fr-FR')}
+                      {demande.datesSouhaitees.flexible && demande.datesSouhaitees.flexibiliteDays && (
+                        <span> (±{demande.datesSouhaitees.flexibiliteDays} jours)</span>
+                      )}
+                    </p>
+                  )}
+                  <input
+                    type="date"
+                    value={dateDebutPrevue}
+                    onChange={(e) => setDateDebutPrevue(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                    required
+                  />
+                  {(() => {
+                    if (!dateDebutPrevue || !demande.datesSouhaitees?.dates?.[0]) return null;
+                    
+                    const dateProposee = new Date(dateDebutPrevue);
+                    const dateClient = demande.datesSouhaitees.dates[0].toDate();
+                    const flexDays = demande.datesSouhaitees.flexibiliteDays || 0;
+                    
+                    const dateMin = new Date(dateClient);
+                    dateMin.setDate(dateMin.getDate() - flexDays);
+                    const dateMax = new Date(dateClient);
+                    dateMax.setDate(dateMax.getDate() + flexDays);
+                    
+                    if (dateProposee < dateMin || dateProposee > dateMax) {
+                      return (
+                        <p className="text-xs text-orange-600 mt-1 bg-orange-50 px-2 py-1 rounded">
+                          ⚠️ Cette date est en dehors des préférences du client. Le client pourrait refuser le devis.
+                        </p>
+                      );
+                    }
+                    return (
+                      <p className="text-xs text-green-600 mt-1">
+                        ✅ Correspond aux préférences du client
+                      </p>
+                    );
+                  })()}
                 </div>
 
                 <div>
@@ -674,6 +760,20 @@ export default function NouveauDevisPage() {
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">{titre}</h2>
                 {description && <p className="text-[#6C757D]">{description}</p>}
+              </div>
+            )}
+
+            {dateDebutPrevue && (
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+                <p className="text-sm">
+                  <span className="font-semibold">📅 Date de début prévue :</span>{' '}
+                  {new Date(dateDebutPrevue).toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
               </div>
             )}
 

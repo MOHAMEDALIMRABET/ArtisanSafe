@@ -215,6 +215,21 @@ export default function VoirDevisPage() {
             </div>
           )}
 
+          {/* Date de début prévue */}
+          {devis.dateDebutPrevue && (
+            <div className="mb-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <p className="text-sm font-semibold text-blue-900">📅 Date de début prévue des travaux :</p>
+              <p className="text-blue-800 font-semibold text-lg">
+                {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </p>
+            </div>
+          )}
+
           {/* Motif de refus (si devis refusé) */}
           {devis.statut === 'refuse' && devis.motifRefus && (
             <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 rounded">
