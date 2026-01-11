@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Logo } from '@/components/ui';
 import { Input } from '@/components/ui/Input';
 import { METIERS_AVEC_ICONES } from '@/lib/constants/metiers';
@@ -35,6 +35,7 @@ interface VilleSuggestion {
 
 export default function RecherchePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [dashboardUrl, setDashboardUrl] = useState('/');
   const [villeSuggestions, setVilleSuggestions] = useState<VilleSuggestion[]>([]);
@@ -56,7 +57,37 @@ export default function RecherchePage() {
 
   useEffect(() => {
     loadUserData();
-  }, []);
+    
+    // Pré-remplir le formulaire avec les paramètres URL
+    const categorieParam = searchParams.get('categorie');
+    const villeParam = searchParams.get('ville');
+    const codePostalParam = searchParams.get('codePostal');
+    const descriptionParam = searchParams.get('description');
+    const urgenceParam = searchParams.get('urgence');
+    const datesParam = searchParams.get('dates');
+    const flexibleParam = searchParams.get('flexible');
+    const flexibilityDaysParam = searchParams.get('flexibiliteDays');
+    
+    if (categorieParam || villeParam || codePostalParam || descriptionParam) {
+      const newCriteria: SearchCriteria = {
+        categorie: (categorieParam as Categorie) || '',
+        localisation: {
+          adresse: '',
+          ville: villeParam || '',
+          codePostal: codePostalParam || '',
+        },
+        datesSouhaitees: {
+          dates: datesParam ? JSON.parse(datesParam) : [''],
+          flexible: flexibleParam === 'true',
+          flexibiliteDays: flexibilityDaysParam ? parseInt(flexibilityDaysParam) : undefined,
+        },
+        urgence: (urgenceParam as Urgence) || 'normale',
+        description: descriptionParam || '',
+      };
+      
+      setCriteria(newCriteria);
+    }
+  }, [searchParams]);
 
   async function loadUserData() {
     try {

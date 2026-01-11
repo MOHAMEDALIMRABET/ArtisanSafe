@@ -276,10 +276,7 @@ export default function MesDemandesPage() {
                 className="p-6 hover:border-[#FF6B00] transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div 
-                    className="flex-1 cursor-pointer"
-                    onClick={() => router.push(`/client/demandes/${demande.id}`)}
-                  >
+                  <div className="flex-1">
                     <div className="flex items-center gap-4 mb-3 flex-wrap">
                       <h3 className="text-xl font-bold text-[#2C3E50]">
                         {demande.titre}
@@ -302,6 +299,21 @@ export default function MesDemandesPage() {
                       </div>
                       
                       {getStatutBadge(demande.statut)}
+                      
+                      {/* Badge devis refusé après le badge Publié */}
+                      {(() => {
+                        const devisForDemande = devisMap.get(demande.id) || [];
+                        const devisRefuse = devisForDemande.find(d => d.statut === 'refuse');
+                        
+                        if (devisRefuse) {
+                          return (
+                            <p className="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded">
+                              ❌ Devis refusé le {devisRefuse.dateRefus?.toDate().toLocaleDateString('fr-FR')}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     <p className="text-[#6C757D] text-sm mb-2">
                       {demande.description.substring(0, 150)}
@@ -443,37 +455,7 @@ export default function MesDemandesPage() {
                               </p>
                             );
                           } else if (devisRefuse) {
-                            const artisanId = demande.artisansMatches?.[0];
-                            const artisan = artisanId ? artisansMap.get(artisanId) : null;
-                            return (
-                              <div className="mt-2">
-                                <p className="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded">
-                                  ❌ Devis refusé le {devisRefuse.dateRefus?.toDate().toLocaleDateString('fr-FR')}
-                                </p>
-                                <div className="flex gap-2 mt-2">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (artisanId && artisan) {
-                                        handleDemanderRevision(demande.id, artisanId, artisan.raisonSociale);
-                                      }
-                                    }}
-                                    className="text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg hover:bg-blue-600 transition font-medium flex items-center gap-1"
-                                  >
-                                    🔄 Demander révision
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      router.push(`/recherche?categorie=${demande.categorie}&ville=${demande.localisation.ville}&codePostal=${demande.localisation.codePostal}`);
-                                    }}
-                                    className="text-xs bg-[#FF6B00] text-white px-3 py-1.5 rounded-lg hover:bg-[#E56100] transition font-medium flex items-center gap-1"
-                                  >
-                                    🔍 Autre artisan
-                                  </button>
-                                </div>
-                              </div>
-                            );
+                            return null;
                           } else if (devisEnAttente) {
                             return (
                               <p className="text-xs text-blue-600 mt-2 font-semibold bg-blue-50 px-2 py-1 rounded">
@@ -515,6 +497,50 @@ export default function MesDemandesPage() {
                     ) : null}
                   </div>
                 </div>
+
+                {/* Bouton Chercher un autre artisan en bas au centre si devis refusé */}
+                {(() => {
+                  const devisForDemande = devisMap.get(demande.id) || [];
+                  const devisRefuse = devisForDemande.find(d => d.statut === 'refuse');
+                  
+                  if (devisRefuse) {
+                    return (
+                      <div className="flex justify-center pt-4 border-t border-gray-100">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Construire l'URL avec toutes les informations de la demande
+                            const params = new URLSearchParams({
+                              categorie: demande.categorie,
+                              ville: demande.localisation.ville,
+                              codePostal: demande.localisation.codePostal,
+                              description: demande.description || '',
+                              urgence: demande.urgence || 'normale',
+                            });
+                            
+                            // Ajouter les dates si elles existent
+                            if (demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0) {
+                              const dates = demande.datesSouhaitees.dates.map(d => 
+                                d.toDate().toISOString().split('T')[0]
+                              );
+                              params.append('dates', JSON.stringify(dates));
+                              params.append('flexible', String(demande.datesSouhaitees.flexible || false));
+                              if (demande.datesSouhaitees.flexibiliteDays) {
+                                params.append('flexibiliteDays', String(demande.datesSouhaitees.flexibiliteDays));
+                              }
+                            }
+                            
+                            router.push(`/recherche?${params.toString()}`);
+                          }}
+                          className="text-sm bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition font-medium flex items-center gap-2"
+                        >
+                          🔍 Chercher un autre artisan
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </Card>
             ))}
           </div>
