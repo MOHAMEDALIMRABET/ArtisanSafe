@@ -13,6 +13,7 @@ import { db } from '@/lib/firebase/config';
 import { dupliquerDevis } from '@/lib/firebase/devis-service';
 import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
+import Head from 'next/head';
 
 export default function VoirDevisPage() {
   const router = useRouter();
@@ -22,11 +23,6 @@ export default function VoirDevisPage() {
   const [devis, setDevis] = useState<Devis | null>(null);
   const [loading, setLoading] = useState(true);
   const [duplicationEnCours, setDuplicationEnCours] = useState(false);
-
-  useEffect(() => {
-    if (!user || !devisId) return;
-    loadDevis();
-  }, [user, devisId]);
 
   const loadDevis = async () => {
     if (!devisId) return;
@@ -51,6 +47,21 @@ export default function VoirDevisPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!user || !devisId) return;
+    loadDevis();
+  }, [user, devisId]);
+
+  // Modifier le titre de la page pour l'impression
+  useEffect(() => {
+    if (devis) {
+      document.title = `Devis ${devis.numeroDevis}`;
+    }
+    return () => {
+      document.title = 'ArtisanDispo - Trouvez des artisans qualifiés';
+    };
+  }, [devis]);
 
   const handleDupliquerDevis = async () => {
     if (!devis) return;
@@ -112,9 +123,96 @@ export default function VoirDevisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
-      {/* Header */}
-      <div className="bg-[#2C3E50] text-white py-6">
+    <>
+      {/* Styles pour l'impression */}
+      <style jsx global>{`
+        @media print {
+          /* Configuration de la page - MARGIN 0 pour supprimer URL/pagination */
+          @page {
+            margin: 0;
+            size: A4 portrait;
+          }
+          
+          /* Masquer la navigation et boutons */
+          .no-print {
+            display: none !important;
+          }
+          
+          html, body {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          /* Page container */
+          .min-h-screen {
+            background: white !important;
+            min-height: auto !important;
+          }
+          
+          /* Container du devis - AJOUTER PADDING pour compenser margin 0 */
+          .print-container {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 20mm 15mm !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+          }
+          
+          /* Éviter les coupures de page */
+          table {
+            page-break-inside: avoid;
+          }
+          
+          tr {
+            page-break-inside: avoid;
+          }
+          
+          /* Enlever ombres et bordures arrondies */
+          .shadow-md, .rounded-lg {
+            box-shadow: none !important;
+            border-radius: 0 !important;
+          }
+          
+          /* Forcer fond blanc */
+          .bg-\\[\\#F8F9FA\\], .bg-gray-50, .bg-blue-50, .bg-red-50 {
+            background: white !important;
+            padding: 10px !important;
+          }
+          
+          /* Garder les couleurs importantes */
+          .bg-\\[\\#2C3E50\\] {
+            background: #2C3E50 !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          .text-\\[\\#FF6B00\\] {
+            color: #FF6B00 !important;
+            -webkit-print-color-adjust: exact !important;
+          }
+          
+          .text-\\[\\#2C3E50\\] {
+            color: #2C3E50 !important;
+          }
+          
+          /* Bordures des tableaux */
+          table, td, th {
+            border-color: #000 !important;
+          }
+          
+          /* Images et logos */
+          img {
+            max-width: 100% !important;
+            height: auto !important;
+          }
+        }
+      `}</style>
+      
+      <div className="min-h-screen bg-[#F8F9FA]">
+        {/* Header */}
+        <div className="no-print bg-[#2C3E50] text-white py-6">
         <div className="container mx-auto px-4">
           <button
             onClick={() => router.back()}
@@ -138,7 +236,7 @@ export default function VoirDevisPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto print-container">
           {/* En-tête du devis */}
           <div className="mb-8">
             {/* Logo + Titre DEVIS + Dates */}
@@ -316,7 +414,7 @@ export default function VoirDevisPage() {
           </div>
 
           {/* Actions */}
-          <div className="mt-8 flex gap-4 justify-end flex-wrap">
+          <div className="no-print mt-8 flex gap-4 justify-end flex-wrap">
             <button
               onClick={() => router.push('/artisan/devis')}
               className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
@@ -384,5 +482,6 @@ export default function VoirDevisPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
