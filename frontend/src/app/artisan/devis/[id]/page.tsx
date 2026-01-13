@@ -328,20 +328,53 @@ export default function VoirDevisPage() {
             </div>
           )}
 
-          {/* Motif de refus (si devis refusé) */}
+          {/* Motif de refus ou demande de révision */}
           {devis.statut === 'refuse' && devis.motifRefus && (
-            <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 rounded">
+            <div className={`mb-8 p-4 border-l-4 rounded ${
+              devis.typeRefus === 'revision' 
+                ? 'bg-yellow-50 border-yellow-400' 
+                : 'bg-red-50 border-red-500'
+            }`}>
               <div className="flex items-start gap-3">
-                <svg className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-6 h-6 flex-shrink-0 mt-0.5 ${
+                  devis.typeRefus === 'revision' ? 'text-yellow-600' : 'text-red-600'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="flex-1">
-                  <h3 className="font-bold text-red-900 mb-2">❌ Motif du refus :</h3>
-                  <p className="text-sm text-red-800 whitespace-pre-wrap">{devis.motifRefus}</p>
+                  <h3 className={`font-bold mb-2 ${
+                    devis.typeRefus === 'revision' ? 'text-yellow-900' : 'text-red-900'
+                  }`}>
+                    {devis.typeRefus === 'revision' ? '🔄 Le client demande une révision :' : '❌ Motif du refus :'}
+                  </h3>
+                  <p className={`text-sm whitespace-pre-wrap ${
+                    devis.typeRefus === 'revision' ? 'text-yellow-800' : 'text-red-800'
+                  }`}>
+                    "{devis.motifRefus}"
+                  </p>
                   {devis.dateRefus && (
-                    <p className="text-xs text-red-600 mt-2">
-                      Refusé le {devis.dateRefus.toDate().toLocaleDateString('fr-FR')} à {devis.dateRefus.toDate().toLocaleTimeString('fr-FR')}
+                    <p className={`text-xs mt-2 ${
+                      devis.typeRefus === 'revision' ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {devis.typeRefus === 'revision' ? 'Demande formulée' : 'Refusé'} le {devis.dateRefus.toDate().toLocaleDateString('fr-FR')} à {devis.dateRefus.toDate().toLocaleTimeString('fr-FR')}
                     </p>
+                  )}
+                  {devis.typeRefus === 'revision' && devis.demandeId && (
+                    <button
+                      onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${devis.demandeId}`)}
+                      className="mt-3 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-semibold flex items-center gap-2"
+                    >
+                      📝 Créer un nouveau devis (variante)
+                    </button>
+                  )}
+                  {devis.typeRefus === 'definitif' && (
+                    <div className="mt-3 p-3 bg-gray-100 border-l-4 border-gray-400 rounded">
+                      <p className="text-xs font-semibold text-gray-700 mb-1">⛔ Refus définitif</p>
+                      <p className="text-xs text-gray-600">
+                        Le client ne souhaite pas recevoir d'autres propositions pour cette demande. 
+                        Cette décision est finale et doit être respectée.
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>

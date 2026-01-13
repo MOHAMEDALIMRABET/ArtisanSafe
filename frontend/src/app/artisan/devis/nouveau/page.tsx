@@ -15,18 +15,22 @@ import { createDevis, updateDevis, genererProchainNumeroDevis } from '@/lib/fire
 import { Logo } from '@/components/ui';
 import type { Demande } from '@/types/firestore';
 import type { Devis, LigneDevis, TVARate, calculerLigne, calculerTotaux } from '@/types/devis';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, query, collection, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 export default function NouveauDevisPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const demandeId = searchParams?.get('demandeId');
+  const devisBrouillonId = searchParams?.get('devisId'); // ID du brouillon à modifier
   const { user, loading: authLoading } = useAuth();
 
   // États
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [demande, setDemande] = useState<Demande | null>(null);
+  const [ancienDevisId, setAncienDevisId] = useState<string | null>(null);
+  const [modeEdition, setModeEdition] = useState(false); // true si modification d'un brouillon
 
   // Formulaire
   const [titre, setTitre] = useState('');
@@ -36,6 +40,11 @@ export default function NouveauDevisPage() {
   const [dateDebutPrevue, setDateDebutPrevue] = useState('');
   const [dateValidite, setDateValidite] = useState(30); // Jours
   const [conditions, setConditions] = useState('');
+  
+  // Devis alternatifs (variantes)
+  const [creerVariante, setCreerVariante] = useState(false);
+  const [varianteLabel, setVarianteLabel] = useState('');
+  const [variantesExistantes, setVariantesExistantes] = useState<Devis[]>([]);
 
   // Informations client/artisan (pré-remplies)
   const [clientInfo, setClientInfo] = useState<Devis['client'] | null>(null);
@@ -48,10 +57,18 @@ export default function NouveauDevisPage() {
   const [dateCreation, setDateCreation] = useState<Date>(new Date());
 
   /**
-   * Charger les données de la demande et profils
+   * Charger les données de la demande et profils (ou d'un brouillon existant)
    */
   useEffect(() => {
     async function loadData() {
+      // Cas 1 : Modification d'un brouillon existant
+      if (devisBrouillonId && user) {
+        console.log('📝 Mode ÉDITION - Chargement brouillon:', devisBrouillonId);
+        await chargerBrouillon(devisBrouillonId);
+        return;
+      }
+
+      // Cas 2 : Création d'un nouveau devis depuis une demande
       if (!demandeId || !user) {
         console.log('❌ Pas de demandeId ou user:', { demandeId, user: user?.uid });
         return;
@@ -71,6 +88,34 @@ export default function NouveauDevisPage() {
           return;
         }
         setDemande(demandeData);
+
+        // Vérifier s'il y a un ancien devis en révision pour cette demande
+        try {
+          const q = query(
+            collection(db, 'devis'),
+            where('demandeId', '==', demandeId),
+            where('artisanId', '==', user.uid),
+            where('statut', '==', 'refuse')
+          );
+          const devisSnapshot = await getDocs(q);
+          
+          // Trouver le dernier devis refusé avec typeRefus='revision'
+          const ancienDevis = devisSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Devis))
+            .filter(d => d.typeRefus === 'revision')
+            .sort((a, b) => {
+              const dateA = a.dateCreation?.toMillis() || 0;
+              const dateB = b.dateCreation?.toMillis() || 0;
+              return dateB - dateA;
+            })[0];
+          
+          if (ancienDevis) {
+            setAncienDevisId(ancienDevis.id);
+            console.log('🔄 Détection ancien devis en révision:', ancienDevis.numeroDevis);
+          }
+        } catch (error) {
+          console.error('⚠️ Erreur détection ancien devis:', error);
+        }
 
         // Charger les informations client
         console.log('👤 Chargement client:', demandeData.clientId);
@@ -186,6 +231,9 @@ export default function NouveauDevisPage() {
 
         // Ajouter une première ligne vide
         ajouterLigne();
+        
+        // Charger les variantes existantes pour cette demande
+        await chargerVariantesExistantes(demandeId, user.uid);
 
         console.log('✅ Toutes les données chargées avec succès');
 
@@ -199,7 +247,140 @@ export default function NouveauDevisPage() {
     }
 
     loadData();
-  }, [demandeId, user, router]);
+  }, [demandeId, devisBrouillonId, user, router]);
+
+  /**
+   * Charger les devis existants pour cette demande
+   * MODÈLE ARTISANSAFE : 1 demande = 1 artisan spécifique
+   * Si un devis existe déjà, forcer le mode variante
+   */
+  const chargerVariantesExistantes = async (demandeId: string, artisanId: string) => {
+    try {
+      const q = query(
+        collection(db, 'devis'),
+        where('demandeId', '==', demandeId),
+        where('artisanId', '==', artisanId)
+      );
+      
+      const snapshot = await getDocs(q);
+      const devisTous = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      } as Devis));
+      
+      // Filtrer pour exclure les devis annulés/remplacés
+      const devisActifs = devisTous.filter(d => 
+        d.statut !== 'annule' && d.statut !== 'remplace'
+      );
+      
+      if (devisActifs.length > 0) {
+        // Il existe déjà des devis pour cette demande
+        console.log(`📊 ${devisActifs.length} devis existant(s) pour cette demande`);
+        
+        // Ne garder que ceux qui ont un groupe de variantes
+        const variantes = devisActifs.filter(d => d.varianteGroupe);
+        setVariantesExistantes(variantes.length > 0 ? variantes : devisActifs);
+        
+        // AUTO-ACTIVER le mode variante car un devis existe déjà
+        if (!creerVariante) {
+          setCreerVariante(true);
+          console.log('✅ Mode variante auto-activé (devis existant détecté)');
+        }
+      } else {
+        setVariantesExistantes([]);
+      }
+    } catch (error) {
+      console.error('❌ Erreur chargement devis existants:', error);
+    }
+  };
+
+  /**
+   * Charger un devis brouillon existant pour modification
+   */
+  const chargerBrouillon = async (devisId: string) => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      console.log('📋 Chargement du brouillon:', devisId);
+
+      // Récupérer le devis
+      const devisDoc = await getDoc(doc(db, 'devis', devisId));
+      if (!devisDoc.exists()) {
+        alert('Devis introuvable');
+        router.push('/artisan/devis');
+        return;
+      }
+
+      const devisBrouillon = { id: devisDoc.id, ...devisDoc.data() } as Devis;
+      
+      // Vérifier que c'est bien un brouillon de l'artisan
+      if (devisBrouillon.artisanId !== user.uid) {
+        alert('Vous n\'êtes pas autorisé à modifier ce devis');
+        router.push('/artisan/devis');
+        return;
+      }
+
+      if (devisBrouillon.statut !== 'brouillon') {
+        alert('Seuls les devis brouillons peuvent être modifiés');
+        router.push('/artisan/devis');
+        return;
+      }
+
+      console.log('✅ Brouillon chargé:', devisBrouillon);
+
+      // Charger la demande associée si elle existe
+      if (devisBrouillon.demandeId) {
+        const demandeData = await getDemandeById(devisBrouillon.demandeId);
+        if (demandeData) {
+          setDemande(demandeData);
+        }
+      }
+
+      // Remplir le formulaire avec les données du brouillon
+      setModeEdition(true);
+      setTitre(devisBrouillon.titre || '');
+      setDescription(devisBrouillon.description || '');
+      setLignes(devisBrouillon.lignes || []);
+      setDelaiRealisation(devisBrouillon.delaiRealisation || '');
+      
+      if (devisBrouillon.dateDebutPrevue) {
+        const dateDebut = devisBrouillon.dateDebutPrevue.toDate();
+        setDateDebutPrevue(dateDebut.toISOString().split('T')[0]);
+      }
+
+      // Calculer dateValidite en jours
+      if (devisBrouillon.dateValidite) {
+        const maintenant = new Date();
+        const dateValiditeDate = devisBrouillon.dateValidite.toDate();
+        const joursRestants = Math.ceil((dateValiditeDate.getTime() - maintenant.getTime()) / (1000 * 60 * 60 * 24));
+        setDateValidite(Math.max(1, joursRestants)); // Au moins 1 jour
+      }
+
+      setConditions(devisBrouillon.conditions || '');
+      setClientInfo(devisBrouillon.client);
+      setArtisanInfo(devisBrouillon.artisan);
+      setNumeroDevisPreview(devisBrouillon.numeroDevis || `DV-${new Date().getFullYear()}-XXXX`);
+      
+      // Conserver la date de création originale
+      if (devisBrouillon.dateCreation) {
+        setDateCreation(devisBrouillon.dateCreation.toDate());
+      }
+
+      if (devisBrouillon.devisOriginalId) {
+        setAncienDevisId(devisBrouillon.devisOriginalId);
+      }
+
+      console.log('✅ Formulaire pré-rempli avec succès');
+
+    } catch (error) {
+      console.error('❌ Erreur chargement brouillon:', error);
+      alert('Erreur lors du chargement du brouillon');
+      router.push('/artisan/devis');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /**
    * Ajouter une nouvelle ligne de prestation
@@ -298,15 +479,22 @@ export default function NouveauDevisPage() {
    * Sauvegarder le devis en brouillon
    */
   const sauvegarderBrouillon = async () => {
-    if (!user || !clientInfo || !artisanInfo || !demande || !demandeId) return;
+    if (!user || !clientInfo || !artisanInfo) return;
+
+    // Vérification : au moins une demande OU mode édition
+    if (!modeEdition && (!demande || !demandeId)) {
+      alert('Impossible de sauvegarder : aucune demande associée');
+      return;
+    }
 
     setSaving(true);
     try {
       const devisData: any = {
-        demandeId: demandeId,
-        clientId: demande.clientId,
+        ...(demandeId && { demandeId: demandeId }),
+        ...(demande && { clientId: demande.clientId }),
         artisanId: user.uid,
         statut: 'brouillon',
+        ...(ancienDevisId && { devisOriginalId: ancienDevisId }),
         client: cleanObject(clientInfo),
         artisan: cleanObject(artisanInfo),
         titre,
@@ -321,12 +509,23 @@ export default function NouveauDevisPage() {
         conditions,
       };
 
-      await createDevis(devisData);
-      alert('✅ Devis sauvegardé en brouillon');
-      router.push('/artisan/demandes');
+      if (modeEdition && devisBrouillonId) {
+        // Mise à jour du brouillon existant
+        console.log('📝 Mise à jour du brouillon:', devisBrouillonId);
+        await updateDevis(devisBrouillonId, devisData);
+        alert('✅ Brouillon mis à jour avec succès');
+      } else {
+        // Création d'un nouveau brouillon
+        console.log('➕ Création nouveau brouillon');
+        await createDevis(devisData);
+        alert('✅ Devis sauvegardé en brouillon');
+      }
+      
+      router.push('/artisan/devis');
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde');
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde';
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -336,7 +535,13 @@ export default function NouveauDevisPage() {
    * Envoyer le devis au client
    */
   const envoyerDevis = async () => {
-    if (!user || !clientInfo || !artisanInfo || !demande || !demandeId) return;
+    if (!user || !clientInfo || !artisanInfo) return;
+    
+    // Vérification : au moins une demande OU mode édition
+    if (!modeEdition && (!demande || !demandeId)) {
+      alert('Impossible d\'envoyer : aucune demande associée');
+      return;
+    }
     
     // Validation
     if (!titre.trim()) {
@@ -348,8 +553,8 @@ export default function NouveauDevisPage() {
       return;
     }
     
-    // Vérifier que la date de début est dans les préférences du client
-    if (demande.datesSouhaitees?.dates?.[0]) {
+    // Vérifier que la date de début est dans les préférences du client (si demande existe)
+    if (demande?.datesSouhaitees?.dates?.[0]) {
       const dateProposee = new Date(dateDebutPrevue);
       const dateClient = demande.datesSouhaitees.dates[0].toDate();
       const flexDays = demande.datesSouhaitees.flexibiliteDays || 0;
@@ -386,10 +591,11 @@ export default function NouveauDevisPage() {
     setSaving(true);
     try {
       const devisData: any = {
-        demandeId: demandeId,
-        clientId: demande.clientId,
+        ...(demandeId && { demandeId: demandeId }),
+        ...(demande && { clientId: demande.clientId }),
         artisanId: user.uid,
         statut: 'envoye',
+        ...(ancienDevisId && { devisOriginalId: ancienDevisId }),
         client: cleanObject(clientInfo),
         artisan: cleanObject(artisanInfo),
         titre,
@@ -403,13 +609,63 @@ export default function NouveauDevisPage() {
         ),
         conditions,
       };
+      
+      // VALIDATION : Si des devis existent déjà, FORCER le mode variante
+      if (variantesExistantes.length > 0 && !creerVariante) {
+        alert('⚠️ Un devis existe déjà pour cette demande.\nVous devez créer une variante (option alternative).\nCochez "Créer une variante" et donnez un nom à votre option.');
+        setSaving(false);
+        return;
+      }
+      
+      // Ajouter les champs de variante si créer variante est activé
+      if (creerVariante && varianteLabel.trim()) {
+        // Générer un ID de groupe unique si c'est la première variante
+        const varianteGroupe = variantesExistantes.length > 0 && variantesExistantes[0].varianteGroupe
+          ? variantesExistantes[0].varianteGroupe
+          : `VG-${Date.now()}`;
+        
+        // Déterminer la prochaine lettre de référence
+        const lettresUtilisees = variantesExistantes
+          .map(v => v.varianteLettreReference || '')
+          .filter(Boolean);
+        
+        const lettres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let prochaineLettreReference = 'A';
+        for (let i = 0; i < lettres.length; i++) {
+          if (!lettresUtilisees.includes(lettres[i])) {
+            prochaineLettreReference = lettres[i];
+            break;
+          }
+        }
+        
+        devisData.varianteGroupe = varianteGroupe;
+        devisData.varianteLabel = varianteLabel.trim();
+        devisData.varianteLettreReference = prochaineLettreReference;
+        console.log('📋 Création variante:', { varianteGroupe, lettre: prochaineLettreReference });
+      }
+      
+      // Si c'est le tout premier devis et que "créer variante" est coché, créer le groupe
+      if (creerVariante && varianteLabel.trim() && variantesExistantes.length === 0) {
+        console.log('📋 Premier devis avec variante activée - création groupe');
+      }
 
-      await createDevis(devisData);
-      alert('✅ Devis envoyé au client !');
-      router.push('/artisan/demandes');
+      if (modeEdition && devisBrouillonId) {
+        // Mise à jour + envoi du brouillon existant
+        console.log('📝 Mise à jour et envoi du brouillon:', devisBrouillonId);
+        await updateDevis(devisBrouillonId, devisData);
+        alert('✅ Devis envoyé au client !');
+      } else {
+        // Création + envoi d'un nouveau devis
+        console.log('➕ Création et envoi nouveau devis');
+        await createDevis(devisData);
+        alert('✅ Devis envoyé au client !');
+      }
+      
+      router.push('/artisan/devis');
     } catch (error) {
       console.error('Erreur envoi:', error);
-      alert('Erreur lors de l\'envoi du devis');
+      const errorMessage = error instanceof Error ? error.message : "Erreur lors de l'envoi du devis";
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -426,7 +682,7 @@ export default function NouveauDevisPage() {
     );
   }
 
-  if (!user || !demande) {
+  if (!user || (!demande && !modeEdition)) {
     return null;
   }
 
@@ -443,11 +699,21 @@ export default function NouveauDevisPage() {
               onClick={() => router.back()}
               className="text-[#FF6B00] hover:underline mb-4"
             >
-              ← Retour aux demandes
+              ← Retour {modeEdition ? 'aux devis' : 'aux demandes'}
             </button>
-            <h1 className="text-3xl font-bold text-[#2C3E50]">Créer un devis</h1>
+            <h1 className="text-3xl font-bold text-[#2C3E50]">
+              {modeEdition ? '📝 Modifier le brouillon' : 'Créer un devis'}
+            </h1>
             <p className="text-[#6C757D] mt-2">
-              Demande de {clientInfo?.prenom} {clientInfo?.nom}
+              {modeEdition ? (
+                <span>
+                  Modification en cours • Client : {clientInfo?.prenom} {clientInfo?.nom}
+                </span>
+              ) : (
+                <span>
+                  Demande de {clientInfo?.prenom} {clientInfo?.nom}
+                </span>
+              )}
             </p>
           </div>
 
@@ -557,6 +823,109 @@ export default function NouveauDevisPage() {
               </div>
             </div>
           </div>
+
+          {/* Devis Alternatifs (Variantes) */}
+          {variantesExistantes.length > 0 || demandeId ? (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 shadow-sm mb-6">
+              {variantesExistantes.length > 0 && (
+                <div className="bg-orange-50 border-l-4 border-[#FF6B00] p-4 mb-4 rounded">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-6 h-6 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="font-semibold text-[#FF6B00] mb-1">
+                        ⚠️ Un devis existe déjà pour cette demande
+                      </p>
+                      <p className="text-sm text-[#2C3E50]">
+                        Vous devez créer une <strong>variante</strong> (option alternative) car cette demande vous a été envoyée spécifiquement. 
+                        Cochez "Créer une variante" ci-dessous pour proposer une nouvelle option au client.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-start gap-3 mb-4">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-semibold text-[#2C3E50] mb-1">
+                    Proposer plusieurs options au client
+                  </h2>
+                  <p className="text-sm text-[#6C757D]">
+                    Créez des devis alternatifs (Économique, Standard, Premium) pour la même demande. Le client pourra comparer et choisir.
+                  </p>
+                </div>
+              </div>
+
+              {variantesExistantes.length > 0 && (
+                <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
+                  <h3 className="font-medium text-[#2C3E50] mb-2">
+                    📊 Variantes existantes ({variantesExistantes.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {variantesExistantes.map((v) => (
+                      <div key={v.id} className="flex items-center justify-between text-sm bg-blue-50 px-3 py-2 rounded">
+                        <span>
+                          <span className="font-mono font-semibold text-blue-700">{v.numeroDevis}</span>
+                          {' - '}
+                          <span className="font-medium">{v.varianteLabel}</span>
+                        </span>
+                        <span className="text-[#6C757D]">
+                          {v.totaux?.totalTTC ? `${v.totaux.totalTTC.toFixed(2)} €` : '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="checkbox"
+                  id="creerVariante"
+                  checked={creerVariante}
+                  onChange={(e) => setCreerVariante(e.target.checked)}
+                  className="w-5 h-5 text-[#FF6B00] rounded focus:ring-[#FF6B00]"
+                />
+                <label htmlFor="creerVariante" className="font-medium text-[#2C3E50] cursor-pointer">
+                  ✨ Créer une variante alternative pour ce devis
+                </label>
+              </div>
+
+              {creerVariante && (
+                <div className="ml-8 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-[#2C3E50] mb-1">
+                      Nom de l'option *
+                    </label>
+                    <input
+                      type="text"
+                      value={varianteLabel}
+                      onChange={(e) => setVarianteLabel(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                      placeholder="Ex: Option Économique, Option Premium, Solution Standard..."
+                    />
+                    <p className="text-xs text-[#6C757D] mt-1">
+                      💡 Ce nom apparaîtra sur le devis et aidera le client à identifier les différentes options
+                    </p>
+                  </div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+                    <p className="font-medium text-yellow-800 mb-1">ℹ️ Comment ça fonctionne :</p>
+                    <ul className="text-yellow-700 space-y-1 ml-4 list-disc">
+                      <li>Chaque variante aura un numéro unique (DV-2026-00042-A, -B, -C...)</li>
+                      <li>Le client pourra comparer toutes les options avant de choisir</li>
+                      <li>Si le client accepte une variante, les autres seront automatiquement annulées</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
 
           {/* Prestations */}
           <div className="bg-white rounded-lg p-6 shadow-sm mb-6">

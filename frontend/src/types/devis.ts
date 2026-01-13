@@ -14,7 +14,9 @@ export type DevisStatut =
   | 'envoye'       // Devis envoyé au client
   | 'accepte'      // Client a accepté le devis
   | 'refuse'       // Client a refusé le devis
-  | 'expire';      // Date de validité dépassée
+  | 'expire'       // Date de validité dépassée
+  | 'remplace'     // Devis remplacé par une révision
+  | 'annule';      // Devis annulé (ex: autre variante acceptée)
 
 export type TVARate = 0 | 5.5 | 10 | 20; // Taux de TVA français
 
@@ -57,6 +59,18 @@ export interface Devis {
   motifRefus?: string;           // Motif de refus saisi par le client
   typeRefus?: 'revision' | 'definitif'; // Type de refus
   dateModification: Timestamp;
+  dateDerniereNotification?: Timestamp; // Date de la dernière notification importante (acceptation, refus, etc.)
+  vuParArtisan?: boolean;        // L'artisan a-t-il consulté ce devis après action client (système lu/non lu)
+  dateVueParArtisan?: Timestamp; // Date de consultation par l'artisan
+  
+  // Devis alternatifs (pour proposer plusieurs options au client)
+  varianteGroupe?: string;       // ID du groupe de variantes (même pour tous les devis alternatifs)
+  varianteLabel?: string;        // Ex: "Économique", "Standard", "Premium"
+  varianteLettreReference?: string; // Ex: "A", "B", "C" pour différencier dans le numéro
+  
+  // Révisions (si le devis a été remplacé par une révision)
+  devisRevisionId?: string;      // ID du devis qui remplace celui-ci
+  devisOriginalId?: string;      // ID du devis original (si c'est une révision)
   
   // Informations client (snapshot pour le PDF)
   client: {

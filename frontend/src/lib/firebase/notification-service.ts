@@ -10,7 +10,7 @@ import type { Notification } from '@/types/firestore';
  */
 export async function createNotification(
   userId: string,
-  notificationData: Omit<Notification, 'id' | 'userId' | 'dateCre ation' | 'lue'>
+  notificationData: Omit<Notification, 'id' | 'userId' | 'dateCreation' | 'lue'>
 ): Promise<string> {
   console.log('💾 Création notification Firestore pour userId:', userId, 'type:', notificationData.type);
   const notificationsRef = collection(db, 'notifications');
@@ -199,7 +199,7 @@ export async function notifyArtisanDevisAccepte(
     message: numeroDevis 
       ? `${clientNom} a accepté votre devis ${numeroDevis}. Un contrat a été généré.`
       : `${clientNom} a accepté votre devis. Un contrat a été généré.`,
-    lien: `/artisan/devis/${devisId}`,
+    lien: `/artisan/devis?devisId=${devisId}`, // ← CORRECTION : utiliser query param pour highlight
   });
 }
 
@@ -219,7 +219,27 @@ export async function notifyArtisanDevisRefuse(
     type: 'devis_refuse',
     titre: '❌ Devis refusé',
     message,
-    lien: `/artisan/devis/${devisId}`,
+    lien: `/artisan/devis?devisId=${devisId}`,
+  });
+}
+
+// Demande de révision de devis
+export async function notifyArtisanDevisRevision(
+  artisanId: string,
+  demandeId: string,
+  clientNom: string,
+  numeroDevis?: string,
+  motif?: string
+): Promise<void> {
+  const message = numeroDevis
+    ? `${clientNom} souhaite une révision du devis ${numeroDevis}.${motif ? ` Motif : ${motif}` : ''}`
+    : `${clientNom} souhaite une révision de devis.${motif ? ` Motif : ${motif}` : ''}`;
+
+  await createNotification(artisanId, {
+    type: 'devis_revision',
+    titre: '🔄 Demande de révision de devis',
+    message,
+    lien: `/artisan/devis/nouveau?demandeId=${demandeId}`,
   });
 }
 
@@ -231,15 +251,22 @@ export async function notifyClientDevisRecu(
   numeroDevis?: string
 ): Promise<void> {
   console.log('📨 Création notification devis_recu pour client:', clientId, 'devis:', numeroDevis);
-  await createNotification(clientId, {
-    type: 'devis_recu',
-    titre: '📄 Nouveau devis reçu',
-    message: numeroDevis
-      ? `${artisanNom} vous a envoyé le devis ${numeroDevis}.`
-      : `${artisanNom} vous a envoyé un nouveau devis.`,
-    lien: `/client/devis/${devisId}`,
-  });
-  console.log('✅ Notification devis_recu créée avec succès');
+  console.log('📨 Détails notification:', { clientId, devisId, artisanNom, numeroDevis });
+  
+  try {
+    const notifId = await createNotification(clientId, {
+      type: 'devis_recu',
+      titre: '📄 Nouveau devis reçu',
+      message: numeroDevis
+        ? `${artisanNom} vous a envoyé le devis ${numeroDevis}.`
+        : `${artisanNom} vous a envoyé un nouveau devis.`,
+      lien: `/client/devis/${devisId}`,
+    });
+    console.log('✅ Notification devis_recu créée avec succès, ID:', notifId);
+  } catch (error) {
+    console.error('❌ Erreur lors de la création de la notification:', error);
+    throw error;
+  }
 }
 
 

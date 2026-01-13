@@ -80,6 +80,7 @@ export type NotificationType =
   | 'devis_recu' 
   | 'devis_accepte'
   | 'devis_refuse'
+  | 'devis_revision'     // ✅ Ajouté - demande de révision/nouvelle variante
   | 'contrat_signe'
   | 'paiement' 
   | 'paiement_libere'

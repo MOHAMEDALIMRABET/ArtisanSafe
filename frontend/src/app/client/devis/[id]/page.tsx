@@ -8,9 +8,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { notifyArtisanDevisAccepte, notifyArtisanDevisRefuse, createNotification } from '@/lib/firebase/notification-service';
+import { notifyArtisanDevisAccepte, notifyArtisanDevisRefuse, notifyArtisanDevisRevision } from '@/lib/firebase/notification-service';
 import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
@@ -22,6 +22,7 @@ export default function ClientDevisDetailPage() {
   const { user, loading: authLoading } = useAuth();
   const [devis, setDevis] = useState<Devis | null>(null);
   const [demande, setDemande] = useState<Demande | null>(null);
+  const [autresVariantes, setAutresVariantes] = useState<Devis[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRefusalModal, setShowRefusalModal] = useState(false);
   const [refusalReason, setRefusalReason] = useState('');
@@ -75,6 +76,11 @@ export default function ClientDevisDetailPage() {
 
       setDevis(devisData);
 
+      // Charger les autres variantes si ce devis fait partie d'un groupe
+      if (devisData.varianteGroupe) {
+        await chargerAutresVariantes(devisData.varianteGroupe, devisId);
+      }
+
       // Charger la demande associée
       if (devisData.demandeId) {
         const demandeDoc = await getDoc(doc(db, 'demandes', devisData.demandeId));
@@ -86,6 +92,25 @@ export default function ClientDevisDetailPage() {
       console.error('Erreur chargement devis:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const chargerAutresVariantes = async (varianteGroupe: string, devisActuelId: string) => {
+    try {
+      const q = query(
+        collection(db, 'devis'),
+        where('varianteGroupe', '==', varianteGroupe)
+      );
+      
+      const snapshot = await getDocs(q);
+      const variantes = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as Devis))
+        .filter(v => v.id !== devisActuelId && v.statut === 'envoye'); // Exclure le devis actuel et ne garder que les envoyés
+      
+      setAutresVariantes(variantes);
+      console.log(`📊 ${variantes.length} autre(s) variante(s) disponible(s)`);
+    } catch (error) {
+      console.error('Erreur chargement autres variantes:', error);
     }
   };
 
@@ -103,6 +128,8 @@ export default function ClientDevisDetailPage() {
       await updateDoc(doc(db, 'devis', devisId), {
         statut: 'accepte',
         dateAcceptation: Timestamp.now(),
+        dateDerniereNotification: Timestamp.now(),
+        vuParArtisan: false, // Marquer comme non vu par l'artisan pour notification
       });
 
       // Notifier l'artisan
@@ -143,6 +170,8 @@ export default function ClientDevisDetailPage() {
         dateRefus: Timestamp.now(),
         motifRefus: refusalReason || 'Aucun motif précisé',
         typeRefus: refusalType, // 'revision' ou 'definitif'
+        dateDerniereNotification: Timestamp.now(),
+        vuParArtisan: false, // Marquer comme non vu par l'artisan pour notification
       });
 
       const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
@@ -151,12 +180,13 @@ export default function ClientDevisDetailPage() {
       if (refusalType === 'revision' && devis.demandeId) {
         // Refus avec demande de révision → notification spécifique
         try {
-          await createNotification(devis.artisanId, {
-            type: 'devis_revision',
-            titre: '🔄 Demande de révision de devis',
-            message: `${clientNom} souhaite une révision du devis ${devis.numeroDevis || ''}. Motif : ${refusalReason || 'Non précisé'}`,
-            lien: `/artisan/devis/nouveau?demandeId=${devis.demandeId}`,
-          });
+          await notifyArtisanDevisRevision(
+            devis.artisanId,
+            devis.demandeId,
+            clientNom,
+            devis.numeroDevis,
+            refusalReason
+          );
           console.log('✅ Notification de révision envoyée');
         } catch (error) {
           console.error('Erreur notification révision:', error);
@@ -260,6 +290,51 @@ export default function ClientDevisDetailPage() {
         </div>
 
         <div className="container mx-auto px-4 py-8 print:py-0">
+          {/* Indicateur de variantes multiples */}
+          {autresVariantes.length > 0 && devis.statut === 'envoye' && (
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-500 p-4 mb-4 print:hidden">
+              <div className="flex items-start gap-3">
+                <svg className="w-6 h-6 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div className="flex-1">
+                  <h3 className="text-purple-900 font-bold mb-2">
+                    💡 L'artisan vous propose {autresVariantes.length + 1} options différentes
+                  </h3>
+                  <p className="text-purple-800 text-sm mb-3">
+                    Comparez les variantes pour choisir celle qui correspond le mieux à vos besoins et votre budget.
+                  </p>
+                  <div className="grid gap-2">
+                    {autresVariantes.map(v => (
+                      <button
+                        key={v.id}
+                        onClick={() => router.push(`/client/devis/${v.id}`)}
+                        className="text-left bg-white border-2 border-purple-200 rounded-lg p-3 hover:border-purple-400 hover:shadow-md transition"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="font-semibold text-[#2C3E50]">
+                              {v.varianteLabel || 'Option alternative'}
+                            </p>
+                            <p className="text-xs text-gray-600">{v.numeroDevis}</p>
+                          </div>
+                          <div className="text-right ml-4">
+                            <p className="font-bold text-[#FF6B00] text-lg">
+                              {v.totaux?.totalTTC.toFixed(2)} €
+                            </p>
+                            <p className="text-xs text-purple-600 font-medium">
+                              Voir cette option →
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Boutons d'action - masqués à l'impression */}
           {devis.statut === 'envoye' && (
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 print:hidden">
@@ -498,8 +573,53 @@ export default function ClientDevisDetailPage() {
       {/* Modal de refus */}
       {showRefusalModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-[#2C3E50] mb-4">Refuser ce devis</h3>
+            
+            {/* Alerte si d'autres variantes existent */}
+            {autresVariantes.length > 0 && (
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="font-semibold text-blue-800 mb-2">
+                      💡 L'artisan a proposé {autresVariantes.length + 1} option{autresVariantes.length > 0 ? 's' : ''} différente{autresVariantes.length > 0 ? 's' : ''}
+                    </p>
+                    <p className="text-sm text-blue-700 mb-3">
+                      Avant de refuser, consultez les autres variantes qui pourraient mieux vous convenir :
+                    </p>
+                    <div className="space-y-2">
+                      {autresVariantes.map(v => (
+                        <button
+                          key={v.id}
+                          onClick={() => router.push(`/client/devis/${v.id}`)}
+                          className="w-full text-left bg-white border border-blue-200 rounded p-3 hover:border-blue-400 hover:bg-blue-50 transition"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-[#2C3E50]">
+                                {v.numeroDevis} - {v.varianteLabel || 'Option alternative'}
+                              </p>
+                              <p className="text-sm text-gray-600">{v.titre}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-[#FF6B00] text-lg">
+                                {v.totaux?.totalTTC.toFixed(2)} €
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Cliquez pour voir →
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <p className="text-gray-600 mb-3">
               Motif du refus (optionnel) :
@@ -542,8 +662,13 @@ export default function ClientDevisDetailPage() {
                   className="mt-1 w-4 h-4 text-[#FF6B00] focus:ring-[#FF6B00]"
                 />
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-800">Refuser et demander une révision</p>
-                  <p className="text-sm text-gray-600">L'artisan pourra vous envoyer un nouveau devis amélioré</p>
+                  <p className="font-semibold text-gray-800">Refuser et demander une nouvelle option</p>
+                  <p className="text-sm text-gray-600">
+                    {autresVariantes.length > 0 
+                      ? "L'artisan pourra créer une variante supplémentaire adaptée à vos besoins"
+                      : "L'artisan pourra vous proposer une option alternative améliorée"
+                    }
+                  </p>
                 </div>
               </label>
             </div>

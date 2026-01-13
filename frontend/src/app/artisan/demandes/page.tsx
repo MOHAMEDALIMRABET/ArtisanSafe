@@ -1,23 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getDemandesForArtisan, removeArtisanFromDemande } from '@/lib/firebase/demande-service';
 import { createNotification } from '@/lib/firebase/notification-service';
 import { getFileMetadata } from '@/lib/firebase/storage-service';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import type { User, Demande } from '@/types/firestore';
+import type { Devis } from '@/types/devis';
 
 export default function ArtisanDemandesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightedDemandeId = searchParams?.get('demandeId');
   const { user: authUser, loading: authLoading } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'devis_envoyes' | 'refusees'>('nouvelles');
+  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'devis_envoyes' | 'refusees'>('toutes');
   const [refusingDemandeId, setRefusingDemandeId] = useState<string | null>(null);
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
+  const [demandesRefusStatut, setDemandesRefusStatut] = useState<Map<string, { definitif: boolean; revision: boolean }>>(new Map());
+  const demandeRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
 
   useEffect(() => {
     if (authLoading) return; // Attendre que l'auth soit chargée
@@ -29,6 +36,18 @@ export default function ArtisanDemandesPage() {
 
     loadData();
   }, [authUser, authLoading, router]);
+
+  // Scroller vers la demande mise en évidence
+  useEffect(() => {
+    if (highlightedDemandeId && !isLoading && demandeRefs.current[highlightedDemandeId]) {
+      setTimeout(() => {
+        demandeRefs.current[highlightedDemandeId]?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 300);
+    }
+  }, [highlightedDemandeId, isLoading]);
 
   async function loadData() {
     if (!authUser) return;
@@ -51,6 +70,36 @@ export default function ArtisanDemandesPage() {
         photos: d.photos,
       })));
       setDemandes(demandesData);
+      
+      // Vérifier le statut de refus des devis pour chaque demande
+      const refusStatutMap = new Map<string, { definitif: boolean; revision: boolean }>();
+      for (const demande of demandesData) {
+        try {
+          const devisQuery = query(
+            collection(db, 'devis'),
+            where('demandeId', '==', demande.id),
+            where('artisanId', '==', authUser.uid),
+            where('statut', '==', 'refuse')
+          );
+          const devisSnapshot = await getDocs(devisQuery);
+          
+          let hasDefinitif = false;
+          let hasRevision = false;
+          
+          devisSnapshot.docs.forEach(doc => {
+            const devis = doc.data() as Devis;
+            if (devis.typeRefus === 'definitif') hasDefinitif = true;
+            if (devis.typeRefus === 'revision') hasRevision = true;
+          });
+          
+          if (hasDefinitif || hasRevision) {
+            refusStatutMap.set(demande.id, { definitif: hasDefinitif, revision: hasRevision });
+          }
+        } catch (error) {
+          console.error(`Erreur vérification refus pour demande ${demande.id}:`, error);
+        }
+      }
+      setDemandesRefusStatut(refusStatutMap);
       
       // Charger les métadonnées des photos (noms originaux)
       const metadata = new Map<string, string>();
@@ -143,10 +192,12 @@ export default function ArtisanDemandesPage() {
   }
 
   const filteredDemandes = demandes.filter(demande => {
-    if (filter === 'toutes') return true;
-    if (filter === 'nouvelles') return demande.statut === 'publiee' && (!demande.devisRecus || demande.devisRecus === 0);
-    if (filter === 'devis_envoyes') return demande.devisRecus && demande.devisRecus > 0;
-    if (filter === 'refusees') return demande.statut === 'annulee'; // Les demandes refusées ont statut 'annulee'
+    // Si un demandeId est spécifié dans l'URL, afficher uniquement cette demande
+    if (highlightedDemandeId) {
+      return demande.id === highlightedDemandeId;
+    }
+    
+    // Sinon, afficher toutes les demandes
     return true;
   });
 
@@ -172,58 +223,41 @@ export default function ArtisanDemandesPage() {
                 📬 Demandes Clients
               </h1>
               <p className="text-gray-600">
-                {filteredDemandes.length} demande{filteredDemandes.length > 1 ? 's' : ''} 
-                {filter !== 'toutes' && ` (${filter})`}
+                {highlightedDemandeId ? (
+                  'Détail de la demande'
+                ) : (
+                  <>
+                    {filteredDemandes.length} demande{filteredDemandes.length > 1 ? 's' : ''} 
+                    {filter !== 'toutes' && ` (${filter})`}
+                  </>
+                )}
               </p>
             </div>
+            {highlightedDemandeId && (
+              <button
+                onClick={() => router.push('/artisan/demandes')}
+                className="flex items-center gap-2 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100]"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Retour à toutes les demandes
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Filtres */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilter('toutes')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'toutes'
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Toutes les demandes ({demandes.length})
-            </button>
-            <button
-              onClick={() => setFilter('nouvelles')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'nouvelles'
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              🆕 Sans devis ({demandes.filter(d => d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)).length})
-            </button>
-            <button
-              onClick={() => setFilter('devis_envoyes')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'devis_envoyes'
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              📤 Avec devis envoyés ({demandes.filter(d => d.devisRecus && d.devisRecus > 0).length})
-            </button>
-            <button
-              onClick={() => setFilter('refusees')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'refusees'
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              ❌ Refusées ({demandes.filter(d => d.statut === 'annulee').length})
-            </button>
+        {/* En-tête simplifié - Masqué si on affiche une demande spécifique */}
+        {!highlightedDemandeId && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-bold text-[#2C3E50]">
+              📋 Mes demandes reçues ({demandes.length})
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Liste des demandes de travaux qui vous ont été envoyées
+            </p>
           </div>
-        </div>
+        )}
 
         {/* Liste des demandes */}
         {filteredDemandes.length === 0 ? (
@@ -240,8 +274,13 @@ export default function ArtisanDemandesPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredDemandes.map((demande) => (
-              <div key={demande.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6">
+            {filteredDemandes.map((demande) => {
+              return (
+              <div 
+                key={demande.id} 
+                ref={(el) => { demandeRefs.current[demande.id] = el; }}
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -254,7 +293,7 @@ export default function ArtisanDemandesPage() {
                             ✅ {demande.devisRecus} devis envoyé{demande.devisRecus > 1 ? 's' : ''}
                           </span>
                           <button
-                            onClick={() => router.push(`/artisan/devis`)}
+                            onClick={() => router.push(`/artisan/devis?demandeId=${demande.id}`)}
                             className="text-xs text-blue-600 hover:text-blue-800 underline"
                           >
                             Voir l'historique
@@ -367,23 +406,68 @@ export default function ArtisanDemandesPage() {
 
                 {/* Actions */}
                 <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
-                  {demande.statut === 'publiee' && (
-                    <>
-                      <button
-                        onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`)}
-                        className="flex-1 bg-[#FF6B00] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
-                      >
-                        📝 Envoyer un devis
-                      </button>
-                      <button
-                        onClick={() => handleRefuserDemande(demande.id)}
-                        disabled={refusingDemandeId === demande.id}
-                        className="px-6 py-3 border-2 border-red-300 text-red-700 rounded-lg font-semibold hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {refusingDemandeId === demande.id ? '⏳ Refus...' : '❌ Refuser'}
-                      </button>
-                    </>
-                  )}
+                  {demande.statut === 'publiee' && (() => {
+                    const refusStatut = demandesRefusStatut.get(demande.id);
+                    
+                    // Si refus définitif : bloquer complètement
+                    if (refusStatut?.definitif) {
+                      return (
+                        <div className="flex-1 bg-gray-100 border-2 border-gray-300 p-4 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <svg className="w-6 h-6 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
+                            <div className="flex-1">
+                              <p className="font-bold text-gray-700 mb-1">⛔ Demande fermée - Refus définitif</p>
+                              <p className="text-sm text-gray-600">
+                                Le client a refusé définitivement votre devis. Vous ne pouvez plus envoyer de proposition pour cette demande.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    // Si refus avec révision : permettre de créer une variante
+                    if (refusStatut?.revision) {
+                      return (
+                        <>
+                          <button
+                            onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`)}
+                            className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-600 transition"
+                          >
+                            🔄 Créer un devis révisé
+                          </button>
+                          <button
+                            onClick={() => handleRefuserDemande(demande.id)}
+                            disabled={refusingDemandeId === demande.id}
+                            className="px-6 py-3 border-2 border-red-300 text-red-700 rounded-lg font-semibold hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {refusingDemandeId === demande.id ? '⏳ Refus...' : '❌ Refuser'}
+                          </button>
+                        </>
+                      );
+                    }
+                    
+                    // Sinon : affichage normal
+                    return (
+                      <>
+                        <button
+                          onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`)}
+                          className="flex-1 bg-[#FF6B00] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
+                        >
+                          📝 Envoyer un devis
+                        </button>
+                        <button
+                          onClick={() => handleRefuserDemande(demande.id)}
+                          disabled={refusingDemandeId === demande.id}
+                          className="px-6 py-3 border-2 border-red-300 text-red-700 rounded-lg font-semibold hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {refusingDemandeId === demande.id ? '⏳ Refus...' : '❌ Refuser'}
+                        </button>
+                      </>
+                    );
+                  })()}
                   {demande.statut !== 'publiee' && (
                     <button
                       onClick={() => router.push(`/demande/${demande.id}`)}
@@ -394,7 +478,8 @@ export default function ArtisanDemandesPage() {
                   )}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>
