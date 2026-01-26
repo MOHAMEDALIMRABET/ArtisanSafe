@@ -682,7 +682,211 @@ RESTART_BACKEND.bat
 - Boucle infinie → Voir `docs/DEPANNAGE_BOUCLE_INFINIE.md`
 - Upload documents échoue → Vérifier Firebase Storage rules et CORS
 
-## Stratégie de tests (À implémenter)
+## Stratégie de tests
+
+### 🎯 QUAND tester ? (Recommandation ArtisanSafe)
+
+**Approche progressive recommandée** :
+
+#### Phase 1 : **MAINTENANT** - Tests critiques anti-régression (Priorité 1)
+**Quand** : Avant tout déploiement production ou modification importante  
+**Temps estimé** : 4-6 heures  
+**Objectif** : Protéger les fonctionnalités existantes
+
+**✅ À tester EN PRIORITÉ** :
+
+1. **Authentification & Inscription** (CRITIQUE)
+   - Inscription client réussie → document `users` créé
+   - Inscription artisan → documents `users` + `artisans` créés
+   - Email vérification envoyé automatiquement
+   - Connexion avec bonnes credentials
+   - Déconnexion nettoie la session
+
+2. **Cycle de vie Devis** (CŒUR MÉTIER)
+   - Création devis incrémente `demandes.devisRecus`
+   - Acceptation devis → statut 'accepte' + création contrat
+   - Refus devis → statut 'refuse' + motifRefus enregistré
+   - Notification client lors envoi devis
+   - Notification artisan lors acceptation/refus
+
+3. **Vérification documents** (SÉCURITÉ)
+   - Upload KBIS → stockage Firebase Storage
+   - OCR extrait SIRET correct
+   - Comparaison SIRET profil vs SIRET document
+   - Admin peut approuver/rejeter artisan
+   - Profil invisible si non approuvé
+
+4. **Recherche artisans** (FONCTIONNALITÉ CLÉ)
+   - Recherche par métier retourne bons résultats
+   - Recherche par ville filtre correctement
+   - Artisans non approuvés exclus des résultats
+   - Artisans emailVerified=false exclus des résultats
+
+#### Phase 2 : **PENDANT nouvelles features** - Tests progressifs (Priorité 2)
+**Quand** : Au moment du développement de chaque nouvelle fonctionnalité  
+**Temps estimé** : +30% temps développement feature
+
+**À tester lors de l'ajout** :
+- **Stripe paiement** → Tests transactions, webhooks, séquestre
+- **Système avis** → Tests création, modération, calcul moyenne
+- **Mapbox géolocalisation** → Tests rayon recherche, calcul distance
+- **Messagerie pièces jointes** → Tests upload, téléchargement, limites
+
+#### Phase 3 : **APRÈS bugs production** - Tests de non-régression (Priorité 3)
+**Quand** : Immédiatement après correction d'un bug  
+**Temps estimé** : 15-30 minutes par bug
+
+**Processus** :
+1. Bug découvert → Noter scénario
+2. Corriger le bug
+3. Écrire test reproduisant le bug
+4. Vérifier que test passe avec correction
+5. Commit code + test ensemble
+
+#### Phase 4 : **MAINTENANCE** - Extension couverture (Continu)
+**Quand** : 1-2h par semaine  
+**Objectif** : Augmenter couverture progressivement
+
+**Plan hebdomadaire** :
+- Semaine 1 : Tester notifications
+- Semaine 2 : Tester messagerie
+- Semaine 3 : Tester disponibilités artisan
+- Semaine 4 : Tester contrats
+
+### ✅ QUOI tester exactement ? (Liste exhaustive)
+
+#### Tests Niveau 1 : CRITIQUE (À faire immédiatement)
+
+**Authentification** :
+```typescript
+✅ signUpClient() crée document users avec role='client'
+✅ signUpArtisan() crée users + artisans
+✅ sendEmailVerification() appelé automatiquement
+✅ signIn() avec credentials valides retourne user
+✅ signIn() avec mauvais password échoue avec message français
+✅ signOut() nettoie auth.currentUser
+```
+
+**Devis** :
+```typescript
+✅ createDevis() crée document avec statut='brouillon'
+✅ sendDevis() change statut → 'envoye' + crée notification client
+✅ acceptDevis() change statut → 'accepte' + crée contrat + notifie artisan
+✅ refuseDevis() change statut → 'refuse' + enregistre motifRefus
+✅ createDevis() incrémente demandes.devisRecus
+```
+
+**Vérification KBIS** :
+```typescript
+✅ parseKbisDocument() extrait SIRET 14 chiffres
+✅ compareSiret() détecte concordance profil/document
+✅ verifyKbisDocument() retourne success si SIRET matche
+✅ Admin approve → verificationStatus='approved'
+✅ Profil invisible si verificationStatus='pending'
+```
+
+**Recherche** :
+```typescript
+✅ searchArtisans('plomberie') retourne uniquement plombiers
+✅ searchArtisans(null, 'Paris') filtre par ville
+✅ Artisans non approuvés exclus des résultats
+✅ Artisans emailVerified=false exclus
+✅ Tri côté client fonctionne (pas d'index composite Firestore)
+```
+
+#### Tests Niveau 2 : IMPORTANT (Semaines 2-4)
+
+**Notifications** :
+```typescript
+✅ createNotification() crée document Firestore
+✅ useNotifications() détecte nouvelles notifications
+✅ markAsRead() change isRead → true
+✅ markAllAsRead() change toutes notifications
+✅ Badge affiche bon compteur unreadCount
+```
+
+**Messagerie** :
+```typescript
+✅ sendMessage() crée message dans conversation
+✅ Messages temps réel via onSnapshot
+✅ Conversation créée automatiquement si inexistante
+✅ Dernier message affiché dans liste conversations
+```
+
+**Contrats** :
+```typescript
+✅ Contrat créé lors acceptation devis
+✅ statut='en_cours' par défaut
+✅ dateDebut enregistrée
+✅ Lien vers devis original préservé
+```
+
+#### Tests Niveau 3 : OPTIONNEL (Mois 2+)
+
+**Upload documents** :
+```typescript
+✅ Upload fichier < 10MB accepté
+✅ Upload fichier > 10MB rejeté
+✅ Formats PDF/JPG/PNG acceptés
+✅ Format .doc rejeté
+✅ URL Firebase Storage générée correctement
+```
+
+**Disponibilités** :
+```typescript
+✅ Artisan peut bloquer dates
+✅ Dates passées non modifiables
+✅ Recherche exclut artisans indisponibles
+```
+
+**Admin** :
+```typescript
+✅ Seul role='admin' accède /admin
+✅ Liste artisans pending affichée
+✅ Approbation met à jour verificationStatus
+✅ Historique uploads accessible
+```
+
+### 📅 Planning recommandé (Semaines 1-8)
+
+**Semaine 1 : Configuration + Tests Auth**
+```bash
+Lundi : Installation Jest + config
+Mardi-Mercredi : Tests signUpClient, signUpArtisan, signIn
+Jeudi : Tests email vérification
+Vendredi : Tests signOut + erreurs
+```
+
+**Semaine 2 : Tests Devis (Cœur métier)**
+```bash
+Lundi-Mardi : Tests createDevis + sendDevis
+Mercredi : Tests acceptDevis + création contrat
+Jeudi : Tests refuseDevis
+Vendredi : Tests incrémentation compteur
+```
+
+**Semaine 3 : Tests KBIS + Recherche**
+```bash
+Lundi-Mardi : Tests OCR parseKbisDocument
+Mercredi : Tests comparaison SIRET
+Jeudi : Tests searchArtisans
+Vendredi : Tests filtres + exclusions
+```
+
+**Semaine 4 : Tests E2E (Parcours complets)**
+```bash
+Lundi : Setup Playwright
+Mardi : Test inscription artisan E2E
+Mercredi : Test cycle devis complet E2E
+Jeudi : Test upload documents E2E
+Vendredi : Test recherche + contact E2E
+```
+
+**Semaines 5-8 : Tests progressifs**
+- Notifications (semaine 5)
+- Messagerie (semaine 6)
+- Contrats + disponibilités (semaine 7)
+- Admin + edge cases (semaine 8)
 
 ### Structure recommandée
 
