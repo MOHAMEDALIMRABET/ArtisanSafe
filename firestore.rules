@@ -147,36 +147,37 @@ service cloud.firestore {
     // ============================================
     // 6. COLLECTION: conversations
     // ============================================
-    // Accès uniquement aux participants
+    // Accès uniquement aux participants + ADMIN (pour litiges)
     // Protection coordonnées avant contrat validé
+    // HISTORISATION COMPLÈTE pour résolution litiges
     
     match /conversations/{conversationId} {
-      allow read: if isAuthenticated() && 
-                     request.auth.uid in resource.data.participants;
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && request.auth.uid in resource.data.participants);
       allow create: if isAuthenticated() && 
                        request.auth.uid in request.resource.data.participants;
-      allow update: if isAuthenticated() && 
-                       request.auth.uid in resource.data.participants;
-      allow delete: if isAdmin();
+      allow update: if isAdmin() ||
+                       (isAuthenticated() && request.auth.uid in resource.data.participants);
+      allow delete: if false; // ⛔ JAMAIS SUPPRIMER - Archive obligatoire pour litiges
     }
     
     // ============================================
     // 7. COLLECTION: messages
     // ============================================
-    // Lecture par participants de la conversation
+    // Lecture par participants + ADMIN (pour litiges)
     // Création uniquement si participant
-    // Validation anti-spam coordonnées
+    // HISTORISATION COMPLÈTE - jamais de suppression
     
     match /messages/{messageId} {
-      allow read: if isAuthenticated();
+      allow read: if isAdmin() || isAuthenticated(); // Admin a accès total
       allow create: if isAuthenticated() &&
                        request.auth.uid == request.resource.data.senderId;
       allow update: if isOwner(resource.data.senderId) || isAdmin();
-      allow delete: if isAdmin();
+      allow delete: if false; // ⛔ JAMAIS SUPPRIMER - Archive obligatoire pour litiges
       
       // Protection coordonnées (regex basique)
       // Note: validation complète côté client/serveur
-      allow write: if request.resource.data.type in ['texte', 'document', 'image'];
+      allow write: if request.resource.data.content != null;
     }
     
     // ============================================

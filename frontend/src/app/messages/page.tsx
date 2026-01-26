@@ -506,9 +506,6 @@ export default function MessagesPage() {
                       {sending ? '⏳' : '📤'} Envoyer
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    🛡️ Système anti-bypass actif : le partage de coordonnées personnelles est interdit
-                  </p>
                 </form>
               </>
             ) : (

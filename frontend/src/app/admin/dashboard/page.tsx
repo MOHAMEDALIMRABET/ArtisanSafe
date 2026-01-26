@@ -126,6 +126,13 @@ export default function AdminDashboardPage() {
       color: 'bg-green-600'
     },
     {
+      title: 'Litiges & Conversations',
+      description: 'Historique complet pour résolution litiges',
+      icon: '🛡️',
+      link: '/admin/litiges',
+      color: 'bg-red-600'
+    },
+    {
       title: 'Gérer Artisans',
       description: 'Suspendre, réactiver, supprimer',
       icon: '🔧',
@@ -176,7 +183,7 @@ export default function AdminDashboardPage() {
       {/* Actions rapides */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-[#2C3E50] mb-4">Actions rapides</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickActions.map((action, index) => (
             <Link
               key={index}

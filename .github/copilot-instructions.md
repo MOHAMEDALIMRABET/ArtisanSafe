@@ -4,6 +4,14 @@
 
 ArtisanSafe est une plateforme marketplace bilingue (français principal, anglais secondaire) qui connecte les clients avec des artisans qualifiés (plombiers, électriciens, menuisiers, maçons, etc.). La plateforme met l'accent sur la sécurité, la confiance et les transactions transparentes grâce à des profils vérifiés, des paiements sécurisés et une médiation des litiges.
 
+**Stack actuel :**
+- Frontend: Next.js 15 + React 19 + TypeScript + TailwindCSS 4
+- Backend: Node.js + Express + TypeScript
+- Database: Firebase Firestore
+- Auth: Firebase Auth
+- Storage: Firebase Storage
+- Services: SIRENE API (vérification SIRET), OCR (Tesseract.js), Email (nodemailer)
+
 ## 🎨 CHARTE GRAPHIQUE OBLIGATOIRE
 
 ### Logo officiel
@@ -112,80 +120,116 @@ className="bg-white border border-[#E9ECEF] hover:border-[#FF6B00] rounded-lg sh
 
 ## Statut du projet
 
-**Phase actuelle :** Développement MVP - Infrastructure Firebase configurée.
+**Phase actuelle :** MVP avancé - Infrastructure complète et fonctionnalités de base implémentées.
 
-Le projet utilise :
-- **Frontend :** Next.js 15 + TypeScript + TailwindCSS ✅
-- **Backend :** Node.js + Express + TypeScript ✅
-- **Base de données :** Firebase Firestore ✅
-- **Authentification :** Firebase Auth ✅
-- **Storage :** Firebase Storage (à venir)
-- **Intégrations :** Stripe/PayPal, Mapbox (à venir)
+**Fonctionnalités opérationnelles :**
+- ✅ Authentification double rôle (clients/artisans) avec vérification email
+- ✅ Profils artisans publics avec métiers, localisation, documents (KBIS, décennale)
+- ✅ Recherche d'artisans par métier + localisation
+- ✅ Système de demandes client → devis artisan → acceptation/refus
+- ✅ Messagerie temps réel (Firestore)
+- ✅ Notifications en temps réel (badge, dropdown, marquage lu)
+- ✅ Vérification automatique KBIS (OCR, QR code INPI, validation SIRET)
+- ✅ Gestion admin (approbation artisans, historique uploads)
+- ✅ Contrats + disponibilités artisans
 
-## Structure prévue
+**En développement :**
+- ⏳ Paiement sécurisé (Stripe avec séquestre)
+- ⏳ Système d'avis et notations
+- ⏳ Géolocalisation avancée (Mapbox)
 
+## Architecture de données (CRITIQUE)
+
+### Collections Firestore
+
+```typescript
+// Collection: users (données privées)
+{
+  uid: string,  // ID Firebase Auth
+  email: string,
+  role: 'client' | 'artisan' | 'admin',
+  nom: string,
+  prenom: string,
+  representantLegal?: string,  // Artisans uniquement
+  telephone: string,
+  statut: 'non_verifie' | 'verifie' | 'suspendu',
+  emailVerified: boolean,  // Synchronisé depuis Firebase Auth
+  createdAt: Timestamp
+}
+
+// Collection: artisans (profils publics)
+{
+  userId: string,  // Référence au document users
+  businessName: string,
+  siret?: string,
+  metiers: string[],  // ['plomberie', 'electricite']
+  location: {
+    address: string,
+    city: string,
+    postalCode: string,
+    coordinates?: GeoPoint
+  },
+  description?: string,
+  verificationStatus: 'pending' | 'approved' | 'rejected',
+  documents: {
+    kbis?: { url, uploadedAt, ... },
+    decennale?: { url, uploadedAt, ... }
+  },
+  createdAt: Timestamp
+}
+
+// Collection: demandes (demandes clients)
+{
+  clientId: string,
+  metier: string,
+  description: string,
+  location: { city, postalCode },
+  statut: 'publiee' | 'en_attente_devis' | 'devis_recus' | 'acceptee' | 'terminee' | 'annulee',
+  devisRecus: number,  // Compteur mis à jour par Cloud Functions
+  createdAt: Timestamp
+}
+
+// Collection: devis
+{
+  demandeId: string,
+  clientId: string,
+  artisanId: string,
+  statut: 'brouillon' | 'envoye' | 'accepte' | 'refuse',
+  prestations: Array<{ designation, quantite, prixUnitaireHT, tva }>,
+  montantHT: number,
+  montantTTC: number,
+  delaiRealisation?: string,
+  dateValidite?: Timestamp,
+  motifRefus?: string,  // Si refusé
+  createdAt: Timestamp
+}
+
+// Collection: contrats
+{
+  devisId: string,
+  clientId: string,
+  artisanId: string,
+  statut: 'en_cours' | 'termine' | 'annule',
+  dateDebut?: Timestamp,
+  dateFin?: Timestamp
+}
+
+// Collection: conversations + messages
+// Messagerie temps réel entre client/artisan
+
+// Collection: notifications
+{
+  recipientId: string,
+  type: 'devis_recu' | 'devis_accepte' | 'devis_refuse' | 'nouveau_message' | ...,
+  title: string,
+  message: string,
+  relatedId?: string,  // ID du devis/message lié
+  isRead: boolean,
+  createdAt: Timestamp
+}
 ```
-ArtisanSafe/
-├── frontend/          # Application client
-├── backend/           # API et logique serveur
-├── mobile/            # Application mobile (optionnel, phase future)
-├── docs/              # Documentation
-├── tests/             # Tests unitaires et d'intégration
-└── scripts/           # Scripts utilitaires
-```
 
-## Approche de développement
-
-### Priorités MVP (Phase 1)
-Lors de l'implémentation des fonctionnalités, prioriser dans cet ordre :
-1. Inscription/authentification des utilisateurs (double rôle : clients & artisans)
-2. Profils artisans avec présentation du portfolio
-3. Fonctionnalité de recherche d'artisans de base
-4. Système de demande de devis
-5. Messagerie simple entre utilisateurs
-
-### Langue & Localisation
-- **Langue principale :** Français (tout le texte de l'interface, documentation, contenu de la base de données)
-- **Code :** Anglais (variables, fonctions, commentaires, messages de commit)
-- Utiliser i18n dès le début pour supporter l'expansion multilingue future
-- Garder les clés de traduction descriptives : `artisan.profile.skills` et non `ap.s`
-
-### Focus sur la sécurité et la confiance
-La proposition de valeur fondamentale de cette plateforme est la sécurité et la confiance. Lors de l'implémentation :
-- **Authentification :** Implémenter une vérification d'identité robuste dès le jour 1
-- **Paiements :** Ne jamais manipuler les données brutes de carte ; utiliser exclusivement les SDKs Stripe/PayPal
-- **Protection des données :** Hasher les mots de passe (bcrypt min 12 rounds), assainir toutes les entrées
-- **Avis :** Assurer l'authenticité des avis (uniquement post-transaction, un par transaction)
-- **Téléchargement de fichiers :** Valider les types de fichiers, scanner les malwares, imposer des limites de taille
-
-### Architecture à double utilisateur
-Chaque fonctionnalité doit considérer les deux types d'utilisateurs (client vs artisan) :
-- Vues et permissions séparées basées sur les rôles
-- Les profils artisans sont publics ; les profils clients sont privés
-- Les fonctionnalités du tableau de bord diffèrent selon le rôle (artisans : demandes de travail, calendrier ; clients : historique de services, artisans sauvegardés)
-
-### Patterns de conception API
-Lors de la construction des APIs backend :
-- Conventions RESTful : `/api/v1/artisans`, `/api/v1/quotes`
-- Utiliser les méthodes HTTP et codes de statut appropriés
-- Paginer les endpoints de liste (par défaut 20 éléments, max 100)
-- Filtrage/recherche : `/api/v1/artisans?skills=plomberie&location=Paris&available=true`
-- Réponses d'erreur standardisées : `{ "error": { "code": "INVALID_QUOTE", "message": "..." } }`
-
-### Conventions de base de données
-
-**Firebase Firestore** est utilisé pour toutes les données :
-
-#### Collections principales
-- **users** : Données privées (clients + artisans) - accès restreint par UID
-- **artisans** : Profils publics des artisans - lecture publique
-- **devis** : Demandes de devis - accès client/artisan uniquement
-- **avis** : Évaluations - lecture publique, création par clients
-- **conversations** + **messages** : Messagerie temps réel
-- **contrats** : Contrats signés entre clients et artisans
-- **disponibilites** : Créneaux d'indisponibilité des artisans
-
-#### ⚠️ RÈGLE CRITIQUE - Éviter les index composites Firestore
+### ⚠️ RÈGLE CRITIQUE - Éviter les index composites Firestore
 
 **Problème :**
 Les requêtes combinant `where()` + `orderBy()` sur différents champs nécessitent un **index composite** dans Firestore, ce qui bloque le développement jusqu'à la création manuelle de l'index.
@@ -222,28 +266,289 @@ return contrats.sort((a, b) => {
 });
 ```
 
-**Avantages :**
-- ✅ Fonctionne immédiatement sans configuration Firebase
-- ✅ Pas de délai de création d'index
-- ✅ Flexibilité totale sur la logique de tri
-- ✅ Aucune dépendance entre environnements (dev/prod)
-
-**Performance :**
-- OK jusqu'à ~1000 documents (tri en <10ms)
-- Si besoin de pagination avec tri : créer index composite manuellement
-
 **Règle générale :**
 - 🚫 NE JAMAIS combiner `where()` + `orderBy()` sur champs différents
 - ✅ TOUJOURS faire `where()` uniquement dans Firestore
 - ✅ TOUJOURS trier avec `.sort()` en JavaScript après récupération
 
-#### Bonnes pratiques
-- Utiliser les services dans `frontend/src/lib/` :
-### Configuration de l'environnement
-Variables d'environnement requises :
+### Services Firestore (frontend)
 
-**Frontend** (`.env.local`) :
+Utiliser **TOUJOURS** les services dans `frontend/src/lib/` :
+- `firebase/user-service.ts` : CRUD users (createUser, getUserById, updateUser)
+- `firebase/artisan-service.ts` : CRUD artisans + recherche
+- `firebase/devis-service.ts` : Gestion devis
+- `firebase/demande-service.ts` : Gestion demandes
+- `firebase/notification-service.ts` : Création/lecture notifications
+- `auth-service.ts` : signUpClient, signUpArtisan, signIn, signOut
+
+**Exemple :**
+```typescript
+import { createUser } from '@/lib/firebase/user-service';
+import { createArtisan } from '@/lib/firebase/artisan-service';
+
+// ✅ BON - Utiliser les services
+await createUser(userData);
+await createArtisan(artisanData);
+
+// ❌ MAUVAIS - Accès direct Firestore
+await addDoc(collection(db, 'users'), { ... });  // NE JAMAIS FAIRE
+```
+
+## Workflows critiques
+
+### Démarrage développement local
+
 ```bash
+# Démarrer frontend (port 3000)
+cd frontend && npm run dev
+
+# Démarrer backend (port 5000)
+cd backend && npm run dev
+
+# Vérifier la config (script utilitaire)
+node verify-setup.js
+```
+
+### Inscription artisan (workflow complexe)
+
+1. **Formulaire** `/inscription?role=artisan` :
+   - Infos personnelles (nom, prénom, email, mot de passe)
+   - Infos entreprise (businessName, SIRET, métiers, localisation)
+
+2. **Création compte** (auth-service.ts) :
+   ```typescript
+   // Créer Firebase Auth user
+   await createUserWithEmailAndPassword(auth, email, password)
+   
+   // Créer document users
+   await createUser({ email, nom, prenom, role: 'artisan', ... })
+   
+   // Créer document artisans (profil public)
+   await createArtisan({ userId, businessName, siret, metiers, ... })
+   
+   // Envoyer email vérification
+   await sendEmailVerification(user)
+   ```
+
+3. **Validation email OBLIGATOIRE** :
+   - ⚠️ Profil artisan **INVISIBLE** tant que `emailVerified = false`
+   - Sync automatique via `syncEmailVerificationStatus()` (hook useAuthStatus)
+   - Redirection `/email-verified` après validation
+
+4. **Upload documents** (backend) :
+   - POST `/api/v1/documents/upload-kbis` (Multer + Firebase Storage)
+   - OCR automatique (Tesseract.js) → extraction SIRET, raison sociale, QR code
+   - Vérification SIRET via API SIRENE
+   - Mise à jour `artisans.documents.kbis`
+
+5. **Approbation admin** :
+   - Page `/admin/verifications`
+   - Admin vérifie documents uploadés
+   - Change `verificationStatus` → 'approved' | 'rejected'
+   - ✅ Profil visible dans recherches uniquement si 'approved'
+
+### Cycle de vie devis
+
+```
+1. Client crée demande (/client/nouvelle-demande)
+   → Collection: demandes (statut: 'publiee')
+
+2. Artisan trouve demande (/artisan/demandes)
+   → Filtre par métier + localisation
+
+3. Artisan crée devis (/artisan/devis/nouveau)
+   → Collection: devis (statut: 'brouillon' puis 'envoye')
+   → Notification client (type: 'devis_recu')
+   → Incrémente demandes.devisRecus
+
+4. Client consulte devis (/client/devis/[id])
+   → Accepter: statut → 'accepte'
+     • Notification artisan (type: 'devis_accepte')
+     • Crée contrat (collection: contrats)
+   → Refuser: statut → 'refuse' + motifRefus
+     • Notification artisan (type: 'devis_refuse')
+```
+
+### Notifications temps réel
+
+**Hook personnalisé** `useNotifications(userId)` :
+```typescript
+// Écoute Firestore onSnapshot
+const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(user?.uid);
+
+// Création notification (exemple)
+await createNotification({
+  recipientId: clientId,
+  type: 'devis_recu',
+  title: 'Nouveau devis reçu',
+  message: `${artisan.businessName} vous a envoyé un devis`,
+  relatedId: devisId
+});
+```
+
+**Badge UI** : `<NotificationBadge />` affiche cloche + compteur
+
+## 🎨 CHARTE GRAPHIQUE (STRICTEMENT OBLIGATOIRE)
+
+### Palette de couleurs
+
+**TOUJOURS utiliser ces couleurs exactes :**
+```tsx
+// Couleurs principales
+bg-[#FF6B00]     // Primary (Orange BTP) - Boutons CTA
+bg-[#2C3E50]     // Secondary (Bleu foncé) - Headers/navigation
+bg-[#FFC107]     // Accent (Jaune sécurité) - Alertes
+
+// Couleurs fonctionnelles
+bg-[#28A745]     // Success
+bg-[#DC3545]     // Danger
+text-[#6C757D]   // Texte secondaire
+
+// États hover
+hover:bg-[#E56100]  // Orange hover
+hover:bg-[#1A3A5C]  // Bleu hover
+```
+
+**INTERDICTIONS :**
+- ❌ NE JAMAIS utiliser `bg-blue-600`, `text-blue-500` (réservé info uniquement)
+- ❌ NE JAMAIS inventer de nouvelles couleurs
+- ✅ TOUJOURS `bg-[#FF6B00]` pour boutons primaires
+- ✅ TOUJOURS `bg-[#2C3E50]` pour headers/navigation
+- ✅ TOUJOURS `text-[#FF6B00]` pour liens
+
+**Exemples de composants :**
+```tsx
+// Bouton Primary
+<button className="bg-[#FF6B00] text-white hover:bg-[#E56100] px-4 py-2 rounded-lg">
+
+// Bouton Secondary
+<button className="border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white">
+
+// Card interactive
+<div className="bg-white border border-[#E9ECEF] hover:border-[#FF6B00] rounded-lg shadow-md">
+```
+
+## Conventions de code
+
+### Nommage
+- **Composants :** PascalCase (`ArtisanCard`, `DevisForm`)
+- **Fonctions/Variables :** camelCase (`getUserProfile`, `createDevis`)
+- **Constantes :** UPPER_SNAKE_CASE (`MAX_FILE_SIZE_MB`)
+- **Fichiers :** kebab-case (`artisan-profile.tsx`, `devis-service.ts`)
+
+### Termes métier (français)
+- **Artisan** (pas "craftsman")
+- **Devis** (quote/estimate)
+- **Demande** (request)
+- **Métier** (trade: plomberie, électricité, menuiserie, maçonnerie)
+- **Prestation** (service)
+- **Avis** (review/rating)
+
+### Structure composant React
+```tsx
+// 1. Imports
+import { useState } from 'react';
+import { Button } from '@/components/ui';
+
+// 2. Types/Interfaces
+interface ArtisanCardProps {
+  artisan: Artisan;
+  onContact: (id: string) => void;
+}
+
+// 3. Composant
+export function ArtisanCard({ artisan, onContact }: ArtisanCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  // ...
+}
+```
+
+### Gestion erreurs
+- **Messages utilisateur** : Toujours en français : "Une erreur s'est produite. Veuillez réessayer."
+- **Logs serveur** : Détails techniques pour debug
+- **Ne jamais** exposer traces de pile ou erreurs internes aux clients
+- Utiliser `translateAuthError()` dans auth-service.ts pour erreurs Firebase Auth
+
+## Patterns spécifiques au projet
+
+### Vérification SIRET automatique
+
+Backend expose `/api/v1/sirene/verify` :
+```typescript
+// Vérifie SIRET via API SIRENE officielle
+POST /api/v1/sirene/verify
+Body: { siret: "12345678901234", raisonSociale: "ENTREPRISE SAS" }
+
+Response: {
+  valid: boolean,
+  denomination: string,
+  status: 'actif' | 'fermé',
+  match: boolean  // SIRET correspond à raison sociale
+}
+```
+
+### OCR Documents (KBIS, Décennale)
+
+Service backend `document-parser.service.ts` :
+```typescript
+// Extraction automatique via Tesseract.js
+const result = await parseKBIS(pdfBuffer);
+// → { siret, siren, raisonSociale, representantLegal, dateEmission, qrCodeData }
+
+const result = await parseDecennale(imageBuffer);
+// → { numeroPolice, assureur, dateDebut, dateFin, garanties }
+```
+
+**QR Code INPI** : Les KBIS récents contiennent QR code validé via jsQR
+
+### Notifications (Pattern observateur)
+
+```typescript
+// Fonction helper pour notifier
+async function notifyClientDevisRecu(clientId: string, devisId: string, artisan: Artisan) {
+  await createNotification({
+    recipientId: clientId,
+    type: 'devis_recu',
+    title: 'Nouveau devis reçu',
+    message: `${artisan.businessName} vous a envoyé un devis`,
+    relatedId: devisId
+  });
+}
+
+// Utilisation dans devis-service
+await updateDevisStatus(devisId, 'envoye');
+await notifyClientDevisRecu(clientId, devisId, artisan);
+```
+
+### Double rôle utilisateur (Client/Artisan)
+
+**Règles de visibilité :**
+- Profils artisans : **publics** (lecture = true dans firestore.rules)
+- Profils clients : **privés** (lecture = isOwner || isAdmin)
+- Dashboard artisan : `/artisan/dashboard`
+- Dashboard client : `/client/dashboard`
+- Routage basé sur `user.role` (hook `useAuthStatus`)
+
+### Recherche artisans
+
+Pattern actuel (frontend) :
+```typescript
+// Service: searchArtisans(metier?, ville?)
+const artisans = await searchArtisans('plomberie', 'Paris');
+
+// Firestore query simple (pas d'index composite)
+let q = query(collection(db, 'artisans'));
+if (metier) q = query(q, where('metiers', 'array-contains', metier));
+if (ville) q = query(q, where('location.city', '==', ville));
+
+// Filtres supplémentaires côté client
+return artisans.filter(a => a.verificationStatus === 'approved' && a.emailVerified);
+```
+
+## Configuration environnement
+
+**Frontend** `.env.local` :
+```env
 NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
 NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
@@ -253,100 +558,60 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
 ```
 
-**Backend** (`.env`) :
-```bash
+**Backend** `.env` :
+```env
 PORT=5000
 NODE_ENV=development
 FIREBASE_PROJECT_ID=...
 FIREBASE_CLIENT_EMAIL=...
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
-STRIPE_SECRET_KEY=...
-MAPBOX_ACCESS_TOKEN=...
 ```
 
-Voir `docs/FIREBASE.md` pour la configuration complète.uth
-JWT_SECRET=...
-AUTH_PROVIDER=firebase|auth0
+Credentials disponibles via admin - voir `docs/ADMIN_CREDENTIALS_SHARING.md`
 
-# Payments
-STRIPE_SECRET_KEY=...
-STRIPE_PUBLISHABLE_KEY=...
+## Documentation complémentaire
 
-# Maps
-GOOGLE_MAPS_API_KEY=...
+**Workflows essentiels :**
+- `docs/EMAIL_VERIFICATION_WORKFLOW.md` - Validation email client/artisan
+- `docs/WORKFLOW_CLIENT_DEVIS.md` - Cycle complet devis
+- `docs/WORKFLOW_POST_ACCEPTANCE_SEQUESTRE.md` - Paiement (futur)
 
-# Storage
-AWS_S3_BUCKET=...
-AWS_ACCESS_KEY_ID=...
-```
+**Systèmes techniques :**
+- `docs/KBIS_VERIFICATION_AUTOMATIQUE.md` - OCR + validation SIRET
+- `docs/SYSTEME_NOTIFICATIONS.md` - Architecture notifications temps réel
+- `docs/FIREBASE.md` - Structure Firestore complète
+- `docs/ARCHITECTURE_TECHNIQUE.md` - Vue d'ensemble système
 
-## Directives de style de code
+**Admin :**
+- `docs/ADMIN_UPLOAD_HISTORY.md` - Gestion uploads documents
+- `scripts/create-admin.js` - Créer compte admin Firebase
 
-### Conventions de nommage
-- **Composants :** PascalCase (`ArtisanCard`, `QuoteRequestForm`)
-- **Fonctions/Variables :** camelCase (`getUserProfile`, `isAvailable`)
-- **Constantes :** UPPER_SNAKE_CASE (`MAX_FILE_SIZE_MB`, `DEFAULT_SEARCH_RADIUS_KM`)
-- **Fichiers :** kebab-case (`artisan-profile.tsx`, `quote-service.ts`)
+## Tests et débogage
 
-### Termes du domaine en français (utiliser de manière cohérente)
-- Artisan (pas "craftsman" ou "tradesperson")
-- Devis (quote/estimate)
-- Métier (trade/skill: plomberie, électricité, menuiserie, maçonnerie)
-- Prestation (service/job)
-- Avis (review/rating)
-
-### Structure des composants (Frontend)
-```tsx
-// Ordre : imports, types, composant, exports
-import { useState } from 'react';
-import { Button } from '@/components/ui';
-
-interface ArtisanCardProps {
-  artisan: Artisan;
-  onContact: (id: string) => void;
-}
-
-export function ArtisanCard({ artisan, onContact }: ArtisanCardProps) {
-  // Logique ici
-}
-```
-
-### Gestion des erreurs
-- Toujours fournir des messages en français conviviaux : "Une erreur s'est produite. Veuillez réessayer."
-- Journaliser les détails techniques côté serveur pour le débogage
-- Ne jamais exposer les traces de pile ou erreurs internes aux clients
-
-## Workflows clés
-
-### Configuration du développement local
 ```bash
-# Configuration initiale
-git clone https://github.com/MOHAMEDALIMRABET/ArtisanSafe.git
-cd ArtisanSafe
+# Tester API SIRENE
+node backend/test-sirene-api.js
 
-# Configuration frontend (une fois implémenté)
-cd frontend && npm install
-cp .env.example .env  # Configurer avec les clés locales
-npm run dev  # S'exécute sur http://localhost:3000
+# Vérifier config Firebase
+node verify-setup.js
 
-# Configuration backend (une fois implémenté)
-cd backend && npm install
-cp .env.example .env
-npm run dev  # S'exécute sur http://localhost:5000
+# Vérifier notifications
+node scripts/verifier-notifications.js
+
+# Redémarrer backend (Windows)
+RESTART_BACKEND.bat
 ```
 
-### Workflow Git
-## Questions à clarifier
+**Erreurs fréquentes :**
+- "Missing index" Firestore → Utiliser tri JavaScript client-side
+- "Email not verified" → Vérifier syncEmailVerificationStatus() appelé
+- CORS upload → Voir `docs/FIX_CORS_UPLOAD.md` + `update-cors.ps1`
+- Boucle infinie → Voir `docs/DEPANNAGE_BOUCLE_INFINIE.md`
 
-1. ✅ **Backend :** Node.js + Express choisi
-2. ✅ **Authentification :** Firebase Auth choisi
-3. ✅ **Base de données :** Firebase Firestore choisi
-4. ⏳ **Storage fichiers :** Firebase Storage (à configurer)
-5. ⏳ **Fournisseur de cartes :** Mapbox (à intégrer)
-6. ⏳ **Paiements :** Stripe (à intégrer)
+## Prochaines étapes (roadmap)
 
-Voir `docs/FIREBASE.md` pour la documentation complète Firebase.
-4. **Fournisseur de cartes :** Google Maps API ou Mapbox ?
-5. **Préférences d'hébergement :** Vercel/Netlify pour le frontend, AWS/Heroku pour le backend ?
-
-Une fois ces choix effectués, mettre à jour ce fichier et créer la structure initiale du projet.
+- ⏳ Intégration Stripe (paiement sécurisé + séquestre)
+- ⏳ Système avis/notations post-prestation
+- ⏳ Mapbox (géolocalisation avancée + rayon recherche)
+- ⏳ Messagerie améliorée (pièces jointes, images)
+- ⏳ Application mobile React Native
