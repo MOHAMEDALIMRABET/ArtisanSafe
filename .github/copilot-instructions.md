@@ -682,6 +682,188 @@ RESTART_BACKEND.bat
 - Boucle infinie → Voir `docs/DEPANNAGE_BOUCLE_INFINIE.md`
 - Upload documents échoue → Vérifier Firebase Storage rules et CORS
 
+## Stratégie de tests (À implémenter)
+
+### Structure recommandée
+
+```
+ArtisanSafe/
+├── frontend/
+│   ├── src/
+│   │   └── lib/
+│   │       └── __tests__/              # Tests unitaires
+│   │           ├── validators.test.ts
+│   │           └── integration/        # Tests intégration
+│   └── e2e/                            # Tests E2E Playwright
+│       ├── artisan-inscription.spec.ts
+│       └── client-devis.spec.ts
+│
+├── backend/
+│   └── src/
+│       └── services/
+│           └── __tests__/              # Tests unitaires/intégration
+│
+└── tests/
+    └── fixtures/                       # Données test réutilisables
+        ├── artisan.fixture.ts
+        └── devis.fixture.ts
+```
+
+### Patterns de tests à utiliser
+
+**Pattern AAA (Arrange-Act-Assert)** :
+```typescript
+test('accepter un devis change le statut', async () => {
+  // ARRANGE (Préparer)
+  const devis = await createTestDevis({ statut: 'envoye' });
+  
+  // ACT (Agir)
+  await acceptDevis(devis.id);
+  
+  // ASSERT (Vérifier)
+  const devisUpdated = await getDevisById(devis.id);
+  expect(devisUpdated.statut).toBe('accepte');
+});
+```
+
+**Pattern Given-When-Then** :
+```typescript
+it('devrait créer un contrat quand un devis est accepté', async () => {
+  // GIVEN (Étant donné) - État initial
+  const devis = await createTestDevis({ statut: 'envoye' });
+  
+  // WHEN (Quand) - Action
+  await acceptDevis(devis.id);
+  
+  // THEN (Alors) - Résultat attendu
+  const contrats = await getContratsByDevis(devis.id);
+  expect(contrats).toHaveLength(1);
+});
+```
+
+### Outils recommandés
+
+**Frontend** :
+```bash
+npm install --save-dev jest @testing-library/react @testing-library/jest-dom
+npm install --save-dev @playwright/test  # E2E
+```
+
+**Backend** :
+```bash
+npm install --save-dev jest supertest
+```
+
+**Configuration Jest** (`jest.config.js`) :
+```javascript
+module.exports = {
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
+};
+```
+
+### Phase 1 : Tests prioritaires (MVP)
+
+**Tests critiques à implémenter d'abord** :
+
+1. **Validation SIRET** (unitaire)
+```typescript
+// frontend/src/lib/__tests__/validators.test.ts
+test('accepte SIRET valide 14 chiffres', () => {
+  expect(isValidSiret('12345678901234')).toBe(true);
+});
+```
+
+2. **Authentification** (intégration)
+```typescript
+// frontend/src/lib/__tests__/auth-service.test.ts
+test('signUpArtisan crée user + artisan', async () => {
+  const result = await signUpArtisan(mockData);
+  expect(result.user).toBeDefined();
+  expect(result.artisan).toBeDefined();
+});
+```
+
+3. **Création devis** (intégration)
+```typescript
+// frontend/src/lib/firebase/__tests__/devis-service.test.ts
+test('createDevis incrémente compteur demande', async () => {
+  const devis = await createDevis(mockDevisData);
+  const demande = await getDemandeById(devis.demandeId);
+  expect(demande.devisRecus).toBe(1);
+});
+```
+
+4. **Inscription artisan** (E2E)
+```typescript
+// e2e/artisan-inscription.spec.ts
+test('parcours complet inscription', async ({ page }) => {
+  await page.goto('/inscription?role=artisan');
+  await page.fill('[name="email"]', 'test@artisan.com');
+  // ... remplir formulaire
+  await page.click('[type="submit"]');
+  await expect(page).toHaveURL('/artisan/dashboard');
+});
+```
+
+### Phase 2 : Extension progressive
+
+**Après MVP, ajouter** :
+- Tests notifications temps réel
+- Tests recherche artisans (filtres, tri)
+- Tests messagerie (envoi, réception)
+- Tests upload documents + OCR
+- Tests cycle complet devis → contrat
+- Tests paiements (quand Stripe intégré)
+
+### Commandes npm
+
+```json
+// package.json scripts
+{
+  "test": "jest",
+  "test:watch": "jest --watch",
+  "test:coverage": "jest --coverage",
+  "test:e2e": "playwright test",
+  "test:e2e:ui": "playwright test --ui"
+}
+```
+
+### Fixtures réutilisables
+
+```typescript
+// tests/fixtures/artisan.fixture.ts
+export const mockArtisan = {
+  userId: 'artisan-123',
+  businessName: 'Test Plomberie',
+  siret: '12345678901234',
+  metiers: ['plomberie'],
+  verificationStatus: 'approved',
+  emailVerified: true
+};
+
+// tests/fixtures/devis.fixture.ts
+export const mockDevis = {
+  clientId: 'client-123',
+  artisanId: 'artisan-123',
+  statut: 'envoye',
+  montantTTC: 1500
+};
+```
+
+### Bonnes pratiques
+
+- ✅ **Isoler les tests** : Chaque test doit être indépendant
+- ✅ **Nettoyer après** : Supprimer données test (afterEach)
+- ✅ **Mocker Firebase** : Éviter vraies écritures en base
+- ✅ **Tests rapides** : Unitaires < 1s, E2E < 30s
+- ✅ **Nommer clairement** : "devrait créer notification quand devis accepté"
+- ❌ **Éviter** : Tests dépendants les uns des autres
+- ❌ **Éviter** : Hardcoder des IDs (utiliser fixtures)
+
 ## Prochaines étapes (roadmap)
 
 - ⏳ Intégration Stripe (paiement sécurisé + séquestre)
@@ -689,3 +871,4 @@ RESTART_BACKEND.bat
 - ⏳ Mapbox (géolocalisation avancée + rayon recherche)
 - ⏳ Messagerie améliorée (pièces jointes, images)
 - ⏳ Application mobile React Native
+- ⏳ Suite de tests complète (Jest + Playwright)
