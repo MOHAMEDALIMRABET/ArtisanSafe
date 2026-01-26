@@ -409,6 +409,116 @@ await createNotification({
 
 **Important** : Les deux implémentations coexistent avec des objectifs différents.
 
+### Cloud Functions Firebase (À implémenter - Phase 2)
+
+**Qu'est-ce que c'est ?** Code qui s'exécute **automatiquement** dans le cloud Firebase sans serveur à gérer.
+
+**Statut actuel** : Dossier `functions/` vide - aucune Cloud Function déployée.
+
+#### Cas d'usage recommandés pour ArtisanSafe
+
+**1. Compteur devisRecus automatique** (Priorité HAUTE)
+```typescript
+// functions/src/index.ts
+exports.onDevisCreated = functions.firestore
+  .document('devis/{devisId}')
+  .onCreate(async (snapshot) => {
+    const devis = snapshot.data();
+    
+    // Incrémenter compteur automatiquement
+    await admin.firestore()
+      .doc(`demandes/${devis.demandeId}`)
+      .update({ 
+        devisRecus: admin.firestore.FieldValue.increment(1) 
+      });
+  });
+```
+
+**Pourquoi** : Actuellement géré manuellement dans le code - risque de désynchronisation si erreur.
+
+**2. Notifications automatiques** (Priorité MOYENNE)
+```typescript
+exports.sendNotificationOnDevisAccepted = functions.firestore
+  .document('devis/{devisId}')
+  .onUpdate(async (change) => {
+    const before = change.before.data();
+    const after = change.after.data();
+    
+    // Si statut passe à 'accepte'
+    if (before.statut !== 'accepte' && after.statut === 'accepte') {
+      await admin.firestore().collection('notifications').add({
+        recipientId: after.artisanId,
+        type: 'devis_accepte',
+        title: 'Devis accepté !',
+        message: 'Votre devis a été accepté',
+        relatedId: change.after.id,
+        isRead: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  });
+```
+
+**Pourquoi** : Garantit que notifications sont toujours envoyées même si frontend fermé.
+
+**3. Nettoyage automatique** (Priorité BASSE)
+```typescript
+// Supprimer demandes expirées tous les jours à 3h
+exports.cleanupExpiredDemandes = functions.pubsub
+  .schedule('every day 03:00')
+  .timeZone('Europe/Paris')
+  .onRun(async () => {
+    const thirtyDaysAgo = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    );
+    
+    const snapshot = await admin.firestore()
+      .collection('demandes')
+      .where('createdAt', '<', thirtyDaysAgo)
+      .where('statut', '==', 'publiee')
+      .get();
+    
+    const batch = admin.firestore().batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+  });
+```
+
+#### Types de triggers disponibles
+
+```typescript
+// 1. Firestore triggers (les plus utiles)
+onCreate()   // Document créé
+onUpdate()   // Document modifié
+onDelete()   // Document supprimé
+
+// 2. Auth triggers
+functions.auth.user().onCreate()  // Nouvel utilisateur
+
+// 3. Scheduled (Cron jobs)
+functions.pubsub.schedule('every day 02:00').onRun()
+
+// 4. HTTP (API endpoints serverless)
+functions.https.onRequest()
+```
+
+#### Avantages
+
+- ✅ **Automatisation** : Code s'exécute sans intervention
+- ✅ **Fiabilité** : Garanti de s'exécuter même si frontend fermé
+- ✅ **Sécurité** : Accès privilégié Firebase Admin SDK
+- ✅ **Scalabilité** : Gère 1 ou 10000 requêtes automatiquement
+- ✅ **Coût** : Gratuit jusqu'à 2 millions d'appels/mois
+
+#### Quand implémenter
+
+**Phase 2** (après MVP) : 
+1. Installer Firebase Functions : `firebase init functions`
+2. Implémenter compteur devisRecus
+3. Déployer : `firebase deploy --only functions`
+
+**Coût estimé** : Gratuit pour usage ArtisanSafe (< 100k appels/mois)
+
 ## 🎨 CHARTE GRAPHIQUE (STRICTEMENT OBLIGATOIRE)
 
 ### Palette de couleurs
