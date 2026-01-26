@@ -9,6 +9,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { useNotifications } from '@/hooks/useNotifications';
+import { collection, query, where, onSnapshot, or } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import type { User } from '@/types/firestore';
 
 interface UserMenuProps {
@@ -25,6 +27,31 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
   const shouldLoadNotifications = !!user?.uid;
   const { notifications, markTypeAsRead } = useNotifications(shouldLoadNotifications ? user.uid : undefined);
 
+  // État pour les messages non lus
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  // Compter les messages non lus en temps réel
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const q = query(
+      collection(db, 'conversations'),
+      or(where('participants', 'array-contains', user.uid))
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let totalUnread = 0;
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const unreadForUser = data.unreadCount?.[user.uid] || 0;
+        totalUnread += unreadForUser;
+      });
+      setUnreadMessagesCount(totalUnread);
+    });
+
+    return () => unsubscribe();
+  }, [user?.uid]);
+
   // Compter les notifications par catégorie (non lues uniquement)
   const notifDevis = notifications.filter(
     n => !n.lue && (
@@ -40,8 +67,8 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
     n => !n.lue && (n.type === 'nouvelle_demande' || n.type === 'demande_refusee')
   ).length;
 
-  // Nombre total de notifications non lues
-  const totalNotifications = notifDevis + notifDemandes;
+  // Nombre total de notifications non lues (incluant messages)
+  const totalNotifications = notifDevis + notifDemandes + unreadMessagesCount;
 
   // Fermer le dropdown au clic extérieur
   useEffect(() => {
@@ -328,6 +355,11 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
                     />
                   </svg>
                   <span className="font-medium flex-1">💬 Messages</span>
+                  {unreadMessagesCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {unreadMessagesCount}
+                    </span>
+                  )}
                 </button>
               </>
             )}
@@ -391,6 +423,11 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
                     />
                   </svg>
                   <span className="font-medium flex-1">💬 Messages</span>
+                  {unreadMessagesCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {unreadMessagesCount}
+                    </span>
+                  )}
                 </button>
               </>
             )}
