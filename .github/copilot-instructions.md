@@ -1178,6 +1178,328 @@ export const mockDevis = {
 - ❌ **Éviter** : Tests dépendants les uns des autres
 - ❌ **Éviter** : Hardcoder des IDs (utiliser fixtures)
 
+## Scripts de migration Firestore
+
+Le projet utilise **3 patterns de migration distincts** pour gérer l'évolution des données.
+
+### Pattern 1 : Data Normalization (migrate-metiers.ts)
+
+**Objectif** : Normaliser données existantes après changement de contraintes.
+
+**Fichier** : `frontend/scripts/migrate-metiers.ts`
+
+**Use cases** :
+- Harmoniser format (accents, casse, structure)
+- Convertir types (objet → tableau)
+- Dédupliquer valeurs
+
+**Pattern technique** :
+```typescript
+// 1. Mapping ancien → nouveau
+const METIERS_MIGRATION: Record<string, string> = {
+  'Électricité': 'electricite',
+  'Plomberie': 'plomberie',
+  'Menuiserie': 'menuiserie'
+};
+
+// 2. Lecture collection complète avec Firebase Admin SDK
+const snapshot = await db.collection('artisans').get();
+
+// 3. Pour chaque document
+for (const docSnap of snapshot.docs) {
+  const metiers = docSnap.data().metiers;
+  
+  // 4. Normalisation
+  const normalizedMetiers = metiersArray
+    .map(m => METIERS_MIGRATION[m] || m.toLowerCase())
+    .filter((m, i, arr) => arr.indexOf(m) === i); // Dédupliquer
+  
+  // 5. Comparaison avant/après (évite updates inutiles)
+  const needsMigration = JSON.stringify(metiers) !== JSON.stringify(normalizedMetiers);
+  
+  // 6. Update sélectif
+  if (needsMigration) {
+    await db.collection('artisans').doc(docSnap.id).update({
+      metiers: normalizedMetiers
+    });
+  }
+}
+```
+
+**Pourquoi Firebase Admin SDK ?**
+- ✅ Bypass security rules Firestore
+- ✅ Accès direct en écriture
+- ✅ Batch operations performantes
+
+**Exécution** :
+```bash
+cd frontend/scripts
+npx ts-node migrate-metiers.ts
+```
+
+**Logs détaillés** :
+```
+🚀 Démarrage de la migration des métiers...
+📊 15 artisan(s) trouvé(s)
+
+👤 Artisan: PLOMBERIE DUPONT
+   Métiers actuels: ['Plomberie', 'Électricité']
+   ✅ Migration nécessaire
+   Avant: ['Plomberie', 'Électricité']
+   Après: ['plomberie', 'electricite']
+   💾 Sauvegardé dans Firestore
+
+✨ Migration terminée !
+   ✅ 12 artisan(s) migré(s)
+   ⏭️  3 artisan(s) ignoré(s)
+```
+
+---
+
+### Pattern 2 : Cascade Deletion (delete-user-data.js)
+
+**Objectif** : Supprimer TOUTES les données liées à un UID (conformité RGPD).
+
+**Fichier** : `backend/scripts/delete-user-data.js`
+
+**Use cases** :
+- Droit à l'effacement utilisateur (RGPD Art. 17)
+- Nettoyage données orphelines
+- Reset environnement test
+
+**Pattern technique** :
+```typescript
+// 1. Helper pour suppression par référence
+async function deleteCollectionDocs(collection, field, value) {
+  const snap = await db.collection(collection)
+    .where(field, '==', value)
+    .get();
+  
+  // Batch delete (max 500 docs/batch)
+  const batch = db.batch();
+  snap.forEach(doc => batch.delete(doc.ref));
+  await batch.commit();
+  
+  console.log(`Supprimé ${snap.size} documents de ${collection}`);
+}
+
+// 2. Suppression directe (document ID = UID)
+await db.collection('users').doc(UID).delete();
+await db.collection('artisans').doc(UID).delete();
+
+// 3. Suppression par références (where clause)
+await deleteCollectionDocs('devis', 'clientId', UID);
+await deleteCollectionDocs('devis', 'artisanId', UID);
+await deleteCollectionDocs('avis', 'clientId', UID);
+await deleteCollectionDocs('avis', 'artisanId', UID);
+await deleteCollectionDocs('conversations', 'participants', UID);
+await deleteCollectionDocs('messages', 'authorId', UID);
+await deleteCollectionDocs('contrats', 'clientId', UID);
+await deleteCollectionDocs('contrats', 'artisanId', UID);
+await deleteCollectionDocs('disponibilites', 'artisanId', UID);
+```
+
+**⚠️ ATTENTION** : Ce script supprime **DÉFINITIVEMENT** les données (pas de soft delete).
+
+**Exécution** :
+```bash
+cd backend/scripts
+node delete-user-data.js <UID>
+```
+
+**Exemple** :
+```bash
+node delete-user-data.js abc123xyz456
+# Supprimé 5 documents de devis où clientId == abc123xyz456
+# Supprimé 2 documents de avis où clientId == abc123xyz456
+# Supprimé 3 documents de conversations où participants == abc123xyz456
+# Suppression terminée pour UID: abc123xyz456
+```
+
+**TODO** : Voir `backend/TODO_SUPPRESSION_CASCADE.md` pour implémenter soft delete.
+
+---
+
+### Pattern 3 : User Creation with Custom Claims (create-admin.js)
+
+**Objectif** : Créer utilisateur Firebase Auth + Firestore avec rôle spécial.
+
+**Fichier** : `scripts/create-admin.js`
+
+**Use cases** :
+- Créer premier compte admin (bootstrap)
+- Setup rôles spéciaux (modérateur, super-admin)
+- Import utilisateurs en masse
+
+**Pattern technique** :
+```typescript
+const readline = require('readline');
+
+// 1. Interface interactive
+const email = await question('📧 Email admin: ');
+const password = await question('🔑 Mot de passe: ');
+
+// 2. Créer Firebase Auth user
+let userRecord;
+try {
+  userRecord = await auth.createUser({
+    email: email,
+    password: password,
+    displayName: `${prenom} ${nom}`,
+    emailVerified: true // Admin pré-vérifié
+  });
+} catch (error) {
+  // 3. Gérer email déjà existant (idempotence)
+  if (error.code === 'auth/email-already-exists') {
+    userRecord = await auth.getUserByEmail(email);
+    console.log('⚠️  Email existe déjà, mise à jour...');
+  } else {
+    throw error;
+  }
+}
+
+// 4. Créer document Firestore avec role spécial
+await db.collection('users').doc(userRecord.uid).set({
+  uid: userRecord.uid,
+  email: email,
+  role: 'admin', // ← Role spécial
+  nom: nom,
+  prenom: prenom,
+  telephone: telephone,
+  dateCreation: admin.firestore.FieldValue.serverTimestamp(),
+  statut: 'verifie',
+  actif: true,
+  permissions: {
+    approveArtisans: true,
+    viewReports: true,
+    manageUsers: true
+  }
+});
+
+// 5. (Optionnel) Custom claims pour Firebase Auth
+await auth.setCustomUserClaims(userRecord.uid, {
+  admin: true
+});
+```
+
+**Idempotence** : Le script détecte si l'email existe déjà et met à jour au lieu d'échouer.
+
+**Exécution** :
+```bash
+cd scripts
+node create-admin.js
+```
+
+**Exemple interactif** :
+```
+🔧 Initialisation Firebase Admin SDK...
+
+📧 Email admin: admin@artisandispo.fr
+🔑 Mot de passe: SuperSecure123!
+👤 Nom: Admin
+👤 Prénom: ArtisanDispo
+📱 Téléphone: +33600000000
+
+⏳ Création du compte admin...
+✅ Utilisateur créé dans Firebase Auth
+   UID: abc123xyz456
+✅ Document Firestore créé
+   Collection: users/abc123xyz456
+✅ Permissions admin accordées
+
+🎉 Compte admin créé avec succès !
+```
+
+**Sécurité** : Utilise Firebase Admin SDK (credentials via FIREBASE_PRIVATE_KEY).
+
+---
+
+### Patterns recommandés (non implémentés)
+
+#### Pattern 4 : Soft Delete (À implémenter)
+
+```typescript
+// Au lieu de .delete()
+await doc.update({
+  deleted: true,
+  deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+  deletedBy: adminUID
+});
+
+// Filtrer dans queries
+query(collection, where('deleted', '==', false))
+
+// Cloud Function : Nettoyage après 30 jours
+exports.cleanupSoftDeleted = functions.pubsub
+  .schedule('every day 03:00')
+  .onRun(async () => {
+    const thirtyDaysAgo = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    );
+    
+    const snapshot = await db.collection('users')
+      .where('deleted', '==', true)
+      .where('deletedAt', '<', thirtyDaysAgo)
+      .get();
+    
+    // Suppression définitive
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+  });
+```
+
+#### Pattern 5 : Schema Versioning (Recommandé)
+
+```typescript
+// Ajouter version dans chaque document
+{
+  schemaVersion: 2,
+  metiers: ['plomberie'], // Format v2
+  // ...
+}
+
+// Migration incrémentale
+async function migrateToV2(doc) {
+  if (doc.schemaVersion < 2) {
+    // Appliquer changements v1 → v2
+    await doc.ref.update({
+      schemaVersion: 2,
+      // ... transformations
+    });
+  }
+}
+```
+
+---
+
+### Commandes utiles
+
+```bash
+# Normaliser métiers
+cd frontend/scripts && npx ts-node migrate-metiers.ts
+
+# Supprimer données utilisateur (RGPD)
+cd backend/scripts && node delete-user-data.js <UID>
+
+# Créer admin
+cd scripts && node create-admin.js
+
+# Vérifier artisan après migration
+cd frontend/scripts && npx ts-node verifier-artisan.ts <UID>
+```
+
+### Bonnes pratiques migrations
+
+- ✅ **Toujours** utiliser Firebase Admin SDK (bypass security rules)
+- ✅ **Toujours** comparer avant/après (éviter updates inutiles)
+- ✅ **Toujours** logger progrès (console.log détaillés)
+- ✅ **Toujours** gérer erreurs (try/catch + process.exit(1))
+- ✅ **Toujours** tester sur petit échantillon d'abord
+- ✅ **Toujours** backup Firestore avant migration importante
+- ❌ **Jamais** hardcoder credentials (utiliser .env)
+- ❌ **Jamais** migrer en production sans test local
+
 ## Prochaines étapes (roadmap)
 
 - ⏳ Intégration Stripe (paiement sécurisé + séquestre)
