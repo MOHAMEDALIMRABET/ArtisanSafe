@@ -10,7 +10,7 @@ ArtisanSafe est une plateforme marketplace bilingue (français principal, anglai
 - Database: Firebase Firestore
 - Auth: Firebase Auth
 - Storage: Firebase Storage
-- Services: SIRENE API (vérification SIRET), OCR (Tesseract.js), Email (nodemailer)
+- Services: SIRENE API (future), OCR Tesseract.js (aide admin), Email (nodemailer)
 
 ## 🎨 CHARTE GRAPHIQUE OBLIGATOIRE
 
@@ -129,7 +129,7 @@ className="bg-white border border-[#E9ECEF] hover:border-[#FF6B00] rounded-lg sh
 - ✅ Système de demandes client → devis artisan → acceptation/refus
 - ✅ Messagerie temps réel (Firestore)
 - ✅ Notifications en temps réel (badge, dropdown, marquage lu)
-- ✅ Vérification automatique KBIS (OCR, QR code INPI, validation SIRET)
+- ✅ Vérification KBIS hybride (OCR Tesseract.js pré-remplit + validation manuelle admin)
 - ✅ Gestion admin (approbation artisans, historique uploads)
 - ✅ Contrats + disponibilités artisans
 
@@ -335,17 +335,22 @@ node verify-setup.js
    - Sync automatique via `syncEmailVerificationStatus()` (hook useAuthStatus)
    - Redirection `/email-verified` après validation
 
-4. **Upload documents** (backend) :
-   - POST `/api/v1/documents/upload-kbis` (Multer + Firebase Storage)
-   - OCR automatique (Tesseract.js) → extraction SIRET, raison sociale, QR code
-   - Vérification SIRET via API SIRENE
-   - Mise à jour `artisans.documents.kbis`
+4. **Upload documents** (frontend → Firebase Storage) :
+   - Upload KBIS, pièce d'identité, RC Pro, Garantie décennale
+   - **OCR automatique Tesseract.js** :
+     - Extraction SIRET, raison sociale, représentant légal
+     - Vérification auto SIRET vs profil
+     - Détection QR code INPI
+   - Stockage Firebase Storage + métadonnées OCR
+   - Mise à jour `artisans.documents` avec URLs et données extraites
 
-5. **Approbation admin** :
+5. **Approbation admin (VALIDATION FINALE)** :
    - Page `/admin/verifications`
-   - Admin vérifie documents uploadés
+   - Admin **consulte visuellement** les documents uploadés
+   - Champs **pré-remplis par OCR** (aide)
+   - **Vérification manuelle finale** : KBIS, identité, RC Pro, Garantie
    - Change `verificationStatus` → 'approved' | 'rejected'
-   - ✅ Profil visible dans recherches uniquement si 'approved'
+   - ✅ Profil visible dans recherches uniquement si 'approved' + `emailVerified = true`
 
 ### Cycle de vie devis
 
@@ -387,6 +392,22 @@ await createNotification({
 ```
 
 **Badge UI** : `<NotificationBadge />` affiche cloche + compteur
+
+### Architecture OCR Documents
+
+**Frontend** : OCR complet Tesseract.js
+- Fichier : `frontend/src/lib/firebase/document-parser.ts` (1105 lignes)
+- Fonction : `parseKbisDocument(file)`
+- Extraction : SIRET, raison sociale, représentant légal, QR code INPI
+- Utilisé par : `verification-service.ts` → `verifyKbisDocument()`
+
+**Backend** : Analyse légère
+- Fichier : `backend/src/services/document-parser.service.ts` (157 lignes)
+- Fonction : `parseKbisDocument(file)`
+- Analyse : Métadonnées uniquement (pas de Tesseract.js)
+- Endpoint : `/api/v1/documents/parse-kbis`
+
+**Important** : Les deux implémentations coexistent avec des objectifs différents.
 
 ## 🎨 CHARTE GRAPHIQUE (STRICTEMENT OBLIGATOIRE)
 
@@ -471,35 +492,63 @@ export function ArtisanCard({ artisan, onContact }: ArtisanCardProps) {
 
 ## Patterns spécifiques au projet
 
-### Vérification SIRET automatique
+### Vérification documents (WORKFLOW HYBRIDE)
 
-Backend expose `/api/v1/sirene/verify` :
+**Workflow actuel - OCR automatique + validation manuelle** :
+
+1. **Upload artisan** :
+   - Frontend upload documents → Firebase Storage
+   - **OCR Tesseract.js automatique** (frontend) :
+     - Extraction SIRET, raison sociale, représentant légal
+     - Comparaison SIRET extrait vs SIRET profil
+     - Détection QR code INPI (si présent)
+     - Pré-vérification automatique
+   - Service utilisé : `frontend/src/lib/firebase/document-parser.ts`
+
+2. **Validation admin (DÉCISION FINALE)** :
+   - Admin consulte `/admin/verifications`
+   - **Vérification visuelle manuelle** des documents :
+     - KBIS (validité, concordance SIRET/raison sociale)
+     - Pièce d'identité (représentant légal)
+     - RC Pro (assurance responsabilité civile)
+     - Garantie décennale (couverture activités)
+   - OCR a pré-rempli les champs → Admin vérifie la cohérence
+   - **Admin décide** : approuve/rejette → `verificationStatus`
+
+**Architecture technique** :
 ```typescript
-// Vérifie SIRET via API SIRENE officielle
+// Frontend - OCR automatique (AIDE)
+const parseResult = await parseKbisDocument(file);
+// → Tesseract.js extrait : SIRET, raison sociale, représentant légal, QR code
+
+// Backend - Analyse légère (OPTIONNEL)
+POST /api/v1/documents/parse-kbis
+// → Analyse métadonnées (nom fichier, taille, type)
+
+// API SIRENE - Feature future (NON ACTIVÉE)
 POST /api/v1/sirene/verify
 Body: { siret: "12345678901234", raisonSociale: "ENTREPRISE SAS" }
-
-Response: {
-  valid: boolean,
-  denomination: string,
-  status: 'actif' | 'fermé',
-  match: boolean  // SIRET correspond à raison sociale
-}
+// → À activer lors de l'inscription artisan
 ```
 
-### OCR Documents (KBIS, Décennale)
+**Important** :
+- ✅ OCR = **outil d'aide** pour gagner du temps
+- ✅ Admin = **décision finale** (sécurité maximale)
+- ✅ Validation manuelle = **obligatoire** pour approuver
 
-Service backend `document-parser.service.ts` :
+### Validation email (AUTOMATIQUE - NE PAS MODIFIER)
+
+**Workflow Firebase Auth** :
 ```typescript
-// Extraction automatique via Tesseract.js
-const result = await parseKBIS(pdfBuffer);
-// → { siret, siren, raisonSociale, representantLegal, dateEmission, qrCodeData }
+// 1. Inscription → Email de vérification automatique
+await sendEmailVerification(user);
 
-const result = await parseDecennale(imageBuffer);
-// → { numeroPolice, assureur, dateDebut, dateFin, garanties }
+// 2. Utilisateur clique sur lien → Firebase valide
+// 3. Sync automatique via syncEmailVerificationStatus()
+// 4. Profil artisan visible SI emailVerified = true + verificationStatus = 'approved'
 ```
 
-**QR Code INPI** : Les KBIS récents contiennent QR code validé via jsQR
+⚠️ **IMPORTANT** : Ne pas désactiver l'envoi automatique d'emails de vérification
 
 ### Notifications (Pattern observateur)
 
@@ -586,10 +635,34 @@ Credentials disponibles via admin - voir `docs/ADMIN_CREDENTIALS_SHARING.md`
 - `docs/ADMIN_UPLOAD_HISTORY.md` - Gestion uploads documents
 - `scripts/create-admin.js` - Créer compte admin Firebase
 
+## API Backend - Endpoints disponibles
+
+**Routes actives** :
+
+1. **`/api/v1/documents/parse-kbis`** (Backend - Analyse légère)
+   - Analyse métadonnées uniquement (nom fichier, taille, type)
+   - **PAS d'OCR** : Version légère sans Tesseract.js
+   - Limite : 10MB, formats PDF/JPG/PNG
+   - **Note** : OCR Tesseract.js complet utilisé côté frontend
+
+2. **`/api/v1/sirene/verify`** (Feature future)
+   - Vérification SIRET + raison sociale
+   - API publique : entreprise.data.gouv.fr
+   - **Non activé** : À implémenter lors de l'inscription
+
+3. **`/api/v1/sms/send-verification-code`** (Si Twilio configuré)
+   - Envoi code vérification téléphone
+   - Coût : ~0.05€/SMS
+   - Mode simulation si non configuré
+
+4. **`/api/v1/emails/send-pending`** (Admin uniquement)
+   - Envoi manuel emails en attente
+   - Complément au système automatique Firebase
+
 ## Tests et débogage
 
 ```bash
-# Tester API SIRENE
+# Tester API SIRENE (future feature)
 node backend/test-sirene-api.js
 
 # Vérifier config Firebase
@@ -607,6 +680,7 @@ RESTART_BACKEND.bat
 - "Email not verified" → Vérifier syncEmailVerificationStatus() appelé
 - CORS upload → Voir `docs/FIX_CORS_UPLOAD.md` + `update-cors.ps1`
 - Boucle infinie → Voir `docs/DEPANNAGE_BOUCLE_INFINIE.md`
+- Upload documents échoue → Vérifier Firebase Storage rules et CORS
 
 ## Prochaines étapes (roadmap)
 
