@@ -14,7 +14,6 @@ import {
   where, 
   getDocs, 
   addDoc, 
-  orderBy, 
   onSnapshot,
   doc,
   getDoc,
@@ -50,6 +49,66 @@ interface UserInfo {
   displayName: string;
   email: string;
   photoURL?: string;
+}
+
+// Composant pour afficher une conversation dans la liste
+function ConversationItem({ 
+  conversation, 
+  otherUserId, 
+  defaultName, 
+  isSelected, 
+  onClick 
+}: { 
+  conversation: Conversation; 
+  otherUserId: string; 
+  defaultName: string; 
+  isSelected: boolean; 
+  onClick: () => void;
+}) {
+  const [fullName, setFullName] = useState(defaultName);
+
+  useEffect(() => {
+    if (!otherUserId) return;
+
+    const loadFullName = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', otherUserId));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          const prenom = data.prenom || '';
+          const nom = data.nom || '';
+          const name = `${prenom} ${nom}`.trim() || data.email || 'Utilisateur';
+          setFullName(name);
+        }
+      } catch (error) {
+        console.error('Erreur chargement nom:', error);
+      }
+    };
+
+    loadFullName();
+  }, [otherUserId]);
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full p-4 border-b hover:bg-gray-50 transition text-left ${
+        isSelected ? 'bg-blue-50 border-l-4 border-[#FF6B00]' : ''
+      }`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-semibold text-[#2C3E50]">{fullName}</span>
+        {conversation.unreadCount && conversation.unreadCount > 0 && (
+          <span className="bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+            {conversation.unreadCount}
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-gray-600 truncate">{conversation.lastMessage || 'Aucun message'}</p>
+      <p className="text-xs text-gray-400 mt-1">
+        {conversation.lastMessageDate?.toDate().toLocaleDateString('fr-FR')}
+      </p>
+    </button>
+  );
 }
 
 export default function MessagesPage() {
@@ -111,7 +170,7 @@ export default function MessagesPage() {
 
   // Si userId fourni dans l'URL, créer/ouvrir conversation
   useEffect(() => {
-    if (!user || !targetUserId || conversations.length === 0) return;
+    if (!user || !targetUserId || loading) return;
 
     // Chercher conversation existante
     const existingConv = conversations.find(c => 
@@ -121,10 +180,12 @@ export default function MessagesPage() {
     if (existingConv) {
       setSelectedConversation(existingConv.id);
     } else {
-      // Créer nouvelle conversation
-      createConversation(targetUserId);
+      // Créer nouvelle conversation si elle n'existe pas encore
+      if (!loading) {
+        createConversation(targetUserId);
+      }
     }
-  }, [targetUserId, user, conversations]);
+  }, [targetUserId, user, conversations, loading]);
 
   // Charger les messages de la conversation sélectionnée
   useEffect(() => {
@@ -133,10 +194,10 @@ export default function MessagesPage() {
       return;
     }
 
+    // Requête simple sans orderBy pour éviter l'index composite
     const q = query(
       collection(db, 'messages'),
-      where('conversationId', '==', selectedConversation),
-      orderBy('createdAt', 'asc')
+      where('conversationId', '==', selectedConversation)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -144,6 +205,13 @@ export default function MessagesPage() {
         id: doc.id,
         ...doc.data(),
       } as Message));
+
+      // Tri côté client par date de création
+      msgs.sort((a, b) => {
+        const dateA = a.createdAt?.toMillis() || 0;
+        const dateB = b.createdAt?.toMillis() || 0;
+        return dateA - dateB; // Ordre croissant (ancien → récent)
+      });
 
       setMessages(msgs);
       
@@ -186,11 +254,14 @@ export default function MessagesPage() {
       const currentUserData = currentUserDoc.data();
       const otherUserData = otherUserDoc.data();
 
+      const currentUserName = `${currentUserData?.prenom || ''} ${currentUserData?.nom || ''}`.trim() || currentUserData?.email || 'Utilisateur';
+      const otherUserName = `${otherUserData?.prenom || ''} ${otherUserData?.nom || ''}`.trim() || otherUserData?.email || 'Utilisateur';
+
       const conversationRef = await addDoc(collection(db, 'conversations'), {
         participants: [user.uid, otherUserId],
         participantNames: {
-          [user.uid]: currentUserData?.nom || currentUserData?.email || 'Utilisateur',
-          [otherUserId]: otherUserData?.nom || otherUserData?.email || 'Utilisateur',
+          [user.uid]: currentUserName,
+          [otherUserId]: otherUserName,
         },
         lastMessage: '',
         lastMessageDate: serverTimestamp(),
@@ -209,9 +280,13 @@ export default function MessagesPage() {
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
         const data = userDoc.data();
+        const prenom = data.prenom || '';
+        const nom = data.nom || '';
+        const fullName = `${prenom} ${nom}`.trim() || data.email || 'Utilisateur';
+        
         setOtherUserInfo({
           uid: userId,
-          displayName: data.nom || data.prenom || data.email || 'Utilisateur',
+          displayName: fullName,
           email: data.email,
           photoURL: data.photoURL,
         });
@@ -340,29 +415,18 @@ export default function MessagesPage() {
               ) : (
                 conversations.map((conv) => {
                   const otherUserId = conv.participants.find(p => p !== user.uid);
-                  const otherUserName = otherUserId ? conv.participantNames[otherUserId] : 'Utilisateur';
+                  // Essayer d'abord participantNames, sinon chercher dans les données utilisateur
+                  let otherUserName = otherUserId ? conv.participantNames[otherUserId] : 'Utilisateur';
                   
                   return (
-                    <button
+                    <ConversationItem
                       key={conv.id}
+                      conversation={conv}
+                      otherUserId={otherUserId || ''}
+                      defaultName={otherUserName}
+                      isSelected={selectedConversation === conv.id}
                       onClick={() => setSelectedConversation(conv.id)}
-                      className={`w-full p-4 border-b hover:bg-gray-50 transition text-left ${
-                        selectedConversation === conv.id ? 'bg-blue-50 border-l-4 border-[#FF6B00]' : ''
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-[#2C3E50]">{otherUserName}</span>
-                        {conv.unreadCount && conv.unreadCount > 0 && (
-                          <span className="bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                            {conv.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 truncate">{conv.lastMessage || 'Aucun message'}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {conv.lastMessageDate?.toDate().toLocaleDateString('fr-FR')}
-                      </p>
-                    </button>
+                    />
                   );
                 })
               )}
@@ -377,7 +441,6 @@ export default function MessagesPage() {
                 <div className="bg-[#2C3E50] text-white p-4 flex items-center justify-between">
                   <div>
                     <h2 className="font-semibold">{otherUserInfo.displayName}</h2>
-                    <p className="text-sm text-gray-300">{otherUserInfo.email}</p>
                   </div>
                   <button
                     onClick={() => setSelectedConversation(null)}
