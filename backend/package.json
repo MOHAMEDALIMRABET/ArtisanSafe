@@ -18,12 +18,14 @@
   "license": "MIT",
   "dependencies": {
     "@types/multer": "^2.0.0",
+    "@types/node-cron": "^3.0.11",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "firebase-admin": "^13.6.0",
     "mongoose": "^9.0.2",
     "multer": "^2.0.2",
+    "node-cron": "^3.0.3",
     "nodemailer": "^7.0.12"
   },
   "devDependencies": {

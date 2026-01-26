@@ -64,8 +64,8 @@ app.listen(port, async () => {
   if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
     // Attendre 2 secondes pour s'assurer que Firebase est initialisé
     setTimeout(() => {
-      startEmailWatcher(5).catch(console.error);
-      console.log('✅ Service email configuré - Envoi automatique activé');
+      startEmailWatcher().catch(console.error);
+      console.log('✅ Service email configuré - Envoi automatique planifié (quotidien à 2h00)');
     }, 2000);
   } else {
     console.log('⚠️ Configuration SMTP manquante - Envoi d\'emails désactivé');
