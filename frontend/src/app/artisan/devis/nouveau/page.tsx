@@ -18,6 +18,127 @@ import type { Devis, LigneDevis, TVARate, calculerLigne, calculerTotaux } from '
 import { Timestamp, query, collection, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
+/**
+ * Fonction de validation anti-contournement
+ * Détecte les numéros de téléphone et adresses dans le texte
+ * Inspiré de BlaBlaCar pour garantir les transactions sur la plateforme
+ */
+function detecterInformationsInterdites(texte: string): { valide: boolean; raison?: string } {
+  if (!texte) return { valide: true };
+
+  const texteLower = texte.toLowerCase();
+  
+  // Détection numéros de téléphone en chiffres purs
+  const patternsNumeros = [
+    /0[1-9](?:[\s.-]?\d{2}){4}/g,           // 06 12 34 56 78, 06.12.34.56.78
+    /\+33[1-9](?:[\s.-]?\d{2}){4}/g,        // +33 6 12 34 56 78
+    /(?:^|\s)0[1-9]\d{8}(?:$|\s)/g,         // 0612345678
+    /(?:^|\s)\d{2}[\s.-]\d{2}[\s.-]\d{2}[\s.-]\d{2}[\s.-]\d{2}(?:$|\s)/g, // XX XX XX XX XX
+    /\b\d{8,10}\b/g,                        // N'importe quelle séquence de 8-10 chiffres consécutifs
+  ];
+  
+  for (const pattern of patternsNumeros) {
+    if (pattern.test(texte)) {
+      return { 
+        valide: false, 
+        raison: '⛔ Numéros de téléphone interdits. Utilisez la messagerie de la plateforme pour communiquer.' 
+      };
+    }
+  }
+  
+  // Map de conversion mots → chiffres pour détection mixte
+  const motsVersChiffres: { [key: string]: string } = {
+    'zero': '0', 'zéro': '0', 'o': '0', 'oh': '0',
+    'un': '1', 'une': '1', 'i': '1', 'l': '1',
+    'deux': '2', 'de': '2',
+    'trois': '3',
+    'quatre': '4',
+    'cinq': '5',
+    'six': '6', 'cis': '6', 'sis': '6',
+    'sept': '7', 'sette': '7', 'set': '7',
+    'huit': '8', 'wi': '8',
+    'neuf': '9', 'noeuf': '9',
+    'dix': '10',
+    'onze': '11',
+    'douze': '12',
+    'treize': '13',
+    'quatorze': '14',
+    'quinze': '15',
+    'seize': '16',
+    'vingt': '20',
+    'trente': '30',
+    'quarante': '40',
+    'cinquante': '50',
+    'soixante': '60',
+    'soixante-dix': '70',
+    'quatre-vingt': '80',
+    'quatre-vingts': '80',
+    'quatre-vingt-dix': '90'
+  };
+  
+  // Normaliser le texte pour détecter les combinaisons mixtes
+  // Remplacer les mots par des chiffres et vérifier si on obtient un numéro
+  let texteNormalise = ' ' + texteLower + ' ';
+  
+  // Remplacer les mots numériques par leurs chiffres
+  for (const [mot, chiffre] of Object.entries(motsVersChiffres)) {
+    const regex = new RegExp(`\\b${mot}\\b`, 'gi');
+    texteNormalise = texteNormalise.replace(regex, chiffre);
+  }
+  
+  // Après normalisation, vérifier si on a des patterns de téléphone
+  const patternsApresNormalisation = [
+    /\b0[\s.-]?[1-9](?:[\s.-]?\d{1,2}){4,9}\b/g,  // 0 6 12 34 56 78 ou variations
+    /\b[0-9]{10}\b/g,                              // 10 chiffres consécutifs
+    /\b[0-9]{1,2}[\s.-][0-9]{1,2}[\s.-][0-9]{1,2}[\s.-][0-9]{1,2}[\s.-][0-9]{1,2}\b/g, // XX XX XX XX XX
+  ];
+  
+  for (const pattern of patternsApresNormalisation) {
+    if (pattern.test(texteNormalise)) {
+      return { 
+        valide: false, 
+        raison: '⛔ Numéros de téléphone (même partiellement écrits en lettres) interdits. Utilisez la messagerie de la plateforme.' 
+      };
+    }
+  }
+  
+  // Détection numéros en toutes lettres (séquence longue)
+  const motsNumeros = ['zero', 'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze'];
+  const sequenceNumeros = motsNumeros.filter(mot => texteLower.includes(mot));
+  if (sequenceNumeros.length >= 4) { // Augmenté de 3 à 4 pour plus de précision
+    return { 
+      valide: false, 
+      raison: '⛔ Écriture de numéros en toutes lettres interdite. Utilisez la messagerie intégrée.' 
+    };
+  }
+  
+  // Détection emails
+  const patternEmail = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
+  if (patternEmail.test(texte)) {
+    return { 
+      valide: false, 
+      raison: '⛔ Adresses email interdites. Utilisez la messagerie de la plateforme.' 
+    };
+  }
+  
+  // Détection adresses postales complètes (rue + code postal + ville)
+  const patternRue = /(\d+\s+(rue|avenue|boulevard|av|bd|impasse|allée|chemin|place)\s+[a-z\s-]+)/gi;
+  const patternCodePostal = /\b\d{5}\b/g;
+  const motsCles = ['rue', 'avenue', 'boulevard', 'impasse', 'allée', 'chemin', 'place'];
+  
+  const aRue = motsCles.some(mot => texteLower.includes(mot)) || patternRue.test(texte);
+  const aCodePostal = patternCodePostal.test(texte);
+  
+  if (aRue && aCodePostal) {
+    return { 
+      valide: false, 
+      raison: '⛔ Adresses complètes interdites.' 
+    };
+  }
+  
+  return { valide: true };
+}
+
 export default function NouveauDevisPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,6 +155,8 @@ export default function NouveauDevisPage() {
 
   // Formulaire
   const [titre, setTitre] = useState('');
+  const [matierePremiere, setMatierePremiere] = useState('');
+  const [mainOeuvre, setMainOeuvre] = useState('');
   const [description, setDescription] = useState('');
   const [lignes, setLignes] = useState<LigneDevis[]>([]);
   const [delaiRealisation, setDelaiRealisation] = useState('');
@@ -340,6 +463,8 @@ export default function NouveauDevisPage() {
       // Remplir le formulaire avec les données du brouillon
       setModeEdition(true);
       setTitre(devisBrouillon.titre || '');
+      setMatierePremiere(devisBrouillon.matierePremiere || '');
+      setMainOeuvre(devisBrouillon.mainOeuvre || '');
       setDescription(devisBrouillon.description || '');
       setLignes(devisBrouillon.lignes || []);
       setDelaiRealisation(devisBrouillon.delaiRealisation || '');
@@ -498,6 +623,8 @@ export default function NouveauDevisPage() {
         client: cleanObject(clientInfo),
         artisan: cleanObject(artisanInfo),
         titre,
+        matierePremiere,
+        mainOeuvre,
         description,
         lignes,
         totaux: calculerTotauxGlobaux(),
@@ -548,6 +675,10 @@ export default function NouveauDevisPage() {
       alert('Veuillez saisir un titre');
       return;
     }
+    if (!mainOeuvre.trim()) {
+      alert('Veuillez renseigner la main d\'\u0153uvre (champ obligatoire)');
+      return;
+    }
     if (!dateDebutPrevue) {
       alert('Veuillez indiquer la date de début prévue des travaux');
       return;
@@ -588,6 +719,26 @@ export default function NouveauDevisPage() {
       return;
     }
 
+    // VALIDATION ANTI-CONTOURNEMENT : Vérifier tous les champs de texte
+    const champsAVerifier = [
+      { nom: 'titre', valeur: titre },
+      { nom: 'matière première', valeur: matierePremiere },
+      { nom: 'main d\'\u0153uvre', valeur: mainOeuvre },
+      { nom: 'description', valeur: description },
+      { nom: 'délai de réalisation', valeur: delaiRealisation },
+      { nom: 'conditions', valeur: conditions },
+      ...lignes.map((l, i) => ({ nom: `ligne ${i + 1}`, valeur: l.description }))
+    ];
+
+    for (const champ of champsAVerifier) {
+      const validation = detecterInformationsInterdites(champ.valeur);
+      if (!validation.valide) {
+        alert(`❌ ${validation.raison}\n\nChamp concerné : ${champ.nom}\n\n💬 Utilisez le bouton "Contacter client" pour échanger via la messagerie sécurisée de la plateforme.`);
+        setSaving(false);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const devisData: any = {
@@ -599,6 +750,8 @@ export default function NouveauDevisPage() {
         client: cleanObject(clientInfo),
         artisan: cleanObject(artisanInfo),
         titre,
+        matierePremiere,
+        mainOeuvre,
         description,
         lignes,
         totaux: calculerTotauxGlobaux(),
@@ -732,6 +885,33 @@ export default function NouveauDevisPage() {
                   onChange={(e) => setTitre(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                   placeholder="Ex: Rénovation salle de bain"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#2C3E50] mb-1">
+                  Matière première (optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={matierePremiere}
+                  onChange={(e) => setMatierePremiere(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                  placeholder="Ex: Carrelage, Peinture, Parquet..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#2C3E50] mb-1">
+                  Main d'œuvre *
+                </label>
+                <input
+                  type="text"
+                  value={mainOeuvre}
+                  onChange={(e) => setMainOeuvre(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                  placeholder="Ex: 1 artisan, 2 ouvriers..."
+                  required
                 />
               </div>
 
@@ -1055,18 +1235,14 @@ export default function NouveauDevisPage() {
             <button
               onClick={sauvegarderBrouillon}
               disabled={saving}
-              className="flex-1 bg-gray-200 text-[#2C3E50] px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50"
-            >
-              {saving ? '⏳ Sauvegarde...' : '💾 Sauvegarder en brouillon'}
-            </button>
-            <button
-              onClick={envoyerDevis}
-              disabled={saving}
               className="flex-1 bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50"
             >
-              {saving ? '⏳ Envoi...' : '📨 Envoyer le devis'}
+              {saving ? '⏳ Génération...' : '📄 Générer le devis'}
             </button>
           </div>
+          <p className="text-center text-sm text-[#6C757D] mt-3">
+            💡 Le devis sera sauvegardé. Vous pourrez l'envoyer au client depuis votre liste de devis.
+          </p>
         </div>
       </div>
 
@@ -1112,10 +1288,8 @@ export default function NouveauDevisPage() {
                 <h3 className="text-sm font-semibold text-[#2C3E50] mb-2">POUR :</h3>
                 <div className="text-sm">
                   <p className="font-semibold">{clientInfo?.prenom} {clientInfo?.nom}</p>
-                  <p className="text-[#6C757D]">{clientInfo?.email}</p>
-                  <p className="text-[#6C757D]">{clientInfo?.telephone}</p>
                   {clientInfo?.adresse && (
-                    <p className="text-[#6C757D]">
+                    <p className="text-[#6C757D] mt-2">
                       {clientInfo.adresse.rue}<br />
                       {clientInfo.adresse.codePostal} {clientInfo.adresse.ville}
                     </p>

@@ -24,6 +24,7 @@ export default function ArtisanDemandesPage() {
   const [refusingDemandeId, setRefusingDemandeId] = useState<string | null>(null);
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
   const [demandesRefusStatut, setDemandesRefusStatut] = useState<Map<string, { definitif: boolean; revision: boolean }>>(new Map());
+  const [clientsInfo, setClientsInfo] = useState<Map<string, { nom: string; prenom: string }>>(new Map());
   const demandeRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
 
   useEffect(() => {
@@ -115,6 +116,24 @@ export default function ArtisanDemandesPage() {
         }
       }
       setPhotoMetadata(metadata);
+      
+      // Charger les informations des clients
+      const clientsMap = new Map<string, { nom: string; prenom: string }>();
+      const uniqueClientIds = [...new Set(demandesData.map(d => d.clientId))];
+      for (const clientId of uniqueClientIds) {
+        try {
+          const clientData = await getUserById(clientId);
+          if (clientData) {
+            clientsMap.set(clientId, { 
+              nom: clientData.nom || '',
+              prenom: clientData.prenom || ''
+            });
+          }
+        } catch (error) {
+          console.error(`Erreur chargement client ${clientId}:`, error);
+        }
+      }
+      setClientsInfo(clientsMap);
       
       setIsLoading(false);
     } catch (error) {
@@ -283,6 +302,27 @@ export default function ArtisanDemandesPage() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
+                    {/* Informations du client */}
+                    {(() => {
+                      const client = clientsInfo.get(demande.clientId);
+                      if (client) {
+                        return (
+                          <div className="mb-3 flex items-center gap-2 bg-[#F8F9FA] p-3 rounded-lg">
+                            <div className="w-10 h-10 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold text-lg">
+                              {client.prenom?.[0]?.toUpperCase() || 'C'}{client.nom?.[0]?.toUpperCase() || ''}
+                            </div>
+                            <div>
+                              <p className="text-sm text-[#6C757D] font-medium">Demandeur</p>
+                              <p className="font-semibold text-[#2C3E50]">
+                                {client.prenom} {client.nom}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                    
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-xl font-bold text-gray-800">
                         {demande.categorie}
@@ -439,6 +479,13 @@ export default function ArtisanDemandesPage() {
                             🔄 Créer un devis révisé
                           </button>
                           <button
+                            onClick={() => router.push(`/messages?userId=${demande.clientId}`)}
+                            className="px-6 py-3 border-2 border-[#2C3E50] text-[#2C3E50] rounded-lg font-semibold hover:bg-[#2C3E50] hover:text-white transition"
+                          >
+                            💬 Contacter client
+                          </button>
+                          <div className="w-4"></div>
+                          <button
                             onClick={() => handleRefuserDemande(demande.id)}
                             disabled={refusingDemandeId === demande.id}
                             className="px-6 py-3 border-2 border-red-300 text-red-700 rounded-lg font-semibold hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -458,6 +505,13 @@ export default function ArtisanDemandesPage() {
                         >
                           📝 Envoyer un devis
                         </button>
+                        <button
+                          onClick={() => router.push(`/messages?userId=${demande.clientId}`)}
+                          className="px-6 py-3 border-2 border-[#2C3E50] text-[#2C3E50] rounded-lg font-semibold hover:bg-[#2C3E50] hover:text-white transition"
+                        >
+                          💬 Contacter client
+                        </button>
+                        <div className="w-4"></div>
                         <button
                           onClick={() => handleRefuserDemande(demande.id)}
                           disabled={refusingDemandeId === demande.id}

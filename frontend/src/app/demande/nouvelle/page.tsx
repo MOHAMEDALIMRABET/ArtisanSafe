@@ -301,11 +301,21 @@ function NouvelleDemandeContent() {
                   {artisan.metiers?.join(' • ')}
                 </p>
               </div>
-              {artisan.verified && (
-                <div className="bg-[#28A745] text-white px-3 py-1 rounded-full text-sm font-semibold">
-                  ✓ Vérifié
-                </div>
-              )}
+              <div className="flex flex-col gap-2">
+                {artisan.verified && (
+                  <div className="bg-[#28A745] text-white px-3 py-1 rounded-full text-sm font-semibold">
+                    ✓ Vérifié
+                  </div>
+                )}
+                {artisan.verificationDocuments?.decennale?.verified && (
+                  <img 
+                    src="/badge-decennale.svg" 
+                    alt="Garantie Décennale" 
+                    className="w-20 h-20"
+                    title="Garantie Décennale vérifiée"
+                  />
+                )}
+              </div>
             </div>
           </Card>
         )}
@@ -495,7 +505,7 @@ function NouvelleDemandeContent() {
               className="flex-1 bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold"
               disabled={loading}
             >
-              {loading ? '⏳ Création...' : '📤 Publier la demande'}
+              {loading ? '⏳ Envoi...' : '📤 Envoyer la demande'}
             </Button>
           </div>
 

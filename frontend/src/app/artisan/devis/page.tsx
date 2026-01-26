@@ -201,6 +201,53 @@ export default function MesDevisPage() {
     router.push(`/artisan/devis/${devisId}`);
   };
 
+  // Envoyer un devis brouillon au client
+  const handleEnvoyerDevis = async (devisId: string) => {
+    const confirmer = confirm(
+      '📨 Envoyer ce devis au client ?\n\n' +
+      'Le client recevra une notification et pourra consulter votre devis.\n\n' +
+      '⚠️ Vous ne pourrez plus modifier ce devis après l\'envoi.'
+    );
+
+    if (!confirmer) return;
+
+    try {
+      const devisRef = doc(db, 'devis', devisId);
+      const devisDoc = await getDoc(devisRef);
+      
+      if (!devisDoc.exists()) {
+        alert('❌ Devis introuvable');
+        return;
+      }
+
+      const devisData = devisDoc.data() as Devis;
+
+      // Mettre à jour le statut du devis
+      await updateDoc(devisRef, {
+        statut: 'envoye',
+        dateEnvoi: Timestamp.now(),
+      });
+
+      // Envoyer une notification au client
+      const { createNotification } = await import('@/lib/firebase/notification-service');
+      await createNotification(devisData.clientId, {
+        type: 'nouveau_devis',
+        titre: 'Nouveau devis reçu',
+        message: `Vous avez reçu un devis de ${devisData.artisan.raisonSociale || 'l\'artisan'} pour un montant de ${devisData.totaux.totalTTC.toFixed(2)}€ TTC.`,
+        lien: `/client/devis/${devisId}`,
+      });
+
+      console.log('✅ Devis envoyé avec succès');
+      alert('✅ Devis envoyé au client avec succès !');
+      
+      // Recharger la liste des devis
+      loadDevis();
+    } catch (error) {
+      console.error('❌ Erreur envoi devis:', error);
+      alert('❌ Erreur lors de l\'envoi du devis. Veuillez réessayer.');
+    }
+  };
+
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
       brouillon: 'bg-gray-100 text-gray-800',
@@ -827,15 +874,23 @@ export default function MesDevisPage() {
                             <span className="text-xs text-gray-500 italic">Refus définitif</span>
                             <span className="text-[10px] text-gray-400">Pas de nouvelle proposition</span>
                           </div>                        ) : d.statut === 'brouillon' ? (
-                          <button
-                            onClick={() => router.push(`/artisan/devis/nouveau?devisId=${d.id}`)}
-                            className="px-3 py-1 bg-[#FF6B00] text-white rounded hover:bg-[#E56100] text-xs font-semibold flex items-center gap-1"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Modifier
-                          </button>
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => handleEnvoyerDevis(d.id)}
+                              className="px-3 py-1 bg-[#FF6B00] text-white rounded hover:bg-[#E56100] text-xs font-semibold flex items-center gap-1 justify-center"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              Envoyer au client
+                            </button>
+                            <button
+                              onClick={() => router.push(`/artisan/devis/${d.id}`)}
+                              className="text-xs text-[#6C757D] hover:text-[#FF6B00] hover:underline"
+                            >
+                              👁️ Consulter
+                            </button>
+                          </div>
                         ) : (
                           <button
                             onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
