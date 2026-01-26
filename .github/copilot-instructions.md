@@ -1075,4 +1075,25 @@ export const mockDevis = {
 - ⏳ Mapbox (géolocalisation avancée + rayon recherche)
 - ⏳ Messagerie améliorée (pièces jointes, images)
 - ⏳ Application mobile React Native
-- ⏳ Suite de tests complète (Jest + Playwright)
+
+---
+
+## ⚠️ RAPPEL IMPORTANT - Tests à implémenter
+
+**TODO : Implémenter les tests (Voir section "Stratégie de tests" ci-dessus)**
+
+**Action prioritaire** :
+1. Installer Jest : `npm install --save-dev jest @testing-library/react @testing-library/jest-dom`
+2. Créer premier test : `frontend/src/lib/__tests__/validators.test.ts`
+3. Tester validation SIRET (test le plus simple pour démarrer)
+
+**Temps estimé Phase 1** : 4-6 heures pour tests critiques  
+**ROI** : Protection contre régressions + confiance déploiement production
+
+**Planning recommandé** :
+- Semaine 1 : Tests Auth (signUp, signIn, emailVerification)
+- Semaine 2 : Tests Devis (createDevis, acceptDevis, notifications)
+- Semaine 3 : Tests KBIS + Recherche
+- Semaine 4 : Tests E2E Playwright
+
+**Référence complète** : Voir section "Stratégie de tests" pour détails exhaustifs.
