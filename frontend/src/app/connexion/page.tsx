@@ -34,6 +34,7 @@ export default function ConnexionPage() {
         router.push('/dashboard'); // Client par défaut
       }
     } catch (err: any) {
+      // Affiche toujours le message utilisateur (jamais le message technique Firebase)
       setError(err.message || 'Email ou mot de passe incorrect');
     } finally {
       setIsLoading(false);

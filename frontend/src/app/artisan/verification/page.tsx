@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { verifySiret, updateSiretVerification } from '@/lib/firebase/verification-service';
+import { artisanDoitDecennale } from '@/lib/decennale-helper';
 import type { Artisan } from '@/types/firestore';
 
 export default function VerificationPage() {
@@ -264,10 +265,45 @@ export default function VerificationPage() {
             {!siretVerified && artisan && (
               <div>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                  <p className="text-sm text-blue-700 mb-2">
-                    <strong>SIRET actuel :</strong> {artisan.siret}
-                  </p>
-                  <p className="text-sm text-blue-700 mb-3">
+                  <label className="block text-sm text-blue-700 mb-2 font-semibold">
+                    <strong>SIRET actuel :</strong>
+                  </label>
+                  <input
+                    type="text"
+                    value={artisan.siret}
+                    onChange={async (e) => {
+                      const newSiret = e.target.value;
+                      setArtisan({ ...artisan, siret: newSiret });
+                      setSiretStatus('pending');
+                      setSiretError('');
+                    }}
+                    className="w-full border border-blue-300 rounded px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+                    maxLength={14}
+                    disabled={siretStatus === 'verifying'}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!artisan.siret || artisan.siret.length !== 14) {
+                        setSiretError('Le SIRET doit comporter 14 chiffres.');
+                        return;
+                      }
+                      setSiretStatus('verifying');
+                      setSiretError('');
+                      try {
+                        // Mettre à jour le SIRET dans Firestore
+                        await updateSiretVerification(artisan.userId, artisan.siret);
+                        setSiretStatus('pending');
+                        setSiretError('SIRET mis à jour. Cliquez sur "Vérifier le SIRET" pour valider.');
+                      } catch (err: any) {
+                        setSiretError('Erreur lors de la mise à jour du SIRET.');
+                      }
+                    }}
+                    className="bg-[#2C3E50] text-white px-4 py-2 rounded mb-2 hover:bg-[#1A3A5C] disabled:opacity-50"
+                    disabled={siretStatus === 'verifying'}
+                  >
+                    Mettre à jour le SIRET
+                  </button>
+                  <p className="text-xs text-blue-700 mb-3">
                     <strong>Raison sociale déclarée :</strong> {artisan.raisonSociale}
                   </p>
                   <p className="text-sm text-blue-700 font-semibold mb-2">
@@ -296,7 +332,6 @@ export default function VerificationPage() {
                     <p className="text-xs text-green-600 mb-3">
                       Votre entreprise est active dans la base SIRENE.
                     </p>
-                    
                     {sireneData && (
                       <div className="mt-3 pt-3 border-t border-green-200">
                         <p className="text-xs font-semibold text-green-800 mb-2">📊 Informations retournées par SIRENE :</p>
@@ -438,6 +473,82 @@ export default function VerificationPage() {
           </div>
 
           {/* 4. Pièce d'identité */}
+                    {/* 5. Garantie Responsabilité Civile Professionnelle */}
+                    <div className="bg-white rounded-lg shadow-md p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            artisan?.verificationDocuments?.rcPro?.verified 
+                              ? 'bg-green-100' 
+                              : artisan?.verificationDocuments?.rcPro?.rejected 
+                                ? 'bg-red-100'
+                                : artisan?.verificationDocuments?.rcPro?.url 
+                                  ? 'bg-blue-100' 
+                                  : 'bg-orange-100'
+                          }`}>
+                            <span className="text-2xl">
+                              {artisan?.verificationDocuments?.rcPro?.verified 
+                                ? '✅' 
+                                : artisan?.verificationDocuments?.rcPro?.rejected 
+                                  ? '❌'
+                                  : artisan?.verificationDocuments?.rcPro?.url 
+                                    ? '⏳' 
+                                    : '📄'}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-lg">Garantie Responsabilité Civile Professionnelle</h3>
+                            <p className="text-sm text-gray-600">
+                              {artisan?.verificationDocuments?.rcPro?.verified 
+                                ? 'Attestation vérifiée' 
+                                : artisan?.verificationDocuments?.rcPro?.rejected 
+                                  ? 'Document rejeté'
+                                  : artisan?.verificationDocuments?.rcPro?.url 
+                                    ? 'Document en cours de vérification' 
+                                    : 'Document non uploadé'}
+                            </p>
+                          </div>
+                        </div>
+                        {artisan?.verificationDocuments?.rcPro?.verified && (
+                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                            Vérifié
+                          </span>
+                        )}
+                        {artisan?.verificationDocuments?.rcPro?.rejected && (
+                          <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                            Rejeté
+                          </span>
+                        )}
+                        {artisan?.verificationDocuments?.rcPro?.url && !artisan?.verificationDocuments?.rcPro?.verified && !artisan?.verificationDocuments?.rcPro?.rejected && (
+                          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                            En cours de vérification
+                          </span>
+                        )}
+                      </div>
+                      {artisan?.verificationDocuments?.rcPro?.rejected && (
+                        <div className="bg-red-50 border-l-4 border-red-400 p-3 mb-4">
+                          <p className="text-sm text-red-700">
+                            <strong>Raison du rejet :</strong> {artisan.verificationDocuments.rcPro.rejectionReason || 'Non spécifiée'}
+                          </p>
+                        </div>
+                      )}
+                      {!artisan?.verificationDocuments?.rcPro?.url && (
+                        <button
+                          onClick={() => router.push('/artisan/documents')}
+                          className="mt-2 w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
+                        >
+                          📤 Uploader l'attestation RC Pro
+                        </button>
+                      )}
+                      {artisan?.verificationDocuments?.rcPro?.rejected && (
+                        <button
+                          onClick={() => router.push('/artisan/documents')}
+                          className="w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
+                        >
+                          📤 Re-uploader l'attestation RC Pro
+                        </button>
+                      )}
+                    </div>
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -517,6 +628,68 @@ export default function VerificationPage() {
             )}
           </div>
         </div>
+
+
+        {/* Section décennale (affichage conditionnel selon métiers) */}
+        {artisan && (
+          <>
+            {/* Cas 1 : Métiers renseignés ET nécessitent décennale → Section obligatoire */}
+            {artisan.metiers && artisan.metiers.length > 0 && artisanDoitDecennale(artisan.metiers) && (
+              <section className="mt-8 p-6 border-2 border-[#FF6B00] rounded-lg bg-white">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-3xl">🛡️</span>
+                  <h3 className="font-bold text-lg text-[#FF6B00]">
+                    Attestation d'assurance décennale <span className="text-[#FFC107]">(obligatoire)</span>
+                  </h3>
+                </div>
+                <p className="text-[#6C757D] mb-4">
+                  Pour les métiers du gros œuvre et structure (maçonnerie, toiture, charpente, etc.), la loi impose une assurance décennale couvrant les travaux pendant 10 ans après réception. Fournir l'attestation est indispensable pour être vérifié sur la plateforme.
+                </p>
+
+                {/* Statut du document */}
+                <div className="mb-4">
+                  {artisan.verificationDocuments?.decennale?.verified ? (
+                    <div className="p-3 bg-[#28A745] bg-opacity-10 border border-[#28A745] rounded">
+                      <span className="text-[#28A745] font-semibold">✔️ Décennale validée</span>
+                    </div>
+                  ) : artisan.verificationDocuments?.decennale?.rejected ? (
+                    <div className="p-3 bg-[#DC3545] bg-opacity-10 border border-[#DC3545] rounded">
+                      <span className="text-[#DC3545] font-semibold">❌ Décennale rejetée</span>
+                      <p className="text-sm mt-2">
+                        <strong>Raison :</strong> {artisan.verificationDocuments.decennale.rejectionReason || 'Non spécifiée'}
+                      </p>
+                    </div>
+                  ) : artisan.verificationDocuments?.decennale?.url ? (
+                    <div className="p-3 bg-[#FFC107] bg-opacity-10 border border-[#FFC107] rounded">
+                      <span className="text-[#FFC107] font-semibold">⏳ Décennale en attente de validation</span>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-[#FF6B00] bg-opacity-10 border border-[#FF6B00] rounded">
+                      <span className="text-[#FF6B00] font-semibold">⚠️ Aucune attestation déposée</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* TODO: Bouton/zone d'upload, historique, etc. */}
+              </section>
+            )}
+
+            {/* Cas 2 : Métiers non renseignés → Message informatif */}
+            {(!artisan.metiers || artisan.metiers.length === 0) && (
+              <section className="mt-8 p-6 border border-[#E9ECEF] rounded-lg bg-[#F8F9FA]">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">ℹ️</span>
+                  <h3 className="font-bold text-lg text-[#2C3E50]">Assurance décennale</h3>
+                </div>
+                <p className="text-[#6C757D]">
+                  Si votre métier nécessite une assurance décennale (maçonnerie, toiture, charpente, menuiserie, isolation, plomberie, électricité, carrelage, chauffage, climatisation), elle sera demandée après la saisie de votre profil dans la section <strong>Mon Profil</strong>.
+                </p>
+              </section>
+            )}
+
+            {/* Cas 3 : Métiers renseignés mais ne nécessitent PAS décennale → Rien à afficher */}
+          </>
+        )}
       </div>
     </div>
   );

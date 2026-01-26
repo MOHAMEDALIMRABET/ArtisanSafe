@@ -564,7 +564,7 @@ function ResultatsContent() {
                     {/* Informations */}
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-xl font-bold text-[#2C3E50]">
                             {result.artisan.raisonSociale || result.artisan.nom}
                           </h3>
@@ -573,6 +573,15 @@ function ResultatsContent() {
                             <div className="bg-[#28A745] text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                               ✓ Vérifié
                             </div>
+                          )}
+                          {/* Badge Garantie Décennale si validée */}
+                          {result.artisan.verificationDocuments?.decennale?.verified && (
+                            <img 
+                              src="/badge-decennale.svg" 
+                              alt="Garantie Décennale"
+                              className="w-20 h-20 cursor-help flex-shrink-0"
+                              title="Garantie Décennale 10 ans validée"
+                            />
                           )}
                         </div>
                         

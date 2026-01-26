@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Cercle extérieur noir -->
+  <circle cx="100" cy="100" r="95" fill="none" stroke="#000000" stroke-width="6"/>
+  
+  <!-- Cercle intérieur noir -->
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#000000" stroke-width="4"/>
+  
+  <!-- Texte GARANTIE en haut (courbe) -->
+  <defs>
+    <path id="topCurve" d="M 30,100 A 70,70 0 0,1 170,100" fill="none"/>
+    <path id="bottomCurve" d="M 170,100 A 70,70 0 0,1 30,100" fill="none"/>
+  </defs>
+  
+  <text font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#000000" letter-spacing="4">
+    <textPath href="#topCurve" startOffset="50%" text-anchor="middle">
+      GARANTIE
+    </textPath>
+  </text>
+  
+  <!-- Texte DÉCENNALE au centre (en diagonale) - taille réduite -->
+  <text x="100" y="108" font-family="Arial, sans-serif" font-size="26" font-weight="900" text-anchor="middle" fill="#000000" letter-spacing="0.5" transform="rotate(-15 100 100)">
+    DÉCENNALE
+  </text>
+  
+  <!-- Texte GARANTIE en bas (courbe inversée) -->
+  <text font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#000000" letter-spacing="4">
+    <textPath href="#bottomCurve" startOffset="50%" text-anchor="middle">
+      GARANTIE
+    </textPath>
+  </text>
+</svg>

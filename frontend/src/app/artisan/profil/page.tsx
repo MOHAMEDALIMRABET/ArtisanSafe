@@ -7,6 +7,7 @@ import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId, updateArtisan } from '@/lib/firebase/artisan-service';
 import { Button, Input, Logo } from '@/components/ui';
 import { METIERS_MAP, METIERS_DISPONIBLES } from '@/lib/constants/metiers';
+import { artisanDoitDecennale } from '@/lib/decennale-helper';
 import type { Categorie, Artisan, ZoneIntervention } from '@/types/firestore';
 
 interface VilleSuggestion {
@@ -35,6 +36,11 @@ export default function ProfilArtisanPage() {
   const [codePostal, setCodePostal] = useState('');
   const [rayonKm, setRayonKm] = useState(30);
   const [presentation, setPresentation] = useState('');
+
+  // Vérifier si décennale en cours de vérification (bloquer modification métiers)
+  const decennaleEnCoursVerification = artisan?.verificationDocuments?.decennale?.url && 
+                                        !artisan.verificationDocuments.decennale.verified && 
+                                        !artisan.verificationDocuments.decennale.rejected;
 
   useEffect(() => {
     loadArtisanProfile();
@@ -296,23 +302,64 @@ export default function ProfilArtisanPage() {
             <h2 className="text-xl font-bold text-gray-800 mb-4">
               Métiers <span className="text-sm text-gray-500 font-normal">(Sélectionner au moins 1)</span>
             </h2>
+
+            {/* Avertissement blocage si décennale en cours */}
+            {decennaleEnCoursVerification && (
+              <div className="mb-4 bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">🔒</span>
+                  <div className="flex-1">
+                    <h4 className="text-red-900 font-semibold mb-1">Modification des métiers temporairement bloquée</h4>
+                    <p className="text-sm text-red-800">
+                      Votre <strong>attestation de garantie décennale</strong> est actuellement en cours de vérification par notre équipe.
+                      Vous ne pouvez pas modifier vos métiers pendant cette période pour éviter toute incohérence.
+                    </p>
+                    <p className="text-xs text-red-700 mt-2">
+                      💡 Vous pourrez modifier vos métiers une fois que votre document aura été validé ou rejeté.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {METIERS_DISPONIBLES.map((metier) => (
                 <button
                   key={metier}
                   type="button"
-                  onClick={() => toggleMetier(metier)}
+                  onClick={() => !decennaleEnCoursVerification && toggleMetier(metier)}
+                  disabled={decennaleEnCoursVerification}
                   className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                    metiers.includes(metier)
-                      ? 'border-[#FF6B00] bg-orange-50 text-[#FF6B00]'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    decennaleEnCoursVerification 
+                      ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300 text-gray-500' 
+                      : metiers.includes(metier)
+                        ? 'border-[#FF6B00] bg-orange-50 text-[#FF6B00]'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
                   {METIERS_MAP[metier]}
                 </button>
               ))}
             </div>
+
+            {/* Avertissement décennale si métiers concernés ET document pas encore uploadé */}
+            {metiers.length > 0 && artisanDoitDecennale(metiers) && !artisan?.verificationDocuments?.decennale?.url && (
+              <div className="mt-4 bg-yellow-50 border-l-4 border-[#FFC107] rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">⚠️</span>
+                  <div className="flex-1">
+                    <h4 className="text-yellow-900 font-semibold mb-1">Garantie Décennale Obligatoire</h4>
+                    <p className="text-sm text-yellow-800">
+                      Les métiers que vous avez sélectionnés nécessitent une <strong>assurance garantie décennale</strong>.
+                      Vous devrez fournir votre attestation dans la section <strong>Documents</strong> pour être vérifié sur la plateforme.
+                    </p>
+                    <p className="text-xs text-yellow-700 mt-2">
+                      Métiers concernés : Maçonnerie, Toiture, Charpente, Menuiserie, Isolation, Plomberie, Électricité, Carrelage, Chauffage, Climatisation
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Zone d'intervention */}

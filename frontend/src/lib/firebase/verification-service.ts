@@ -6,6 +6,7 @@
 import { doc, updateDoc, Timestamp, getDoc, arrayUnion, collection } from 'firebase/firestore';
 import { db } from './config';
 import type { Artisan, VerificationStatus } from '@/types/firestore';
+import { artisanDoitDecennale } from '../decennale-helper';
 
 // ============================================
 // 1. VÉRIFICATION SIRET (API INSEE/SIRENE)
@@ -271,11 +272,16 @@ import { parseKbisDocument, compareSiret, compareRepresentantLegal, type KbisPar
 async function uploadToStorage(
   userId: string,
   file: File,
-  documentType: 'kbis' | 'idCard'
+  documentType: 'kbis' | 'idCard' | 'rcPro' | 'decennale'
 ): Promise<string> {
   try {
     const timestamp = Date.now();
-    const fileName = `${documentType}_${timestamp}_${file.name}`;
+    // Nettoyer le nom de fichier : supprimer espaces et caractères spéciaux
+    const cleanFileName = file.name
+      .replace(/\s+/g, '_')  // Remplacer espaces par underscore
+      .replace(/[^a-zA-Z0-9._-]/g, '')  // Supprimer caractères spéciaux
+      .toLowerCase();
+    const fileName = `${documentType}_${timestamp}_${cleanFileName}`;
     const storageRef = ref(storage, `artisans/${userId}/documents/${fileName}`);
     
     console.log('📤 Upload vers Firebase Storage...', fileName);
@@ -490,6 +496,152 @@ export async function uploadIdCard(
 }
 
 /**
+ * Upload une attestation RC Pro (Responsabilité Civile Professionnelle)
+ */
+export async function uploadRcPro(
+  userId: string,
+  file: File
+): Promise<{
+  success: boolean;
+  url?: string;
+  error?: string;
+}> {
+  try {
+    // Vérifier le type de fichier
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      return {
+        success: false,
+        error: 'Format non supporté. Utilisez JPG, PNG ou PDF.'
+      };
+    }
+    
+    // Vérifier la taille (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return {
+        success: false,
+        error: 'Fichier trop volumineux (max 5MB)'
+      };
+    }
+    
+    // Upload vers Firebase Storage
+    const url = await uploadToStorage(userId, file, 'rcPro');
+    
+    // Récupérer l'état actuel pour l'historique
+    const artisanRef = doc(db, 'artisans', userId);
+    const artisanSnap = await getDoc(artisanRef);
+    const currentDoc = artisanSnap.data()?.verificationDocuments?.rcPro;
+    
+    // Sauvegarder dans Firestore (admin devra vérifier)
+    await updateDoc(artisanRef, {
+      'verificationDocuments.rcPro': {
+        url,
+        uploadDate: Timestamp.now(),
+        verified: false, // Nécessite validation admin
+        rejected: false, // Réinitialiser le statut de rejet
+        rejectionReason: null,
+        rejectedAt: null,
+        rejectedBy: null
+      },
+      // Ajouter dans l'historique pour traçabilité
+      'verificationDocuments.rcPro.uploadHistory': arrayUnion({
+        uploadedAt: Timestamp.now(),
+        fileSize: file.size,
+        fileName: file.name,
+        previouslyRejected: currentDoc?.rejected || false,
+        rejectionReason: currentDoc?.rejectionReason || null
+      })
+    });
+    
+    return {
+      success: true,
+      url
+    };
+    
+  } catch (error) {
+    console.error('Erreur upload RC Pro:', error);
+    return {
+      success: false,
+      error: 'Erreur lors de l\'upload'
+    };
+  }
+}
+
+/**
+ * Upload une attestation d'assurance décennale
+ */
+export async function uploadDecennale(
+  userId: string,
+  file: File
+): Promise<{
+  success: boolean;
+  url?: string;
+  error?: string;
+}> {
+  try {
+    // Vérifier le type de fichier
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      return {
+        success: false,
+        error: 'Format non supporté. Utilisez JPG, PNG ou PDF.'
+      };
+    }
+    
+    // Vérifier la taille (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return {
+        success: false,
+        error: 'Fichier trop volumineux (max 5MB)'
+      };
+    }
+    
+    // Upload vers Firebase Storage
+    const url = await uploadToStorage(userId, file, 'decennale');
+    
+    // Récupérer l'état actuel pour l'historique
+    const artisanRef = doc(db, 'artisans', userId);
+    const artisanSnap = await getDoc(artisanRef);
+    const currentDoc = artisanSnap.data()?.verificationDocuments?.decennale;
+    
+    // Sauvegarder dans Firestore (admin devra vérifier)
+    await updateDoc(artisanRef, {
+      'verificationDocuments.decennale': {
+        url,
+        uploadDate: Timestamp.now(),
+        verified: false, // Nécessite validation admin
+        rejected: false, // Réinitialiser le statut de rejet
+        rejectionReason: null,
+        rejectedAt: null,
+        rejectedBy: null
+      },
+      // Ajouter dans l'historique pour traçabilité
+      'verificationDocuments.decennale.uploadHistory': arrayUnion({
+        uploadedAt: Timestamp.now(),
+        fileSize: file.size,
+        fileName: file.name,
+        previouslyRejected: currentDoc?.rejected || false,
+        rejectionReason: currentDoc?.rejectionReason || null
+      })
+    });
+    
+    return {
+      success: true,
+      url
+    };
+    
+  } catch (error) {
+    console.error('Erreur upload attestation décennale:', error);
+    return {
+      success: false,
+      error: 'Erreur lors de l\'upload'
+    };
+  }
+}
+
+/**
  * Upload un Kbis (sans parsing complexe, juste stockage)
  */
 export async function uploadKbisDocument(
@@ -566,7 +718,7 @@ export async function uploadKbisDocument(
  */
 export async function saveDocumentUrl(
   userId: string,
-  documentType: 'kbis' | 'idCard',
+  documentType: 'kbis' | 'idCard' | 'rcPro' | 'decennale',
   url: string
 ): Promise<void> {
   const artisanRef = doc(db, 'artisans', userId);
@@ -597,22 +749,32 @@ export async function calculateVerificationStatus(userId: string): Promise<Verif
   
   const artisan = artisanDoc.data() as Artisan;
   
-  // Vérifier les 4 critères requis pour la vérification complète
+  // Vérifier les critères requis pour la vérification complète
   const siretOk = artisan.siretVerified === true;
   const phoneOk = artisan.contactVerification?.telephone?.verified === true;
   const kbisOk = artisan.verificationDocuments?.kbis?.verified === true;
   const idCardOk = artisan.verificationDocuments?.idCard?.verified === true;
+  const rcProOk = artisan.verificationDocuments?.rcPro?.verified === true;
   
-  // Tous les 4 critères remplis = approved (profil vérifié)
-  if (siretOk && phoneOk && kbisOk && idCardOk) {
+  // Décennale obligatoire uniquement si le métier le nécessite
+  const decennaleRequired = artisan.metiers && artisan.metiers.length > 0 && artisanDoitDecennale(artisan.metiers);
+  const decennaleOk = !decennaleRequired || artisan.verificationDocuments?.decennale?.verified === true;
+
+  // Tous les critères remplis = approved (profil vérifié)
+  if (siretOk && phoneOk && kbisOk && idCardOk && rcProOk && decennaleOk) {
     return 'approved';
   }
-  
+
   // Au moins un document uploadé = pending (en attente validation admin)
-  if (artisan.verificationDocuments?.kbis || artisan.verificationDocuments?.idCard) {
+  if (
+    artisan.verificationDocuments?.kbis ||
+    artisan.verificationDocuments?.idCard ||
+    artisan.verificationDocuments?.rcPro ||
+    artisan.verificationDocuments?.decennale
+  ) {
     return 'pending';
   }
-  
+
   // Rien de fait = incomplete
   return 'incomplete';
 }
@@ -642,12 +804,12 @@ export async function updateVerificationStatus(
 /**
  * Valide un document (KBIS ou Pièce d'identité)
  * @param userId - ID de l'utilisateur artisan
- * @param documentType - Type de document ('kbis' ou 'idCard')
+ * @param documentType - Type de document ('kbis', 'idCard', 'rcPro' ou 'decennale')
  * @param adminId - ID de l'admin qui valide
  */
 export async function validateDocument(
   userId: string,
-  documentType: 'kbis' | 'idCard',
+  documentType: 'kbis' | 'idCard' | 'rcPro' | 'decennale',
   adminId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
@@ -669,21 +831,24 @@ export async function validateDocument(
       const data = artisanSnap.data();
       const kbisVerified = data.verificationDocuments?.kbis?.verified || false;
       const idVerified = data.verificationDocuments?.idCard?.verified || false;
+      const rcProVerified = data.verificationDocuments?.rcPro?.verified || false;
       
-      // Si les 2 documents sont validés → activer l'artisan dans les recherches
-      if (kbisVerified && idVerified) {
+      // Vérifier si décennale requise
+      const decennaleRequired = data.metiers && data.metiers.length > 0 && artisanDoitDecennale(data.metiers);
+      const decennaleVerified = !decennaleRequired || data.verificationDocuments?.decennale?.verified || false;
+      
+      // Si tous les documents sont validés (y compris décennale si requise) → activer l'artisan
+      if (kbisVerified && idVerified && rcProVerified && decennaleVerified) {
         await updateDoc(artisanRef, {
           verified: true,  // ← CHAMP PRINCIPAL pour les recherches
           verificationStatus: 'approved',
           verificationDate: Timestamp.now(),
         });
-        
         // ✅ METTRE À JOUR LE STATUT DANS LA COLLECTION USERS
         const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, {
           statut: 'verifie'
         });
-        
         console.log(`✅ Artisan ${userId} complètement vérifié et activé !`);
       } else {
         console.log(`⏳ Artisan ${userId} partiellement vérifié (${documentType} validé)`);
@@ -705,13 +870,13 @@ export async function validateDocument(
 /**
  * Rejette un document avec une raison
  * @param userId - ID de l'utilisateur artisan
- * @param documentType - Type de document ('kbis' ou 'idCard')
+ * @param documentType - Type de document ('kbis', 'idCard', 'rcPro' ou 'decennale')
  * @param adminId - ID de l'admin qui rejette
  * @param reason - Raison du rejet
  */
 export async function rejectDocument(
   userId: string,
-  documentType: 'kbis' | 'idCard',
+  documentType: 'kbis' | 'idCard' | 'rcPro' | 'decennale',
   adminId: string,
   reason: string
 ): Promise<{ success: boolean; error?: string }> {

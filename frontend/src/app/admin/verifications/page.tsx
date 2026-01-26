@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { getAllArtisansForAdmin } from '@/lib/firebase/artisan-service';
 import { validateDocument, rejectDocument } from '@/lib/firebase/verification-service';
+import { artisanDoitDecennale } from '@/lib/decennale-helper';
 import type { Artisan } from '@/types/firestore';
 
 type FilterType = 'all' | 'pending' | 'verified' | 'rejected';
@@ -29,7 +30,7 @@ export default function AdminVerificationsPage() {
   // État pour les actions
   const [actionLoading, setActionLoading] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [rejectDocType, setRejectDocType] = useState<'kbis' | 'idCard' | null>(null);
+  const [rejectDocType, setRejectDocType] = useState<'kbis' | 'idCard' | 'rcPro' | 'decennale' | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
@@ -72,15 +73,22 @@ export default function AdminVerificationsPage() {
       filtered = filtered.filter(a => {
         const kbisPending = !!a.verificationDocuments?.kbis?.url && !a.verificationDocuments?.kbis?.verified;
         const idPending = !!a.verificationDocuments?.idCard?.url && !a.verificationDocuments?.idCard?.verified;
-        return kbisPending || idPending;
+        const rcProPending = !!a.verificationDocuments?.rcPro?.url && !a.verificationDocuments?.rcPro?.verified;
+        const needsDecennale = a.metiers && artisanDoitDecennale(a.metiers);
+        const decennalePending = needsDecennale && !!a.verificationDocuments?.decennale?.url && !a.verificationDocuments?.decennale?.verified;
+        return kbisPending || idPending || rcProPending || decennalePending;
       });
     } else if (filter === 'verified') {
       filtered = filtered.filter(a => 
-        a.verificationDocuments?.kbis?.verified && a.verificationDocuments?.idCard?.verified
+        a.verificationDocuments?.kbis?.verified && 
+        a.verificationDocuments?.idCard?.verified && 
+        a.verificationDocuments?.rcPro?.verified
       );
     } else if (filter === 'rejected') {
       filtered = filtered.filter(a => 
-        a.verificationDocuments?.kbis?.rejected || a.verificationDocuments?.idCard?.rejected
+        a.verificationDocuments?.kbis?.rejected || 
+        a.verificationDocuments?.idCard?.rejected || 
+        a.verificationDocuments?.rcPro?.rejected
       );
     }
 
@@ -109,11 +117,15 @@ export default function AdminVerificationsPage() {
     applyFilters(selectedFilter, value, artisans);
   };
 
-  const handleValidateDocument = async (documentType: 'kbis' | 'idCard') => {
+  const handleValidateDocument = async (documentType: 'kbis' | 'idCard' | 'rcPro' | 'decennale') => {
     if (!selectedArtisan) return;
     
+    const docName = documentType === 'kbis' ? 'KBIS' : 
+                    documentType === 'idCard' ? 'Pièce d\'identité' : 
+                    documentType === 'rcPro' ? 'RC Pro' : 
+                    'Garantie Décennale';
     const confirmed = window.confirm(
-      `Êtes-vous sûr de vouloir valider le document ${documentType === 'kbis' ? 'KBIS' : 'Pièce d\'identité'} ?`
+      `Êtes-vous sûr de vouloir valider le document ${docName} ?`
     );
     
     if (!confirmed) return;
@@ -144,7 +156,7 @@ export default function AdminVerificationsPage() {
     }
   };
 
-  const handleRejectDocument = (documentType: 'kbis' | 'idCard') => {
+  const handleRejectDocument = (documentType: 'kbis' | 'idCard' | 'rcPro') => {
     setRejectDocType(documentType);
     setRejectReason('');
     setShowRejectDialog(true);
@@ -308,6 +320,12 @@ export default function AdminVerificationsPage() {
                   Pièce ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  RC Pro
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Décennale
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -316,6 +334,9 @@ export default function AdminVerificationsPage() {
               {filteredArtisans.map((artisan) => {
                 const kbisStatus = getDocumentStatus(artisan.verificationDocuments?.kbis);
                 const idStatus = getDocumentStatus(artisan.verificationDocuments?.idCard);
+                const rcProStatus = getDocumentStatus(artisan.verificationDocuments?.rcPro);
+                const needsDecennale = artisan.metiers && artisanDoitDecennale(artisan.metiers);
+                const decennaleStatus = needsDecennale ? getDocumentStatus(artisan.verificationDocuments?.decennale) : null;
 
                 return (
                   <tr key={artisan.userId} className="hover:bg-gray-50">
@@ -357,6 +378,34 @@ export default function AdminVerificationsPage() {
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(rcProStatus)}
+                        {artisan.verificationDocuments?.rcPro?.uploadHistory && 
+                         artisan.verificationDocuments.rcPro.uploadHistory.length > 3 && (
+                          <span className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded" title={`${artisan.verificationDocuments.rcPro.uploadHistory.length} uploads`}>
+                            {artisan.verificationDocuments.rcPro.uploadHistory.length}×
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {needsDecennale ? (
+                        <div className="flex items-center gap-2">
+                          {decennaleStatus ? getStatusBadge(decennaleStatus) : (
+                            <span className="text-xs text-gray-400">Non uploadé</span>
+                          )}
+                          {artisan.verificationDocuments?.decennale?.uploadHistory && 
+                           artisan.verificationDocuments.decennale.uploadHistory.length > 3 && (
+                            <span className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded" title={`${artisan.verificationDocuments.decennale.uploadHistory.length} uploads`}>
+                              {artisan.verificationDocuments.decennale.uploadHistory.length}×
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">Non requise</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -824,6 +873,308 @@ export default function AdminVerificationsPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Document RC Pro */}
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-gray-100 px-4 py-3 flex justify-between items-center">
+                      <h3 className="font-semibold text-gray-900 flex items-center">
+                        🛡️ RC Pro
+                      </h3>
+                      {getStatusBadge(getDocumentStatus(selectedArtisan.verificationDocuments?.rcPro))}
+                    </div>
+                    
+                    <div className="p-4">
+                      {selectedArtisan.verificationDocuments?.rcPro?.url ? (
+                        <>
+                          {/* Aperçu du document */}
+                          <div className="mb-4 bg-gray-50 rounded-lg overflow-hidden">
+                            {selectedArtisan.verificationDocuments.rcPro.url.toLowerCase().endsWith('.pdf') ? (
+                              <iframe
+                                src={selectedArtisan.verificationDocuments.rcPro.url}
+                                className="w-full h-64 border-0"
+                                title="RC Pro PDF"
+                              />
+                            ) : (
+                              <img
+                                src={selectedArtisan.verificationDocuments.rcPro.url}
+                                alt="RC Pro"
+                                className="w-full h-64 object-contain"
+                              />
+                            )}
+                          </div>
+
+                          {/* Informations du document */}
+                          <div className="space-y-2 mb-4 text-sm">
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase">Date d'upload</label>
+                              <p className="text-gray-900">
+                                {selectedArtisan.verificationDocuments.rcPro.uploadDate
+                                  ? new Date(selectedArtisan.verificationDocuments.rcPro.uploadDate.toDate()).toLocaleDateString('fr-FR', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })
+                                  : '-'
+                                }
+                              </p>
+                            </div>
+
+                            {/* Historique des uploads */}
+                            {selectedArtisan.verificationDocuments.rcPro.uploadHistory && selectedArtisan.verificationDocuments.rcPro.uploadHistory.length > 0 && (
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase flex items-center gap-2">
+                                  Historique des uploads ({selectedArtisan.verificationDocuments.rcPro.uploadHistory.length})
+                                  {selectedArtisan.verificationDocuments.rcPro.uploadHistory.length > 5 && (
+                                    <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                      ⚠️ SUSPECT
+                                    </span>
+                                  )}
+                                </label>
+                                <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-1 max-h-40 overflow-y-auto">
+                                  {selectedArtisan.verificationDocuments.rcPro.uploadHistory.map((upload, idx) => (
+                                    <div key={idx} className="text-xs text-gray-700 mb-1 pb-1 border-b border-yellow-200 last:border-0">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">
+                                          {new Date(upload.uploadedAt.toDate()).toLocaleDateString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                        <span className="text-gray-500">•</span>
+                                        <span className="truncate max-w-[150px]" title={upload.fileName}>
+                                          {upload.fileName}
+                                        </span>
+                                        <span className="text-gray-500">•</span>
+                                        <span className="text-gray-500">
+                                          {(upload.fileSize / 1024).toFixed(0)} KB
+                                        </span>
+                                      </div>
+                                      {upload.previouslyRejected && (
+                                        <p className="text-red-600 text-xs mt-0.5">
+                                          ↻ Re-upload après rejet: {upload.rejectionReason}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Boutons d'action */}
+                          {!selectedArtisan.verificationDocuments.rcPro.verified && !selectedArtisan.verificationDocuments.rcPro.rejected && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleValidateDocument('rcPro')}
+                                disabled={actionLoading}
+                                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {actionLoading ? '⏳ Validation...' : '✓ Valider'}
+                              </button>
+                              <button
+                                onClick={() => handleRejectDocument('rcPro')}
+                                disabled={actionLoading}
+                                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                ✕ Rejeter
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Message si validé */}
+                          {selectedArtisan.verificationDocuments.rcPro.verified && (
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+                              <p className="text-green-800 font-medium">✓ Document validé</p>
+                              <p className="text-green-600 text-xs mt-1">
+                                Le {selectedArtisan.verificationDocuments.rcPro.validatedAt
+                                  ? new Date(selectedArtisan.verificationDocuments.rcPro.validatedAt.toDate()).toLocaleDateString('fr-FR')
+                                  : '-'
+                                }
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Message si rejeté */}
+                          {selectedArtisan.verificationDocuments.rcPro.rejected && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+                              <p className="text-red-800 font-medium">✕ Document rejeté</p>
+                              <p className="text-red-600 text-xs mt-1">
+                                Raison: {selectedArtisan.verificationDocuments.rcPro.rejectionReason || 'Non spécifiée'}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Lien d'ouverture */}
+                          <a
+                            href={selectedArtisan.verificationDocuments.rcPro.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block text-center text-[#FF6B00] hover:underline text-sm mt-2"
+                          >
+                            Ouvrir dans un nouvel onglet →
+                          </a>
+                        </>
+                      ) : (
+                        <p className="text-gray-500 text-center py-8">Document non uploadé</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Document Garantie Décennale (conditionnel) */}
+                  {selectedArtisan.metiers && artisanDoitDecennale(selectedArtisan.metiers) && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-gray-100 px-4 py-3 flex justify-between items-center">
+                        <h3 className="font-semibold text-gray-900 flex items-center">
+                          🏗️ Garantie Décennale
+                        </h3>
+                        {getStatusBadge(getDocumentStatus(selectedArtisan.verificationDocuments?.decennale))}
+                      </div>
+                      
+                      <div className="p-4">
+                        {selectedArtisan.verificationDocuments?.decennale?.url ? (
+                          <>
+                            {/* Aperçu du document */}
+                            <div className="mb-4 bg-gray-50 rounded-lg overflow-hidden">
+                              {selectedArtisan.verificationDocuments.decennale.url.toLowerCase().endsWith('.pdf') ? (
+                                <iframe
+                                  src={selectedArtisan.verificationDocuments.decennale.url}
+                                  className="w-full h-64 border-0"
+                                  title="Garantie Décennale PDF"
+                                />
+                              ) : (
+                                <img
+                                  src={selectedArtisan.verificationDocuments.decennale.url}
+                                  alt="Garantie Décennale"
+                                  className="w-full h-64 object-contain"
+                                />
+                              )}
+                            </div>
+
+                            {/* Informations du document */}
+                            <div className="space-y-2 mb-4 text-sm">
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase">Date d'upload</label>
+                                <p className="text-gray-900">
+                                  {selectedArtisan.verificationDocuments.decennale.uploadDate
+                                    ? new Date(selectedArtisan.verificationDocuments.decennale.uploadDate.toDate()).toLocaleDateString('fr-FR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })
+                                    : '-'
+                                  }
+                                </p>
+                              </div>
+
+                              {/* Historique des uploads */}
+                              {selectedArtisan.verificationDocuments.decennale.uploadHistory && selectedArtisan.verificationDocuments.decennale.uploadHistory.length > 0 && (
+                                <div>
+                                  <label className="text-xs text-gray-500 uppercase flex items-center gap-2">
+                                    Historique des uploads ({selectedArtisan.verificationDocuments.decennale.uploadHistory.length})
+                                    {selectedArtisan.verificationDocuments.decennale.uploadHistory.length > 5 && (
+                                      <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                        ⚠️ SUSPECT
+                                      </span>
+                                    )}
+                                  </label>
+                                  <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-1 max-h-40 overflow-y-auto">
+                                    {selectedArtisan.verificationDocuments.decennale.uploadHistory.map((upload, idx) => (
+                                      <div key={idx} className="text-xs text-gray-700 mb-1 pb-1 border-b border-yellow-200 last:border-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium">
+                                            {new Date(upload.uploadedAt.toDate()).toLocaleDateString('fr-FR', {
+                                              day: '2-digit',
+                                              month: '2-digit',
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            })}
+                                          </span>
+                                          <span className="text-gray-500">•</span>
+                                          <span className="truncate max-w-[150px]" title={upload.fileName}>
+                                            {upload.fileName}
+                                          </span>
+                                          <span className="text-gray-500">•</span>
+                                          <span className="text-gray-500">
+                                            {(upload.fileSize / 1024).toFixed(0)} KB
+                                          </span>
+                                        </div>
+                                        {upload.previouslyRejected && (
+                                          <p className="text-red-600 text-xs mt-0.5">
+                                            ↻ Re-upload après rejet: {upload.rejectionReason}
+                                          </p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Boutons d'action */}
+                            {!selectedArtisan.verificationDocuments.decennale.verified && !selectedArtisan.verificationDocuments.decennale.rejected && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleValidateDocument('decennale')}
+                                  disabled={actionLoading}
+                                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {actionLoading ? '⏳ Validation...' : '✓ Valider'}
+                                </button>
+                                <button
+                                  onClick={() => handleRejectDocument('decennale')}
+                                  disabled={actionLoading}
+                                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  ✕ Rejeter
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Message si validé */}
+                            {selectedArtisan.verificationDocuments.decennale.verified && (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+                                <p className="text-green-800 font-medium">✓ Document validé</p>
+                                <p className="text-green-600 text-xs mt-1">
+                                  Le {selectedArtisan.verificationDocuments.decennale.validatedAt
+                                    ? new Date(selectedArtisan.verificationDocuments.decennale.validatedAt.toDate()).toLocaleDateString('fr-FR')
+                                    : '-'
+                                  }
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Message si rejeté */}
+                            {selectedArtisan.verificationDocuments.decennale.rejected && (
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+                                <p className="text-red-800 font-medium">✕ Document rejeté</p>
+                                <p className="text-red-600 text-xs mt-1">
+                                  Raison: {selectedArtisan.verificationDocuments.decennale.rejectionReason || 'Non spécifiée'}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Lien d'ouverture */}
+                            <a
+                              href={selectedArtisan.verificationDocuments.decennale.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block text-center text-[#FF6B00] hover:underline text-sm mt-2"
+                            >
+                              Ouvrir dans un nouvel onglet →
+                            </a>
+                          </>
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">Document non uploadé</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -852,7 +1203,10 @@ export default function AdminVerificationsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Rejeter le document {rejectDocType === 'kbis' ? 'KBIS' : 'Pièce d\'identité'}
+              Rejeter le document {rejectDocType === 'kbis' ? 'KBIS' : 
+                                   rejectDocType === 'idCard' ? 'Pièce d\'identité' : 
+                                   rejectDocType === 'rcPro' ? 'RC Pro' : 
+                                   'Garantie Décennale'}
             </h3>
             
             <p className="text-gray-600 text-sm mb-4">

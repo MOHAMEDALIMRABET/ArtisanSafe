@@ -18,6 +18,7 @@ export type Categorie =
   | 'peinture' 
   | 'menuiserie' 
   | 'maconnerie'
+  | 'charpente'
   | 'placo'
   | 'carrelage'
   | 'chauffage'
@@ -185,6 +186,34 @@ export interface ParseResultHistory {
 }
 
 export interface VerificationDocuments {
+    /**
+     * Attestation d'assurance décennale (obligatoire pour certains métiers BTP)
+     */
+    decennale?: {
+      url: string;
+      uploadDate: Timestamp;
+      verified: boolean;
+      rejected?: boolean;
+      validatedAt?: Timestamp;
+      validatedBy?: string;
+      rejectedAt?: Timestamp;
+      rejectedBy?: string;
+      rejectionReason?: string;
+      uploadHistory?: Array<{
+        uploadedAt: Timestamp;
+        fileSize: number;
+        fileName: string;
+        previouslyRejected: boolean;
+        rejectionReason?: string | null;
+      }>;
+      parsedData?: {
+        compagnie?: string;
+        numeroPolice?: string;
+        dateDebut?: string;
+        dateFin?: string;
+      };
+      expirationDate?: Timestamp;
+    };
   kbis?: {
     url: string;
     uploadDate: Timestamp;
@@ -260,6 +289,34 @@ export interface VerificationDocuments {
     parsedData?: {
       nom?: string;
       prenom?: string;
+    };
+  };
+
+  /**
+   * Garantie Responsabilité Civile Professionnelle (RC Pro)
+   */
+  rcPro?: {
+    url: string;
+    uploadDate: Timestamp;
+    verified: boolean;
+    rejected?: boolean;
+    validatedAt?: Timestamp;
+    validatedBy?: string;
+    rejectedAt?: Timestamp;
+    rejectedBy?: string;
+    rejectionReason?: string;
+    uploadHistory?: Array<{
+      uploadedAt: Timestamp;
+      fileSize: number;
+      fileName: string;
+      previouslyRejected: boolean;
+      rejectionReason?: string | null;
+    }>;
+    parsedData?: {
+      compagnie?: string;
+      numeroPolice?: string;
+      dateDebut?: string;
+      dateFin?: string;
     };
   };
 }

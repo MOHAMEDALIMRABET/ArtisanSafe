@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { getUserById } from '@/lib/firebase/user-service';
-import { uploadAndVerifyKbis, uploadIdCard, uploadKbisDocument } from '@/lib/firebase/verification-service';
+import { uploadAndVerifyKbis, uploadIdCard, uploadKbisDocument, uploadRcPro, uploadDecennale } from '@/lib/firebase/verification-service';
+import { artisanDoitDecennale } from '@/lib/decennale-helper';
 import type { Artisan } from '@/types/firestore';
 import type { KbisParseResult } from '@/lib/firebase/document-parser';
 
@@ -52,6 +53,18 @@ export default function DocumentsUploadPage() {
   const [idUploading, setIdUploading] = useState(false);
   const [idError, setIdError] = useState('');
   const [idSuccess, setIdSuccess] = useState(false);
+
+  // États pour RC Pro
+  const [rcProFile, setRcProFile] = useState<File | null>(null);
+  const [rcProUploading, setRcProUploading] = useState(false);
+  const [rcProError, setRcProError] = useState('');
+  const [rcProSuccess, setRcProSuccess] = useState(false);
+
+  // États pour Décennale
+  const [decennaleFile, setDecennaleFile] = useState<File | null>(null);
+  const [decennaleUploading, setDecennaleUploading] = useState(false);
+  const [decennaleError, setDecennaleError] = useState('');
+  const [decennaleSuccess, setDecennaleSuccess] = useState(false);
 
   useEffect(() => {
     loadArtisan();
@@ -267,6 +280,100 @@ export default function DocumentsUploadPage() {
     }
   };
 
+  // ============================================
+  // UPLOAD RC PRO
+  // ============================================
+
+  const handleRcProFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setRcProFile(file);
+      setRcProError('');
+      setRcProSuccess(false);
+    }
+  };
+
+  const handleUploadRcPro = async () => {
+    if (!rcProFile || !artisan) return;
+
+    setRcProUploading(true);
+    setRcProError('');
+    setRcProSuccess(false);
+
+    try {
+      const result = await uploadRcPro(artisan.userId, rcProFile);
+
+      if (result.success) {
+        // Invalider le cache
+        const user = authService.getCurrentUser();
+        if (user) localStorage.removeItem(`artisan_${user.uid}`);
+        
+        setRcProSuccess(true);
+        await loadArtisan();
+        // Reset le succès après 3 secondes pour montrer le badge "En cours de vérification"
+        setTimeout(() => setRcProSuccess(false), 3000);
+      } else {
+        setRcProError(result.error || 'Erreur inconnue');
+      }
+    } catch (error) {
+      console.error('Erreur upload RC Pro:', error);
+      setRcProError('Erreur technique');
+    } finally {
+      setRcProUploading(false);
+    }
+  };
+
+  // ============================================
+  // UPLOAD DÉCENNALE
+  // ============================================
+
+  const handleDecennaleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setDecennaleFile(file);
+      setDecennaleError('');
+      setDecennaleSuccess(false);
+    }
+  };
+
+  const handleUploadDecennale = async () => {
+    if (!decennaleFile || !artisan) return;
+
+    setDecennaleUploading(true);
+    setDecennaleError('');
+    setDecennaleSuccess(false);
+
+    try {
+      const result = await uploadDecennale(artisan.userId, decennaleFile);
+
+      if (result.success) {
+        // Créer notification admin pour nouveau document décennale
+        await createAdminNotification(artisan.userId, {
+          type: 'new_document',
+          message: `Nouvelle attestation de garantie décennale uploadée (${(decennaleFile.size / 1024 / 1024).toFixed(2)} MB)`,
+          artisanName: `${artisan.nom} ${artisan.prenom}`,
+          priority: 'medium',
+        });
+        
+        // Invalider le cache
+        const user = authService.getCurrentUser();
+        if (user) localStorage.removeItem(`artisan_${user.uid}`);
+        
+        setDecennaleSuccess(true);
+        await loadArtisan();
+        // Reset le succès après 3 secondes pour montrer le badge "En cours de vérification"
+        setTimeout(() => setDecennaleSuccess(false), 3000);
+      } else {
+        setDecennaleError(result.error || 'Erreur inconnue');
+      }
+    } catch (error) {
+      console.error('Erreur upload Décennale:', error);
+      setDecennaleError('Erreur technique');
+    } finally {
+      setDecennaleUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -290,6 +397,19 @@ export default function DocumentsUploadPage() {
   const idRejected = artisan.verificationDocuments?.idCard?.rejected === true;
   const idRejectionReason = artisan.verificationDocuments?.idCard?.rejectionReason || '';
   const idUploaded = !!(artisan.verificationDocuments?.idCard?.url && !idVerified && !idRejected);
+
+  const rcProVerified = artisan.verificationDocuments?.rcPro?.verified === true;
+  const rcProRejected = artisan.verificationDocuments?.rcPro?.rejected === true;
+  const rcProRejectionReason = artisan.verificationDocuments?.rcPro?.rejectionReason || '';
+  const rcProUploaded = !!(artisan.verificationDocuments?.rcPro?.url && !rcProVerified && !rcProRejected);
+
+  const decennaleVerified = artisan.verificationDocuments?.decennale?.verified === true;
+  const decennaleRejected = artisan.verificationDocuments?.decennale?.rejected === true;
+  const decennaleRejectionReason = artisan.verificationDocuments?.decennale?.rejectionReason || '';
+  const decennaleUploaded = !!(artisan.verificationDocuments?.decennale?.url && !decennaleVerified && !decennaleRejected);
+
+  // Vérifier si l'artisan doit fournir la décennale
+  const needsDecennale = artisan.metiers && artisan.metiers.length > 0 && artisanDoitDecennale(artisan.metiers);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -569,15 +689,338 @@ export default function DocumentsUploadPage() {
                   <button
                     onClick={handleUploadId}
                     disabled={!idFile || idUploading}
-                    className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {idUploading ? 'Upload en cours...' : '📤 Uploader la pièce d\'identité'}
+                    {idUploading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Envoi en cours...
+                      </>
+                    ) : '📤 Uploader la pièce d\'identité'}
                   </button>
                 </div>
               </div>
             )}
           </div>
+
+        {/* 3. RC PRO */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                rcProVerified ? 'bg-green-100' : rcProRejected ? 'bg-red-100' : rcProUploaded ? 'bg-blue-100' : 'bg-orange-100'
+              }`}>
+                {rcProVerified ? (
+                  <span className="text-2xl">✅</span>
+                ) : rcProRejected ? (
+                  <span className="text-2xl">❌</span>
+                ) : rcProUploaded ? (
+                  <span className="text-2xl">⏳</span>
+                ) : (
+                  <span className="text-2xl">🛡️</span>
+                )}
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Responsabilité Civile Professionnelle (RC Pro)</h3>
+                <p className="text-sm text-gray-600">Attestation RC Pro en cours de validité</p>
+              </div>
+            </div>
+
+            {rcProVerified && (
+              <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                ✓ Vérifié
+              </span>
+            )}
+            {rcProRejected && (
+              <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                ✗ Rejeté
+              </span>
+            )}
+            {rcProUploaded && !rcProVerified && !rcProSuccess && (
+              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                En cours de vérification
+              </span>
+            )}
+          </div>
+
+          {rcProSuccess && (
+            <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+              <p className="text-sm text-green-700">
+                ✅ Document uploadé ! Il sera vérifié par notre équipe sous 24-48h.
+              </p>
+            </div>
+          )}
+
+          {rcProRejected && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">❌</span>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-red-800 mb-2">
+                    Document rejeté par notre équipe
+                  </p>
+                  <p className="text-sm text-red-700 mb-3">
+                    <strong>Raison :</strong> {rcProRejectionReason || 'Non spécifiée'}
+                  </p>
+                  <p className="text-sm text-red-600">
+                    📤 Veuillez uploader un nouveau document conforme aux exigences.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(!rcProVerified && !rcProUploaded && !rcProSuccess) && (
+            <div>
+              <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 mb-4">
+                <h4 className="text-blue-900 font-medium mb-2">🛡️ Instructions</h4>
+                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                  <li>Attestation RC Pro en cours de validité</li>
+                  <li>Document clair et lisible</li>
+                  <li>Nom et SIRET visibles</li>
+                  <li>Format : PDF, JPG ou PNG</li>
+                </ul>
+              </div>
+
+              {rcProError && (
+                <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                  <p className="text-sm text-red-700">❌ {rcProError}</p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sélectionner votre RC Pro (JPG, PNG, PDF)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={handleRcProFileChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-orange-50 file:text-[#FF6B00]
+                      hover:file:bg-orange-100
+                      cursor-pointer"
+                  />
+                  {rcProFile && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      📎 {rcProFile.name} ({(rcProFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleUploadRcPro}
+                  disabled={!rcProFile || rcProUploading}
+                  className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {rcProUploading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Envoi en cours...
+                    </>
+                  ) : '📤 Uploader l\'attestation RC Pro'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* 4. GARANTIE DÉCENNALE (Affichage conditionnel) */}
+        {needsDecennale && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  decennaleVerified ? 'bg-green-100' : decennaleRejected ? 'bg-red-100' : decennaleUploaded ? 'bg-blue-100' : 'bg-orange-100'
+                }`}>
+                  {decennaleVerified ? (
+                    <span className="text-2xl">✅</span>
+                  ) : decennaleRejected ? (
+                    <span className="text-2xl">❌</span>
+                  ) : decennaleUploaded ? (
+                    <span className="text-2xl">⏳</span>
+                  ) : (
+                    <span className="text-2xl">🏗️</span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Garantie Décennale</h3>
+                  <p className="text-sm text-gray-600">Assurance obligatoire pour vos métiers</p>
+                </div>
+              </div>
+
+              {decennaleVerified && (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  ✓ Vérifié
+                </span>
+              )}
+              {decennaleRejected && (
+                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  ✗ Rejeté
+                </span>
+              )}
+              {decennaleUploaded && !decennaleVerified && !decennaleSuccess && (
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  En cours de vérification
+                </span>
+              )}
+            </div>
+
+            {decennaleVerified ? (
+              null
+            ) : decennaleRejected ? (
+              <div className="space-y-4">
+                <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0">
+                      <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-red-900 font-medium mb-1">Document refusé</h4>
+                      <p className="text-sm text-red-700">{decennaleRejectionReason}</p>
+                      <p className="text-sm text-red-600 mt-2">Veuillez uploader un nouveau document conforme.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sélectionner votre nouvelle attestation (JPG, PNG, PDF)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={handleDecennaleFileChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-orange-50 file:text-[#FF6B00]
+                      hover:file:bg-orange-100
+                      cursor-pointer"
+                  />
+                  {decennaleFile && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      📎 {decennaleFile.name} ({(decennaleFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleUploadDecennale}
+                  disabled={!decennaleFile || decennaleUploading}
+                  className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {decennaleUploading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Envoi en cours...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Télécharger
+                    </>
+                  )}
+                </button>
+
+                {decennaleError && (
+                  <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-3 text-red-700 text-sm">
+                    {decennaleError}
+                  </div>
+                )}
+
+                {decennaleSuccess && (
+                  <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-3 text-green-700 text-sm">
+                    {decennaleSuccess}
+                  </div>
+                )}
+              </div>
+            ) : decennaleUploaded && !decennaleSuccess ? null : (
+              <div className="space-y-4">
+                <div className="bg-yellow-50 border-l-4 border-[#FFC107] rounded-lg p-4">
+                  <h4 className="text-yellow-900 font-medium mb-2">⚠️ Document obligatoire</h4>
+                  <p className="text-sm text-yellow-800 mb-3">
+                    Vos métiers nécessitent une garantie décennale obligatoire. Sans ce document, votre profil ne pourra pas être activé.
+                  </p>
+                  <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside">
+                    <li>Attestation décennale en cours de validité</li>
+                    <li>Couvrant vos métiers déclarés</li>
+                    <li>Document clair et lisible</li>
+                    <li>Format : PDF, JPG ou PNG</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sélectionner votre attestation décennale (JPG, PNG, PDF)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={handleDecennaleFileChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-orange-50 file:text-[#FF6B00]
+                      hover:file:bg-orange-100
+                      cursor-pointer"
+                  />
+                  {decennaleFile && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      📎 {decennaleFile.name} ({(decennaleFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleUploadDecennale}
+                  disabled={!decennaleFile || decennaleUploading}
+                  className="w-full bg-[#FF6B00] text-white py-3 rounded-lg font-semibold hover:bg-[#E56100] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {decennaleUploading ? (
+                    <>
+                      <svg className="animate-spin h-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Envoi en cours...
+                    </>
+                  ) : '📤 Uploader l\'attestation décennale'}
+                </button>
+
+                {decennaleError && (
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                    <p className="text-sm text-red-700">❌ {decennaleError}</p>
+                  </div>
+                )}
+
+                {decennaleSuccess && (
+                  <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
+                    <p className="text-sm text-green-700">✅ {decennaleSuccess}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       </div>
     </div>
   );

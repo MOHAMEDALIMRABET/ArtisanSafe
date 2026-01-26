@@ -226,7 +226,15 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
 
             {/* Mon profil */}
             <button
-              onClick={() => handleNavigation(isArtisan ? '/artisan/profil' : '/profil')}
+              onClick={() => {
+                // Bloquer l'accès au profil pour les artisans non vérifiés
+                if (isArtisan && user.statut !== 'verifie') {
+                  alert('⚠️ Profil non vérifié\n\nVous devez d\'abord compléter la vérification de votre profil (KBIS, CNI, RC Pro) avant d\'accéder à cette section.\n\nVous allez être redirigé vers la page de vérification.');
+                  handleNavigation('/artisan/verification');
+                } else {
+                  handleNavigation(isArtisan ? '/artisan/profil' : '/profil');
+                }
+              }}
               className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
             >
               <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,6 +246,11 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
                 />
               </svg>
               <span className="font-medium">Mon profil</span>
+              {isArtisan && user.statut !== 'verifie' && (
+                <span className="text-lg">
+                  🔒
+                </span>
+              )}
             </button>
 
             {/* Messages */}

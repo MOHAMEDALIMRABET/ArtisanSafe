@@ -160,6 +160,7 @@ export default function InscriptionPage() {
           phone: formattedPhone,
           role: 'client'
         });
+        router.push('/dashboard');
       } else {
         await authService.signUpArtisan({
           email,
@@ -178,10 +179,8 @@ export default function InscriptionPage() {
             postalCode: ''
           }
         });
+        router.push('/artisan/dashboard');
       }
-      
-      // Redirection après inscription réussie
-      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue lors de l\'inscription');
     } finally {

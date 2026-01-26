@@ -343,7 +343,7 @@ export async function approveArtisan(
       updates['verificationDocuments.idCard.verified'] = true;
     }
 
-    // Vérifier si toutes les étapes sont complètes
+    // Vérifier si toutes les étapes sont complètes (KBIS + ID Card + RC Pro)
     const allStepsComplete = 
       artisan.siretVerified &&
       artisan.contactVerification?.email?.verified &&
@@ -351,7 +351,8 @@ export async function approveArtisan(
       (documentChecked === 'both' || 
        (artisan.verificationDocuments?.kbis?.verified || documentChecked === 'kbis')) &&
       (documentChecked === 'both' || 
-       (artisan.verificationDocuments?.idCard?.verified || documentChecked === 'idCard'));
+       (artisan.verificationDocuments?.idCard?.verified || documentChecked === 'idCard')) &&
+      artisan.verificationDocuments?.rcPro?.verified;
 
     if (allStepsComplete) {
       updates.verified = true;

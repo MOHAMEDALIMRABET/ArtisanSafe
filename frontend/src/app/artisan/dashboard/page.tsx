@@ -8,6 +8,7 @@ import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
 import { useNotifications } from '@/hooks/useNotifications';
+import { artisanDoitDecennale } from '@/lib/decennale-helper';
 import type { User, Artisan } from '@/types/firestore';
 
 export default function ArtisanDashboardPage() {
@@ -30,11 +31,13 @@ export default function ArtisanDashboardPage() {
     n => (n.type === 'devis_accepte' || n.type === 'devis_refuse') && !n.lue
   ).length;
 
-  // Calculer si le profil est complètement vérifié
+  // Calculer si le profil est complètement vérifié (SANS la décennale)
+  // La décennale est un document additionnel qui ne bloque pas l'accès au profil
   const isFullyVerified = 
     artisan?.siretVerified && 
     artisan?.verificationDocuments?.kbis?.verified && 
-    artisan?.verificationDocuments?.idCard?.verified;
+    artisan?.verificationDocuments?.idCard?.verified && 
+    artisan?.verificationDocuments?.rcPro?.verified;
 
   useEffect(() => {
     loadUserData();
@@ -226,6 +229,64 @@ export default function ArtisanDashboardPage() {
           </div>
         </div>
 
+        {/* Alerte : Profil invisible car décennale manquante */}
+        {artisan?.metiers && artisanDoitDecennale(artisan.metiers) && !artisan?.verificationDocuments?.decennale?.verified && (
+          <div className="mb-6 bg-orange-50 border-l-4 border-[#FF6B00] rounded-lg p-5 shadow-md">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <span className="text-3xl">🔒</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-[#FF6B00] mb-2">
+                  🚫 Votre profil n'est PAS VISIBLE dans les recherches
+                </h3>
+                <p className="text-sm text-gray-700 mb-3">
+                  Vos métiers (<strong>{artisan.metiers.join(', ')}</strong>) nécessitent une <strong>garantie décennale obligatoire</strong>. 
+                  Tant que ce document n'est pas validé par notre équipe, <strong>votre profil reste invisible</strong> pour les clients.
+                </p>
+                
+                {!artisan?.verificationDocuments?.decennale?.url ? (
+                  <div className="bg-white rounded-lg p-3 mb-3">
+                    <p className="text-sm font-semibold text-red-700 mb-1">
+                      ❌ Attestation décennale non uploadée
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Vous devez uploader votre attestation de garantie décennale pour que votre profil soit activé.
+                    </p>
+                  </div>
+                ) : artisan?.verificationDocuments?.decennale?.rejected ? (
+                  <div className="bg-white rounded-lg p-3 mb-3">
+                    <p className="text-sm font-semibold text-red-700 mb-1">
+                      ❌ Attestation décennale rejetée
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      <strong>Raison :</strong> {artisan.verificationDocuments.decennale.rejectionReason || 'Non spécifiée'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg p-3 mb-3">
+                    <p className="text-sm font-semibold text-blue-700 mb-1">
+                      ⏳ Attestation décennale en cours de vérification
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Notre équipe examine votre document. Vous serez visible dès validation (sous 24-48h).
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => router.push('/artisan/documents')}
+                  className="bg-[#FF6B00] hover:bg-[#E56100] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  {!artisan?.verificationDocuments?.decennale?.url || artisan?.verificationDocuments?.decennale?.rejected 
+                    ? '📤 Uploader ma garantie décennale' 
+                    : '📄 Voir mes documents'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Alerte : Documents rejetés */}
         {(artisan?.verificationDocuments?.kbis?.rejected || artisan?.verificationDocuments?.idCard?.rejected) && (
           <div className="mb-6 bg-red-50 border-l-4 border-red-500 rounded-lg p-5 shadow-md">
@@ -341,6 +402,24 @@ export default function ArtisanDashboardPage() {
                       Pièce d'identité {artisan?.verificationDocuments?.idCard?.rejected ? "rejetée" : "vérifiée"}
                     </span>
                   </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={
+                      artisan?.verificationDocuments?.rcPro?.verified 
+                        ? "text-green-600" 
+                        : artisan?.verificationDocuments?.rcPro?.rejected 
+                          ? "text-red-600" 
+                          : "text-orange-600"
+                    }>
+                      {artisan?.verificationDocuments?.rcPro?.verified 
+                        ? "✅" 
+                        : artisan?.verificationDocuments?.rcPro?.rejected 
+                          ? "❌" 
+                          : "⏳"}
+                    </span>
+                    <span className="text-gray-700">
+                      Responsabilité Civile Pro {artisan?.verificationDocuments?.rcPro?.rejected ? "rejetée" : "vérifiée"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </Link>
@@ -396,7 +475,7 @@ export default function ArtisanDashboardPage() {
                 </div>
               </div>
               <div className="text-sm text-gray-500">
-                Pour compléter votre profil, vous devez d'abord vérifier votre identité (SIRET, téléphone) et uploader le KBIS et la pièce d'identité dans "Mes Documents".
+                Pour compléter votre profil, vous devez d'abord vérifier votre identité (SIRET, téléphone) et uploader le KBIS, la pièce d'identité et responsabilité civile professionnelle dans "Mes Documents".
               </div>
             </div>
           )}
@@ -439,18 +518,29 @@ export default function ArtisanDashboardPage() {
                     {(() => {
                       const kbisVerified = artisan?.verificationDocuments?.kbis?.verified === true;
                       const idVerified = artisan?.verificationDocuments?.idCard?.verified === true;
+                      const rcProVerified = artisan?.verificationDocuments?.rcPro?.verified === true;
+                      const decennaleVerified = artisan?.verificationDocuments?.decennale?.verified === true;
                       const kbisUploaded = !!artisan?.verificationDocuments?.kbis?.url;
                       const idUploaded = !!artisan?.verificationDocuments?.idCard?.url;
+                      const rcProUploaded = !!artisan?.verificationDocuments?.rcPro?.url;
+                      const decennaleUploaded = !!artisan?.verificationDocuments?.decennale?.url;
                       const kbisRejected = artisan?.verificationDocuments?.kbis?.rejected === true;
                       const idRejected = artisan?.verificationDocuments?.idCard?.rejected === true;
+                      const rcProRejected = artisan?.verificationDocuments?.rcPro?.rejected === true;
+                      const decennaleRejected = artisan?.verificationDocuments?.decennale?.rejected === true;
                       
-                      // Les deux vérifiés : pas de badge
-                      if (kbisVerified && idVerified) {
+                      // Vérifier si la décennale est requise
+                      const needsDecennale = artisan?.metiers && artisanDoitDecennale(artisan.metiers);
+                      
+                      // Tous vérifiés (incluant décennale si requise) : pas de badge
+                      const allVerified = kbisVerified && idVerified && rcProVerified && (!needsDecennale || decennaleVerified);
+                      if (allVerified) {
                         return null;
                       }
                       
                       // Au moins un document rejeté : badge "À compléter"
-                      if (kbisRejected || idRejected) {
+                      const hasRejected = kbisRejected || idRejected || rcProRejected || (needsDecennale && decennaleRejected);
+                      if (hasRejected) {
                         return (
                           <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
                             À compléter
@@ -461,8 +551,10 @@ export default function ArtisanDashboardPage() {
                       // Au moins un document uploadé et en attente de vérification : badge "En cours de vérification"
                       const kbisEnCours = kbisUploaded && !kbisVerified && !kbisRejected;
                       const idEnCours = idUploaded && !idVerified && !idRejected;
+                      const rcProEnCours = rcProUploaded && !rcProVerified && !rcProRejected;
+                      const decennaleEnCours = needsDecennale && decennaleUploaded && !decennaleVerified && !decennaleRejected;
                       
-                      if (kbisEnCours || idEnCours) {
+                      if (kbisEnCours || idEnCours || rcProEnCours || decennaleEnCours) {
                         return (
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
                             En cours de vérification
@@ -478,7 +570,9 @@ export default function ArtisanDashboardPage() {
                       );
                     })()}
                   </div>
-                  <p className="text-sm text-gray-600">KBIS & Pièce d'identité</p>
+                  <p className="text-sm text-gray-600">
+                    KBIS, Pièce d'identité, RC Pro{artisan?.metiers && artisanDoitDecennale(artisan.metiers) ? ' & Garantie Décennale' : ''}
+                  </p>
                 </div>
               </div>
                 {artisan && (
@@ -499,6 +593,25 @@ export default function ArtisanDashboardPage() {
                         Pièce d'identité {artisan.verificationDocuments?.idCard?.verified ? "vérifiée" : "requise"}
                       </span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className={artisan.verificationDocuments?.rcPro?.verified ? "text-green-600" : "text-orange-600"}>
+                        {artisan.verificationDocuments?.rcPro?.verified ? "✅" : "🛡️"}
+                      </span>
+                      <span className="text-gray-700">
+                        Responsabilité Civile Pro {artisan.verificationDocuments?.rcPro?.verified ? "vérifiée" : "requise"}
+                      </span>
+                    </div>
+                    {/* Décennale conditionnelle */}
+                    {artisan.metiers && artisanDoitDecennale(artisan.metiers) && (
+                      <div className="flex items-center gap-2">
+                        <span className={artisan.verificationDocuments?.decennale?.verified ? "text-green-600" : "text-orange-600"}>
+                          {artisan.verificationDocuments?.decennale?.verified ? "✅" : "🏗️"}
+                        </span>
+                        <span className="text-gray-700">
+                          Garantie Décennale {artisan.verificationDocuments?.decennale?.verified ? "vérifiée" : "requise"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

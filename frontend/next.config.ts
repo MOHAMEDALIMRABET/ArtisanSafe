@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Configuration Turbopack (Next.js 16+)
+  turbopack: {},
+  
   webpack: (config, { isServer }) => {
     // Ignorer les modules Node.js dans le bundle client
     if (!isServer) {

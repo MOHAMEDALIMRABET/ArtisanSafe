@@ -88,12 +88,12 @@ Les champs suivants ont été **complètement retirés** du code :
 }
 ```
 
-### Admin valide Carte ID
+### Admin valide RC Pro (activation automatique)
 ```typescript
 {
-  verificationDocuments.idCard.verified: true,
+  verificationDocuments.rcPro.verified: true,
   
-  // ✅ Les 2 documents sont validés → activation automatique
+  // ✅ Les 3 documents sont validés (KBIS + ID + RC Pro) → activation automatique
   verified: true,
   verificationStatus: 'approved',
   verificationDate: Timestamp.now()
@@ -158,7 +158,7 @@ where('verified', '==', false) // Artisans en attente
 
 1. **Un seul champ de vérification** : `verified` (plus simple)
 2. **Workflow clair** : `pending` → `approved` | `rejected`
-3. **Activation automatique** : Dès que les 2 documents sont validés
+3. **Activation automatique** : Dès que les 3 documents (KBIS + ID + RC Pro) sont validés
 4. **Désactivation immédiate** : Si un document est rejeté
 5. **Cohérence** : Toutes les requêtes utilisent le même champ
 
@@ -168,7 +168,8 @@ where('verified', '==', false) // Artisans en attente
 
 - [ ] Inscription d'un nouvel artisan → `verified: false`
 - [ ] Validation KBIS uniquement → `verified` reste `false`
-- [ ] Validation Carte ID après KBIS → `verified` passe à `true`
+- [ ] Validation Carte ID après KBIS → `verified` reste `false`
+- [ ] Validation RC Pro après KBIS + ID → `verified` passe à `true`
 - [ ] Recherche artisan → Apparaît uniquement si `verified: true`
 - [ ] Rejet d'un document → `verified` passe à `false`
 - [ ] Badge "Vérifié" affiché sur profil → Utilise `artisan.verified`

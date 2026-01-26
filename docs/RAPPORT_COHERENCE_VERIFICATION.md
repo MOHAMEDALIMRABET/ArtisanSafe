@@ -118,15 +118,16 @@ frontend/src/lib/firebase/admin-service.ts:154
   verificationStatus: 'approved',
   verificationDate: Timestamp.now(),
   verificationDocuments: {
-    kbis: { verified: true },   // ✅
-    idCard: { verified: true }  // ✅
+    kbis: { verified: true },    // ✅
+    idCard: { verified: true },  // ✅
+    rcPro: { verified: true }    // ✅
   }
 }
 ```
-**Logique** : `verification-service.ts:668-686`
+**Logique** : `verification-service.ts:841`
 ```typescript
-// Si les 2 documents sont validés → activer l'artisan
-if (kbisVerified && idVerified) {
+// Si les 3 documents sont validés (KBIS + ID + RC Pro) → activer l'artisan
+if (kbisVerified && idVerified && rcProVerified) {
   await updateDoc(artisanRef, {
     verified: true,
     verificationStatus: 'approved',

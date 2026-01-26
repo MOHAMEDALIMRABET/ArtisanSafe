@@ -32,6 +32,7 @@ function translateAuthError(error: any): string {
     case 'auth/user-disabled':
       return 'Ce compte a été désactivé.';
     case 'auth/user-not-found':
+    case 'auth/invalid-credential':
       return 'Aucun compte ne correspond à cette adresse email.';
     case 'auth/wrong-password':
       return 'Mot de passe incorrect.';
