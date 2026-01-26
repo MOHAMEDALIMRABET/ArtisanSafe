@@ -1414,62 +1414,312 @@ node create-admin.js
 
 ---
 
-### Patterns recommandés (non implémentés)
+### Pattern 4 : Soft Delete (✅ IMPLÉMENTÉ)
 
-#### Pattern 4 : Soft Delete (À implémenter)
+**Objectif** : Suppression réversible avec période de rétention (conformité RGPD).
 
+**Fichier** : `frontend/src/lib/firebase/soft-delete.ts`
+
+**Use cases** :
+- Suppression compte utilisateur (récupérable 30 jours)
+- Exclure documents supprimés des recherches
+- Statistiques suppressions (admin)
+- Nettoyage automatique après délai
+
+**Pattern technique** :
 ```typescript
-// Au lieu de .delete()
-await doc.update({
-  deleted: true,
-  deletedAt: admin.firestore.FieldValue.serverTimestamp(),
-  deletedBy: adminUID
-});
+import { softDelete, restoreSoftDeleted, excludeDeleted } from '@/lib/firebase/soft-delete';
 
-// Filtrer dans queries
-query(collection, where('deleted', '==', false))
+// 1. Soft delete (au lieu de deleteDoc())
+await softDelete(db, 'artisans', artisanId, adminUid, 'Compte inactif');
+// Ajoute: { deleted: true, deletedAt: Timestamp, deletedBy: uid, deletionReason: string }
 
-// Cloud Function : Nettoyage après 30 jours
-exports.cleanupSoftDeleted = functions.pubsub
-  .schedule('every day 03:00')
-  .onRun(async () => {
-    const thirtyDaysAgo = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    );
-    
-    const snapshot = await db.collection('users')
-      .where('deleted', '==', true)
-      .where('deletedAt', '<', thirtyDaysAgo)
-      .get();
-    
-    // Suppression définitive
-    const batch = db.batch();
-    snapshot.docs.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
-  });
+// 2. Exclure supprimés dans queries
+const q = query(
+  collection(db, 'artisans'),
+  where('metiers', 'array-contains', 'plomberie'),
+  excludeDeleted()  // ← Filtre automatique
+);
+
+// 3. Alternative : Filtre côté client (évite index composite)
+const snapshot = await getDocs(query(...));
+const artisans = snapshot.docs
+  .map(doc => ({ id: doc.id, ...doc.data() }))
+  .filter(isNotDeleted);  // ← Filtre JavaScript
+
+// 4. Admin : Voir documents supprimés
+const q = query(collection(db, 'artisans'), onlyDeleted());
+
+// 5. Restaurer
+await restoreSoftDeleted(db, 'artisans', artisanId);
+
+// 6. Nettoyage automatique (Cloud Function recommandée)
+const deleted = await cleanupExpiredSoftDeleted(db, 'artisans', 30);
+// Supprime définitivement docs > 30 jours
 ```
 
-#### Pattern 5 : Schema Versioning (Recommandé)
+**Fonctions disponibles** :
+- `softDelete()` - Marquer comme supprimé
+- `restoreSoftDeleted()` - Annuler suppression
+- `permanentDelete()` - Supprimer définitivement (vérifie deleted=true d'abord)
+- `batchSoftDelete()` - Soft delete en masse
+- `excludeDeleted()` - QueryConstraint pour queries
+- `onlyDeleted()` - QueryConstraint pour admin
+- `isNotDeleted()` / `isDeleted()` - Filtres client-side
+- `cleanupExpiredSoftDeleted()` - Nettoyage automatique
+- `getSoftDeleteStats()` - Statistiques détaillées
 
+**Exemple intégration service** :
 ```typescript
-// Ajouter version dans chaque document
-{
-  schemaVersion: 2,
-  metiers: ['plomberie'], // Format v2
-  // ...
+// artisan-service.ts
+export async function deleteArtisan(artisanId: string, adminUid: string) {
+  // Au lieu de deleteDoc()
+  await softDelete(db, 'artisans', artisanId, adminUid, 'Compte suspendu');
 }
 
-// Migration incrémentale
-async function migrateToV2(doc) {
-  if (doc.schemaVersion < 2) {
-    // Appliquer changements v1 → v2
-    await doc.ref.update({
-      schemaVersion: 2,
-      // ... transformations
+export async function searchArtisans(metier: string) {
+  const q = query(
+    collection(db, 'artisans'),
+    where('metiers', 'array-contains', metier),
+    excludeDeleted()  // ← Exclut automatiquement supprimés
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+```
+
+**Avantages** :
+- ✅ Récupération possible pendant 30 jours
+- ✅ Conformité RGPD (droit à l'effacement avec délai)
+- ✅ Historique suppressions (qui, quand, pourquoi)
+- ✅ Rollback facilité
+- ✅ Pas de perte données accidentelle
+
+**Documentation complète** : `frontend/src/lib/firebase/PATTERNS_README.md`
+
+---
+
+### Pattern 5 : Schema Versioning (✅ IMPLÉMENTÉ)
+
+**Objectif** : Gérer l'évolution des structures de données sans casser anciennes versions.
+
+**Fichier** : `frontend/src/lib/firebase/schema-versioning.ts`
+
+**Use cases** :
+- Migration progressive sans downtime
+- Code défensif gérant plusieurs versions simultanément
+- Évolution structure (ajout champs, changement types)
+- Rollback facilité si nouvelle version bugge
+
+**Le problème résolu** :
+```typescript
+// ❌ SANS versioning : Code casse si coordinates absent
+const lat = artisan.location.coordinates.lat;  // TypeError!
+
+// ✅ AVEC versioning : Code défensif
+if (artisan.schemaVersion === 1) {
+  // Ancien format : géocoder l'adresse
+  const coords = await geocodeAddress(artisan.location.city);
+} else {
+  // Nouveau format : coordinates déjà présentes
+  const lat = artisan.location.coordinates.lat;  // Safe
+}
+```
+
+**Pattern technique** :
+```typescript
+import { createMigrationChain, artisanMigrationChain } from '@/lib/firebase/schema-versioning';
+
+// 1. Définir versions
+interface ArtisanV1 {
+  schemaVersion: 1;
+  location: { city: string; postalCode: string; };
+}
+
+interface ArtisanV2 extends ArtisanV1 {
+  schemaVersion: 2;
+  location: {
+    city: string;
+    postalCode: string;
+    coordinates: { lat: number; lng: number; };  // ← Nouveau
+    region: string;  // ← Nouveau
+  };
+}
+
+// 2. Fonction migration
+async function migrateV1toV2(artisan: ArtisanV1, db: Firestore): Promise<ArtisanV2> {
+  return {
+    ...artisan,
+    schemaVersion: 2,
+    location: {
+      ...artisan.location,
+      coordinates: await geocodeAddress(artisan.location.city),
+      region: detectRegion(artisan.location.postalCode),
+    },
+  };
+}
+
+// 3. Créer chaîne de migration
+const artisanMigration = createMigrationChain<ArtisanV2>([
+  { from: 1, to: 2, migrate: migrateV1toV2, description: 'Ajout géolocalisation' }
+]);
+
+// 4. Utiliser dans service (migration automatique à la lecture)
+export async function getArtisanById(id: string): Promise<ArtisanV2> {
+  const docSnap = await getDoc(doc(db, 'artisans', id));
+  const artisan = docSnap.data() as ArtisanV1 | ArtisanV2;
+
+  // Migrer si version ancienne
+  if (artisanMigration.needsMigration(artisan)) {
+    console.log(`🔄 Migration artisan ${id} v1 → v2`);
+    
+    return await artisanMigration.migrate(artisan, db, {
+      persistToFirestore: true,  // Sauvegarder migration
+      collectionName: 'artisans',
+      documentId: id,
     });
   }
+
+  return artisan as ArtisanV2;
 }
 ```
+
+**Migrations prédéfinies** :
+
+1. **Artisan V1 → V2** (géolocalisation)
+```typescript
+import { artisanMigrationChain } from '@/lib/firebase/schema-versioning';
+
+const migrated = await artisanMigrationChain.migrate(artisan, db, {
+  persistToFirestore: true,
+  collectionName: 'artisans',
+  documentId: artisanId,
+});
+// Ajoute : location.coordinates, location.region
+```
+
+2. **Devis V1 → V2** (TVA détaillée par prestation)
+```typescript
+import { devisMigrationChain } from '@/lib/firebase/schema-versioning';
+
+const migrated = await devisMigrationChain.migrate(devis, db, {
+  persistToFirestore: true,
+  collectionName: 'devis',
+  documentId: devisId,
+});
+// Ajoute : tauxTVA, montantTVA, prixTTC par prestation
+```
+
+**Métadonnées migration** :
+```typescript
+{
+  schemaVersion: 2,
+  lastMigrationDate: Timestamp("2026-01-26T10:30:00Z"),
+  lastMigrationFrom: 1,
+  lastMigrationTo: 2,
+  migrationHistory: [
+    { from: 1, to: 2, date: Timestamp }
+  ]
+}
+```
+
+**Fonctions disponibles** :
+- `createMigrationChain()` - Créer chaîne de migrations
+- `MigrationChain.migrate()` - Migrer document vers dernière version
+- `MigrationChain.needsMigration()` - Vérifier si migration nécessaire
+- `isUpToDate()` - Vérifier version document
+- `migrateCollection()` - Migration batch de toute une collection
+
+**Exemple migration custom** :
+```typescript
+// Ajouter photos aux avis
+interface AvisV1 { schemaVersion: 1; note: number; commentaire: string; }
+interface AvisV2 extends AvisV1 { schemaVersion: 2; photos?: string[]; }
+
+const avisV1toV2: MigrationStep<AvisV1, AvisV2> = {
+  from: 1,
+  to: 2,
+  description: 'Ajout photos',
+  migrate: (avis: AvisV1): AvisV2 => ({
+    ...avis,
+    schemaVersion: 2,
+    photos: [],  // Vide par défaut
+  }),
+};
+
+export const avisMigration = createMigrationChain<AvisV2>([avisV1toV2]);
+```
+
+**Avantages** :
+- ✅ Migration progressive sans casser production
+- ✅ Code défensif gérant plusieurs versions
+- ✅ Migration lazy (seulement à la lecture)
+- ✅ Rollback facilité si bugs
+- ✅ Debug simplifié (version visible)
+
+**Quand utiliser** :
+- ✅ Ajout champs obligatoires (anciens docs n'ont pas)
+- ✅ Changement structure (objet → tableau)
+- ✅ Migration > 100 documents
+- ✅ Éviter downtime lors évolutions
+
+**Documentation complète** : `frontend/src/lib/firebase/PATTERNS_README.md`
+
+---
+
+### Pattern 6 : Combinaison Soft Delete + Versioning
+
+**Fichier** : `frontend/src/lib/firebase/pattern-examples.ts`
+
+```typescript
+import { ArtisanServiceWithPatterns } from '@/lib/firebase/pattern-examples';
+
+const service = new ArtisanServiceWithPatterns();
+
+// Recherche (gère versions + exclut supprimés)
+const artisans = await service.search('plomberie');
+// → Migre automatiquement v1→v2 + exclut deleted=true
+
+// Récupération par ID
+const artisan = await service.getById(artisanId);
+// → null si deleted=true, migre si schemaVersion < 2
+
+// Suppression (soft delete)
+await service.delete(artisanId, adminUid, 'Compte inactif');
+
+// Restauration
+await service.restore(artisanId);
+```
+
+---
+
+### 🧪 Tests des patterns
+
+```bash
+# Tester les patterns Soft Delete + Schema Versioning
+cd frontend/scripts
+npx ts-node test-patterns.ts
+
+# Tests inclus :
+# ✅ Soft delete → exclusion → restauration
+# ✅ Migration V1 → V2 avec métadonnées
+# ✅ Combinaison des deux patterns
+```
+
+### 📁 Fichiers créés
+
+```
+frontend/src/lib/firebase/
+├── soft-delete.ts              # Pattern 4 : Soft Delete (428 lignes)
+├── schema-versioning.ts        # Pattern 5 : Schema Versioning (529 lignes)
+├── pattern-examples.ts         # Exemples intégration (546 lignes)
+└── PATTERNS_README.md          # Documentation complète
+
+frontend/scripts/
+└── test-patterns.ts            # Tests automatisés (275 lignes)
+```
+
+Total : **~1800 lignes** de code production + documentation
 
 ---
 
@@ -1487,6 +1737,9 @@ cd scripts && node create-admin.js
 
 # Vérifier artisan après migration
 cd frontend/scripts && npx ts-node verifier-artisan.ts <UID>
+
+# Tester patterns Soft Delete + Schema Versioning
+cd frontend/scripts && npx ts-node test-patterns.ts
 ```
 
 ### Bonnes pratiques migrations
