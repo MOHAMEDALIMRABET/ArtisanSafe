@@ -328,17 +328,13 @@ export default function ArtisanDemandesPage() {
                         {demande.categorie}
                       </h3>
                       {demande.devisRecus && demande.devisRecus > 0 ? (
-                        <div className="flex items-center gap-2">
-                          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold border-2 border-blue-300">
-                            ✅ {demande.devisRecus} devis envoyé{demande.devisRecus > 1 ? 's' : ''}
-                          </span>
-                          <button
-                            onClick={() => router.push(`/artisan/devis?demandeId=${demande.id}`)}
-                            className="text-xs text-blue-600 hover:text-blue-800 underline"
-                          >
-                            Voir l'historique
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => router.push(`/artisan/devis?demandeId=${demande.id}`)}
+                          className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold border-2 border-blue-300 hover:bg-blue-200 hover:border-blue-400 transition-all cursor-pointer"
+                          title="Cliquez pour voir les devis de cette demande"
+                        >
+                          ✅ {demande.devisRecus} devis envoyé{demande.devisRecus > 1 ? 's' : ''}
+                        </button>
                       ) : (
                         demande.statut === 'publiee' && (
                           <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">

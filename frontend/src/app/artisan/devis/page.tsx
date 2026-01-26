@@ -27,6 +27,7 @@ export default function MesDevisPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlightedDevisId = searchParams?.get('devisId');
+  const filtreDemandeId = searchParams?.get('demandeId');
   const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('devis');
   const [devis, setDevis] = useState<Devis[]>([]);
@@ -117,6 +118,11 @@ export default function MesDevisPage() {
         id: doc.id,
         ...doc.data(),
       } as Devis));
+
+      // Filtrer par demandeId si présent dans l'URL (navigation depuis page demandes)
+      if (filtreDemandeId) {
+        devisData = devisData.filter(d => d.demandeId === filtreDemandeId);
+      }
 
       // Trier par date de création décroissante
       devisData.sort((a, b) => {
