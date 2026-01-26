@@ -1,0 +1,467 @@
+'use client';
+
+/**
+ * Page de messagerie avec système anti-bypass intégré
+ * Permet la communication sécurisée entre artisans et clients
+ */
+
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  addDoc, 
+  orderBy, 
+  onSnapshot,
+  doc,
+  getDoc,
+  updateDoc,
+  Timestamp,
+  or,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { validateMessage } from '@/lib/antiBypassValidator';
+
+interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  createdAt: Timestamp;
+  read: boolean;
+}
+
+interface Conversation {
+  id: string;
+  participants: string[];
+  participantNames: Record<string, string>;
+  lastMessage: string;
+  lastMessageDate: Timestamp;
+  unreadCount?: number;
+}
+
+interface UserInfo {
+  uid: string;
+  displayName: string;
+  email: string;
+  photoURL?: string;
+}
+
+export default function MessagesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetUserId = searchParams?.get('userId');
+  const { user, loading: authLoading } = useAuth();
+  
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [otherUserInfo, setOtherUserInfo] = useState<UserInfo | null>(null);
+  const [messageContent, setMessageContent] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [validationWarning, setValidationWarning] = useState<string | null>(null);
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Charger les conversations de l'utilisateur
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    const q = query(
+      collection(db, 'conversations'),
+      or(
+        where('participants', 'array-contains', user.uid)
+      )
+    );
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const convs: Conversation[] = [];
+      
+      for (const docSnap of snapshot.docs) {
+        const data = docSnap.data();
+        convs.push({
+          id: docSnap.id,
+          participants: data.participants || [],
+          participantNames: data.participantNames || {},
+          lastMessage: data.lastMessage || '',
+          lastMessageDate: data.lastMessageDate || Timestamp.now(),
+          unreadCount: data.unreadCount?.[user.uid] || 0,
+        });
+      }
+
+      // Trier par date de dernier message
+      convs.sort((a, b) => {
+        const dateA = a.lastMessageDate?.toMillis() || 0;
+        const dateB = b.lastMessageDate?.toMillis() || 0;
+        return dateB - dateA;
+      });
+
+      setConversations(convs);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, authLoading]);
+
+  // Si userId fourni dans l'URL, créer/ouvrir conversation
+  useEffect(() => {
+    if (!user || !targetUserId || conversations.length === 0) return;
+
+    // Chercher conversation existante
+    const existingConv = conversations.find(c => 
+      c.participants.includes(targetUserId)
+    );
+
+    if (existingConv) {
+      setSelectedConversation(existingConv.id);
+    } else {
+      // Créer nouvelle conversation
+      createConversation(targetUserId);
+    }
+  }, [targetUserId, user, conversations]);
+
+  // Charger les messages de la conversation sélectionnée
+  useEffect(() => {
+    if (!selectedConversation) {
+      setMessages([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'messages'),
+      where('conversationId', '==', selectedConversation),
+      orderBy('createdAt', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs: Message[] = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      } as Message));
+
+      setMessages(msgs);
+      
+      // Marquer comme lu
+      markAsRead(selectedConversation);
+    });
+
+    return () => unsubscribe();
+  }, [selectedConversation]);
+
+  // Charger les infos de l'autre utilisateur
+  useEffect(() => {
+    if (!selectedConversation || !user) return;
+
+    const conv = conversations.find(c => c.id === selectedConversation);
+    if (!conv) return;
+
+    const otherUserId = conv.participants.find(p => p !== user.uid);
+    if (!otherUserId) return;
+
+    loadUserInfo(otherUserId);
+  }, [selectedConversation, user, conversations]);
+
+  // Auto-scroll vers le bas
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Créer une nouvelle conversation
+  const createConversation = async (otherUserId: string) => {
+    if (!user) return;
+
+    try {
+      // Charger infos des deux utilisateurs
+      const [currentUserDoc, otherUserDoc] = await Promise.all([
+        getDoc(doc(db, 'users', user.uid)),
+        getDoc(doc(db, 'users', otherUserId)),
+      ]);
+
+      const currentUserData = currentUserDoc.data();
+      const otherUserData = otherUserDoc.data();
+
+      const conversationRef = await addDoc(collection(db, 'conversations'), {
+        participants: [user.uid, otherUserId],
+        participantNames: {
+          [user.uid]: currentUserData?.nom || currentUserData?.email || 'Utilisateur',
+          [otherUserId]: otherUserData?.nom || otherUserData?.email || 'Utilisateur',
+        },
+        lastMessage: '',
+        lastMessageDate: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      });
+
+      setSelectedConversation(conversationRef.id);
+    } catch (error) {
+      console.error('Erreur création conversation:', error);
+    }
+  };
+
+  // Charger les infos d'un utilisateur
+  const loadUserInfo = async (userId: string) => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setOtherUserInfo({
+          uid: userId,
+          displayName: data.nom || data.prenom || data.email || 'Utilisateur',
+          email: data.email,
+          photoURL: data.photoURL,
+        });
+      }
+    } catch (error) {
+      console.error('Erreur chargement utilisateur:', error);
+    }
+  };
+
+  // Marquer les messages comme lus
+  const markAsRead = async (conversationId: string) => {
+    if (!user) return;
+
+    try {
+      const convRef = doc(db, 'conversations', conversationId);
+      await updateDoc(convRef, {
+        [`unreadCount.${user.uid}`]: 0,
+      });
+    } catch (error) {
+      console.error('Erreur marquer comme lu:', error);
+    }
+  };
+
+  // Valider le message en temps réel
+  const handleMessageChange = (value: string) => {
+    setMessageContent(value);
+    
+    const validation = validateMessage(value);
+    if (!validation.isValid) {
+      setValidationWarning(validation.message || '');
+    } else {
+      setValidationWarning(null);
+    }
+  };
+
+  // Envoyer un message
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user || !selectedConversation || !messageContent.trim()) return;
+
+    // Validation anti-bypass
+    const validation = validateMessage(messageContent);
+    if (!validation.isValid) {
+      alert(validation.message);
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      const conv = conversations.find(c => c.id === selectedConversation);
+      if (!conv) return;
+
+      const receiverId = conv.participants.find(p => p !== user.uid);
+      if (!receiverId) return;
+
+      // Créer le message
+      await addDoc(collection(db, 'messages'), {
+        conversationId: selectedConversation,
+        senderId: user.uid,
+        receiverId,
+        content: messageContent.trim(),
+        createdAt: serverTimestamp(),
+        read: false,
+      });
+
+      // Mettre à jour la conversation
+      await updateDoc(doc(db, 'conversations', selectedConversation), {
+        lastMessage: messageContent.trim().substring(0, 100),
+        lastMessageDate: serverTimestamp(),
+        [`unreadCount.${receiverId}`]: (conv.unreadCount || 0) + 1,
+      });
+
+      setMessageContent('');
+      setValidationWarning(null);
+    } catch (error) {
+      console.error('Erreur envoi message:', error);
+      alert('Erreur lors de l\'envoi du message');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    router.push('/connexion');
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 pt-20">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-[#2C3E50] mb-6">💬 Messagerie</h1>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+          {/* Liste des conversations */}
+          <div className="lg:col-span-1 bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="bg-[#2C3E50] text-white p-4">
+              <h2 className="font-semibold">Conversations</h2>
+            </div>
+            
+            <div className="overflow-y-auto h-full">
+              {loading ? (
+                <div className="p-4 text-center text-gray-500">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF6B00] mx-auto mb-2"></div>
+                  Chargement...
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">
+                  <svg className="w-16 h-16 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p>Aucune conversation</p>
+                </div>
+              ) : (
+                conversations.map((conv) => {
+                  const otherUserId = conv.participants.find(p => p !== user.uid);
+                  const otherUserName = otherUserId ? conv.participantNames[otherUserId] : 'Utilisateur';
+                  
+                  return (
+                    <button
+                      key={conv.id}
+                      onClick={() => setSelectedConversation(conv.id)}
+                      className={`w-full p-4 border-b hover:bg-gray-50 transition text-left ${
+                        selectedConversation === conv.id ? 'bg-blue-50 border-l-4 border-[#FF6B00]' : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-[#2C3E50]">{otherUserName}</span>
+                        {conv.unreadCount && conv.unreadCount > 0 && (
+                          <span className="bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                            {conv.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 truncate">{conv.lastMessage || 'Aucun message'}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {conv.lastMessageDate?.toDate().toLocaleDateString('fr-FR')}
+                      </p>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-md flex flex-col overflow-hidden">
+            {selectedConversation && otherUserInfo ? (
+              <>
+                {/* Header */}
+                <div className="bg-[#2C3E50] text-white p-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-semibold">{otherUserInfo.displayName}</h2>
+                    <p className="text-sm text-gray-300">{otherUserInfo.email}</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedConversation(null)}
+                    className="lg:hidden text-white hover:text-gray-300"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {messages.map((msg) => {
+                    const isOwn = msg.senderId === user.uid;
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                            isOwn
+                              ? 'bg-[#FF6B00] text-white'
+                              : 'bg-gray-200 text-[#2C3E50]'
+                          }`}
+                        >
+                          <p className="break-words">{msg.content}</p>
+                          <p className={`text-xs mt-1 ${isOwn ? 'text-orange-100' : 'text-gray-500'}`}>
+                            {msg.createdAt?.toDate().toLocaleTimeString('fr-FR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Avertissement anti-bypass */}
+                {validationWarning && (
+                  <div className="px-4 py-2 bg-red-50 border-t-2 border-red-500">
+                    <p className="text-sm text-red-700 whitespace-pre-line">{validationWarning}</p>
+                  </div>
+                )}
+
+                {/* Formulaire */}
+                <form onSubmit={handleSendMessage} className="p-4 border-t bg-gray-50">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={messageContent}
+                      onChange={(e) => handleMessageChange(e.target.value)}
+                      placeholder="Écrivez votre message..."
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                      disabled={sending}
+                    />
+                    <button
+                      type="submit"
+                      disabled={sending || !messageContent.trim() || !!validationWarning}
+                      className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {sending ? '⏳' : '📤'} Envoyer
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    🛡️ Système anti-bypass actif : le partage de coordonnées personnelles est interdit
+                  </p>
+                </form>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <svg className="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p className="text-lg font-medium">Sélectionnez une conversation</p>
+                  <p className="text-sm text-gray-400 mt-2">ou créez-en une nouvelle</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
