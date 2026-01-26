@@ -27,7 +27,6 @@ export default function MesDevisPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlightedDevisId = searchParams?.get('devisId');
-  const filtreDemandeId = searchParams?.get('demandeId'); // Filtre par demande
   const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('devis');
   const [devis, setDevis] = useState<Devis[]>([]);
@@ -118,12 +117,6 @@ export default function MesDevisPage() {
         id: doc.id,
         ...doc.data(),
       } as Devis));
-
-      // Filtrer par demandeId si présent dans l'URL
-      if (filtreDemandeId) {
-        devisData = devisData.filter(d => d.demandeId === filtreDemandeId);
-        console.log(`🔍 Filtrage par demande ${filtreDemandeId}: ${devisData.length} devis trouvé(s)`);
-      }
 
       // Trier par date de création décroissante
       devisData.sort((a, b) => {
@@ -585,39 +578,6 @@ export default function MesDevisPage() {
           </div>
         </div>
 
-        {/* Bannière de filtrage par demande */}
-        {filtreDemandeId && !highlightedDevisId && (
-          <div className="mb-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-lg shadow-lg flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-white bg-opacity-20 p-2 rounded-full">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-bold">🎯 Filtrage actif - Devis d'une demande spécifique</p>
-                <p className="text-sm text-white text-opacity-90">
-                  Affichage des {devis.length} devis liés à cette demande uniquement
-                  {demandesInfo[filtreDemandeId] && (
-                    <span className="ml-2 bg-white bg-opacity-20 px-2 py-0.5 rounded text-white font-semibold">
-                      📋 {demandesInfo[filtreDemandeId].titre}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => router.push('/artisan/devis')}
-              className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition flex items-center gap-2 text-white"
-            >
-              <span className="text-sm font-semibold">Voir tous les devis</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
-
         {/* Statistiques rapides - Cliquables pour filtrer - Masquées si devis spécifique */}
         {activeTab === 'devis' && !highlightedDevisId && (
           <>
@@ -900,7 +860,7 @@ export default function MesDevisPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {d.statut === 'refuse' && d.typeRefus === 'revision' && d.demandeId ? (
                           <button
-                            onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${d.demandeId}`)}
+                            onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${d.demandeId}&revisionDevisId=${d.id}`)}
                             className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-xs font-semibold"
                           >
                             📝 Créer révision

@@ -144,6 +144,7 @@ export default function NouveauDevisPage() {
   const searchParams = useSearchParams();
   const demandeId = searchParams?.get('demandeId');
   const devisBrouillonId = searchParams?.get('devisId'); // ID du brouillon à modifier
+  const revisionDevisId = searchParams?.get('revisionDevisId'); // ID du devis à réviser
   const { user, loading: authLoading } = useAuth();
 
   // États
@@ -152,6 +153,7 @@ export default function NouveauDevisPage() {
   const [demande, setDemande] = useState<Demande | null>(null);
   const [ancienDevisId, setAncienDevisId] = useState<string | null>(null);
   const [modeEdition, setModeEdition] = useState(false); // true si modification d'un brouillon
+  const [estPremierDevis, setEstPremierDevis] = useState(true); // true si aucun devis existant pour cette demande
 
   // Formulaire
   const [titre, setTitre] = useState('');
@@ -191,7 +193,15 @@ export default function NouveauDevisPage() {
         return;
       }
 
-      // Cas 2 : Création d'un nouveau devis depuis une demande
+      // Cas 2 : Création d'une révision
+      if (revisionDevisId && user) {
+        console.log('🔄 Mode RÉVISION - Chargement devis original:', revisionDevisId);
+        setEstRevision(true);
+        await chargerDevisPourRevision(revisionDevisId);
+        return;
+      }
+
+      // Cas 3 : Création d'un nouveau devis depuis une demande
       if (!demandeId || !user) {
         console.log('❌ Pas de demandeId ou user:', { demandeId, user: user?.uid });
         return;
@@ -358,6 +368,12 @@ export default function NouveauDevisPage() {
         // Charger les variantes existantes pour cette demande
         await chargerVariantesExistantes(demandeId, user.uid);
 
+        // Si c'est une révision, charger le devis original et auto-activer la variante
+        if (revisionDevisId) {
+          console.log('🔄 Mode révision détecté, devis original:', revisionDevisId);
+          await chargerDevisOriginalPourRevision(revisionDevisId);
+        }
+
         console.log('✅ Toutes les données chargées avec succès');
 
       } catch (error) {
@@ -396,6 +412,9 @@ export default function NouveauDevisPage() {
         d.statut !== 'annule' && d.statut !== 'remplace'
       );
       
+      // Déterminer si c'est le premier devis
+      setEstPremierDevis(devisActifs.length === 0);
+      
       if (devisActifs.length > 0) {
         // Il existe déjà des devis pour cette demande
         console.log(`📊 ${devisActifs.length} devis existant(s) pour cette demande`);
@@ -414,6 +433,47 @@ export default function NouveauDevisPage() {
       }
     } catch (error) {
       console.error('❌ Erreur chargement devis existants:', error);
+    }
+  };
+
+  /**
+   * Charger le devis original pour créer une révision
+   */
+  const chargerDevisOriginalPourRevision = async (devisOriginalId: string) => {
+    try {
+      console.log('🔄 Chargement devis original pour révision:', devisOriginalId);
+      
+      const devisDoc = await getDoc(doc(db, 'devis', devisOriginalId));
+      if (!devisDoc.exists()) {
+        console.error('❌ Devis original introuvable');
+        return;
+      }
+
+      const devisOriginal = { id: devisDoc.id, ...devisDoc.data() } as Devis;
+      
+      // Auto-activer le mode variante
+      setCreerVariante(true);
+      setVarianteLabel('Révision suite à refus');
+      setAncienDevisId(devisOriginalId);
+      
+      // Pré-remplir le formulaire avec les données du devis original
+      setTitre(devisOriginal.titre || '');
+      setMatierePremiere(devisOriginal.matierePremiere || '');
+      setMainOeuvre(devisOriginal.mainOeuvre || '');
+      setDescription(devisOriginal.description || '');
+      setLignes(devisOriginal.lignes || []);
+      setDelaiRealisation(devisOriginal.delaiRealisation || '');
+      
+      if (devisOriginal.dateDebutPrevue) {
+        const dateDebut = devisOriginal.dateDebutPrevue.toDate();
+        setDateDebutPrevue(dateDebut.toISOString().split('T')[0]);
+      }
+      
+      setConditions(devisOriginal.conditions || '');
+      
+      console.log('✅ Devis original chargé pour révision, variante auto-activée');
+    } catch (error) {
+      console.error('❌ Erreur chargement devis original:', error);
     }
   };
 
@@ -501,6 +561,84 @@ export default function NouveauDevisPage() {
     } catch (error) {
       console.error('❌ Erreur chargement brouillon:', error);
       alert('Erreur lors du chargement du brouillon');
+      router.push('/artisan/devis');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Charger un devis pour créer une révision
+   */
+  const chargerDevisPourRevision = async (devisId: string) => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      console.log('📋 Chargement du devis original pour révision:', devisId);
+
+      // Récupérer le devis original
+      const devisDoc = await getDoc(doc(db, 'devis', devisId));
+      if (!devisDoc.exists()) {
+        alert('Devis original introuvable');
+        router.push('/artisan/devis');
+        return;
+      }
+
+      const devisOriginal = { id: devisDoc.id, ...devisDoc.data() } as Devis;
+      
+      // Vérifier que c'est bien un devis de l'artisan
+      if (devisOriginal.artisanId !== user.uid) {
+        alert('Vous n\'êtes pas autorisé à réviser ce devis');
+        router.push('/artisan/devis');
+        return;
+      }
+
+      console.log('✅ Devis original chargé:', devisOriginal);
+
+      // Charger la demande associée si elle existe
+      if (devisOriginal.demandeId) {
+        const demandeData = await getDemandeById(devisOriginal.demandeId);
+        if (demandeData) {
+          setDemande(demandeData);
+        }
+      }
+
+      // Pré-remplir le formulaire avec les données du devis original
+      setTitre(devisOriginal.titre || '');
+      setMatierePremiere(devisOriginal.matierePremiere || '');
+      setMainOeuvre(devisOriginal.mainOeuvre || '');
+      setDescription(devisOriginal.description || '');
+      setLignes(devisOriginal.lignes || []);
+      setDelaiRealisation(devisOriginal.delaiRealisation || '');
+      
+      if (devisOriginal.dateDebutPrevue) {
+        const dateDebut = devisOriginal.dateDebutPrevue.toDate();
+        setDateDebutPrevue(dateDebut.toISOString().split('T')[0]);
+      }
+
+      setDateValidite(30); // Réinitialiser à 30 jours
+      setConditions(devisOriginal.conditions || '');
+      setClientInfo(devisOriginal.client);
+      setArtisanInfo(devisOriginal.artisan);
+
+      // Activer automatiquement le mode variante
+      setCreerVariante(true);
+      setVarianteLabel('Révision suite à refus');
+      
+      // Stocker l'ID du devis original
+      setAncienDevisId(devisOriginal.id);
+
+      // Charger les variantes existantes
+      if (devisOriginal.demandeId) {
+        await chargerVariantesExistantes(devisOriginal.demandeId, user.uid);
+      }
+
+      console.log('✅ Formulaire pré-rempli pour révision avec succès');
+
+    } catch (error) {
+      console.error('❌ Erreur chargement devis pour révision:', error);
+      alert('Erreur lors du chargement du devis');
       router.push('/artisan/devis');
     } finally {
       setLoading(false);
@@ -1005,28 +1143,60 @@ export default function NouveauDevisPage() {
           </div>
 
           {/* Devis Alternatifs (Variantes) */}
-          {variantesExistantes.length > 0 || demandeId ? (
+          {(!estPremierDevis || revisionDevisId) && (variantesExistantes.length > 0 || demandeId) ? (
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 shadow-sm mb-6">
-              {variantesExistantes.length > 0 && (
-                <div className="bg-orange-50 border-l-4 border-[#FF6B00] p-4 mb-4 rounded">
+              {revisionDevisId ? (
+                // Mode révision : affichage spécial automatique
+                <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-4 rounded">
                   <div className="flex items-start gap-3">
-                    <svg className="w-6 h-6 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     <div className="flex-1">
-                      <p className="font-semibold text-[#FF6B00] mb-1">
-                        ⚠️ Un devis existe déjà pour cette demande
+                      <p className="font-semibold text-indigo-800 mb-1">
+                        🔄 Révision automatique du devis
                       </p>
-                      <p className="text-sm text-[#2C3E50]">
-                        Vous devez créer une <strong>variante</strong> (option alternative) car cette demande vous a été envoyée spécifiquement. 
-                        Cochez "Créer une variante" ci-dessous pour proposer une nouvelle option au client.
+                      <p className="text-sm text-indigo-700 mb-3">
+                        Ce devis est une révision suite au refus du client. Il sera automatiquement lié au devis original comme variante alternative.
                       </p>
+                      <div className="bg-white rounded-lg p-3 border border-indigo-200">
+                        <label className="block text-sm font-medium text-indigo-900 mb-1">
+                          Nom de la variante
+                        </label>
+                        <input
+                          type="text"
+                          value={varianteLabel}
+                          onChange={(e) => setVarianteLabel(e.target.value)}
+                          className="w-full px-4 py-2 border border-indigo-300 rounded-lg bg-indigo-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          placeholder="Ex: Révision suite à refus"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
-              
-              <div className="flex items-start gap-3 mb-4">
+              ) : (
+                // Mode normal (devis existants, pas de révision)
+                <>
+                  {variantesExistantes.length > 0 && (
+                    <div className="bg-orange-50 border-l-4 border-[#FF6B00] p-4 mb-4 rounded">
+                      <div className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div className="flex-1">
+                          <p className="font-semibold text-[#FF6B00] mb-1">
+                            ⚠️ Un devis existe déjà pour cette demande
+                          </p>
+                          <p className="text-sm text-[#2C3E50]">
+                            Vous devez créer une <strong>variante</strong> (option alternative) car cette demande vous a été envoyée spécifiquement. 
+                            Cochez "Créer une variante" ci-dessous pour proposer une nouvelle option au client.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-3 mb-4">
                 <div className="bg-blue-100 p-2 rounded-lg">
                   <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1042,7 +1212,7 @@ export default function NouveauDevisPage() {
                 </div>
               </div>
 
-              {variantesExistantes.length > 0 && (
+                  {variantesExistantes.length > 0 && (
                 <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
                   <h3 className="font-medium text-[#2C3E50] mb-2">
                     📊 Variantes existantes ({variantesExistantes.length})
@@ -1064,18 +1234,20 @@ export default function NouveauDevisPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-3 mb-3">
-                <input
-                  type="checkbox"
-                  id="creerVariante"
-                  checked={creerVariante}
-                  onChange={(e) => setCreerVariante(e.target.checked)}
-                  className="w-5 h-5 text-[#FF6B00] rounded focus:ring-[#FF6B00]"
-                />
-                <label htmlFor="creerVariante" className="font-medium text-[#2C3E50] cursor-pointer">
-                  ✨ Créer une variante alternative pour ce devis
-                </label>
-              </div>
+                  {!revisionDevisId && (
+                <div className="flex items-center gap-3 mb-3">
+                  <input
+                    type="checkbox"
+                    id="creerVariante"
+                    checked={creerVariante}
+                    onChange={(e) => setCreerVariante(e.target.checked)}
+                    className="w-5 h-5 text-[#FF6B00] rounded focus:ring-[#FF6B00]"
+                  />
+                  <label htmlFor="creerVariante" className="font-medium text-[#2C3E50] cursor-pointer">
+                    ✨ Créer une variante alternative pour ce devis
+                  </label>
+                </div>
+              )}
 
               {creerVariante && (
                 <div className="ml-8 space-y-3">
@@ -1103,6 +1275,8 @@ export default function NouveauDevisPage() {
                     </ul>
                   </div>
                 </div>
+                  )}
+                </>
               )}
             </div>
           ) : null}
@@ -1246,10 +1420,6 @@ export default function NouveauDevisPage() {
             >
               {saving ? '⏳ Envoi...' : '📨 Envoyer le devis'}
             </button>
-          </div>
-          <div className="text-center text-sm text-[#6C757D] mt-3 space-y-1">
-            <p>💡 <span className="font-semibold">Générer</span> : Le devis sera créé et vous pourrez l'envoyer depuis votre liste de devis</p>
-            <p>📨 <span className="font-semibold">Envoyer</span> : Le client recevra le devis immédiatement</p>
           </div>
         </div>
       </div>
