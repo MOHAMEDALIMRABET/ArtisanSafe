@@ -248,6 +248,34 @@ export default function MesDevisPage() {
     }
   };
 
+  // Supprimer un devis brouillon
+  const handleSupprimerDevis = async (devisId: string, numeroDevis: string) => {
+    const confirmer = confirm(
+      `🗑️ Supprimer définitivement ce devis ?\n\n` +
+      `Numéro: ${numeroDevis}\n\n` +
+      `⚠️ Cette action est irréversible.\n` +
+      `Le devis sera définitivement supprimé de la base de données.`
+    );
+
+    if (!confirmer) return;
+
+    try {
+      const { deleteDoc } = await import('firebase/firestore');
+      const devisRef = doc(db, 'devis', devisId);
+      
+      await deleteDoc(devisRef);
+      
+      console.log('✅ Devis supprimé:', devisId);
+      alert('✅ Devis supprimé avec succès');
+      
+      // Recharger la liste des devis
+      loadDevis();
+    } catch (error) {
+      console.error('❌ Erreur suppression devis:', error);
+      alert('❌ Erreur lors de la suppression. Veuillez réessayer.');
+    }
+  };
+
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
       brouillon: 'bg-gray-100 text-gray-800',
@@ -615,7 +643,7 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'brouillon' ? 'text-white' : 'text-gray-600'}`}>{devisBrouillon.length}</div>
-              <div className={`text-sm ${filter === 'brouillon' ? 'text-white' : 'text-gray-600'}`}>Brouillons</div>
+              <div className={`text-sm ${filter === 'brouillon' ? 'text-white' : 'text-gray-600'}`}>Générés</div>
               {compterReponsesRecentes('brouillon') > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
                   {compterReponsesRecentes('brouillon')}
@@ -855,6 +883,13 @@ export default function MesDevisPage() {
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
                             🔄 Révision demandée
                           </span>
+                        ) : d.statut === 'brouillon' ? (
+                          <button
+                            onClick={() => router.push(`/artisan/devis/${d.id}`)}
+                            className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
+                          >
+                            👁️ Consulter
+                          </button>
                         ) : (
                           getStatutBadge(d.statut)
                         )}
@@ -874,7 +909,7 @@ export default function MesDevisPage() {
                             <span className="text-xs text-gray-500 italic">Refus définitif</span>
                             <span className="text-[10px] text-gray-400">Pas de nouvelle proposition</span>
                           </div>                        ) : d.statut === 'brouillon' ? (
-                          <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleEnvoyerDevis(d.id)}
                               className="px-3 py-1 bg-[#FF6B00] text-white rounded hover:bg-[#E56100] text-xs font-semibold flex items-center gap-1 justify-center"
@@ -885,10 +920,13 @@ export default function MesDevisPage() {
                               Envoyer au client
                             </button>
                             <button
-                              onClick={() => router.push(`/artisan/devis/${d.id}`)}
-                              className="text-xs text-[#6C757D] hover:text-[#FF6B00] hover:underline"
+                              onClick={() => handleSupprimerDevis(d.id, d.numeroDevis)}
+                              className="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 hover:bg-red-600 hover:text-white rounded transition border border-red-300"
+                              title="Supprimer ce devis"
                             >
-                              👁️ Consulter
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
                             </button>
                           </div>
                         ) : (

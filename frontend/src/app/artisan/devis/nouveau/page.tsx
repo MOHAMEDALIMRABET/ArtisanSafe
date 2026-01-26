@@ -1235,14 +1235,22 @@ export default function NouveauDevisPage() {
             <button
               onClick={sauvegarderBrouillon}
               disabled={saving}
-              className="flex-1 bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50"
+              className="flex-1 bg-gray-200 text-[#2C3E50] px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50"
             >
               {saving ? '⏳ Génération...' : '📄 Générer le devis'}
             </button>
+            <button
+              onClick={envoyerDevis}
+              disabled={saving}
+              className="flex-1 bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50"
+            >
+              {saving ? '⏳ Envoi...' : '📨 Envoyer le devis'}
+            </button>
           </div>
-          <p className="text-center text-sm text-[#6C757D] mt-3">
-            💡 Le devis sera sauvegardé. Vous pourrez l'envoyer au client depuis votre liste de devis.
-          </p>
+          <div className="text-center text-sm text-[#6C757D] mt-3 space-y-1">
+            <p>💡 <span className="font-semibold">Générer</span> : Le devis sera créé et vous pourrez l'envoyer depuis votre liste de devis</p>
+            <p>📨 <span className="font-semibold">Envoyer</span> : Le client recevra le devis immédiatement</p>
+          </div>
         </div>
       </div>
 

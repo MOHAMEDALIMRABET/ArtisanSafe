@@ -292,11 +292,9 @@ export default function VoirDevisPage() {
                 <h3 className="font-bold text-[#2C3E50] mb-2">Pour :</h3>
                 <div className="text-sm">
                   <p className="font-semibold">{devis.client.prenom} {devis.client.nom}</p>
-                  <p>{devis.client.email}</p>
-                  {devis.client.telephone && <p>{devis.client.telephone}</p>}
                   {devis.client.adresse && (
                     <>
-                      <p>{devis.client.adresse.rue}</p>
+                      <p className="mt-2">{devis.client.adresse.rue}</p>
                       <p>{devis.client.adresse.codePostal} {devis.client.adresse.ville}</p>
                     </>
                   )}
@@ -454,16 +452,6 @@ export default function VoirDevisPage() {
             >
               Fermer
             </button>
-
-            {/* Bouton Modifier (brouillon uniquement) */}
-            {devis.statut === 'brouillon' && (
-              <button
-                onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${devis.demandeId}&editId=${devisId}`)}
-                className="px-6 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100]"
-              >
-                ✏️ Modifier
-              </button>
-            )}
 
             {/* Bouton Contacter le client (devis refusé) */}
             {devis.statut === 'refuse' && (
