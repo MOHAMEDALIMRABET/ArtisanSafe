@@ -22,6 +22,19 @@ const BLOCKED_PATTERNS = {
     /\b\+33[\s.\-]?[1-9][\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}\b/gi,
     /\b00[\s.\-]?33[\s.\-]?[1-9][\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}\b/gi,
     
+    // 🚨 NOUVEAU : Numéros sans espaces (10 chiffres consécutifs ou plus)
+    /\b\d{10,}\b/g,
+    
+    // 🚨 CRITIQUE : Numéros collés aux lettres (ex: "NUMEROtelephione066882710")
+    /[a-z]\d{9,}/gi,  // Lettre suivie de 9+ chiffres (numéros partiels)
+    /\d{9,}[a-z]/gi,  // 9+ chiffres suivis de lettre
+    
+    // 🚨 CRITIQUE : Numéros français partiels (9+ chiffres commençant par 0)
+    /\b0\d{8,}\b/g,
+    
+    // 🚨 NOUVEAU : Numéros internationaux (commence par +)
+    /\+\d{8,}/g,
+    
     // Contournement par mots
     /\bz[eéè]ro[\s\-]?[sixdouze]+/gi,
     /\bun[\s\-]?deux[\s\-]?trois/gi,
@@ -61,24 +74,45 @@ const BLOCKED_PATTERNS = {
 
   // === ADRESSES POSTALES ===
   adresse: [
-    // Codes postaux français
+    // Codes postaux français (5 chiffres consécutifs ou espacés)
     /\b\d{5}\b/g,
+    /\b\d{2}[\s.\-]?\d{3}\b/g, // 75 001, 75.001
+    /\b\d[\s.\-]?\d[\s.\-]?\d[\s.\-]?\d[\s.\-]?\d\b/g, // 7 5 0 0 1
     /\bcode[\s\-]?postal/gi,
-    /\bcp[\s:.\-]?\s*\d{5}/gi,
+    /\bcp[\s:.\-]?\s*\d/gi,
+    
+    // 🚨 NOUVEAU : Numéro + nom de rue (avec ou sans type de voie)
+    /\b\d{1,4}[\s,]+(bis|ter|quater)?\s*(rue|avenue|boulevard|av|bd|impasse|place|chemin|allée|route|voie|passage|square|cour|villa)\b/gi,
+    /\b\d{1,4}[\s,]+[a-zéèêàâôù]{4,}[\s,]+[a-zéèêàâôù]{4,}/gi, // 32 jean jaures
     
     // Noms de voies
-    /\b\d+[\s,]+(rue|avenue|boulevard|av|bd|impasse|place|chemin|allée|route)\b/gi,
     /\b(rue|avenue|boulevard|impasse|place|chemin|allée|route)[\s\-]+[a-z]{3,}/gi,
+    
+    // 🚨 NOUVEAU : Villes françaises courantes
+    /\bparis\b/gi,
+    /\blyon\b/gi,
+    /\bmarseille\b/gi,
+    /\btoulouse\b/gi,
+    /\bnice\b/gi,
+    /\bnantes\b/gi,
+    /\bstrasbourg\b/gi,
+    /\bmontpellier\b/gi,
+    /\bbordeaux\b/gi,
+    /\blille\b/gi,
+    /\brennes\b/gi,
+    /\breims\b/gi,
     
     // Villes et arrondissements
     /\bparis[\s\-]?\d{1,2}[eèém]?/gi,
     /\b75\d{3}\b/g,
     /\barrondissement/gi,
     
-    // Termes généraux
-    /\badresse/gi,
+    // Termes généraux adresse
+    /\badresse[\s:.\-]/gi,
     /\bdomicile/gi,
     /\bchez[\s\-]?moi/gi,
+    /\bhabite[\s\-]?(au|à)/gi,
+    /\bviens[\s\-]?(au|à|chez)/gi,
   ],
 
   // === RÉSEAUX SOCIAUX ===
@@ -119,11 +153,39 @@ const WARNING_MESSAGES: Record<string, string> = {
 };
 
 /**
+ * Détecte les numéros de téléphone fragmentés par des lettres
+ * Ex: "0626num25tel32phone10" → "0626253210" = numéro valide
+ */
+function detectFragmentedPhoneNumbers(text: string): boolean {
+  // Extraire toutes les séquences qui contiennent des chiffres
+  // Pattern : commence par 0, puis alternance chiffres/lettres, au moins 9 chiffres au total
+  const fragmentedPattern = /0[a-z0-9]{15,}/gi;
+  const matches = text.match(fragmentedPattern) || [];
+  
+  for (const match of matches) {
+    // Extraire uniquement les chiffres
+    const digitsOnly = match.replace(/\D/g, '');
+    
+    // Vérifier si ça forme un numéro de téléphone français valide (10 chiffres commençant par 0)
+    if (digitsOnly.length >= 10 && digitsOnly.startsWith('0')) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
  * Valide un message et détecte les tentatives de bypass
  */
 export function validateMessage(content: string): ValidationResult {
   const normalizedContent = content.toLowerCase().trim();
   const blockedPatterns: string[] = [];
+
+  // 🚨 VÉRIFICATION PRIORITAIRE : Numéros fragmentés par des lettres
+  if (detectFragmentedPhoneNumbers(normalizedContent)) {
+    blockedPatterns.push('telephone');
+  }
 
   // Vérifier chaque catégorie de patterns
   for (const [category, patterns] of Object.entries(BLOCKED_PATTERNS)) {

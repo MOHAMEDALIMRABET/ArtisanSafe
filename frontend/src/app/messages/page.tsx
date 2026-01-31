@@ -206,6 +206,15 @@ export default function MessagesPage() {
         ...doc.data(),
       } as Message));
 
+      console.log(`📨 Messages chargés pour conversation ${selectedConversation}:`, msgs.length);
+      msgs.forEach(msg => {
+        console.log(`  - Message ${msg.id}:`, {
+          senderId: msg.senderId,
+          content: msg.content.substring(0, 30),
+          createdAt: msg.createdAt?.toDate?.()
+        });
+      });
+
       // Tri côté client par date de création
       msgs.sort((a, b) => {
         const dateA = a.createdAt?.toMillis() || 0;
@@ -239,6 +248,13 @@ export default function MessagesPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Redirection si non connecté
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/connexion');
+    }
+  }, [user, authLoading, router]);
 
   // Créer une nouvelle conversation
   const createConversation = async (otherUserId: string) => {
@@ -383,8 +399,7 @@ export default function MessagesPage() {
   }
 
   if (!user) {
-    router.push('/connexion');
-    return null;
+    return null; // Redirection gérée par useEffect
   }
 
   return (

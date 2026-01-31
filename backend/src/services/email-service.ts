@@ -130,22 +130,16 @@ export async function processPendingEmails(): Promise<{
 
 /**
  * Surveiller et traiter les emails automatiquement
- * Exécuté via cron job (une fois par jour à 2h du matin)
+ * Vérifie toutes les 5 minutes
  */
 export async function startEmailWatcher(): Promise<void> {
-  const cron = require('node-cron');
-  
-  console.log('📧 Surveillance des emails configurée (quotidienne à 2h00 du matin, timezone Europe/Paris)');
+  console.log('📧 Surveillance des emails configurée (toutes les 5 minutes)');
 
   // Traiter immédiatement au démarrage
   await processPendingEmails();
 
-  // Planifier exécution quotidienne à 2h00 du matin (Europe/Paris)
-  cron.schedule('0 2 * * *', async () => {
-    console.log('⏰ Exécution planifiée - Traitement des emails en attente...');
+  // Vérifier toutes les 5 minutes
+  setInterval(async () => {
     await processPendingEmails();
-  }, {
-    scheduled: true,
-    timezone: 'Europe/Paris'
-  });
+  }, 5 * 60 * 1000); // 5 minutes
 }

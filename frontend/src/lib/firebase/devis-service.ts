@@ -32,9 +32,15 @@ const COLLECTION_NAME = 'devis';
  * Génère le prochain numéro de devis pour l'artisan
  * Supporte les variantes (A, B, C) pour les devis alternatifs
  * NORME BTP : Les variantes d'un même projet partagent le même numéro de base
+ * 
+ * LOGIQUE PROGRESSIVE :
+ * - 1er devis pour une demande : DV-2026-00005 (sans lettre)
+ * - 2e devis pour la MÊME demande : DV-2026-00005-A (transforme le 1er) et DV-2026-00005-B (nouveau)
+ * - 3e devis : DV-2026-00005-C, etc.
  */
 export async function genererProchainNumeroDevis(
   artisanId: string, 
+  demandeId?: string,
   varianteLettreReference?: string,
   varianteGroupe?: string
 ): Promise<string> {
@@ -42,8 +48,29 @@ export async function genererProchainNumeroDevis(
   
   let numeroBase: string;
   
-  // Si c'est une variante d'un groupe existant, réutiliser le numéro de base du groupe
-  if (varianteGroupe) {
+  // PRIORITÉ 1 : Si demandeId fourni, vérifier s'il existe déjà des devis pour cette demande
+  if (demandeId) {
+    const qDemande = query(
+      collection(db, COLLECTION_NAME),
+      where('artisanId', '==', artisanId),
+      where('demandeId', '==', demandeId)
+    );
+    
+    const demandeSnapshot = await getDocs(qDemande);
+    if (!demandeSnapshot.empty) {
+      // Il existe déjà un/des devis pour cette demande → réutiliser le numéro de base
+      const premierDevisDemande = demandeSnapshot.docs[0].data().numeroDevis as string;
+      // Extraire le numéro de base (enlever la lettre de variante si présente)
+      numeroBase = premierDevisDemande.split('-').slice(0, 3).join('-');
+      console.log('♻️ Réutilisation numéro base de la demande:', numeroBase);
+    } else {
+      // Premier devis pour cette demande → générer nouveau numéro
+      numeroBase = await genererNouveauNumeroBase(artisanId, anneeEnCours);
+      console.log('🆕 Nouveau numéro de base pour la demande:', numeroBase);
+    }
+  }
+  // PRIORITÉ 2 : Si varianteGroupe fourni (ancien système), réutiliser le numéro du groupe
+  else if (varianteGroupe) {
     const qGroupe = query(
       collection(db, COLLECTION_NAME),
       where('artisanId', '==', artisanId),
@@ -52,49 +79,17 @@ export async function genererProchainNumeroDevis(
     
     const groupeSnapshot = await getDocs(qGroupe);
     if (!groupeSnapshot.empty) {
-      // Récupérer le numéro de base du premier devis du groupe
       const premierDevisGroupe = groupeSnapshot.docs[0].data().numeroDevis as string;
-      // Extraire la partie avant le tiret de variante (ex: "DV-2026-00014-A" -> "DV-2026-00014")
       numeroBase = premierDevisGroupe.split('-').slice(0, 3).join('-');
       console.log('♻️ Réutilisation numéro base groupe:', numeroBase);
     } else {
-      // Groupe introuvable (cas inhabituel), générer nouveau numéro
-      const q = query(
-        collection(db, COLLECTION_NAME),
-        where('artisanId', '==', artisanId)
-      );
-      const querySnapshot = await getDocs(q);
-      const devisAnneeEnCours = querySnapshot.docs.filter(doc => {
-        const numero = doc.data().numeroDevis as string;
-        return numero?.startsWith(`DV-${anneeEnCours}-`);
-      });
-      const dernierNumero = devisAnneeEnCours.length;
-      numeroBase = `DV-${anneeEnCours}-${String(dernierNumero + 1).padStart(5, '0')}`;
+      numeroBase = await genererNouveauNumeroBase(artisanId, anneeEnCours);
     }
-  } else {
-    // Nouveau projet : incrémenter le numéro
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where('artisanId', '==', artisanId)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    const devisAnneeEnCours = querySnapshot.docs.filter(doc => {
-      const numero = doc.data().numeroDevis as string;
-      return numero?.startsWith(`DV-${anneeEnCours}-`);
-    });
-    
-    // Compter uniquement les numéros de base uniques (pas les variantes)
-    const numerosBaseUniques = new Set(
-      devisAnneeEnCours.map(doc => {
-        const numero = doc.data().numeroDevis as string;
-        // Extraire le numéro de base (DV-2026-00014)
-        return numero.split('-').slice(0, 3).join('-');
-      })
-    );
-    
-    const dernierNumero = numerosBaseUniques.size;
-    numeroBase = `DV-${anneeEnCours}-${String(dernierNumero + 1).padStart(5, '0')}`;
+  } 
+  // PRIORITÉ 3 : Nouveau projet indépendant
+  else {
+    numeroBase = await genererNouveauNumeroBase(artisanId, anneeEnCours);
+    console.log('🆕 Nouveau numéro de base:', numeroBase);
   }
   
   // Si c'est une variante, ajouter la lettre de référence
@@ -103,6 +98,35 @@ export async function genererProchainNumeroDevis(
   }
   
   return numeroBase;
+}
+
+/**
+ * Génère un nouveau numéro de base unique pour l'année en cours
+ * Compte uniquement les numéros de base uniques (pas les variantes)
+ */
+async function genererNouveauNumeroBase(artisanId: string, anneeEnCours: number): Promise<string> {
+  const q = query(
+    collection(db, COLLECTION_NAME),
+    where('artisanId', '==', artisanId)
+  );
+  
+  const querySnapshot = await getDocs(q);
+  const devisAnneeEnCours = querySnapshot.docs.filter(doc => {
+    const numero = doc.data().numeroDevis as string;
+    return numero?.startsWith(`DV-${anneeEnCours}-`);
+  });
+  
+  // Compter uniquement les numéros de base uniques (pas les variantes)
+  const numerosBaseUniques = new Set(
+    devisAnneeEnCours.map(doc => {
+      const numero = doc.data().numeroDevis as string;
+      // Extraire le numéro de base (DV-2026-00014)
+      return numero.split('-').slice(0, 3).join('-');
+    })
+  );
+  
+  const dernierNumero = numerosBaseUniques.size;
+  return `DV-${anneeEnCours}-${String(dernierNumero + 1).padStart(5, '0')}`;
 }
 
 /**
@@ -137,8 +161,10 @@ export async function createDevis(
   const devisRef = collection(db, COLLECTION_NAME);
   
   // Générer le numéro de devis (avec lettre de variante si applicable)
+  // PASSE demandeId en PRIORITÉ pour système de variantes progressif
   const numeroDevis = await genererProchainNumeroDevis(
     devisData.artisanId,
+    devisData.demandeId,
     devisData.varianteLettreReference,
     devisData.varianteGroupe
   );

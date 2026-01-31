@@ -228,9 +228,6 @@ export default function VoirDevisPage() {
               <h1 className="text-2xl font-bold">Devis {devis.numeroDevis}</h1>
               <p className="text-gray-300 mt-1">{devis.titre}</p>
             </div>
-            <div>
-              {getStatutBadge(devis.statut)}
-            </div>
           </div>
         </div>
       </div>

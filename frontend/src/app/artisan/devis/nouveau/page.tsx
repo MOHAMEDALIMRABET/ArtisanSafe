@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 /**
  * Page de création de devis - Style Qonto
@@ -17,13 +17,32 @@ import type { Demande } from '@/types/firestore';
 import type { Devis, LigneDevis, TVARate, calculerLigne, calculerTotaux } from '@/types/devis';
 import { Timestamp, query, collection, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { validateMessage } from '@/lib/antiBypassValidator';
 
 /**
  * Fonction de validation anti-contournement
- * Détecte les numéros de téléphone et adresses dans le texte
- * Inspiré de BlaBlaCar pour garantir les transactions sur la plateforme
+ * Utilise le même système que la messagerie (antiBypassValidator)
+ * Détecte 40+ patterns : téléphones, emails, adresses, réseaux sociaux
  */
 function detecterInformationsInterdites(texte: string): { valide: boolean; raison?: string } {
+  if (!texte) return { valide: true };
+  
+  const validation = validateMessage(texte);
+  
+  if (!validation.isValid) {
+    return {
+      valide: false,
+      raison: validation.message?.split('\n\n')[0] || '⛔ Informations personnelles interdites'
+    };
+  }
+  
+  return { valide: true };
+}
+
+/**
+ * ANCIENNE FONCTION (désactivée - voir antiBypassValidator.ts pour version complète)
+ */
+function detecterInformationsInterditesOLD_DEPRECATED(texte: string): { valide: boolean; raison?: string } {
   if (!texte) return { valide: true };
 
   const texteLower = texte.toLowerCase();
@@ -157,8 +176,6 @@ export default function NouveauDevisPage() {
 
   // Formulaire
   const [titre, setTitre] = useState('');
-  const [matierePremiere, setMatierePremiere] = useState('');
-  const [mainOeuvre, setMainOeuvre] = useState('');
   const [description, setDescription] = useState('');
   const [lignes, setLignes] = useState<LigneDevis[]>([]);
   const [delaiRealisation, setDelaiRealisation] = useState('');
@@ -166,10 +183,31 @@ export default function NouveauDevisPage() {
   const [dateValidite, setDateValidite] = useState(30); // Jours
   const [conditions, setConditions] = useState('');
   
-  // Devis alternatifs (variantes)
-  const [creerVariante, setCreerVariante] = useState(false);
-  const [varianteLabel, setVarianteLabel] = useState('');
+  // Lignes spéciales Prestations
+  const [mainOeuvreQuantite, setMainOeuvreQuantite] = useState<number>(1);
+  const [mainOeuvrePrixHT, setMainOeuvrePrixHT] = useState<number>(0);
+  const [mainOeuvreTVA, setMainOeuvreTVA] = useState<TVARate>(20);
+  const [ajouterMatierePremiere, setAjouterMatierePremiere] = useState(false);
+  const [matierePremiereQuantite, setMatierePremiereQuantite] = useState<number>(1);
+  const [matierePremierePrixHT, setMatierePremierePrixHT] = useState<number>(0);
+  const [mpTvaRate, setMpTvaRate] = useState<TVARate>(20);
+  
+  // Devis alternatifs (variantes) - AUTOMATIQUE pour tous les devis
   const [variantesExistantes, setVariantesExistantes] = useState<Devis[]>([]);
+  
+  // Validation anti-contournement
+  const [erreurValidation, setErreurValidation] = useState<string | null>(null);
+
+  // Auto-masquer l'erreur après 5 secondes
+  useEffect(() => {
+    if (erreurValidation) {
+      const timer = setTimeout(() => {
+        setErreurValidation(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [erreurValidation]);
+
 
   // Informations client/artisan (pré-remplies)
   const [clientInfo, setClientInfo] = useState<Devis['client'] | null>(null);
@@ -196,7 +234,6 @@ export default function NouveauDevisPage() {
       // Cas 2 : Création d'une révision
       if (revisionDevisId && user) {
         console.log('🔄 Mode RÉVISION - Chargement devis original:', revisionDevisId);
-        setEstRevision(true);
         await chargerDevisPourRevision(revisionDevisId);
         return;
       }
@@ -273,40 +310,40 @@ export default function NouveauDevisPage() {
             }
             setClientInfo(clientData);
           } else {
-            console.warn('⚠️ Client introuvable, utilisation données demande');
-            // Fallback : utiliser les données de la demande
+            console.warn('⚠️ Client introuvable, utilisation données minimales');
+            // Fallback : données minimales (demande n'a pas les infos client complètes)
             const fallbackData: any = {
-              nom: demandeData.clientNom || '',
-              prenom: demandeData.clientPrenom || '',
-              email: demandeData.clientEmail || '',
-              telephone: demandeData.clientTelephone || '',
+              nom: 'Client',
+              prenom: '',
+              email: '',
+              telephone: '',
             };
-            // N'ajouter adresse que si elle existe
-            if (demandeData.adresse?.rue && demandeData.adresse?.ville && demandeData.adresse?.codePostal) {
+            // Utiliser l'adresse de localisation si disponible
+            if (demandeData.localisation?.adresse && demandeData.localisation?.ville && demandeData.localisation?.codePostal) {
               fallbackData.adresse = {
-                rue: demandeData.adresse.rue,
-                ville: demandeData.adresse.ville,
-                codePostal: demandeData.adresse.codePostal,
+                rue: demandeData.localisation.adresse,
+                ville: demandeData.localisation.ville,
+                codePostal: demandeData.localisation.codePostal,
               };
             }
             setClientInfo(fallbackData);
           }
         } catch (clientError) {
           console.error('❌ Erreur chargement client:', clientError);
-          console.warn('⚠️ Utilisation données demande comme fallback');
-          // Fallback : utiliser les données de la demande
+          console.warn('⚠️ Utilisation données minimales comme fallback');
+          // Fallback : données minimales
           const fallbackData: any = {
-            nom: demandeData.clientNom || 'Client',
-            prenom: demandeData.clientPrenom || '',
-            email: demandeData.clientEmail || '',
-            telephone: demandeData.clientTelephone || '',
+            nom: 'Client',
+            prenom: '',
+            email: '',
+            telephone: '',
           };
-          // N'ajouter adresse que si elle existe
-          if (demandeData.adresse?.rue && demandeData.adresse?.ville && demandeData.adresse?.codePostal) {
+          // Utiliser l'adresse de localisation si disponible
+          if (demandeData.localisation?.adresse && demandeData.localisation?.ville && demandeData.localisation?.codePostal) {
             fallbackData.adresse = {
-              rue: demandeData.adresse.rue,
-              ville: demandeData.adresse.ville,
-              codePostal: demandeData.adresse.codePostal,
+              rue: demandeData.localisation.adresse,
+              ville: demandeData.localisation.ville,
+              codePostal: demandeData.localisation.codePostal,
             };
           }
           setClientInfo(fallbackData);
@@ -423,11 +460,7 @@ export default function NouveauDevisPage() {
         const variantes = devisActifs.filter(d => d.varianteGroupe);
         setVariantesExistantes(variantes.length > 0 ? variantes : devisActifs);
         
-        // AUTO-ACTIVER le mode variante car un devis existe déjà
-        if (!creerVariante) {
-          setCreerVariante(true);
-          console.log('✅ Mode variante auto-activé (devis existant détecté)');
-        }
+        console.log('📋 Devis existants pour cette demande:', devisActifs.length);
       } else {
         setVariantesExistantes([]);
       }
@@ -451,18 +484,29 @@ export default function NouveauDevisPage() {
 
       const devisOriginal = { id: devisDoc.id, ...devisDoc.data() } as Devis;
       
-      // Auto-activer le mode variante
-      setCreerVariante(true);
-      setVarianteLabel('Révision suite à refus');
+      // Stocker l'ID du devis original pour révision
       setAncienDevisId(devisOriginalId);
       
       // Pré-remplir le formulaire avec les données du devis original
       setTitre(devisOriginal.titre || '');
-      setMatierePremiere(devisOriginal.matierePremiere || '');
-      setMainOeuvre(devisOriginal.mainOeuvre || '');
       setDescription(devisOriginal.description || '');
       setLignes(devisOriginal.lignes || []);
       setDelaiRealisation(devisOriginal.delaiRealisation || '');
+      
+      // Charger Main d'œuvre
+      if (devisOriginal.mainOeuvre) {
+        setMainOeuvreQuantite(devisOriginal.mainOeuvre.quantite || 1);
+        setMainOeuvrePrixHT(devisOriginal.mainOeuvre.prixHT || 0);
+        setMainOeuvreTVA(devisOriginal.mainOeuvre.tauxTVA || 20);
+      }
+      
+      // Charger Matière première
+      if (devisOriginal.matierePremiere) {
+        setAjouterMatierePremiere(true);
+        setMatierePremiereQuantite(devisOriginal.matierePremiere.quantite || 1);
+        setMatierePremierePrixHT(devisOriginal.matierePremiere.prixHT || 0);
+        setMpTvaRate(devisOriginal.matierePremiere.tauxTVA || 20);
+      }
       
       if (devisOriginal.dateDebutPrevue) {
         const dateDebut = devisOriginal.dateDebutPrevue.toDate();
@@ -523,11 +567,24 @@ export default function NouveauDevisPage() {
       // Remplir le formulaire avec les données du brouillon
       setModeEdition(true);
       setTitre(devisBrouillon.titre || '');
-      setMatierePremiere(devisBrouillon.matierePremiere || '');
-      setMainOeuvre(devisBrouillon.mainOeuvre || '');
       setDescription(devisBrouillon.description || '');
       setLignes(devisBrouillon.lignes || []);
       setDelaiRealisation(devisBrouillon.delaiRealisation || '');
+      
+      // Charger Main d'œuvre
+      if (devisBrouillon.mainOeuvre) {
+        setMainOeuvreQuantite(devisBrouillon.mainOeuvre.quantite || 1);
+        setMainOeuvrePrixHT(devisBrouillon.mainOeuvre.prixHT || 0);
+        setMainOeuvreTVA(devisBrouillon.mainOeuvre.tauxTVA || 20);
+      }
+      
+      // Charger Matière première
+      if (devisBrouillon.matierePremiere) {
+        setAjouterMatierePremiere(true);
+        setMatierePremiereQuantite(devisBrouillon.matierePremiere.quantite || 1);
+        setMatierePremierePrixHT(devisBrouillon.matierePremiere.prixHT || 0);
+        setMpTvaRate(devisBrouillon.matierePremiere.tauxTVA || 20);
+      }
       
       if (devisBrouillon.dateDebutPrevue) {
         const dateDebut = devisBrouillon.dateDebutPrevue.toDate();
@@ -606,11 +663,24 @@ export default function NouveauDevisPage() {
 
       // Pré-remplir le formulaire avec les données du devis original
       setTitre(devisOriginal.titre || '');
-      setMatierePremiere(devisOriginal.matierePremiere || '');
-      setMainOeuvre(devisOriginal.mainOeuvre || '');
       setDescription(devisOriginal.description || '');
       setLignes(devisOriginal.lignes || []);
       setDelaiRealisation(devisOriginal.delaiRealisation || '');
+      
+      // Charger Main d'œuvre
+      if (devisOriginal.mainOeuvre) {
+        setMainOeuvreQuantite(devisOriginal.mainOeuvre.quantite || 1);
+        setMainOeuvrePrixHT(devisOriginal.mainOeuvre.prixHT || 0);
+        setMainOeuvreTVA(devisOriginal.mainOeuvre.tauxTVA || 20);
+      }
+      
+      // Charger Matière première
+      if (devisOriginal.matierePremiere) {
+        setAjouterMatierePremiere(true);
+        setMatierePremiereQuantite(devisOriginal.matierePremiere.quantite || 1);
+        setMatierePremierePrixHT(devisOriginal.matierePremiere.prixHT || 0);
+        setMpTvaRate(devisOriginal.matierePremiere.tauxTVA || 20);
+      }
       
       if (devisOriginal.dateDebutPrevue) {
         const dateDebut = devisOriginal.dateDebutPrevue.toDate();
@@ -622,11 +692,7 @@ export default function NouveauDevisPage() {
       setClientInfo(devisOriginal.client);
       setArtisanInfo(devisOriginal.artisan);
 
-      // Activer automatiquement le mode variante
-      setCreerVariante(true);
-      setVarianteLabel('Révision suite à refus');
-      
-      // Stocker l'ID du devis original
+      // Stocker l'ID du devis original pour révision
       setAncienDevisId(devisOriginal.id);
 
       // Charger les variantes existantes
@@ -697,6 +763,7 @@ export default function NouveauDevisPage() {
    * Calculer les totaux globaux
    */
   const calculerTotauxGlobaux = () => {
+    // Calcul des lignes de prestations normales
     const totalHT = lignes.reduce((sum, ligne) => sum + ligne.totalHT, 0);
     
     const totalTVA: { [key in TVARate]?: number } = {};
@@ -704,11 +771,36 @@ export default function NouveauDevisPage() {
       totalTVA[ligne.tauxTVA] = (totalTVA[ligne.tauxTVA] || 0) + ligne.totalTVA;
     });
     
+    // Ajout Main d'œuvre
+    const mainOeuvreHT = mainOeuvreQuantite * mainOeuvrePrixHT;
+    const mainOeuvreTVAMontant = mainOeuvreHT * (mainOeuvreTVA / 100);
+    const mainOeuvreTTC = mainOeuvreHT + mainOeuvreTVAMontant;
+    
+    // Ajout Matière première (si activée)
+    let matierePremiereHT = 0;
+    let matierePremiereTVAMontant = 0;
+    let matierePremiereTTC = 0;
+    
+    if (ajouterMatierePremiere) {
+      matierePremiereHT = matierePremiereQuantite * matierePremierePrixHT;
+      matierePremiereTVAMontant = matierePremiereHT * (mpTvaRate / 100);
+      matierePremiereTTC = matierePremiereHT + matierePremiereTVAMontant;
+    }
+    
+    // Totaux HT (lignes + main d'œuvre + matière première)
+    const totalHTGlobal = totalHT + mainOeuvreHT + matierePremiereHT;
+    
+    // Ajout des TVA de Main d'œuvre et Matière première
+    totalTVA[mainOeuvreTVA] = (totalTVA[mainOeuvreTVA] || 0) + mainOeuvreTVAMontant;
+    if (ajouterMatierePremiere) {
+      totalTVA[mpTvaRate] = (totalTVA[mpTvaRate] || 0) + matierePremiereTVAMontant;
+    }
+    
     const totalTVAGlobal = Object.values(totalTVA).reduce((sum, val) => sum + (val || 0), 0);
-    const totalTTC = totalHT + totalTVAGlobal;
+    const totalTTC = totalHTGlobal + totalTVAGlobal;
     
     return {
-      totalHT: Math.round(totalHT * 100) / 100,
+      totalHT: Math.round(totalHTGlobal * 100) / 100,
       totalTVA,
       totalTVAGlobal: Math.round(totalTVAGlobal * 100) / 100,
       totalTTC: Math.round(totalTTC * 100) / 100,
@@ -750,6 +842,22 @@ export default function NouveauDevisPage() {
       return;
     }
 
+    // Validation minimale pour brouillon
+    if (!titre.trim()) {
+      alert('Veuillez saisir un titre pour le devis');
+      return;
+    }
+    
+    if (!mainOeuvrePrixHT || mainOeuvrePrixHT <= 0 || isNaN(mainOeuvrePrixHT)) {
+      alert('Veuillez indiquer un prix valide pour la main d\'\u0153uvre');
+      return;
+    }
+    
+    if (!mainOeuvreQuantite || mainOeuvreQuantite <= 0 || isNaN(mainOeuvreQuantite)) {
+      alert('Veuillez indiquer une quantité valide pour la main d\'\u0153uvre (nombre de jours)');
+      return;
+    }
+
     setSaving(true);
     try {
       const devisData: any = {
@@ -761,10 +869,24 @@ export default function NouveauDevisPage() {
         client: cleanObject(clientInfo),
         artisan: cleanObject(artisanInfo),
         titre,
-        matierePremiere,
-        mainOeuvre,
         description,
         lignes,
+        // Main d'œuvre (obligatoire)
+        mainOeuvre: {
+          quantite: mainOeuvreQuantite,
+          prixHT: mainOeuvrePrixHT,
+          tauxTVA: mainOeuvreTVA,
+          unite: 'j'
+        },
+        // Matière première (optionnelle)
+        ...(ajouterMatierePremiere && {
+          matierePremiere: {
+            quantite: matierePremiereQuantite,
+            prixHT: matierePremierePrixHT,
+            tauxTVA: mpTvaRate,
+            unite: 'unité'
+          }
+        }),
         totaux: calculerTotauxGlobaux(),
         delaiRealisation,
         ...(dateDebutPrevue && { dateDebutPrevue: Timestamp.fromDate(new Date(dateDebutPrevue)) }),
@@ -773,6 +895,62 @@ export default function NouveauDevisPage() {
         ),
         conditions,
       };
+      
+      // 🚨 SYSTÈME DE VARIANTES PROGRESSIF (SANS TRANSFORMATION RÉTROACTIVE)
+      // Premier devis : DV-2026-00004 (SANS lettre, jamais modifié)
+      // Première variante : DV-2026-00004-A
+      // Deuxième variante : DV-2026-00004-B
+      
+      if (!modeEdition && demandeId && variantesExistantes.length > 0) {
+        const premierDevis = variantesExistantes[0];
+        
+        // Créer varianteGroupe pour lier tous les devis de cette demande
+        const varianteGroupe = premierDevis.varianteGroupe || `VG-${demandeId}-${Date.now()}`;
+        
+        if (!premierDevis.varianteGroupe) {
+          // Le premier devis n'a pas encore de varianteGroupe
+          // → Lui ajouter varianteGroupe SANS modifier son numéro ni ajouter de lettre
+          console.log('🔗 Ajout varianteGroupe au premier devis (SANS transformation)');
+          
+          await updateDevis(premierDevis.id, {
+            varianteGroupe: varianteGroupe,
+            // PAS de varianteLettreReference : le premier reste sans lettre
+            // PAS de numeroDevis : garde son numéro original
+          });
+          
+          console.log('📋 Premier devis conservé (brouillon):', {
+            numero: premierDevis.numeroDevis,  // Reste DV-2026-00004 (sans -A)
+            varianteGroupe: varianteGroupe
+          });
+        }
+        
+        // Créer la nouvelle variante avec une lettre
+        const lettresUtilisees = variantesExistantes
+          .map(v => v.varianteLettreReference || '')
+          .filter(Boolean);
+        
+        const lettres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let prochaineLettreReference = 'A';
+        for (let i = 0; i < lettres.length; i++) {
+          if (!lettresUtilisees.includes(lettres[i])) {
+            prochaineLettreReference = lettres[i];
+            break;
+          }
+        }
+        
+        devisData.varianteGroupe = varianteGroupe;
+        devisData.varianteLettreReference = prochaineLettreReference;
+        
+        console.log('📋 Création variante (brouillon):', { 
+          varianteGroupe, 
+          lettre: prochaineLettreReference,
+          devisExistants: variantesExistantes.length 
+        });
+      } else if (!modeEdition && demandeId) {
+        // Aucun devis existant → créer le premier SANS variante
+        console.log('📋 Premier devis pour cette demande (brouillon) → SANS lettre de variante');
+        // NE PAS ajouter varianteGroupe ni varianteLettreReference
+      }
 
       if (modeEdition && devisBrouillonId) {
         // Mise à jour du brouillon existant
@@ -783,7 +961,7 @@ export default function NouveauDevisPage() {
         // Création d'un nouveau brouillon
         console.log('➕ Création nouveau brouillon');
         await createDevis(devisData);
-        alert('✅ Devis sauvegardé en brouillon');
+        alert('✅ Devis généré');
       }
       
       router.push('/artisan/devis');
@@ -813,8 +991,12 @@ export default function NouveauDevisPage() {
       alert('Veuillez saisir un titre');
       return;
     }
-    if (!mainOeuvre.trim()) {
-      alert('Veuillez renseigner la main d\'\u0153uvre (champ obligatoire)');
+    if (!mainOeuvrePrixHT || mainOeuvrePrixHT <= 0 || isNaN(mainOeuvrePrixHT)) {
+      alert('Veuillez indiquer un prix valide pour la main d\'\u0153uvre');
+      return;
+    }
+    if (!mainOeuvreQuantite || mainOeuvreQuantite <= 0 || isNaN(mainOeuvreQuantite)) {
+      alert('Veuillez indiquer une quantité valide pour la main d\'\u0153uvre (nombre de jours)');
       return;
     }
     if (!dateDebutPrevue) {
@@ -860,8 +1042,6 @@ export default function NouveauDevisPage() {
     // VALIDATION ANTI-CONTOURNEMENT : Vérifier tous les champs de texte
     const champsAVerifier = [
       { nom: 'titre', valeur: titre },
-      { nom: 'matière première', valeur: matierePremiere },
-      { nom: 'main d\'\u0153uvre', valeur: mainOeuvre },
       { nom: 'description', valeur: description },
       { nom: 'délai de réalisation', valeur: delaiRealisation },
       { nom: 'conditions', valeur: conditions },
@@ -888,10 +1068,24 @@ export default function NouveauDevisPage() {
         client: cleanObject(clientInfo),
         artisan: cleanObject(artisanInfo),
         titre,
-        matierePremiere,
-        mainOeuvre,
         description,
         lignes,
+        // Main d'œuvre (obligatoire)
+        mainOeuvre: {
+          quantite: mainOeuvreQuantite,
+          prixHT: mainOeuvrePrixHT,
+          tauxTVA: mainOeuvreTVA,
+          unite: 'j'
+        },
+        // Matière première (optionnelle)
+        ...(ajouterMatierePremiere && {
+          matierePremiere: {
+            quantite: matierePremiereQuantite,
+            prixHT: matierePremierePrixHT,
+            tauxTVA: mpTvaRate,
+            unite: 'unité'
+          }
+        }),
         totaux: calculerTotauxGlobaux(),
         delaiRealisation,
         dateDebutPrevue: Timestamp.fromDate(new Date(dateDebutPrevue)),
@@ -901,21 +1095,36 @@ export default function NouveauDevisPage() {
         conditions,
       };
       
-      // VALIDATION : Si des devis existent déjà, FORCER le mode variante
-      if (variantesExistantes.length > 0 && !creerVariante) {
-        alert('⚠️ Un devis existe déjà pour cette demande.\nVous devez créer une variante (option alternative).\nCochez "Créer une variante" et donnez un nom à votre option.');
-        setSaving(false);
-        return;
-      }
+      // 🚨 SYSTÈME DE VARIANTES PROGRESSIF (SANS TRANSFORMATION RÉTROACTIVE)
+      // Premier devis : DV-2026-00004 (SANS lettre, jamais modifié)
+      // Première variante : DV-2026-00004-A
+      // Deuxième variante : DV-2026-00004-B
       
-      // Ajouter les champs de variante si créer variante est activé
-      if (creerVariante && varianteLabel.trim()) {
-        // Générer un ID de groupe unique si c'est la première variante
-        const varianteGroupe = variantesExistantes.length > 0 && variantesExistantes[0].varianteGroupe
-          ? variantesExistantes[0].varianteGroupe
-          : `VG-${Date.now()}`;
+      if (variantesExistantes.length > 0) {
+        // Il existe déjà au moins un devis pour cette demande
+        const premierDevis = variantesExistantes[0];
         
-        // Déterminer la prochaine lettre de référence
+        // Créer varianteGroupe pour lier tous les devis de cette demande
+        const varianteGroupe = premierDevis.varianteGroupe || `VG-${demandeId}-${Date.now()}`;
+        
+        if (!premierDevis.varianteGroupe) {
+          // Le premier devis n'a pas encore de varianteGroupe
+          // → Lui ajouter varianteGroupe SANS modifier son numéro ni ajouter de lettre
+          console.log('🔗 Ajout varianteGroupe au premier devis (SANS transformation)');
+          
+          await updateDevis(premierDevis.id, {
+            varianteGroupe: varianteGroupe,
+            // PAS de varianteLettreReference : le premier reste sans lettre
+            // PAS de numeroDevis : garde son numéro original
+          });
+          
+          console.log('📋 Premier devis conservé:', {
+            numero: premierDevis.numeroDevis,  // Reste DV-2026-00004 (sans -A)
+            varianteGroupe: varianteGroupe
+          });
+        }
+        
+        // Créer la nouvelle variante avec une lettre
         const lettresUtilisees = variantesExistantes
           .map(v => v.varianteLettreReference || '')
           .filter(Boolean);
@@ -930,14 +1139,17 @@ export default function NouveauDevisPage() {
         }
         
         devisData.varianteGroupe = varianteGroupe;
-        devisData.varianteLabel = varianteLabel.trim();
         devisData.varianteLettreReference = prochaineLettreReference;
-        console.log('📋 Création variante:', { varianteGroupe, lettre: prochaineLettreReference });
-      }
-      
-      // Si c'est le tout premier devis et que "créer variante" est coché, créer le groupe
-      if (creerVariante && varianteLabel.trim() && variantesExistantes.length === 0) {
-        console.log('📋 Premier devis avec variante activée - création groupe');
+        
+        console.log('📋 Création variante:', { 
+          varianteGroupe, 
+          lettre: prochaineLettreReference,
+          devisExistants: variantesExistantes.length 
+        });
+      } else {
+        // Aucun devis existant → créer le premier SANS variante
+        console.log('📋 Premier devis pour cette demande → SANS lettre de variante');
+        // NE PAS ajouter varianteGroupe ni varianteLettreReference
       }
 
       if (modeEdition && devisBrouillonId) {
@@ -1008,6 +1220,22 @@ export default function NouveauDevisPage() {
             </p>
           </div>
 
+          {/* Alerte de validation anti-contournement */}
+          {erreurValidation && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+              <div className="flex items-start">
+                <span className="text-2xl mr-3">⚠️</span>
+                <div>
+                  <h3 className="text-red-800 font-semibold mb-1">Contenu non autorisé</h3>
+                  <p className="text-red-700 text-sm">{erreurValidation}</p>
+                  <p className="text-red-600 text-xs mt-2">
+                    💡 <strong>Pour votre sécurité</strong> : tous les échanges doivent se faire via la messagerie intégrée de la plateforme.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Informations générales */}
           <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
             <h2 className="text-xl font-semibold text-[#2C3E50] mb-4">Informations générales</h2>
@@ -1020,36 +1248,17 @@ export default function NouveauDevisPage() {
                 <input
                   type="text"
                   value={titre}
-                  onChange={(e) => setTitre(e.target.value)}
+                  onChange={(e) => {
+                    const validation = detecterInformationsInterdites(e.target.value);
+                    if (!validation.valide) {
+                      setErreurValidation(validation.raison || null);
+                      return;
+                    }
+                    setErreurValidation(null);
+                    setTitre(e.target.value);
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                   placeholder="Ex: Rénovation salle de bain"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#2C3E50] mb-1">
-                  Matière première (optionnel)
-                </label>
-                <input
-                  type="text"
-                  value={matierePremiere}
-                  onChange={(e) => setMatierePremiere(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                  placeholder="Ex: Carrelage, Peinture, Parquet..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#2C3E50] mb-1">
-                  Main d'œuvre *
-                </label>
-                <input
-                  type="text"
-                  value={mainOeuvre}
-                  onChange={(e) => setMainOeuvre(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                  placeholder="Ex: 1 artisan, 2 ouvriers..."
-                  required
                 />
               </div>
 
@@ -1059,7 +1268,15 @@ export default function NouveauDevisPage() {
                 </label>
                 <textarea
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => {
+                    const validation = detecterInformationsInterdites(e.target.value);
+                    if (!validation.valide) {
+                      setErreurValidation(validation.raison || null);
+                      return;
+                    }
+                    setErreurValidation(null);
+                    setDescription(e.target.value);
+                  }}
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                   placeholder="Description détaillée des travaux..."
@@ -1084,7 +1301,7 @@ export default function NouveauDevisPage() {
                   <label className="block text-sm font-medium text-[#2C3E50] mb-1">
                     Date de début prévue *
                   </label>
-                  {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
+                  {demande?.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
                     <p className="text-xs text-[#6C757D] mb-1">
                       📅 Client souhaite : {demande.datesSouhaitees.dates[0].toDate().toLocaleDateString('fr-FR')}
                       {demande.datesSouhaitees.flexible && demande.datesSouhaitees.flexibiliteDays && (
@@ -1100,7 +1317,7 @@ export default function NouveauDevisPage() {
                     required
                   />
                   {(() => {
-                    if (!dateDebutPrevue || !demande.datesSouhaitees?.dates?.[0]) return null;
+                    if (!dateDebutPrevue || !demande?.datesSouhaitees?.dates?.[0]) return null;
                     
                     const dateProposee = new Date(dateDebutPrevue);
                     const dateClient = demande.datesSouhaitees.dates[0].toDate();
@@ -1160,41 +1377,52 @@ export default function NouveauDevisPage() {
                         Ce devis est une révision suite au refus du client. Il sera automatiquement lié au devis original comme variante alternative.
                       </p>
                       <div className="bg-white rounded-lg p-3 border border-indigo-200">
-                        <label className="block text-sm font-medium text-indigo-900 mb-1">
-                          Nom de la variante
-                        </label>
-                        <input
-                          type="text"
-                          value={varianteLabel}
-                          onChange={(e) => setVarianteLabel(e.target.value)}
-                          className="w-full px-4 py-2 border border-indigo-300 rounded-lg bg-indigo-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                          placeholder="Ex: Révision suite à refus"
-                        />
+                        <p className="text-sm font-medium text-indigo-900">
+                          🔄 Mode révision automatique activé
+                        </p>
+                        <p className="text-xs text-indigo-700 mt-1">
+                          Une nouvelle variante sera créée avec la prochaine lettre disponible
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                // Mode normal (devis existants, pas de révision)
+                // Mode normal (devis existants)
                 <>
-                  {variantesExistantes.length > 0 && (
-                    <div className="bg-orange-50 border-l-4 border-[#FF6B00] p-4 mb-4 rounded">
-                      <div className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <div className="flex-1">
-                          <p className="font-semibold text-[#FF6B00] mb-1">
-                            ⚠️ Un devis existe déjà pour cette demande
-                          </p>
-                          <p className="text-sm text-[#2C3E50]">
-                            Vous devez créer une <strong>variante</strong> (option alternative) car cette demande vous a été envoyée spécifiquement. 
-                            Cochez "Créer une variante" ci-dessous pour proposer une nouvelle option au client.
-                          </p>
+                  {variantesExistantes.length > 0 && (() => {
+                    // Calculer la prochaine lettre disponible (même logique que dans sauvegarderBrouillon/envoyerDevis)
+                    const lettresUtilisees = variantesExistantes
+                      .map(v => v.varianteLettreReference || '')
+                      .filter(Boolean);
+                    
+                    const lettres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                    let prochaineLettreReference = 'A';
+                    for (let i = 0; i < lettres.length; i++) {
+                      if (!lettresUtilisees.includes(lettres[i])) {
+                        prochaineLettreReference = lettres[i];
+                        break;
+                      }
+                    }
+                    
+                    return (
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <div className="flex-1">
+                            <p className="font-semibold text-blue-800 mb-1">
+                              📋 Création d'une nouvelle variante
+                            </p>
+                            <p className="text-sm text-blue-700">
+                              Ce devis sera automatiquement créé comme <strong>variante {prochaineLettreReference}</strong> pour permettre au client de comparer vos différentes propositions.
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   <div className="flex items-start gap-3 mb-4">
                 <div className="bg-blue-100 p-2 rounded-lg">
@@ -1215,15 +1443,13 @@ export default function NouveauDevisPage() {
                   {variantesExistantes.length > 0 && (
                 <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
                   <h3 className="font-medium text-[#2C3E50] mb-2">
-                    📊 Variantes existantes ({variantesExistantes.length})
+                    📊 Devis existants ({variantesExistantes.length})
                   </h3>
                   <div className="space-y-2">
                     {variantesExistantes.map((v) => (
                       <div key={v.id} className="flex items-center justify-between text-sm bg-blue-50 px-3 py-2 rounded">
-                        <span>
-                          <span className="font-mono font-semibold text-blue-700">{v.numeroDevis}</span>
-                          {' - '}
-                          <span className="font-medium">{v.varianteLabel}</span>
+                        <span className="font-mono font-semibold text-blue-700">
+                          {v.numeroDevis}
                         </span>
                         <span className="text-[#6C757D]">
                           {v.totaux?.totalTTC ? `${v.totaux.totalTTC.toFixed(2)} €` : '—'}
@@ -1233,49 +1459,6 @@ export default function NouveauDevisPage() {
                   </div>
                 </div>
               )}
-
-                  {!revisionDevisId && (
-                <div className="flex items-center gap-3 mb-3">
-                  <input
-                    type="checkbox"
-                    id="creerVariante"
-                    checked={creerVariante}
-                    onChange={(e) => setCreerVariante(e.target.checked)}
-                    className="w-5 h-5 text-[#FF6B00] rounded focus:ring-[#FF6B00]"
-                  />
-                  <label htmlFor="creerVariante" className="font-medium text-[#2C3E50] cursor-pointer">
-                    ✨ Créer une variante alternative pour ce devis
-                  </label>
-                </div>
-              )}
-
-              {creerVariante && (
-                <div className="ml-8 space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-[#2C3E50] mb-1">
-                      Nom de l'option *
-                    </label>
-                    <input
-                      type="text"
-                      value={varianteLabel}
-                      onChange={(e) => setVarianteLabel(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                      placeholder="Ex: Option Économique, Option Premium, Solution Standard..."
-                    />
-                    <p className="text-xs text-[#6C757D] mt-1">
-                      💡 Ce nom apparaîtra sur le devis et aidera le client à identifier les différentes options
-                    </p>
-                  </div>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
-                    <p className="font-medium text-yellow-800 mb-1">ℹ️ Comment ça fonctionne :</p>
-                    <ul className="text-yellow-700 space-y-1 ml-4 list-disc">
-                      <li>Chaque variante aura un numéro unique (DV-2026-00042-A, -B, -C...)</li>
-                      <li>Le client pourra comparer toutes les options avant de choisir</li>
-                      <li>Si le client accepte une variante, les autres seront automatiquement annulées</li>
-                    </ul>
-                  </div>
-                </div>
-                  )}
                 </>
               )}
             </div>
@@ -1294,6 +1477,163 @@ export default function NouveauDevisPage() {
             </div>
 
             <div className="space-y-4">
+              {/* Main d'œuvre - OBLIGATOIRE */}
+              <div className="border-2 border-[#FF6B00] rounded-lg p-4 bg-orange-50">
+                <div className="flex justify-between items-start mb-3">
+                  <span className="text-sm font-semibold text-[#FF6B00]">Main d'œuvre *</span>
+                  <span className="text-xs bg-[#FF6B00] text-white px-2 py-1 rounded">OBLIGATOIRE</span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs text-[#6C757D] mb-1">Quantité</label>
+                    <input
+                      type="number"
+                      value={mainOeuvreQuantite}
+                      onChange={(e) => setMainOeuvreQuantite(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-[#6C757D] mb-1">Unité</label>
+                    <select
+                      value="j"
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100"
+                    >
+                      <option value="j">j</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-[#6C757D] mb-1">Prix HT (€)</label>
+                    <input
+                      type="number"
+                      value={mainOeuvrePrixHT}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                        setMainOeuvrePrixHT(isNaN(value) ? 0 : value);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                      min="0"
+                      step="0.01"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-[#6C757D] mb-1">TVA (%)</label>
+                    <select
+                      value={mainOeuvreTVA}
+                      onChange={(e) => setMainOeuvreTVA(parseFloat(e.target.value) as TVARate)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                    >
+                      <option value="0">0%</option>
+                      <option value="5.5">5.5%</option>
+                      <option value="10">10%</option>
+                      <option value="20">20%</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end text-sm mt-2">
+                  <span className="text-[#6C757D]">Total : </span>
+                  <span className="font-semibold text-[#2C3E50] ml-2">
+                    {(mainOeuvreQuantite * mainOeuvrePrixHT * (1 + mainOeuvreTVA / 100)).toFixed(2)} € TTC
+                  </span>
+                </div>
+              </div>
+
+              {/* Matière première - OPTIONNELLE */}
+              <div className={`border rounded-lg p-4 ${ajouterMatierePremiere ? 'border-[#2C3E50] bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="ajouterMatierePremiere"
+                      checked={ajouterMatierePremiere}
+                      onChange={(e) => setAjouterMatierePremiere(e.target.checked)}
+                      className="w-4 h-4 text-[#FF6B00] focus:ring-[#FF6B00] border-gray-300 rounded"
+                    />
+                    <label htmlFor="ajouterMatierePremiere" className="text-sm font-medium text-[#2C3E50] cursor-pointer">
+                      Matière première (optionnel)
+                    </label>
+                  </div>
+                  {ajouterMatierePremiere && (
+                    <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">OPTIONNEL</span>
+                  )}
+                </div>
+
+                {ajouterMatierePremiere && (
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs text-[#6C757D] mb-1">Quantité</label>
+                      <input
+                        type="number"
+                        value={matierePremiereQuantite}
+                        onChange={(e) => setMatierePremiereQuantite(parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[#6C757D] mb-1">Unité</label>
+                      <select
+                        value="unité"
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100"
+                      >
+                        <option value="unité">unité</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[#6C757D] mb-1">Prix HT (€)</label>
+                      <input
+                        type="number"
+                        value={matierePremierePrixHT}
+                        onChange={(e) => {
+                          const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          setMatierePremierePrixHT(isNaN(value) ? 0 : value);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[#6C757D] mb-1">TVA (%)</label>
+                      <select
+                        value={mpTvaRate}
+                        onChange={(e) => setMpTvaRate(parseFloat(e.target.value) as TVARate)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                      >
+                        <option value="0">0%</option>
+                        <option value="5.5">5.5%</option>
+                        <option value="10">10%</option>
+                        <option value="20">20%</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {ajouterMatierePremiere && (
+                  <div className="flex justify-end text-sm mt-2">
+                    <span className="text-[#6C757D]">Total : </span>
+                    <span className="font-semibold text-[#2C3E50] ml-2">
+                      {(matierePremiereQuantite * matierePremierePrixHT * (1 + mpTvaRate / 100)).toFixed(2)} € TTC
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Lignes de prestations personnalisées */}
               {lignes.map((ligne, index) => (
                 <div key={ligne.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
@@ -1310,7 +1650,15 @@ export default function NouveauDevisPage() {
                     <input
                       type="text"
                       value={ligne.description}
-                      onChange={(e) => mettreAJourLigne(ligne.id, { description: e.target.value })}
+                      onChange={(e) => {
+                        const validation = detecterInformationsInterdites(e.target.value);
+                        if (!validation.valide) {
+                          setErreurValidation(validation.raison || null);
+                          return;
+                        }
+                        setErreurValidation(null);
+                        mettreAJourLigne(ligne.id, { description: e.target.value });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                       placeholder="Description de la prestation"
                     />
@@ -1397,7 +1745,15 @@ export default function NouveauDevisPage() {
             <h2 className="text-xl font-semibold text-[#2C3E50] mb-4">Conditions particulières</h2>
             <textarea
               value={conditions}
-              onChange={(e) => setConditions(e.target.value)}
+              onChange={(e) => {
+                const validation = detecterInformationsInterdites(e.target.value);
+                if (!validation.valide) {
+                  setErreurValidation(validation.raison || null);
+                  return;
+                }
+                setErreurValidation(null);
+                setConditions(e.target.value);
+              }}
               rows={4}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
               placeholder="Conditions de paiement, garanties, etc..."
@@ -1520,6 +1876,54 @@ export default function NouveauDevisPage() {
                 </tr>
               </thead>
               <tbody>
+                {/* Main d'œuvre (toujours affichée) */}
+                <tr className="border-t border-gray-200 bg-orange-50">
+                  <td className="px-4 py-3 text-sm">
+                    <span className="font-semibold text-[#FF6B00]">⚡ Main d'œuvre</span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-center">
+                    {mainOeuvreQuantite} j
+                  </td>
+                  <td className="px-4 py-3 text-sm text-right">
+                    {mainOeuvrePrixHT.toFixed(2)} €
+                  </td>
+                  <td className="px-4 py-3 text-sm text-center">
+                    {mainOeuvreTVA}%
+                  </td>
+                  <td className="px-4 py-3 text-sm text-right font-semibold">
+                    {(() => {
+                      const ht = mainOeuvreQuantite * mainOeuvrePrixHT;
+                      const ttc = ht * (1 + mainOeuvreTVA / 100);
+                      return ttc.toFixed(2);
+                    })()} €
+                  </td>
+                </tr>
+
+                {/* Matière première (si activée) */}
+                {ajouterMatierePremiere && (
+                  <tr className="border-t border-gray-200 bg-blue-50">
+                    <td className="px-4 py-3 text-sm">
+                      <span className="font-semibold text-blue-600">🛠️ Matière première</span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-center">
+                      {matierePremiereQuantite} unité
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right">
+                      {matierePremierePrixHT.toFixed(2)} €
+                    </td>
+                    <td className="px-4 py-3 text-sm text-center">
+                      {mpTvaRate}%
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right font-semibold">
+                      {(() => {
+                        const ht = matierePremiereQuantite * matierePremierePrixHT;
+                        const ttc = ht * (1 + mpTvaRate / 100);
+                        return ttc.toFixed(2);
+                      })()} €
+                    </td>
+                  </tr>
+                )}
+
                 {lignes.map((ligne) => (
                   <tr key={ligne.id} className="border-t border-gray-200">
                     <td className="px-4 py-3 text-sm">
@@ -1585,3 +1989,10 @@ export default function NouveauDevisPage() {
     </div>
   );
 }
+
+
+
+
+
+
+

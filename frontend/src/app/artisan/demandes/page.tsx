@@ -327,7 +327,7 @@ export default function ArtisanDemandesPage() {
                       <h3 className="text-xl font-bold text-gray-800">
                         {demande.categorie}
                       </h3>
-                      {demande.devisRecus && demande.devisRecus > 0 ? (
+                      {demande.devisRecus && demande.devisRecus > 0 && (
                         <button
                           onClick={() => router.push(`/artisan/devis?demandeId=${demande.id}`)}
                           className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold border-2 border-blue-300 hover:bg-blue-200 hover:border-blue-400 transition-all cursor-pointer"
@@ -335,12 +335,11 @@ export default function ArtisanDemandesPage() {
                         >
                           ✅ {demande.devisRecus} devis envoyé{demande.devisRecus > 1 ? 's' : ''}
                         </button>
-                      ) : (
-                        demande.statut === 'publiee' && (
-                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                            🆕 Nouvelle demande
-                          </span>
-                        )
+                      )}
+                      {(!demande.devisRecus || demande.devisRecus === 0) && demande.statut === 'publiee' && (
+                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                          🆕 Nouvelle demande
+                        </span>
                       )}
                       {demande.urgence && (
                         <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
@@ -448,18 +447,28 @@ export default function ArtisanDemandesPage() {
                     // Si refus définitif : bloquer complètement
                     if (refusStatut?.definitif) {
                       return (
-                        <div className="flex-1 bg-gray-100 border-2 border-gray-300 p-4 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <svg className="w-6 h-6 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                            </svg>
-                            <div className="flex-1">
-                              <p className="font-bold text-gray-700 mb-1">⛔ Demande fermée - Refus définitif</p>
-                              <p className="text-sm text-gray-600">
-                                Le client a refusé définitivement votre devis. Vous ne pouvez plus envoyer de proposition pour cette demande.
-                              </p>
+                        <div className="flex-1 space-y-3">
+                          <div className="bg-gray-100 border-2 border-gray-300 p-4 rounded-lg">
+                            <div className="flex items-start gap-3">
+                              <svg className="w-6 h-6 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                              </svg>
+                              <div className="flex-1">
+                                <p className="font-bold text-gray-700 mb-1">⛔ Demande fermée - Refus définitif</p>
+                                <p className="text-sm text-gray-600">
+                                  Le client a refusé définitivement votre devis. Vous ne pouvez plus envoyer de proposition pour cette demande.
+                                </p>
+                              </div>
                             </div>
                           </div>
+                          {demande.devisRecus && demande.devisRecus > 0 && (
+                            <button
+                              onClick={() => router.push(`/artisan/devis?demandeId=${demande.id}`)}
+                              className="w-full bg-blue-50 text-blue-700 px-4 py-3 rounded-lg font-semibold border-2 border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition"
+                            >
+                              📋 Voir l'historique des devis ({demande.devisRecus})
+                            </button>
+                          )}
                         </div>
                       );
                     }

@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { doc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { notifyArtisanDevisAccepte, notifyArtisanDevisRefuse, notifyArtisanDevisRevision } from '@/lib/firebase/notification-service';
 import { Logo } from '@/components/ui';
@@ -26,8 +26,10 @@ export default function ClientDevisDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showRefusalModal, setShowRefusalModal] = useState(false);
   const [refusalReason, setRefusalReason] = useState('');
-  const [refusalType, setRefusalType] = useState<'definitif' | 'revision'>('definitif');
+  const [refusalType, setRefusalType] = useState<'variante' | 'artisan' | 'revision'>('variante');
   const [processing, setProcessing] = useState(false);
+
+  const [actionExecuted, setActionExecuted] = useState(false);
 
   const devisId = params.id as string;
   const action = searchParams.get('action');
@@ -43,12 +45,25 @@ export default function ClientDevisDetailPage() {
   }, [devisId, user, authLoading]);
 
   useEffect(() => {
-    if (action === 'accepter' && devis?.statut === 'envoye') {
+    // Gérer les actions automatiques (accepter/refuser) une seule fois
+    if (!devis || action === null) return;
+    
+    if (action === 'accepter' && devis.statut === 'envoye') {
+      // Retirer le paramètre action de l'URL pour éviter la boucle
+      const url = new URL(window.location.href);
+      url.searchParams.delete('action');
+      window.history.replaceState({}, '', url.toString());
+      
       handleAccepter();
-    } else if (action === 'refuser' && devis?.statut === 'envoye') {
+    } else if (action === 'refuser' && devis.statut === 'envoye') {
+      // Retirer le paramètre action de l'URL pour éviter la boucle
+      const url = new URL(window.location.href);
+      url.searchParams.delete('action');
+      window.history.replaceState({}, '', url.toString());
+      
       setShowRefusalModal(true);
     }
-  }, [action, devis]);
+  }, [action, devis?.statut]); // Ne dépend que de action et statut, pas des fonctions
 
   const loadDevis = async () => {
     try {
@@ -165,53 +180,109 @@ export default function ClientDevisDetailPage() {
     try {
       setProcessing(true);
 
-      await updateDoc(doc(db, 'devis', devisId), {
-        statut: 'refuse',
-        dateRefus: Timestamp.now(),
-        motifRefus: refusalReason || 'Aucun motif précisé',
-        typeRefus: refusalType, // 'revision' ou 'definitif'
-        dateDerniereNotification: Timestamp.now(),
-        vuParArtisan: false, // Marquer comme non vu par l'artisan pour notification
-      });
-
       const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
 
-      // Notifier l'artisan selon le type de refus
-      if (refusalType === 'revision' && devis.demandeId) {
-        // Refus avec demande de révision → notification spécifique
-        try {
-          await notifyArtisanDevisRevision(
-            devis.artisanId,
-            devis.demandeId,
-            clientNom,
-            devis.numeroDevis,
-            refusalReason
-          );
-          console.log('✅ Notification de révision envoyée');
-        } catch (error) {
-          console.error('Erreur notification révision:', error);
+      // CAS 1 : REFUSER CET ARTISAN DÉFINITIVEMENT (toutes variantes + blocage)
+      if (refusalType === 'artisan') {
+        console.log('🚫 Refus artisan définitif - Blocage de toutes les variantes');
+        
+        // Récupérer TOUS les devis de cet artisan pour cette demande
+        const devisArtisanQuery = query(
+          collection(db, 'devis'),
+          where('demandeId', '==', devis.demandeId),
+          where('artisanId', '==', devis.artisanId)
+        );
+        
+        const devisArtisanSnapshot = await getDocs(devisArtisanQuery);
+        
+        // Refuser TOUS les devis de cet artisan
+        const batch = writeBatch(db);
+        
+        devisArtisanSnapshot.forEach((docSnap) => {
+          batch.update(docSnap.ref, {
+            statut: 'refuse',
+            dateRefus: Timestamp.now(),
+            motifRefus: `Artisan refusé définitivement : ${refusalReason || 'Aucun motif précisé'}`,
+            typeRefus: 'artisan',
+            dateDerniereNotification: Timestamp.now(),
+            vuParArtisan: false,
+          });
+        });
+        
+        // Marquer la demande pour bloquer futurs devis de cet artisan
+        if (devis.demandeId) {
+          const demandeRef = doc(db, 'demandes', devis.demandeId);
+          const demandeSnap = await getDoc(demandeRef);
+          const artisansBloqués = demandeSnap.data()?.artisansBloqués || [];
+          
+          batch.update(demandeRef, {
+            artisansBloqués: [...artisansBloqués, devis.artisanId]
+          });
         }
-      } else {
-        // Refus définitif → notification de refus standard
-        try {
-          await notifyArtisanDevisRefuse(
-            devis.artisanId,
-            devisId,
-            clientNom,
-            devis.numeroDevis,
-            refusalReason
-          );
-          console.log('✅ Artisan notifié du refus définitif');
-        } catch (error) {
-          console.error('Erreur notification artisan:', error);
-        }
+        
+        await batch.commit();
+        
+        console.log(`✅ ${devisArtisanSnapshot.size} devis refusés + artisan bloqué`);
+        
+        // Notifier l'artisan une seule fois
+        await notifyArtisanDevisRefuse(
+          devis.artisanId,
+          devisId,
+          clientNom,
+          devis.numeroDevis,
+          `Refus définitif de toutes vos propositions : ${refusalReason}`
+        );
+        
+        alert(`❌ Cet artisan a été refusé définitivement.\n\n${devisArtisanSnapshot.size} devis refusés au total.\nIl ne pourra plus vous contacter pour cette demande.`);
       }
-
-      const message = refusalType === 'revision'
-        ? '❌ Devis refusé. L\'artisan sera notifié et pourra vous envoyer un devis révisé.'
-        : '❌ Devis refusé. L\'artisan sera notifié.';
       
-      alert(message);
+      // CAS 2 : REFUSER JUSTE CETTE VARIANTE
+      else if (refusalType === 'variante') {
+        console.log('📋 Refus de cette variante uniquement');
+        
+        await updateDoc(doc(db, 'devis', devisId), {
+          statut: 'refuse',
+          dateRefus: Timestamp.now(),
+          motifRefus: refusalReason || 'Aucun motif précisé',
+          typeRefus: 'variante',
+          dateDerniereNotification: Timestamp.now(),
+          vuParArtisan: false,
+        });
+        
+        await notifyArtisanDevisRefuse(
+          devis.artisanId,
+          devisId,
+          clientNom,
+          devis.numeroDevis,
+          refusalReason
+        );
+        
+        alert('❌ Cette variante a été refusée.\n\nL\'artisan pourra toujours vous proposer d\'autres options.');
+      }
+      
+      // CAS 3 : DEMANDER UNE RÉVISION
+      else if (refusalType === 'revision' && devis.demandeId) {
+        console.log('🔄 Refus avec demande de révision');
+        
+        await updateDoc(doc(db, 'devis', devisId), {
+          statut: 'refuse',
+          dateRefus: Timestamp.now(),
+          motifRefus: refusalReason || 'Aucun motif précisé',
+          typeRefus: 'revision',
+          dateDerniereNotification: Timestamp.now(),
+          vuParArtisan: false,
+        });
+        
+        await notifyArtisanDevisRevision(
+          devis.artisanId,
+          devis.demandeId,
+          clientNom,
+          devis.numeroDevis,
+          refusalReason
+        );
+        
+        alert('🔄 Devis refusé avec demande de révision.\n\nL\'artisan pourra vous envoyer une nouvelle proposition améliorée.');
+      }
       
       router.push('/client/devis');
     } catch (error) {
@@ -314,9 +385,8 @@ export default function ClientDevisDetailPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <p className="font-semibold text-[#2C3E50]">
-                              {v.varianteLabel || 'Option alternative'}
+                              {v.numeroDevis}
                             </p>
-                            <p className="text-xs text-gray-600">{v.numeroDevis}</p>
                           </div>
                           <div className="text-right ml-4">
                             <p className="font-bold text-[#FF6B00] text-lg">
@@ -600,7 +670,7 @@ export default function ClientDevisDetailPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="font-semibold text-[#2C3E50]">
-                                {v.numeroDevis} - {v.varianteLabel || 'Option alternative'}
+                                {v.numeroDevis}
                               </p>
                               <p className="text-sm text-gray-600">{v.titre}</p>
                             </div>
@@ -637,32 +707,60 @@ export default function ClientDevisDetailPage() {
             </p>
 
             <div className="space-y-3 mb-6">
+              {/* Option 1 : Refuser juste cette variante */}
               <label className="flex items-start gap-3 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-[#FF6B00] transition">
                 <input
                   type="radio"
                   name="refusalType"
-                  value="definitif"
-                  checked={refusalType === 'definitif'}
-                  onChange={(e) => setRefusalType(e.target.value as 'definitif' | 'revision')}
+                  value="variante"
+                  checked={refusalType === 'variante'}
+                  onChange={(e) => setRefusalType(e.target.value as 'variante' | 'artisan' | 'revision')}
                   className="mt-1 w-4 h-4 text-[#FF6B00] focus:ring-[#FF6B00]"
                 />
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-800">Refuser définitivement</p>
-                  <p className="text-sm text-gray-600">L'artisan sera notifié du refus</p>
+                  <p className="font-semibold text-gray-800">
+                    📝 Refuser cette variante uniquement
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    L'artisan pourra toujours vous proposer d'autres options pour cette demande
+                  </p>
                 </div>
               </label>
 
-              <label className="flex items-start gap-3 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-[#FF6B00] transition">
+              {/* Option 2 : Bloquer cet artisan définitivement */}
+              <label className="flex items-start gap-3 p-3 border-2 border-red-300 rounded-lg cursor-pointer hover:border-red-500 transition bg-red-50">
+                <input
+                  type="radio"
+                  name="refusalType"
+                  value="artisan"
+                  checked={refusalType === 'artisan'}
+                  onChange={(e) => setRefusalType(e.target.value as 'variante' | 'artisan' | 'revision')}
+                  className="mt-1 w-4 h-4 text-red-600 focus:ring-red-600"
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800 flex items-center gap-2">
+                    ⚠️ Refuser cet artisan définitivement
+                  </p>
+                  <p className="text-sm text-red-700 font-medium mt-1">
+                    Attention : Toutes ses propositions (variantes incluses) seront refusées. Il ne pourra plus vous contacter pour cette demande.
+                  </p>
+                </div>
+              </label>
+
+              {/* Option 3 : Demander une révision */}
+              <label className="flex items-start gap-3 p-3 border-2 border-blue-300 rounded-lg cursor-pointer hover:border-blue-500 transition bg-blue-50">
                 <input
                   type="radio"
                   name="refusalType"
                   value="revision"
                   checked={refusalType === 'revision'}
-                  onChange={(e) => setRefusalType(e.target.value as 'definitif' | 'revision')}
-                  className="mt-1 w-4 h-4 text-[#FF6B00] focus:ring-[#FF6B00]"
+                  onChange={(e) => setRefusalType(e.target.value as 'variante' | 'artisan' | 'revision')}
+                  className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-600"
                 />
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-800">Refuser et demander une nouvelle option</p>
+                  <p className="font-semibold text-gray-800">
+                    🔄 Refuser et demander une nouvelle option
+                  </p>
                   <p className="text-sm text-gray-600">
                     {autresVariantes.length > 0 
                       ? "L'artisan pourra créer une variante supplémentaire adaptée à vos besoins"
@@ -677,7 +775,7 @@ export default function ClientDevisDetailPage() {
               <button
                 onClick={() => {
                   setShowRefusalModal(false);
-                  setRefusalType('definitif');
+                  setRefusalType('variante');
                 }}
                 disabled={processing}
                 className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition"

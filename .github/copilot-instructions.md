@@ -1,5 +1,36 @@
 # ArtisanSafe - Instructions Copilot
 
+## 🚀 Quick Start for AI Agents
+
+**Start here for immediate productivity:**
+
+1. **Run dev servers**: `cd frontend && npm run dev` (port 3000) | `cd backend && npm run dev` (port 5000)
+2. **Color scheme**: ALWAYS use `bg-[#FF6B00]` (orange) for primary buttons, `bg-[#2C3E50]` (blue) for headers - NEVER use generic blue/green
+3. **Services pattern**: ALWAYS use `frontend/src/lib/firebase/*-service.ts` - NEVER access Firestore directly
+4. **Anti-bypass**: ALWAYS use `antiBypassValidator.ts` for message validation - blocks 40+ patterns (phone/email/address)
+5. **Firestore queries**: NEVER combine `where()` + `orderBy()` on different fields → sort client-side with `.sort()` to avoid composite indexes
+6. **Critical files**: 
+   - Validation: `frontend/src/lib/antiBypassValidator.ts` (285 lines)
+   - OCR: `frontend/src/lib/firebase/document-parser.ts` (1105 lines)
+   - Patterns: `frontend/src/lib/firebase/soft-delete.ts`, `schema-versioning.ts`
+
+**Common tasks:**
+```bash
+# Create admin user
+node scripts/create-admin.js
+
+# Migrate data
+cd frontend/scripts && npx ts-node migrate-metiers.ts
+
+# Delete user data (RGPD)
+cd backend/scripts && node delete-user-data.js <UID>
+
+# Test patterns
+cd frontend/scripts && npx ts-node test-patterns.ts
+```
+
+---
+
 ## Vue d'ensemble du projet
 
 ArtisanSafe est une plateforme marketplace bilingue (français principal, anglais secondaire) qui connecte les clients avec des artisans qualifiés (plombiers, électriciens, menuisiers, maçons, etc.). La plateforme met l'accent sur la sécurité, la confiance et les transactions transparentes grâce à des profils vérifiés, des paiements sécurisés et une médiation des litiges.
@@ -11,6 +42,49 @@ ArtisanSafe est une plateforme marketplace bilingue (français principal, anglai
 - Auth: Firebase Auth
 - Storage: Firebase Storage
 - Services: SIRENE API (future), OCR Tesseract.js (aide admin), Email (nodemailer)
+
+## 📁 Project Structure
+
+```
+ArtisanSafe/
+├── frontend/                 # Next.js 15 + React 19
+│   ├── src/
+│   │   ├── app/             # Next.js App Router pages
+│   │   ├── components/      # React components
+│   │   ├── lib/             # Core services (⚠️ USE THESE)
+│   │   │   ├── firebase/    # Firestore services (NEVER access Firestore directly)
+│   │   │   │   ├── *-service.ts      # CRUD services
+│   │   │   │   ├── soft-delete.ts    # RGPD-compliant deletion
+│   │   │   │   ├── schema-versioning.ts  # Data migrations
+│   │   │   │   └── document-parser.ts    # OCR Tesseract.js
+│   │   │   ├── antiBypassValidator.ts  # ⚠️ CRITICAL - Message validation
+│   │   │   └── auth-service.ts         # Authentication
+│   │   ├── hooks/           # React custom hooks
+│   │   └── types/           # TypeScript types
+│   └── scripts/             # Migration/utility scripts
+│
+├── backend/                 # Node.js + Express API
+│   ├── src/
+│   │   ├── routes/          # API endpoints
+│   │   ├── services/        # Business logic
+│   │   └── server.ts
+│   └── scripts/             # Admin scripts (create-admin, delete-user-data)
+│
+├── docs/                    # Comprehensive documentation
+│   ├── FIREBASE.md          # Firestore structure
+│   ├── *_WORKFLOW.md        # Process documentation
+│   └── FIX_*.md             # Troubleshooting guides
+│
+├── functions/               # ⚠️ EMPTY - Cloud Functions not deployed yet
+├── scripts/                 # Root-level admin scripts
+└── .github/
+    └── copilot-instructions.md  # This file
+```
+
+**Key directories:**
+- `frontend/src/lib/firebase/`: ALL Firestore operations (use these services)
+- `docs/`: 50+ markdown files documenting every aspect
+- `frontend/scripts/`: Data migration utilities
 
 ## 🎨 CHARTE GRAPHIQUE OBLIGATOIRE
 
@@ -117,6 +191,47 @@ className="bg-white border border-[#E9ECEF] hover:border-[#FF6B00] rounded-lg sh
 - L'orange évoque la sécurité des chantiers
 - Le bleu inspire confiance et professionnalisme
 - Interface claire, professionnelle et rassurante
+
+## 🔥 Recent Critical Fixes & Current Focus
+
+### ✅ Recently Fixed (2026-01)
+1. **Validation anti-bypass renforcée** (`antiBypassValidator.ts`)
+   - Fixed: Numéros collés aux lettres (`NUMEROtelephione066882710`)
+   - Added: 9+ digit detection patterns
+   - Added: Ville française detection (Paris, Lyon, etc.)
+   - Added: Address patterns with street numbers
+
+2. **Soft Delete Pattern** (RGPD compliance)
+   - Implemented: `frontend/src/lib/firebase/soft-delete.ts`
+   - 30-day retention before permanent deletion
+   - Admin restore capabilities
+   - Automatic exclusion from searches
+
+3. **Schema Versioning** (Data migration)
+   - Implemented: `frontend/src/lib/firebase/schema-versioning.ts`
+   - Progressive migrations without downtime
+   - V1→V2 migrations: Artisan (geolocation), Devis (TVA details)
+
+### ⏳ Current Priorities
+1. **Testing implementation** (TODO - See "Stratégie de tests" section)
+   - Phase 1: Critical tests (Auth, Devis, KBIS validation)
+   - Setup: Jest + React Testing Library
+   - Estimated: 4-6 hours for Phase 1
+
+2. **Stripe payment integration** (Phase 2)
+   - Escrow system for secure transactions
+   - Cloud Functions for webhooks
+
+3. **Mapbox geolocation** (Phase 2)
+   - Advanced radius search
+   - Distance calculations
+
+### ⚠️ Known Limitations
+- No Cloud Functions deployed (functions/ empty)
+- Tests not implemented yet (1 test file exists)
+- SIRENE API not activated
+- Email verification uses Firebase defaults (can't customize templates)
+
 
 ## Statut du projet
 
@@ -279,6 +394,11 @@ Utiliser **TOUJOURS** les services dans `frontend/src/lib/` :
 - `firebase/devis-service.ts` : Gestion devis
 - `firebase/demande-service.ts` : Gestion demandes
 - `firebase/notification-service.ts` : Création/lecture notifications
+- `firebase/soft-delete.ts` : Suppression réversible (soft delete)
+- `firebase/schema-versioning.ts` : Migration progressive des schémas
+- `firebase/verification-service.ts` : Vérification KBIS + documents
+- `firebase/email-notification-service.ts` : Emails événements importants
+- `firebase/account-service.ts` : Suppression/suspension comptes
 - `auth-service.ts` : signUpClient, signUpArtisan, signIn, signOut
 
 **Exemple :**
@@ -574,6 +694,45 @@ hover:bg-[#1A3A5C]  // Bleu hover
 - **Métier** (trade: plomberie, électricité, menuiserie, maçonnerie)
 - **Prestation** (service)
 - **Avis** (review/rating)
+
+### Anti-contournement messagerie
+
+**CRITIQUE** : Utiliser `antiBypassValidator.ts` pour TOUTE validation de messages utilisateurs.
+
+**Fichier** : `frontend/src/lib/antiBypassValidator.ts`
+
+**Pourquoi** : Empêche le partage de coordonnées personnelles (téléphone, email, adresse) avant paiement sécurisé.
+
+```typescript
+import { validateMessage } from '@/lib/antiBypassValidator';
+
+// ✅ BON - Utiliser le validateur
+const validation = validateMessage(userMessage);
+if (!validation.isValid) {
+  alert(validation.message);
+  return;
+}
+
+// ❌ MAUVAIS - Patterns locaux incomplets
+if (message.includes('@')) { ... }  // NE JAMAIS FAIRE
+```
+
+**Patterns détectés (40+)** :
+- Téléphones : formats standards, chiffres collés (`NUMEROtelephione066882710`), substitutions
+- Emails : formats standards, contournements (`arobase`, espaces)
+- Adresses : codes postaux, numéros de rue, villes françaises
+- Réseaux sociaux : Facebook, Instagram, LinkedIn, WhatsApp, Telegram
+- Coordonnées bancaires : IBAN, BIC, RIB
+
+**Cas critiques gérés** :
+```typescript
+// Détecte numéro collé aux lettres
+"NUMEROtelephione066882710" ❌ BLOQUÉ
+"appellemoi0612345678" ❌ BLOQUÉ
+"email@gmail.com" ❌ BLOQUÉ
+"32 rue jean jaures" ❌ BLOQUÉ
+"whatsapp +33612345678" ❌ BLOQUÉ
+```
 
 ### Structure composant React
 ```tsx
@@ -1760,6 +1919,38 @@ cd frontend/scripts && npx ts-node test-patterns.ts
 - ⏳ Mapbox (géolocalisation avancée + rayon recherche)
 - ⏳ Messagerie améliorée (pièces jointes, images)
 - ⏳ Application mobile React Native
+
+---
+
+## 🐛 Common Pitfalls & Troubleshooting
+
+### Firestore Query Errors
+**Problem**: "Missing index" error in Firestore  
+**Solution**: NEVER combine `where()` + `orderBy()` on different fields. Sort client-side with `.sort()` instead.
+
+### Upload Errors
+**Problem**: Documents fail to upload to Firebase Storage  
+**Solution**: Check CORS configuration - run `powershell update-cors.ps1` to update Storage CORS rules.
+
+### Validation Bypass
+**Problem**: Users sharing contact info in messages  
+**Solution**: ALWAYS use `antiBypassValidator.ts` - never create local validation patterns.
+
+### Email Not Sending
+**Problem**: Verification emails not received  
+**Solution**: Check Firebase Auth settings. Email templates are Firebase default and cannot be customized.
+
+### Infinite Loop
+**Problem**: Component re-renders infinitely  
+**Solution**: Check `docs/DEPANNAGE_BOUCLE_INFINIE.md` - usually caused by missing dependencies in useEffect or incorrect auth state management.
+
+### Search Returns Nothing
+**Problem**: Artisan search returns empty results  
+**Solution**: Verify artisan has `verificationStatus: 'approved'` AND `emailVerified: true` - both required for visibility.
+
+### Scripts Won't Run
+**Problem**: Migration scripts fail with TypeScript errors  
+**Solution**: Use `npx ts-node --project scripts/tsconfig.json` for scripts with custom tsconfig.
 
 ---
 

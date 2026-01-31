@@ -253,7 +253,7 @@ export default function MesDevisPage() {
       `🗑️ Supprimer définitivement ce devis ?\n\n` +
       `Numéro: ${numeroDevis}\n\n` +
       `⚠️ Cette action est irréversible.\n` +
-      `Le devis sera définitivement supprimé de la base de données.`
+      `Le devis sera définitivement supprimé`
     );
 
     if (!confirmer) return;
@@ -780,16 +780,7 @@ export default function MesDevisPage() {
                         `}
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#2C3E50]">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span className="numero-devis">{d.numeroDevis}</span>
-                            </div>
-                            {d.varianteLabel && (
-                              <span className="bg-indigo-100 text-indigo-800 text-[10px] font-semibold px-2 py-0.5 rounded inline-block w-fit">
-                                ⚡ {d.varianteLabel}
-                              </span>
-                            )}
-                          </div>
+                          <span className="numero-devis">{d.numeroDevis}</span>
                         </td>
                         <td className="px-2 py-4 text-sm max-w-xs">
                         {d.demandeId && demandesInfo[d.demandeId] ? (

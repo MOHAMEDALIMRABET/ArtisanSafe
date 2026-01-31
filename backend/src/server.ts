@@ -65,7 +65,7 @@ app.listen(port, async () => {
     // Attendre 2 secondes pour s'assurer que Firebase est initialisé
     setTimeout(() => {
       startEmailWatcher().catch(console.error);
-      console.log('✅ Service email configuré - Envoi automatique planifié (quotidien à 2h00)');
+      console.log('✅ Service email configuré - Surveillance active (toutes les 5 minutes)');
     }, 2000);
   } else {
     console.log('⚠️ Configuration SMTP manquante - Envoi d\'emails désactivé');

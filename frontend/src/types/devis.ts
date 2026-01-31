@@ -65,8 +65,7 @@ export interface Devis {
   
   // Devis alternatifs (pour proposer plusieurs options au client)
   varianteGroupe?: string;       // ID du groupe de variantes (même pour tous les devis alternatifs)
-  varianteLabel?: string;        // Ex: "Économique", "Standard", "Premium"
-  varianteLettreReference?: string; // Ex: "A", "B", "C" pour différencier dans le numéro
+  varianteLettreReference?: string; // Ex: "A", "B", "C" - Lettre attribuée automatiquement
   
   // Révisions (si le devis a été remplacé par une révision)
   devisRevisionId?: string;      // ID du devis qui remplace celui-ci
@@ -104,6 +103,22 @@ export interface Devis {
   titre: string;                 // Titre du devis
   description?: string;          // Description générale
   lignes: LigneDevis[];          // Lignes de prestation
+  
+  // Main d'œuvre (obligatoire)
+  mainOeuvre?: {
+    quantite: number;            // Quantité (ex: nombre de jours)
+    prixHT: number;              // Prix HT
+    tauxTVA: TVARate;            // Taux de TVA
+    unite: string;               // Unité (ex: "j" pour jours)
+  };
+  
+  // Matière première (optionnelle)
+  matierePremiere?: {
+    quantite: number;            // Quantité
+    prixHT: number;              // Prix HT
+    tauxTVA: TVARate;            // Taux de TVA
+    unite: string;               // Unité (ex: "unité")
+  };
   
   // Totaux (auto-calculés)
   totaux: {

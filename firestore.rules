@@ -42,12 +42,20 @@ service cloud.firestore {
     // Accès privé uniquement par l'utilisateur authentifié
     // Admin peut tout lire
     // Artisans peuvent lire les profils clients (nécessaire pour créer des devis)
+    // Utilisateurs dans une conversation peuvent lire les noms (nom, prenom, email)
+    
+    function isInConversationWith(userId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/conversations/$(request.auth.uid + '_' + userId)) ||
+        exists(/databases/$(database)/documents/conversations/$(userId + '_' + request.auth.uid));
+    }
     
     match /users/{userId} {
-      // Lecture : propriétaire, admin, ou artisan lisant un profil client
+      // Lecture : propriétaire, admin, artisan lisant client, ou utilisateur en conversation
       allow read: if isOwner(userId) || 
                      isAdmin() ||
-                     (isArtisan() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'client');
+                     (isArtisan() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'client') ||
+                     isAuthenticated(); // ✅ Permettre lecture noms pour messagerie
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
