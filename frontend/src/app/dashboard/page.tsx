@@ -280,8 +280,15 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <div>
+                    <h2 className="text-xl font-bold text-gray-800">Mes devis</h2>
+                    <p className="text-sm text-gray-600">Consulter vos devis reçus</p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
 
-          {/* Section Avis Artisans */}
+          {/* Section Avis */}
           <div className="mt-8 bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
