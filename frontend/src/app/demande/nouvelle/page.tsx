@@ -196,7 +196,7 @@ function NouvelleDemandeContent() {
           flexibiliteDays: criteria.flexible ? (criteria.flexibiliteDays || 0) : 0,
         },
         urgence: criteria.urgence,
-        budget: formData.budget.max > 0 ? formData.budget : null,
+        budgetIndicatif: formData.budget > 0 ? formData.budget : undefined,
         photosUrls: photoUrls, // URLs Firebase Storage au lieu des noms de fichiers
         statut: 'brouillon' as const,
         devisRecus: 0,
