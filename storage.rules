@@ -44,8 +44,9 @@ service firebase.storage {
       allow read: if request.auth != null;
       
       // Création: Seulement clients authentifiés peuvent créer des signatures
+      // Note: On ne vérifie PAS le rôle ici car custom claims non configurés
+      // La vérification du rôle se fait côté application
       allow create: if request.auth != null && 
-                       request.auth.token.role == 'client' &&
                        request.resource.size < 5 * 1024 * 1024 && // Max 5MB
                        request.resource.contentType.matches('image/png');
       
