@@ -125,17 +125,22 @@ service cloud.firestore {
     }
     
     // ============================================
-    // 5. COLLECTION: contrats (OBSOLÈTE - SUPPRIMÉE)
+    // 5. COLLECTION: contrats (OBSOLÈTE - EN COURS DE MIGRATION)
     // ============================================
-    // ⚠️ La collection 'contrats' a été supprimée.
+    // ⚠️ MIGRATION EN COURS : Collection 'contrats' → 'devis'
     // Juridiquement, un devis signé = contrat.
-    // Toutes les données sont dans 'devis' avec statuts étendus:
+    // Toutes les données migreront vers 'devis' avec statuts étendus:
     // paye, en_cours, travaux_termines, termine_valide, litige
     //
-    // Règles conservées temporairement pour éviter erreurs (à supprimer après migration)
+    // ✅ TEMPORAIRE : Lecture autorisée pour compatibilité avis-service.ts
+    // TODO 2026-03 : Supprimer après migration complète vers devis
     
     match /contrats/{contratId} {
-      allow read, write: if false; // Bloquer toute opération
+      allow read: if isAuthenticated() && 
+                     (isOwner(resource.data.clientId) || 
+                      isOwner(resource.data.artisanId) || 
+                      isAdmin());
+      allow write: if false; // Bloquer création/modification/suppression
     }
     
     // ============================================

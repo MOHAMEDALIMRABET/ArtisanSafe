@@ -14,13 +14,19 @@ L'architecture comportait **2 collections distinctes** :
 
 **Problème** : **Juridiquement, un devis signé = contrat**. Pas besoin de duplication !
 
+⚖️ **Principe juridique fondamental** :
+- Devis signé par les deux parties = **contrat de travaux** (Code civil art. 1128)
+- Signature électronique = valeur juridique identique (eIDAS)
+- ❌ Inutile de créer un document "contrat" séparé
+
 ### Solution
 
 **Fusionner** toute la logique dans la collection `devis` :
-- ✅ Devis signé = contrat juridique
+- ✅ **Devis signé = contrat juridique** (pas de collection séparée)
 - ✅ Nouveaux statuts : `paye`, `en_cours`, `travaux_termines`, `termine_valide`, `litige`
 - ✅ Gestion escrow intégrée dans `devis.paiement`
 - ✅ Gestion travaux dans `devis.travaux`
+- ✅ Signature électronique stockée dans `devis.signatureClient`
 
 ---
 
@@ -88,22 +94,35 @@ export async function validerAutomatiquementTravaux(devisId)  // Cloud Function
 
 ### 3. Firestore Rules
 
-**Anciennes règles contrats** :
+**État actuel (2026-02-01)** :
 ```javascript
-// SUPPRIMÉ
+// Collection contrats : LECTURE TEMPORAIRE autorisée
 match /contrats/{contratId} {
-  allow read: if isOwner(resource.data.clientId) || ...
-  allow update: if ...
+  allow read: if isAuthenticated() && 
+                 (isOwner(resource.data.clientId) || 
+                  isOwner(resource.data.artisanId) || 
+                  isAdmin());
+  allow write: if false; // ✅ Bloque création/modification/suppression
 }
 ```
 
-**Nouvelles règles devis** :
+**Raison** : 
+- La collection `contrats` est **obsolète** mais contient encore des données
+- Lecture autorisée pour compatibilité avec `avis-service.ts` (getContratsTerminesSansAvis)
+- **Aucun nouveau contrat ne peut être créé** (write: false)
+- Migration progressive vers système basé 100% sur `devis`
+
+**Nouvelle logique devis** :
 ```javascript
 match /devis/{devisId} {
   allow read: if isOwner(resource.data.clientId) || isOwner(resource.data.artisanId);
+  
   allow update: if isOwner(resource.data.artisanId) ||  // Début/fin travaux
                    isOwner(resource.data.clientId) ||   // Validation/litige
                    isAdmin();
+  
+  // IMPORTANT : Devis signé (statut >= 'paye') = CONTRAT JURIDIQUE
+  // Plus besoin de créer document dans collection 'contrats'
 }
 ```
 
@@ -125,14 +144,31 @@ Fichier **marqué comme @deprecated** avec redirections :
 
 ## 📊 Correspondance Ancien → Nouveau
 
-| Ancien (contrats) | Nouveau (devis) |
-|-------------------|-----------------|
-| `createContrat()` | `createDevis()` + `statut: 'paye'` |
-| `declarerDebutTravaux()` | `declarerDebutTravaux()` (devis-service) |
-| `declarerFinTravaux()` | `declarerFinTravaux()` (devis-service) |
-| `validerTravaux()` | `validerTravaux()` (devis-service) |
-| `signalerLitige()` | `signalerLitige()` (devis-service) |
-| `contrats/{id}` | `devis/{id}` avec `statut >= 'paye'` |
+### ⚖️ Principe clé : DEVIS SIGNÉ = CONTRAT
+
+**Avant (architecture complexe)** :
+1. Devis envoyé → statut `envoye`
+2. Client accepte + signe → statut `en_attente_paiement`
+3. Client paie → **CRÉATION document `contrats`** ← ❌ Inutile juridiquement !
+4. Travaux gérés dans collection `contrats`
+
+**Après (architecture simplifiée)** :
+1. Devis envoyé → statut `envoye`
+2. Client accepte + signe → statut `en_attente_paiement` + `devis.signatureClient` ✅
+3. Client paie → statut `paye` ← **CONTRAT JURIDIQUE VALIDE**
+4. Travaux gérés directement dans `devis` (statuts + champ `travaux`)
+
+### Mapping fonctions
+
+| Ancien (contrats) | Nouveau (devis) | Commentaire |
+|-------------------|-----------------|-------------|
+| `createContrat()` | ❌ **SUPPRIMÉ** | Devis signé + payé = contrat automatique |
+| `getContratById()` | `getDevisById()` avec `statut >= 'paye'` | Filtre côté client |
+| `declarerDebutTravaux()` | `declarerDebutTravaux()` (devis-service) | Même nom, collection différente |
+| `declarerFinTravaux()` | `declarerFinTravaux()` (devis-service) | Même nom, collection différente |
+| `validerTravaux()` | `validerTravaux()` (devis-service) | Même nom, collection différente |
+| `signalerLitige()` | `signalerLitige()` (devis-service) | Même nom, collection différente |
+| `contrats/{id}` | `devis/{id}` avec `statut >= 'paye'` | **1 seule collection** |
 
 ---
 
@@ -262,16 +298,42 @@ test('declarer DebutTravaux change statut paye → en_cours', async () => {
 
 ### Données existantes
 
-**Déploiement non-destructif** : 
-- Collection `contrats` **NON supprimée** dans Firestore (contient peut-être des données)
-- Règles bloquent les nouvelles opérations (`allow read, write: if false`)
-- Migration manuelle si contrats existants :
+**Collection `contrats` : État actuel (2026-02-01)** :
+- ✅ **Lecture autorisée** (règles Firestore mises à jour)
+- ❌ **Écriture bloquée** (`allow write: if false`)
+- 🔄 **Migration progressive** vers système 100% basé sur `devis`
 
+**Pourquoi on garde temporairement** :
+1. Compatibilité avec code existant :
+   - `avis-service.ts` → `getContratsTerminesSansAvis()`
+   - Dashboard client → affiche interventions terminées
+2. Données historiques potentielles dans Firestore
+3. Migration sans downtime
+
+**Prochaines étapes** :
 ```bash
-# Script de migration (si nécessaire)
+# 1. Vérifier si données dans contrats (Firestore Console)
+# 2. Si oui, migrer vers devis avec script :
 cd frontend/scripts
 npx ts-node migrate-contrats-to-devis.ts
+
+# 3. Après migration complète, supprimer règles contrats
+# firestore.rules : Supprimer match /contrats/{contratId}
 ```
+
+### Principe juridique : Devis signé = Contrat
+
+⚖️ **Rappel important** :
+- **Code civil art. 1128** : Contrat formé dès accord + signature des parties
+- **Devis signé par client + artisan = contrat de travaux** (valeur juridique complète)
+- **Signature électronique (Canvas)** : Valeur juridique identique (règlement eIDAS)
+- ❌ **PAS BESOIN** de créer un document "contrat" séparé
+
+**Dans ArtisanSafe** :
+- Devis `statut: 'paye'` = **Contrat juridiquement contraignant**
+- `devis.signatureClient` = preuve de consentement
+- `devis.dateLimitePaiement` = clause résolutoire (annulation si non payé 24h)
+- `devis.paiement` = preuve d'exécution financière
 
 ### Rollback
 
