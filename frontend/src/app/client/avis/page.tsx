@@ -168,15 +168,14 @@ export default function AvisClientPage() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Avis</h1>
+          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Avis Clients</h1>
           <p className="text-gray-600">
-            Consultez les avis que vous avez donnés aux artisans
+            Consultez les retours de vos clients et répondez-y pour améliorer votre réputation
           </p>
         </div>
 
         {/* Statistiques avec répartition */}
-        {avis.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <div className="grid md:grid-cols-2 gap-8">
               {/* Note moyenne */}
               <div>
@@ -216,10 +215,10 @@ export default function AvisClientPage() {
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Filtres et recherche */}
-        {avis.length > 0 && (
+        {
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="grid md:grid-cols-3 gap-4">
               {/* Filtre par note */}
@@ -299,14 +298,14 @@ export default function AvisClientPage() {
           {avisFiltres.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-12 text-center">
               <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
                 {avis.length === 0 ? 'Aucun avis pour le moment' : 'Aucun résultat'}
               </h3>
               <p className="text-gray-500">
                 {avis.length === 0
-                  ? 'Vous n\'avez pas encore laissé d\'avis.'
+                  ? 'Les avis de vos clients apparaîtront ici après la fin de leurs interventions.'
                   : 'Essayez de modifier vos filtres de recherche.'}
               </p>
             </div>
