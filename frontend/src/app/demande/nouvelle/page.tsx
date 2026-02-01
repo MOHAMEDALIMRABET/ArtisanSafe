@@ -179,7 +179,7 @@ function NouvelleDemandeContent() {
       }
 
       // Créer la demande
-      const demandeData = {
+      const demandeData: any = {
         clientId: user.uid,
         categorie: criteria.categorie,
         titre: formData.titre,
@@ -196,12 +196,16 @@ function NouvelleDemandeContent() {
           flexibiliteDays: criteria.flexible ? (criteria.flexibiliteDays || 0) : 0,
         },
         urgence: criteria.urgence,
-        budgetIndicatif: formData.budget > 0 ? formData.budget : undefined,
         photosUrls: photoUrls, // URLs Firebase Storage au lieu des noms de fichiers
         statut: 'brouillon' as const,
         devisRecus: 0,
         artisansMatches: artisanPreselect ? [artisanPreselect] : [],
       };
+
+      // Ajouter budgetIndicatif seulement si > 0 (Firestore refuse undefined)
+      if (formData.budget > 0) {
+        demandeData.budgetIndicatif = formData.budget;
+      }
 
       // Créer ou mettre à jour la demande
       let demandeId: string;
