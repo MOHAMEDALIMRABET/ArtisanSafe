@@ -218,9 +218,8 @@ export default function AvisClientPage() {
         </div>
 
         {/* Filtres et recherche */}
-        {
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="grid md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="grid md:grid-cols-3 gap-4">
               {/* Filtre par note */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -291,7 +290,7 @@ export default function AvisClientPage() {
               </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* Liste des avis */}
         <div className="space-y-6">
