@@ -63,6 +63,13 @@ export interface Devis {
   vuParArtisan?: boolean;        // L'artisan a-t-il consulté ce devis après action client (système lu/non lu)
   dateVueParArtisan?: Timestamp; // Date de consultation par l'artisan
   
+  // Signature électronique (lors de l'acceptation)
+  signatureClient?: {
+    url: string;                 // URL Firebase Storage de l'image de signature
+    date: Timestamp;             // Date de la signature
+    ip?: string;                 // IP du client (optionnel, pour traçabilité)
+  };
+  
   // Devis alternatifs (pour proposer plusieurs options au client)
   varianteGroupe?: string;       // ID du groupe de variantes (même pour tous les devis alternatifs)
   varianteLettreReference?: string; // Ex: "A", "B", "C" - Lettre attribuée automatiquement

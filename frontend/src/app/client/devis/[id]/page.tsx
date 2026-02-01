@@ -9,7 +9,9 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { doc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { db, storage } from '@/lib/firebase/config';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { SignatureCanvas } from '@/components/SignatureCanvas';
 import { notifyArtisanDevisAccepte, notifyArtisanDevisRefuse, notifyArtisanDevisRevision } from '@/lib/firebase/notification-service';
 import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
@@ -93,6 +95,7 @@ export default function ClientDevisDetailPage() {
   const [refusalReason, setRefusalReason] = useState('');
   const [refusalType, setRefusalType] = useState<'variante' | 'artisan' | 'revision'>('variante');
   const [processing, setProcessing] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
 
   const devisId = params.id as string;
   const action = searchParams.get('action');
@@ -195,22 +198,38 @@ export default function ClientDevisDetailPage() {
   const handleAccepter = async () => {
     if (!devis || processing) return;
 
-    if (!confirm('Êtes-vous sûr de vouloir accepter ce devis ? Cette action est irréversible.')) {
-      return;
-    }
+    // Ouvrir la modale de signature électronique
+    setShowSignatureModal(true);
+  };
+
+  const handleSignatureValidated = async (signatureDataURL: string) => {
+    if (!devis) return;
 
     try {
       setProcessing(true);
+      setShowSignatureModal(false);
 
-      // Mettre à jour le statut du devis
+      // 1. Uploader la signature dans Firebase Storage
+      const signatureRef = ref(storage, `signatures/${devisId}_${Date.now()}.png`);
+      await uploadString(signatureRef, signatureDataURL, 'data_url');
+      const signatureURL = await getDownloadURL(signatureRef);
+
+      console.log('✅ Signature uploadée:', signatureURL);
+
+      // 2. Mettre à jour le statut du devis avec la signature
       await updateDoc(doc(db, 'devis', devisId), {
         statut: 'accepte',
         dateAcceptation: Timestamp.now(),
         dateDerniereNotification: Timestamp.now(),
-        vuParArtisan: false, // Marquer comme non vu par l'artisan pour notification
+        vuParArtisan: false,
+        signatureClient: {
+          url: signatureURL,
+          date: Timestamp.now(),
+          ip: '', // TODO: Récupérer l'IP client si nécessaire
+        },
       });
 
-      // Notifier l'artisan
+      // 3. Notifier l'artisan
       try {
         const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
         await notifyArtisanDevisAccepte(
@@ -222,16 +241,16 @@ export default function ClientDevisDetailPage() {
         console.log('✅ Artisan notifié de l\'acceptation');
       } catch (error) {
         console.error('Erreur notification artisan:', error);
-        // Ne pas bloquer l'acceptation si la notification échoue
       }
 
-      alert('✅ Devis accepté avec succès !\n\nL\'artisan sera notifié. Vous pouvez maintenant procéder au paiement.');
+      alert('✅ Devis accepté avec succès !\n\nVotre signature électronique a été enregistrée. L\'artisan sera notifié.');
       
       // TODO: Créer le contrat et rediriger vers le paiement
       router.push('/client/devis');
     } catch (error) {
       console.error('Erreur acceptation devis:', error);
-      alert('Erreur lors de l\'acceptation. Veuillez réessayer.');
+      alert('❌ Erreur lors de l\'acceptation. Veuillez réessayer.');
+      setShowSignatureModal(true); // Réouvrir la modale en cas d'erreur
     } finally {
       setProcessing(false);
     }
@@ -702,6 +721,14 @@ export default function ClientDevisDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de signature électronique */}
+      {showSignatureModal && (
+        <SignatureCanvas
+          onSave={handleSignatureValidated}
+          onCancel={() => setShowSignatureModal(false)}
+        />
+      )}
 
       {/* Modal de refus */}
       {showRefusalModal && (

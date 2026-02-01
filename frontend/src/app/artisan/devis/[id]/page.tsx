@@ -456,6 +456,77 @@ export default function VoirDevisPage() {
             )}
           </div>
 
+          {/* Signature électronique du client (si devis accepté) */}
+          {devis.statut === 'accepte' && devis.signatureClient && (
+            <div className="border-t-2 border-green-500 mt-8 pt-6 bg-green-50 rounded-lg p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-green-800 mb-2 flex items-center gap-2">
+                    ✅ Devis accepté et signé électroniquement
+                  </h3>
+                  <p className="text-sm text-green-700 mb-4">
+                    Le client <strong>{devis.client.prenom} {devis.client.nom}</strong> a accepté ce devis le{' '}
+                    <strong>{devis.dateAcceptation?.toDate().toLocaleDateString('fr-FR', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</strong>
+                  </p>
+                  
+                  {/* Affichage de la signature */}
+                  <div className="bg-white border-2 border-green-300 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-gray-700 mb-3">Signature du client :</p>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 inline-block">
+                      <img
+                        src={devis.signatureClient.url}
+                        alt="Signature du client"
+                        className="max-w-md h-auto"
+                        style={{ maxHeight: '150px' }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3">
+                      📅 Signé le {devis.signatureClient.date?.toDate().toLocaleDateString('fr-FR')} à{' '}
+                      {devis.signatureClient.date?.toDate().toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      🔒 Signature électronique conforme au règlement eIDAS (UE n°910/2014)
+                    </p>
+                  </div>
+
+                  {/* Message d'action */}
+                  <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <div className="flex items-start gap-3">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      <div className="text-sm text-blue-800">
+                        <p className="font-semibold mb-1">Prochaines étapes :</p>
+                        <ul className="list-disc list-inside space-y-1 text-blue-700">
+                          <li>Contactez le client pour planifier les travaux</li>
+                          <li>Le paiement sera effectué via la plateforme (séquestre sécurisé)</li>
+                          <li>Conservez ce devis signé pour vos dossiers</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="no-print mt-8 flex gap-4 justify-end flex-wrap">
             <button
