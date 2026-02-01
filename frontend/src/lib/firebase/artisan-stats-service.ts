@@ -152,8 +152,8 @@ export async function trackDevisEnvoye(
       }
 
       // Calculer nouveau délai moyen
-      const sommeDe lais = nouvellesReponses.reduce((sum, d) => sum + d, 0);
-      const nouveauDelaiMoyen = sommeDe lais / nouvellesReponses.length;
+      const sommeDelais = nouvellesReponses.reduce((sum, d) => sum + d, 0);
+      const nouveauDelaiMoyen = sommeDelais / nouvellesReponses.length;
 
       // Compter réponses rapides
       const nouveauReponseRapide24h = delaiHeures < 24 
