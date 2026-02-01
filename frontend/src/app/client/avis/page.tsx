@@ -280,18 +280,15 @@ export default function AvisClientPage() {
               </div>
             </div>
           </div>
-              </div>
-            </div>
 
-            {/* Compteur résultats */}
-            {(filtreNote !== null || recherche.trim()) && (
+          {/* Compteur résultats */}
+          {(filtreNote !== null || recherche.trim()) && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-600">
                   {avisFiltres.length} résultat{avisFiltres.length !== 1 ? 's' : ''} trouvé{avisFiltres.length !== 1 ? 's' : ''}
                 </p>
               </div>
             )}
-          </div>
         </div>
 
         {/* Liste des avis */}
