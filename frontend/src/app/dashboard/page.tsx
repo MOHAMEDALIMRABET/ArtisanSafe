@@ -404,7 +404,7 @@ export default function DashboardPage() {
                     {avis.reponseArtisan && (
                       <div className="bg-blue-50 border-l-2 border-blue-400 pl-3 py-2 mt-2">
                         <p className="text-xs text-blue-700 font-semibold mb-1">Réponse de l'artisan :</p>
-                        <p className="text-xs text-gray-700 line-clamp-2">{avis.reponseArtisan.texte}</p>
+                        <p className="text-xs text-gray-700 line-clamp-2">{avis.reponseArtisan.message}</p>
                       </div>
                     )}
                   </div>
