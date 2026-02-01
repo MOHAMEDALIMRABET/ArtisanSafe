@@ -595,7 +595,7 @@ export async function dupliquerDevis(devisId: string): Promise<string> {
  * Artisan déclare le début des travaux
  * Statut: paye → en_cours
  */
-export async function declarer DebutTravaux(devisId: string, artisanId: string): Promise<void> {
+export async function declarerDebutTravaux(devisId: string, artisanId: string): Promise<void> {
   const devisRef = doc(db, COLLECTION_NAME, devisId);
   const devisSnap = await getDoc(devisRef);
   
