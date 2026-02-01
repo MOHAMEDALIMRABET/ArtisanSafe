@@ -685,126 +685,32 @@ export default function ArtisanDashboardPage() {
               </div>
             </div>
           </Link>
-        </div>
 
-        {/* Section Avis Clients */}
-        <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-800">Avis</h3>
-                <p className="text-sm text-gray-600">
-                  {statsAvis.total > 0 ? (
-                    <>
-                      <span className="font-semibold text-[#FF6B00]">{statsAvis.moyenne.toFixed(1)}/5</span>
-                      {' '}• {statsAvis.total} avis
-                    </>
-                  ) : (
-                    'Aucun avis pour le moment'
-                  )}
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/artisan/avis"
-              className="text-[#FF6B00] hover:underline text-sm font-medium flex items-center gap-1"
-            >
-              Voir tout
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-
-          {avisRecents.length === 0 ? (
-            <div className="text-center py-8">
-              <svg className="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-              <p className="text-gray-500 text-sm">
-                Aucun avis client pour le moment. <br />
-                Les avis apparaîtront après vos premières interventions terminées.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {avisRecents.map((avis) => (
-                <div key={avis.id} className="border border-gray-200 rounded-lg p-4 hover:border-[#FF6B00] transition">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <svg
-                          key={star}
-                          className={`w-5 h-5 ${star <= avis.note ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {avis.dateCreation && new Intl.DateTimeFormat('fr-FR', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                      }).format(avis.dateCreation.toDate())}
-                    </span>
-                  </div>
-                  
-                  {avis.points_forts && avis.points_forts.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {avis.points_forts.map((point, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          {point}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <p className="text-sm text-gray-700 italic line-clamp-2">
-                    "{avis.commentaire}"
+          {/* Avis */}
+          <Link href="/artisan/avis">
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Avis</h2>
+                  <p className="text-sm text-gray-600">
+                    {statsAvis.total > 0 ? (
+                      <>
+                        <span className="font-semibold text-[#FF6B00]">{statsAvis.moyenne.toFixed(1)}/5</span>
+                        {' '}• {statsAvis.total} avis
+                      </>
+                    ) : (
+                      'Aucun avis pour le moment'
+                    )}
                   </p>
-                  
-                  {!avis.reponseArtisan && (
-                    <Link
-                      href="/artisan/avis"
-                      className="inline-flex items-center gap-1 text-[#FF6B00] text-xs mt-2 hover:underline"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                      </svg>
-                      Répondre
-                    </Link>
-                  )}
                 </div>
-              ))}
-              
-              {statsAvis.total > 3 && (
-                <div className="text-center pt-2">
-                  <Link
-                    href="/artisan/avis"
-                    className="inline-flex items-center gap-2 text-[#FF6B00] hover:underline text-sm font-medium"
-                  >
-                    Voir tous les avis ({statsAvis.total})
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </Link>
-                </div>
-              )}
+              </div>
             </div>
-          )}
+          </Link>
         </div>
 
         {/* Section Mes Devis - Mes Factures (compacte) */}
