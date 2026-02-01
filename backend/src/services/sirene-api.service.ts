@@ -23,8 +23,10 @@ interface SireneResponse {
 
 /**
  * Vérifier un SIRET et récupérer les informations de l'entreprise
+ * @param siret SIRET à vérifier (14 chiffres)
+ * @param raisonSocialeInput Raison sociale fournie par l'utilisateur (utilisée en mode bypass)
  */
-export async function verifySiret(siret: string): Promise<SireneResponse> {
+export async function verifySiret(siret: string, raisonSocialeInput?: string): Promise<SireneResponse> {
   try {
     // Nettoyer le SIRET (enlever espaces)
     const cleanSiret = siret.replace(/\s/g, '');
@@ -43,14 +45,16 @@ export async function verifySiret(siret: string): Promise<SireneResponse> {
     // MODE BYPASS ACTIVÉ - Utilisation en développement uniquement
     if (process.env.SIRENE_BYPASS_VERIFICATION === 'true') {
       console.log(`⚠️ MODE BYPASS ACTIVÉ - Vérification SIRENE désactivée (dev uniquement)`);
+      const raisonSociale = raisonSocialeInput || 'ENTREPRISE TEST (BYPASS MODE)';
+      console.log(`📝 Raison sociale utilisée: ${raisonSociale}`);
       return {
         valid: true,
-        raisonSociale: 'ENTREPRISE TEST (BYPASS MODE)',
+        raisonSociale: raisonSociale,
         adresse: '1 Rue de Test, 75001 Paris',
         activite: 'Test Mode',
         data: {
           siret: cleanSiret,
-          raisonSociale: 'ENTREPRISE TEST (BYPASS MODE)',
+          raisonSociale: raisonSociale,
           adresse: '1 Rue de Test, 75001 Paris',
           codePostal: '75001',
           ville: 'Paris',
@@ -240,8 +244,8 @@ export async function verifySiretWithRaisonSociale(
   console.log(`📋 SIRET reçu: ${siret}`);
   console.log(`📋 Raison sociale reçue: ${raisonSocialeInput}`);
   
-  // 1. Vérifier le SIRET dans SIRENE
-  const sireneResult = await verifySiret(siret);
+  // 1. Vérifier le SIRET dans SIRENE (en passant la raison sociale pour le mode bypass)
+  const sireneResult = await verifySiret(siret, raisonSocialeInput);
 
   if (!sireneResult.valid) {
     console.log(`❌ Échec vérification SIRET: ${sireneResult.error}`);

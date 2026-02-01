@@ -1,6 +1,7 @@
 import { db } from './config';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { Artisan, Demande, MatchingResult, MatchingCriteria } from '@/types/firestore';
+import { getArtisanStats, calculateScoreReactivite } from './artisan-stats-service';
 
 /**
  * Calcule la distance entre deux points GPS (formule de Haversine)
@@ -405,11 +406,22 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
       const disponibiliteScore = calculateDisponibiliteScore(artisan, tempDemande as Demande);
       const notationScore = calculateNotationScore(artisan);
       
+      // 🆕 NOUVEAU: Score de réactivité (taux de réponse + délai moyen)
+      let reactiviteScore = 0;
+      try {
+        const stats = await getArtisanStats(artisan.userId);
+        reactiviteScore = calculateScoreReactivite(stats);
+      } catch (error) {
+        console.log(`⚠️  Stats non disponibles pour ${artisan.raisonSociale}, score réactivité=0`);
+        reactiviteScore = 0; // Nouvel artisan sans historique
+      }
+      
       console.log(`📊 Scores détaillés:`);
       console.log(`   - Métier: ${metierScore}/100`);
       console.log(`   - Distance: ${distanceScore}/50`);
       console.log(`   - Disponibilité: ${disponibiliteScore}/50`);
       console.log(`   - Notation: ${notationScore}/50`);
+      console.log(`   - Réactivité: ${reactiviteScore}/80 🆕`);
       
       // ✅ CHANGEMENT: Accepter même avec disponibiliteScore=0 (artisan peut être contacté)
       // Si score dispo = 0, on affiche quand même l'artisan avec un score réduit
@@ -433,21 +445,23 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
         urgenceScore = 5;
       }
 
-      // Score total (max 270 points)
+      // 🆕 Score total (max 350 points) - Ajout du score de réactivité
       const scoreTotal = 
-        metierScore + 
-        distanceScore + 
-        disponibiliteScore + 
-        notationScore + 
-        urgenceScore;
+        metierScore +        // 100
+        distanceScore +      // 50
+        disponibiliteScore + // 50
+        notationScore +      // 50
+        reactiviteScore +    // 80 🆕
+        urgenceScore;        // 20
 
-      console.log(`✅ ${artisan.raisonSociale}: score=${scoreTotal} (distance=${distanceScore}, dispo=${disponibiliteScore}, note=${notationScore})`);
+      console.log(`✅ ${artisan.raisonSociale}: score=${scoreTotal}/350 (distance=${distanceScore}, dispo=${disponibiliteScore}, note=${notationScore}, réactivité=${reactiviteScore})`);
 
       const details = {
         metierMatch: metierScore,
         distanceScore,
         disponibiliteScore,
         notationScore,
+        reactiviteScore, // 🆕
         urgenceMatch: urgenceScore,
       };
 

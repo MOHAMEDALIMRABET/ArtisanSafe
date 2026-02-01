@@ -295,10 +295,24 @@ service cloud.firestore {
     }
     
     // ============================================
-    // 14. COLLECTION: contrats (ESCROW - SYSTÈME SÉQUESTRE)
+    // 14. COLLECTION: artisan_stats (SCORING RÉACTIVITÉ)
+    // ============================================
+    // Statistiques de performance artisan pour scoring matching
+    // Lecture publique (nécessaire pour matching)
+    // Écriture uniquement par système (services Firebase)
+    
+    match /artisan_stats/{artisanId} {
+      allow read: if true; // Public pour affichage stats + calcul matching
+      allow create: if isAuthenticated(); // Créé automatiquement par services
+      allow update: if isAuthenticated(); // Mis à jour par services Firebase
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // 15. COLLECTION: contrats (ESCROW - SYSTÈME SÉQUESTRE)
     // ============================================
     // ============================================
-    // 15. COLLECTION: deleted_accounts
+    // 16. COLLECTION: deleted_accounts
     // ============================================
     // Archives des comptes supprimés
     // Accessible uniquement par admin en lecture seule

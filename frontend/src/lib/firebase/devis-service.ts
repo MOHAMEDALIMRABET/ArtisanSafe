@@ -25,6 +25,7 @@ import type {
   DevisStatut,
 } from '@/types/devis';
 import { notifyClientDevisRecu } from './notification-service';
+import { trackDevisEnvoye, trackDevisAccepte, trackDevisRefuse } from './artisan-stats-service';
 
 const COLLECTION_NAME = 'devis';
 
@@ -242,6 +243,27 @@ export async function createDevis(
         numeroDevis
       );
       console.log('✅ Notification envoyée au client:', devisData.clientId, 'pour devis:', numeroDevis);
+      
+      // 🆕 TRACKING: Enregistrer l'envoi du devis pour le scoring
+      if (devisData.demandeId) {
+        try {
+          // Récupérer la date de création de la demande pour calculer le délai
+          const demandeRef = doc(db, 'demandes', devisData.demandeId);
+          const demandeSnap = await getDoc(demandeRef);
+          if (demandeSnap.exists()) {
+            const demande = demandeSnap.data();
+            await trackDevisEnvoye(
+              devisData.artisanId,
+              demande.dateCreation as Timestamp,
+              maintenant
+            );
+            console.log('📊 Stats artisan mises à jour : devis envoyé');
+          }
+        } catch (error) {
+          console.error('⚠️ Erreur tracking devis envoyé:', error);
+          // Ne pas bloquer si le tracking échoue
+        }
+      }
     } catch (error) {
       console.error('❌ Erreur envoi notification client:', error);
       console.error('Stack:', error instanceof Error ? error.stack : 'Pas de stack');
@@ -307,6 +329,14 @@ export async function updateDevis(
       updateData.dateAcceptation = Timestamp.now();
       updateData.dateDerniereNotification = Timestamp.now(); // Notifier l'artisan
       
+      // 🆕 TRACKING: Enregistrer l'acceptation pour le scoring
+      try {
+        await trackDevisAccepte(devisActuel.artisanId);
+        console.log('📊 Stats artisan mises à jour : devis accepté');
+      } catch (error) {
+        console.error('⚠️ Erreur tracking devis accepté:', error);
+      }
+      
       // Si c'est un devis avec variantes, annuler automatiquement les autres variantes
       if (devisActuel.varianteGroupe) {
         await annulerAutresVariantes(devisId, devisActuel.varianteGroupe);
@@ -314,6 +344,15 @@ export async function updateDevis(
     } else if (updates.statut === 'refuse') {
       updateData.dateRefus = Timestamp.now();
       updateData.dateDerniereNotification = Timestamp.now(); // Notifier l'artisan
+      
+      // 🆕 TRACKING: Enregistrer le refus pour le scoring
+      try {
+        await trackDevisRefuse(devisActuel.artisanId);
+        console.log('📊 Stats artisan mises à jour : devis refusé');
+      } catch (error) {
+        console.error('⚠️ Erreur tracking devis refusé:', error);
+      }
+      
       // Le motifRefus doit être passé dans updates si fourni
     }
   }

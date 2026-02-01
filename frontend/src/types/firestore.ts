@@ -94,6 +94,77 @@ export type NotificationType =
 
 export type MessageType = 'texte' | 'document' | 'image';
 
+// ============================================
+// STATISTIQUES ARTISAN (SCORING RÉACTIVITÉ)
+// ============================================
+
+/**
+ * Statistiques de performance artisan
+ * Collection Firestore: artisan_stats/{artisanId}
+ */
+export interface ArtisanStats {
+  artisanId: string;
+  
+  // === TAUX DE RÉPONSE DEVIS ===
+  demandesRecues: number;         // Total demandes reçues/matchées
+  devisEnvoyes: number;           // Nombre de devis effectivement envoyés
+  tauxReponseDevis: number;       // % = (devisEnvoyes / demandesRecues) * 100
+  
+  // === DÉLAI DE RÉPONSE ===
+  delaiMoyenReponseHeures: number;  // Délai moyen en heures
+  dernieresReponses: number[];      // Derniers 20 délais (pour moyenne glissante)
+  reponseRapide24h: number;         // Nombre réponses < 24h
+  
+  // === TAUX D'ACCEPTATION CLIENT ===
+  devisAcceptes: number;          // Devis acceptés par les clients
+  devisRefuses: number;           // Devis refusés par les clients
+  tauxAcceptation: number;        // % = (devisAcceptes / devisEnvoyes) * 100
+  
+  // === FIABILITÉ ===
+  missionsTerminees: number;      // Contrats terminés avec succès
+  missionsAnnulees: number;       // Contrats annulés (par artisan ou client)
+  tauxCompletion: number;         // % missions terminées
+  
+  // === QUALITÉ ===
+  noteGlobale: number;            // Note moyenne 0-5
+  nombreAvis: number;             // Nombre total d'avis
+  dernierAvisDate?: Timestamp;
+  
+  // === LITIGES ===
+  nombreLitiges: number;          // Total litiges ouverts
+  litigesResolus: number;         // Litiges résolus favorablement
+  
+  // === HISTORIQUE ===
+  premiereActivite?: Timestamp;   // Première demande reçue
+  derniereActivite?: Timestamp;   // Dernière action (devis envoyé/mission terminée)
+  derniereMiseAJour: Timestamp;   // Dernière mise à jour stats
+  
+  // === PÉRIODES ===
+  stats30Jours?: {
+    demandesRecues: number;
+    devisEnvoyes: number;
+    tauxReponse: number;
+    delaiMoyen: number;
+  };
+  stats90Jours?: {
+    demandesRecues: number;
+    devisEnvoyes: number;
+    tauxReponse: number;
+    delaiMoyen: number;
+  };
+}
+
+/**
+ * Événement historique pour traçabilité
+ */
+export interface StatsEvent {
+  type: 'demande_recue' | 'devis_envoye' | 'devis_accepte' | 'devis_refuse' | 'mission_terminee' | 'mission_annulee';
+  timestamp: Timestamp;
+  demandeId?: string;
+  devisId?: string;
+  delaiReponse?: number; // Pour devis_envoye
+}
+
 export type FormeJuridique = 
   | 'auto_entrepreneur' 
   | 'eurl' 
@@ -633,12 +704,13 @@ export type UpdateDocument<T> = Partial<Omit<T, 'id'>> & { id: string };
 export interface MatchingResult {
   artisanId: string;
   artisan: Artisan; // Objet artisan complet pour affichage
-  score: number;
+  score: number; // Sur 350 points max (ajout réactivité)
   breakdown: {
     metierMatch: number; // 0-100
     distanceScore: number; // 0-50
     disponibiliteScore: number; // 0-50
     notationScore: number; // 0-50
+    reactiviteScore: number; // 0-80 🆕 (taux réponse + délai)
     urgenceMatch: number; // 0-20
   };
   details: { // Alias pour breakdown (compatibilité)
@@ -646,6 +718,7 @@ export interface MatchingResult {
     distanceScore: number;
     disponibiliteScore: number;
     notationScore: number;
+    reactiviteScore: number; // 🆕
     urgenceMatch: number;
   };
   distance?: number; // km
