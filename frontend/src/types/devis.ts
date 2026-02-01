@@ -123,6 +123,16 @@ export interface Devis {
     montantArtisan: number;      // totaux.totalTTC - commission.montant
   };
   
+  // Système de rappels automatiques (devis non répondus)
+  rappels?: {
+    rappel7JoursEnvoye?: Timestamp;  // Rappel -7 jours avant dateDebutPrevue
+    rappel3JoursEnvoye?: Timestamp;  // Rappel -3 jours (urgent)
+  };
+  
+  // Expiration
+  motifExpiration?: string;      // Raison de l'expiration si statut='expire'
+  dateExpiration?: Timestamp;    // Date d'expiration automatique
+  
   // Délai limite de paiement (24h après signature)
   dateLimitePaiement?: Timestamp;  // Calculé automatiquement (dateSignature + 24h)
   
