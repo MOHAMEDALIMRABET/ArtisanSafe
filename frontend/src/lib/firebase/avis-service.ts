@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import type { Avis } from '@/types/firestore';
-import { updateArtisanNotation } from './artisan-service';
+import { updateNotation } from './artisan-service';
 import { updateNoteGlobale } from './artisan-stats-service';
 
 /**
@@ -68,7 +68,7 @@ export async function createAvis(data: {
     });
 
     // Mettre à jour la notation de l'artisan
-    await updateArtisanNotation(data.artisanId, data.note);
+    await updateNotation(data.artisanId, data.note);
 
     // Mettre à jour les stats de l'artisan
     await updateNoteGlobale(data.artisanId, data.note);
