@@ -83,21 +83,29 @@ export async function createAvis(data: {
 
 /**
  * Récupérer tous les avis d'un artisan (visibles uniquement)
+ * ⚠️ Tri côté client pour éviter index composite Firestore
  */
 export async function getAvisByArtisanId(artisanId: string): Promise<Avis[]> {
   try {
+    // ✅ Requête simple sans orderBy (évite index composite)
     const q = query(
       collection(db, 'avis'),
       where('artisanId', '==', artisanId),
-      where('visible', '==', true),
-      orderBy('dateCreation', 'desc')
+      where('visible', '==', true)
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    const avisData = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     } as Avis));
+
+    // ✅ Tri côté client en JavaScript
+    return avisData.sort((a, b) => {
+      const dateA = a.dateCreation?.toMillis() || 0;
+      const dateB = b.dateCreation?.toMillis() || 0;
+      return dateB - dateA; // Ordre décroissant (plus récents en premier)
+    });
   } catch (error) {
     console.error('❌ Erreur récupération avis artisan:', error);
     return [];
@@ -106,20 +114,28 @@ export async function getAvisByArtisanId(artisanId: string): Promise<Avis[]> {
 
 /**
  * Récupérer tous les avis donnés par un client
+ * ⚠️ Tri côté client pour cohérence avec getAvisByArtisanId
  */
 export async function getAvisByClientId(clientId: string): Promise<Avis[]> {
   try {
+    // ✅ Requête simple sans orderBy (évite index composite)
     const q = query(
       collection(db, 'avis'),
-      where('clientId', '==', clientId),
-      orderBy('dateCreation', 'desc')
+      where('clientId', '==', clientId)
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    const avisData = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     } as Avis));
+
+    // ✅ Tri côté client en JavaScript
+    return avisData.sort((a, b) => {
+      const dateA = a.dateCreation?.toMillis() || 0;
+      const dateB = b.dateCreation?.toMillis() || 0;
+      return dateB - dateA; // Ordre décroissant (plus récents en premier)
+    });
   } catch (error) {
     console.error('❌ Erreur récupération avis client:', error);
     return [];
