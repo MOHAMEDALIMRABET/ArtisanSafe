@@ -809,27 +809,6 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
               </div>
             )}
 
-            {/* Badge "Devis payé" masqué à l'impression - visible uniquement à l'écran */}
-            {devis.statut === 'paye' && (
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded print:hidden">
-                <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <div className="text-sm text-green-800 w-full">
-                    <p className="font-semibold mb-1">✅ Devis signé et payé - Coordonnées complètes visibles</p>
-                    <p className="text-green-700">
-                      Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')} - 
-                      Référence : <strong>{devis.paiement?.referenceTransaction}</strong>
-                    </p>
-                    <p className="text-green-700 mt-2">
-                      Vous pouvez maintenant contacter l'artisan directement avec les coordonnées complètes affichées ci-dessus.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Titre */}
             <div className="mb-6">
               <h3 className="text-xl font-bold text-[#2C3E50] mb-2">{devis.titre}</h3>
