@@ -873,9 +873,8 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                 
                 {devis.dateDebutPrevue && (
                   <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                    <p className="text-blue-800 font-semibold text-lg">
-                      <span className="text-sm font-semibold text-blue-900">📅 Date de début prévue des travaux :</span>{' '}
-                      {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
+                    <p className="text-blue-900 font-semibold">
+                      📅 Date de début prévue des travaux : {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
