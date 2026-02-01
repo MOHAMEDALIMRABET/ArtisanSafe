@@ -358,7 +358,7 @@ export default function ArtisanDashboardPage() {
                     <span className={artisan?.siretVerified ? "text-green-600" : "text-orange-600"}>
                       {artisan?.siretVerified ? "✅" : "⏳"}
                     </span>
-                    <span className="text-gray-700">Vérification SIRET</span>
+                    <span className="text-gray-700">SIRET de l'entreprise</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-green-600">
@@ -381,7 +381,7 @@ export default function ArtisanDashboardPage() {
                           : "⏳"}
                     </span>
                     <span className="text-gray-700">
-                      KBIS {artisan?.verificationDocuments?.kbis?.rejected ? "rejeté" : "vérifié"}
+                      Vérification KBIS {artisan?.verificationDocuments?.kbis?.rejected ? "rejeté" : "vérifié"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
@@ -399,7 +399,7 @@ export default function ArtisanDashboardPage() {
                           : "⏳"}
                     </span>
                     <span className="text-gray-700">
-                      Pièce d'identité {artisan?.verificationDocuments?.idCard?.rejected ? "rejetée" : "vérifiée"}
+                      Vérification pièce d'identité {artisan?.verificationDocuments?.idCard?.rejected ? "rejetée" : "vérifiée"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
@@ -417,7 +417,7 @@ export default function ArtisanDashboardPage() {
                           : "⏳"}
                     </span>
                     <span className="text-gray-700">
-                      Responsabilité Civile Pro {artisan?.verificationDocuments?.rcPro?.rejected ? "rejetée" : "vérifiée"}
+                      Vérification assurance resp civile Pro {artisan?.verificationDocuments?.rcPro?.rejected ? "rejetée" : "vérifiée"}
                     </span>
                   </div>
                 </div>

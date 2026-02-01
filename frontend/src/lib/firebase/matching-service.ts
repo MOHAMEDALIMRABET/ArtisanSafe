@@ -143,6 +143,31 @@ function calculateDistanceScore(artisan: Artisan, demande: Demande): number {
   return 10;
 }
 
+function getMinDistanceToClient(artisan: Artisan, demande: Demande): number | null {
+  if (!demande.localisation.coordonneesGPS) {
+    return null;
+  }
+
+  if (!artisan.zonesIntervention || artisan.zonesIntervention.length === 0) {
+    return null;
+  }
+
+  let minDistance = Infinity;
+  for (const zone of artisan.zonesIntervention) {
+    if (zone.latitude && zone.longitude) {
+      const distance = calculateDistance(
+        zone.latitude,
+        zone.longitude,
+        demande.localisation.coordonneesGPS.latitude,
+        demande.localisation.coordonneesGPS.longitude
+      );
+      minDistance = Math.min(minDistance, distance);
+    }
+  }
+
+  return minDistance === Infinity ? null : minDistance;
+}
+
 /**
  * Vérifie si un artisan est disponible à une date donnée (basé sur les slots d'agenda)
  * LOGIQUE CORRECTE : Disponible PAR DÉFAUT, sauf si indisponibilité marquée
@@ -365,6 +390,14 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
         continue;
       }
       console.log(`✅ ${artisan.raisonSociale}: dans la zone`);
+
+      if (criteria.rayonMax && criteria.rayonMax > 0) {
+        const minDistance = getMinDistanceToClient(artisan, tempDemande as Demande);
+        if (minDistance !== null && minDistance > criteria.rayonMax) {
+          console.log(`❌ ${artisan.raisonSociale}: hors rayon client (${minDistance.toFixed(2)}km > ${criteria.rayonMax}km)`);
+          continue;
+        }
+      }
 
       // Calcul des scores
       const metierScore = 100; // Match catégorie garanti par la query

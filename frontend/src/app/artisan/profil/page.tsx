@@ -304,14 +304,18 @@ export default function ProfilArtisanPage() {
                 required
               />
               
-              <Input
+              <AddressAutocomplete
                 label="Adresse de l'entreprise"
-                type="text"
                 value={adresse}
-                onChange={(e) => setAdresse(e.target.value)}
+                onChange={(value) => setAdresse(value)}
+                onAddressSelect={(data) => {
+                  setAdresse(data.adresseComplete);
+                  setVille(data.ville || ville);
+                  setCodePostal(data.codePostal || codePostal);
+                }}
                 placeholder="123 rue de la République, 75001 Paris"
                 required
-                helper="Adresse complète de votre entreprise"
+                helper="Commencez à taper puis sélectionnez une adresse dans la liste"
               />
             </div>
           </div>

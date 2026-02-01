@@ -24,7 +24,6 @@ interface SearchCriteria {
     flexibiliteDays?: number;
   };
   urgence: Urgence;
-  description: string;
 }
 
 interface VilleSuggestion {
@@ -52,7 +51,6 @@ export default function RecherchePage() {
       flexible: false,
     },
     urgence: 'normale',
-    description: '',
   });
 
   useEffect(() => {
@@ -62,13 +60,12 @@ export default function RecherchePage() {
     const categorieParam = searchParams.get('categorie');
     const villeParam = searchParams.get('ville');
     const codePostalParam = searchParams.get('codePostal');
-    const descriptionParam = searchParams.get('description');
     const urgenceParam = searchParams.get('urgence');
     const datesParam = searchParams.get('dates');
     const flexibleParam = searchParams.get('flexible');
     const flexibilityDaysParam = searchParams.get('flexibiliteDays');
     
-    if (categorieParam || villeParam || codePostalParam || descriptionParam) {
+    if (categorieParam || villeParam || codePostalParam) {
       const newCriteria: SearchCriteria = {
         categorie: (categorieParam as Categorie) || '',
         localisation: {
@@ -82,7 +79,6 @@ export default function RecherchePage() {
           flexibiliteDays: flexibilityDaysParam ? parseInt(flexibilityDaysParam) : undefined,
         },
         urgence: (urgenceParam as Urgence) || 'normale',
-        description: descriptionParam || '',
       };
       
       setCriteria(newCriteria);
@@ -489,23 +485,6 @@ export default function RecherchePage() {
                 </button>
               ))}
             </div>
-          </section>
-
-          {/* Étape 5: Description (optionnel) */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-bold text-[#2C3E50] mb-4">
-              5. Décrivez brièvement vos travaux (optionnel)
-            </h2>
-            <textarea
-              value={criteria.description}
-              onChange={(e) => setCriteria({ ...criteria, description: e.target.value })}
-              placeholder="Ex: Rénovation salle de bain complète, environ 10m², remplacement baignoire par douche italienne..."
-              rows={4}
-              className="w-full px-4 py-3 border border-[#E9ECEF] rounded-lg focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00] focus:ring-opacity-20 outline-none resize-none"
-            />
-            <p className="text-sm text-[#6C757D] mt-2">
-              Cette description aidera les artisans à mieux comprendre votre projet
-            </p>
           </section>
 
           {/* Bouton de soumission */}

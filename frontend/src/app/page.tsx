@@ -10,6 +10,9 @@ import type { Categorie } from '@/types/firestore';
 export default function Home() {
   const router = useRouter();
   const [blinkingFields, setBlinkingFields] = useState<{ville: boolean, date: boolean}>({ ville: false, date: false });
+  const [villeSuggestions, setVilleSuggestions] = useState<Array<{nom: string, codePostal: string, departement: string}>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedCodePostal, setSelectedCodePostal] = useState('');
   
   // État du formulaire de recherche
   const [searchForm, setSearchForm] = useState({
@@ -17,8 +20,46 @@ export default function Home() {
     ville: '',
     date: new Date().toISOString().slice(0, 10),
     flexible: false,
-    flexibiliteDays: '0'
+    flexibiliteDays: '0',
+    rayonMax: '10'
   });
+
+  async function searchVilles(query: string) {
+    if (query.length < 2) {
+      setVilleSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,codesPostaux,codeDepartement&boost=population&limit=10`
+      );
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const suggestions = data.flatMap((commune: any) =>
+        commune.codesPostaux.map((cp: string) => ({
+          nom: commune.nom,
+          codePostal: cp,
+          departement: commune.codeDepartement
+        }))
+      );
+
+      setVilleSuggestions(suggestions);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Erreur recherche villes:', error);
+    }
+  }
+
+  function selectVille(suggestion: {nom: string, codePostal: string, departement: string}) {
+    setSearchForm((prev) => ({ ...prev, ville: suggestion.nom }));
+    setSelectedCodePostal(suggestion.codePostal);
+    setShowSuggestions(false);
+    setVilleSuggestions([]);
+  }
 
   async function handleSearch() {
     // Vérifier quels champs sont vides
@@ -40,20 +81,22 @@ export default function Home() {
     }
 
     // Tous les champs sont remplis, continuer avec la recherche
-    let codePostal = '';
-    try {
-      const response = await fetch(
-        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(searchForm.ville.trim())}&fields=codesPostaux&limit=1`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.length > 0 && data[0].codesPostaux && data[0].codesPostaux.length > 0) {
-          codePostal = data[0].codesPostaux[0];
-          console.log(`📮 Code postal trouvé pour ${searchForm.ville}: ${codePostal}`);
+    let codePostal = selectedCodePostal;
+    if (!codePostal) {
+      try {
+        const response = await fetch(
+          `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(searchForm.ville.trim())}&fields=codesPostaux&limit=1`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.length > 0 && data[0].codesPostaux && data[0].codesPostaux.length > 0) {
+            codePostal = data[0].codesPostaux[0];
+            console.log(`📮 Code postal trouvé pour ${searchForm.ville}: ${codePostal}`);
+          }
         }
+      } catch (error) {
+        console.error('Erreur récupération code postal:', error);
       }
-    } catch (error) {
-      console.error('Erreur récupération code postal:', error);
     }
 
     // Construire l'URL avec les paramètres de recherche
@@ -64,6 +107,7 @@ export default function Home() {
       dates: JSON.stringify([searchForm.date]),
       flexible: searchForm.flexible.toString(),
       flexibiliteDays: searchForm.flexibiliteDays,
+      rayonMax: searchForm.rayonMax,
       urgence: 'normale'
     });
 
@@ -100,14 +144,14 @@ export default function Home() {
             </p>
 
             {/* Formulaire de recherche */}
-            <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl p-4">
-              <div className="grid md:grid-cols-5 gap-3">
+            <div className="max-w-screen-xl mx-auto bg-white rounded-2xl shadow-2xl p-4">
+              <div className="grid md:grid-cols-24 gap-2">
                 {/* Type de travaux */}
-                <div className="relative">
+                <div className="relative md:col-span-4">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
                     Type de travaux
                   </label>
-                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-4 py-3 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
+                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
@@ -135,9 +179,9 @@ export default function Home() {
                 </div>
 
                 {/* Ville */}
-                <div className="relative">
+              <div className="relative md:col-span-6">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Localisation</label>
-                  <div className={`flex items-center rounded-xl px-4 py-3 transition-colors ${
+                  <div className={`flex items-center rounded-xl px-3 h-11 transition-colors ${
                     blinkingFields.ville 
                       ? 'animate-blink-once' 
                       : 'bg-[#F8F9FA] hover:bg-[#E9ECEF]'
@@ -161,17 +205,69 @@ export default function Home() {
                       placeholder="Paris, Lyon..." 
                       className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium placeholder-[#95A5A6]"
                       value={searchForm.ville}
-                      onChange={(e) => setSearchForm({...searchForm, ville: e.target.value})}
+                      onChange={(e) => {
+                        const nextValue = e.target.value;
+                        setSearchForm({...searchForm, ville: nextValue});
+                        setSelectedCodePostal('');
+                        searchVilles(nextValue);
+                      }}
+                      onFocus={() => {
+                        if (villeSuggestions.length > 0) setShowSuggestions(true);
+                      }}
                     />
+                  </div>
+
+                  {/* Liste des suggestions */}
+                  {showSuggestions && villeSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border-2 border-[#FF6B00] rounded-lg shadow-lg max-h-60 overflow-y-auto top-full">
+                      {villeSuggestions.map((suggestion, index) => (
+                        <button
+                          key={`${suggestion.nom}-${suggestion.codePostal}-${index}`}
+                          type="button"
+                          onClick={() => selectVille(suggestion)}
+                          className="w-full text-left px-4 py-3 hover:bg-[#FFF3E0] transition-colors border-b border-[#E9ECEF] last:border-b-0"
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-[#2C3E50]">{suggestion.nom}</span>
+                            <span className="text-sm text-[#6C757D]">{suggestion.codePostal}</span>
+                          </div>
+                          <span className="text-xs text-[#95A5A6]">Dépt. {suggestion.departement}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Rayon de recherche */}
+                <div className="relative md:col-span-3">
+                  <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
+                    Rayon
+                  </label>
+                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
+                    <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c1.657 0 3-1.343 3-3S13.657 2 12 2 9 3.343 9 5s1.343 3 3 3zm0 0v14m6-6H6" />
+                    </svg>
+                    <select 
+                      className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer"
+                      value={searchForm.rayonMax}
+                      onChange={(e) => setSearchForm({...searchForm, rayonMax: e.target.value})}
+                    >
+                      <option value="10">10 km</option>
+                      <option value="20">20 km</option>
+                      <option value="30">30 km</option>
+                      <option value="50">50 km</option>
+                      <option value="80">80 km</option>
+                      <option value="100">100 km</option>
+                    </select>
                   </div>
                 </div>
 
                 {/* Date souhaitée */}
-                <div className="relative">
+                <div className="relative md:col-span-4">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
                     Date souhaitée
                   </label>
-                  <div className={`flex items-center rounded-xl px-4 py-3 transition-colors ${
+                  <div className={`flex items-center rounded-xl px-3 h-11 transition-colors ${
                     blinkingFields.date 
                       ? 'animate-blink-once' 
                       : 'bg-[#F8F9FA] hover:bg-[#E9ECEF]'
@@ -190,11 +286,11 @@ export default function Home() {
                 </div>
 
                 {/* Flexibilité */}
-                <div className="relative">
+                <div className="relative md:col-span-3">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
                     Flexibilité
                   </label>
-                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-4 py-3 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
+                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
@@ -215,18 +311,13 @@ export default function Home() {
                 </div>
 
                 {/* Bouton Rechercher */}
-                <div className="relative">
-                  <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3 opacity-0">
-                    Recherche
-                  </label>
+                <div className="relative min-w-0 md:col-span-3">
+                  <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">&nbsp;</label>
                   <button 
                     onClick={handleSearch}
-                    className="w-full bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    className="w-full h-11 bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-6 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span className="hidden md:inline">Rechercher</span>
+                    Rechercher
                   </button>
                 </div>
               </div>

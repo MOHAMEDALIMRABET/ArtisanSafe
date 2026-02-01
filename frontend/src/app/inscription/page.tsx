@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { checkSiretExists } from '@/lib/firebase/artisan-service';
 import { Button, Input, Card } from '@/components/ui';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { METIERS_MAP, METIERS_DISPONIBLES } from '@/lib/constants/metiers';
 import type { Categorie } from '@/types/firestore';
 
@@ -404,12 +405,18 @@ export default function InscriptionPage() {
                 helperText="Votre numéro SIRET sera vérifié"
               />
 
-              <Input
+              <AddressAutocomplete
                 label="Adresse de l'entreprise"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={(value) => setAddress(value)}
+                onAddressSelect={(data) => {
+                  setAddress(data.adresseComplete);
+                  setCity(data.ville || city);
+                  setPostalCode(data.codePostal || postalCode);
+                }}
                 required
                 placeholder="123 rue de la République"
+                helper="Suggestions automatiques via l’API adresse"
               />
 
               <div className="grid grid-cols-2 gap-4">

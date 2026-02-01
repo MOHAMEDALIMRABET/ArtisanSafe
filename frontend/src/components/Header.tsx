@@ -103,7 +103,7 @@ export default function Header() {
                   href="/inscription?role=artisan"
                   className="text-gray-700 hover:text-[#FF6B00] font-medium transition-colors hidden md:block"
                 >
-                  Devenir artisan
+                  Je suis artisan
                 </Link>
                 
                 <Link

@@ -25,6 +25,7 @@ function ResultatsContent() {
   const [categorieInput, setCategorieInput] = useState<string>(searchParams.get('categorie') || 'plomberie');
   const [dateInput, setDateInput] = useState<string>(searchParams.get('dates') ? JSON.parse(searchParams.get('dates')!)[0] : new Date().toISOString().slice(0, 10));
   const [flexibiliteInput, setFlexibiliteInput] = useState<string>(searchParams.get('flexibiliteDays') || '0');
+  const [rayonMaxInput, setRayonMaxInput] = useState<string>(searchParams.get('rayonMax') || '10');
   const [villeSuggestions, setVilleSuggestions] = useState<Array<{nom: string, codePostal: string, departement: string}>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -119,6 +120,8 @@ function ResultatsContent() {
         const urgence = searchParams.get('urgence') as 'faible' | 'normale' | 'urgent';
         const lat = searchParams.get('lat');
         const lon = searchParams.get('lon');
+        const rayonMaxParam = searchParams.get('rayonMax');
+        const rayonMax = rayonMaxParam ? parseInt(rayonMaxParam) : undefined;
 
         if (!categorie || !ville || !datesStr) {
           setError('Critères de recherche manquants');
@@ -146,6 +149,7 @@ function ResultatsContent() {
           flexible,
           flexibiliteDays: flexible ? flexibiliteDays : undefined,
           urgence,
+          rayonMax,
         };
 
         // Sauvegarder les critères pour la création de demande
@@ -247,230 +251,225 @@ function ResultatsContent() {
       {/* Bannière de recherche rapide */}
       <div className="bg-white border-b border-[#E9ECEF] py-4 sticky top-0 z-40 shadow-sm">
         <div className="container mx-auto px-4">
-          <div className="flex items-center gap-3 max-w-5xl mx-auto">
-            {/* Type de travaux */}
-            <div className="flex-1">
-              <label className="block text-xs text-[#6C757D] mb-1">Type de travaux</label>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <select 
-                  className="flex-1 border-none outline-none bg-transparent text-[#2C3E50] font-medium cursor-pointer"
-                  value={categorieInput}
-                  onChange={e => setCategorieInput(e.target.value)}
-                >
-                  <option value="plomberie">Plomberie</option>
-                  <option value="electricite">Électricité</option>
-                  <option value="peinture">Peinture</option>
-                  <option value="menuiserie">Menuiserie</option>
-                  <option value="maconnerie">Maçonnerie</option>
-                  <option value="placo">Placo</option>
-                  <option value="carrelage">Carrelage</option>
-                  <option value="chauffage">Chauffage</option>
-                  <option value="climatisation">Climatisation</option>
-                  <option value="toiture">Toiture</option>
-                  <option value="isolation">Isolation</option>
-                  <option value="serrurerie">Serrurerie</option>
-                  <option value="renovation">Rénovation</option>
-                  <option value="autre">Autre</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="w-px h-12 bg-[#E9ECEF]"></div>
-
-            {/* Localisation */}
-            <div className="flex-1 relative">
-              <label className="block text-xs text-[#6C757D] mb-1">Localisation</label>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <input 
-                  type="text" 
-                  placeholder="Paris, Lyon..." 
-                  className="flex-1 border-none outline-none bg-transparent text-[#2C3E50] font-medium placeholder-[#95A5A6]"
-                  value={villeInput}
-                  onChange={(e) => {
-                    setVilleInput(e.target.value);
-                    searchVilles(e.target.value);
-                  }}
-                  onFocus={() => {
-                    if (villeSuggestions.length > 0) setShowSuggestions(true);
-                  }}
-                />
-              </div>
-              
-              {/* Liste des suggestions */}
-              {showSuggestions && villeSuggestions.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-white border-2 border-[#FF6B00] rounded-lg shadow-lg max-h-60 overflow-y-auto top-full">
-                  {villeSuggestions.map((suggestion, index) => (
-                    <button
-                      key={`${suggestion.nom}-${suggestion.codePostal}-${index}`}
-                      type="button"
-                      onClick={() => selectVille(suggestion)}
-                      className="w-full text-left px-4 py-3 hover:bg-[#FFF3E0] transition-colors border-b border-[#E9ECEF] last:border-b-0"
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-[#2C3E50]">{suggestion.nom}</span>
-                        <span className="text-sm text-[#6C757D]">{suggestion.codePostal}</span>
-                      </div>
-                      <span className="text-xs text-[#95A5A6]">Dépt. {suggestion.departement}</span>
-                    </button>
-                  ))}
+          <div className="max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-24 gap-2">
+              {/* Type de travaux */}
+              <div className="relative min-w-0 md:col-span-4">
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Type de travaux</label>
+                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
+                  <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <select
+                    className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer"
+                    value={categorieInput}
+                    onChange={e => setCategorieInput(e.target.value)}
+                  >
+                    <option value="plomberie">Plomberie</option>
+                    <option value="electricite">Électricité</option>
+                    <option value="peinture">Peinture</option>
+                    <option value="menuiserie">Menuiserie</option>
+                    <option value="maconnerie">Maçonnerie</option>
+                    <option value="placo">Placo</option>
+                    <option value="carrelage">Carrelage</option>
+                    <option value="chauffage">Chauffage</option>
+                    <option value="climatisation">Climatisation</option>
+                    <option value="toiture">Toiture</option>
+                    <option value="isolation">Isolation</option>
+                    <option value="serrurerie">Serrurerie</option>
+                    <option value="renovation">Rénovation</option>
+                    <option value="autre">Autre</option>
+                  </select>
                 </div>
-              )}
-            </div>
-
-            <div className="w-px h-12 bg-[#E9ECEF]"></div>
-            {/* Code postal */}
-            <div className="w-32">
-              <label className="block text-xs text-[#6C757D] mb-1">Code postal</label>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <input 
-                  type="text" 
-                  placeholder="75000" 
-                  maxLength={5}
-                  className="w-full border-none outline-none bg-transparent text-[#2C3E50] font-medium placeholder-[#95A5A6]"
-                  value={codePostalInput}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, ''); // Seulement chiffres
-                    setCodePostalInput(value);
-                    if (value.length === 5) {
-                      searchByCodePostal(value);
-                    }
-                  }}
-                />
               </div>
-            </div>
 
-            <div className="w-px h-12 bg-[#E9ECEF]"></div>
-            {/* Date souhaitée */}
-            <div className="flex-1">
-              <label className="block text-xs text-[#6C757D] mb-1">Date souhaitée</label>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#FF6B00] cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  onClick={(e) => {
-                    const input = e.currentTarget.parentElement?.querySelector('input[type="date"]') as HTMLInputElement;
-                    input?.showPicker?.();
+              {/* Localisation */}
+              <div className="relative md:col-span-6">
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Localisation</label>
+                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
+                  <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Paris, Lyon..."
+                    className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium placeholder-[#95A5A6]"
+                    value={villeInput}
+                    onChange={(e) => {
+                      setVilleInput(e.target.value);
+                      searchVilles(e.target.value);
+                    }}
+                    onFocus={() => {
+                      if (villeSuggestions.length > 0) setShowSuggestions(true);
+                    }}
+                  />
+                </div>
+
+                {/* Liste des suggestions */}
+                {showSuggestions && villeSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border-2 border-[#FF6B00] rounded-lg shadow-lg max-h-60 overflow-y-auto top-full">
+                    {villeSuggestions.map((suggestion, index) => (
+                      <button
+                        key={`${suggestion.nom}-${suggestion.codePostal}-${index}`}
+                        type="button"
+                        onClick={() => selectVille(suggestion)}
+                        className="w-full text-left px-4 py-3 hover:bg-[#FFF3E0] transition-colors border-b border-[#E9ECEF] last:border-b-0"
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-[#2C3E50]">{suggestion.nom}</span>
+                          <span className="text-sm text-[#6C757D]">{suggestion.codePostal}</span>
+                        </div>
+                        <span className="text-xs text-[#95A5A6]">Dépt. {suggestion.departement}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Rayon de recherche */}
+              <div className="relative md:col-span-3">
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3 whitespace-nowrap">Rayon</label>
+                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
+                  <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c1.657 0 3-1.343 3-3S13.657 2 12 2 9 3.343 9 5s1.343 3 3 3zm0 0v14m6-6H6" />
+                  </svg>
+                  <select
+                    className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer"
+                    value={rayonMaxInput}
+                    onChange={(e) => setRayonMaxInput(e.target.value)}
+                  >
+                    <option value="10">10 km</option>
+                    <option value="20">20 km</option>
+                    <option value="30">30 km</option>
+                    <option value="50">50 km</option>
+                    <option value="80">80 km</option>
+                    <option value="100">100 km</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Date souhaitée */}
+              <div className="relative min-w-0 md:col-span-4">
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Date souhaitée</label>
+                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
+                  <svg className="w-5 h-5 text-[#FF6B00] mr-3 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    onClick={(e) => {
+                      const input = e.currentTarget.parentElement?.querySelector('input[type="date"]') as HTMLInputElement;
+                      input?.showPicker?.();
+                    }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <input
+                    type="date"
+                    className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer"
+                    value={dateInput}
+                    onChange={e => setDateInput(e.target.value)}
+                    onClick={(e) => {
+                      (e.target as HTMLInputElement).showPicker?.();
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Flexibilité */}
+              <div className="relative min-w-0 md:col-span-3">
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Flexibilité</label>
+                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
+                  <select
+                    className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer"
+                    value={flexibiliteInput}
+                    onChange={e => setFlexibiliteInput(e.target.value)}
+                  >
+                    <option value="0">±0J</option>
+                    <option value="1">±1J</option>
+                    <option value="2">±2J</option>
+                    <option value="3">±3J</option>
+                    <option value="5">±5J</option>
+                    <option value="7">±7J</option>
+                    <option value="14">±14J</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Bouton Rechercher */}
+              <div className="relative min-w-0 md:col-span-3">
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">&nbsp;</label>
+                <button
+                  className="w-full h-11 bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-6 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    console.log('🔍 CLIC BOUTON RECHERCHER');
+                    console.log('📍 Critères:', { categorie: categorieInput, ville: villeInput, codePostal: codePostalInput, date: dateInput, flexibilite: flexibiliteInput, rayonMax: rayonMaxInput });
+
+                    if (!villeInput.trim()) {
+                      alert('Veuillez saisir une ville');
+                      return;
+                    }
+
+                    // Obtenir coordonnées GPS de la nouvelle ville
+                    let coordonneesGPS = null;
+                    let codePostal = codePostalInput;
+
+                    try {
+                      // Si on a déjà un code postal, l'utiliser pour géocoder précisément
+                      let apiUrl = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(villeInput)}&fields=centre,codesPostaux&limit=1`;
+                      if (codePostal) {
+                        apiUrl += `&codePostal=${codePostal}`;
+                      }
+
+                      console.log('🌍 Géocodage ville:', villeInput, 'avec codePostal:', codePostal || 'non défini');
+
+                      const response = await fetch(apiUrl);
+                      const data = await response.json();
+
+                      console.log('📍 Réponse API géocodage:', data);
+
+                      if (data.length > 0) {
+                        if (data[0].centre) {
+                          coordonneesGPS = {
+                            latitude: data[0].centre.coordinates[1],
+                            longitude: data[0].centre.coordinates[0]
+                          };
+                          console.log('✅ Coordonnées GPS:', coordonneesGPS);
+                        }
+                        // Ne changer le code postal que s'il n'existe pas déjà
+                        if (!codePostal && data[0].codesPostaux && data[0].codesPostaux.length > 0) {
+                          codePostal = data[0].codesPostaux[0];
+                          setCodePostalInput(codePostal);
+                          console.log('📮 Code postal attribué:', codePostal);
+                        }
+                      }
+                    } catch (error) {
+                      console.error('❌ Impossible de géocoder la ville:', error);
+                    }
+
+                    // Construire les nouveaux paramètres avec les valeurs des inputs locaux
+                    const newParams = new URLSearchParams({
+                      categorie: categorieInput,
+                      ville: villeInput.trim(),
+                      codePostal: codePostal || '',
+                      dates: JSON.stringify([dateInput]),
+                      flexible: flexibiliteInput !== '0' ? 'true' : 'false',
+                      flexibiliteDays: flexibiliteInput,
+                      rayonMax: rayonMaxInput,
+                      urgence: searchParams.get('urgence') || 'normale',
+                    });
+
+                    if (coordonneesGPS) {
+                      newParams.append('lat', coordonneesGPS.latitude.toString());
+                      newParams.append('lon', coordonneesGPS.longitude.toString());
+                    }
+
+                    console.log('🔄 Redirection avec params:', newParams.toString());
+                    router.push(`/resultats?${newParams.toString()}`);
                   }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <input 
-                  type="date" 
-                  className="flex-1 border-none outline-none bg-transparent text-[#2C3E50] font-medium cursor-pointer"
-                  value={dateInput}
-                  onChange={e => setDateInput(e.target.value)}
-                  onClick={(e) => {
-                    (e.target as HTMLInputElement).showPicker?.();
-                  }}
-                />
+                  Rechercher
+                </button>
               </div>
             </div>
-
-            <div className="w-px h-12 bg-[#E9ECEF]"></div>
-
-            {/* Flexibilité */}
-            <div className="flex-shrink-0">
-              <label className="block text-xs text-[#6C757D] mb-1">Flexibilité</label>
-              <div className="flex items-center gap-1">
-                <select 
-                  className="border-none outline-none bg-transparent text-[#2C3E50] font-medium cursor-pointer pr-1"
-                  value={flexibiliteInput}
-                  onChange={e => setFlexibiliteInput(e.target.value)}
-                >
-                  <option value="0">±0J</option>
-                  <option value="1">±1J</option>
-                  <option value="2">±2J</option>
-                  <option value="3">±3J</option>
-                  <option value="5">±5J</option>
-                  <option value="7">±7J</option>
-                  <option value="14">±14J</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Bouton Rechercher */}
-            <button 
-              onClick={async (e) => {
-                e.preventDefault();
-                console.log('🔍 CLIC BOUTON RECHERCHER');
-                console.log('📍 Critères:', { categorie: categorieInput, ville: villeInput, codePostal: codePostalInput, date: dateInput, flexibilite: flexibiliteInput });
-                
-                if (!villeInput.trim()) {
-                  alert('Veuillez saisir une ville');
-                  return;
-                }
-                
-                // Obtenir coordonnées GPS de la nouvelle ville
-                let coordonneesGPS = null;
-                let codePostal = codePostalInput;
-                
-                try {
-                  // Si on a déjà un code postal, l'utiliser pour géocoder précisément
-                  let apiUrl = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(villeInput)}&fields=centre,codesPostaux&limit=1`;
-                  if (codePostal) {
-                    apiUrl += `&codePostal=${codePostal}`;
-                  }
-                  
-                  console.log('🌍 Géocodage ville:', villeInput, 'avec codePostal:', codePostal || 'non défini');
-                  
-                  const response = await fetch(apiUrl);
-                  const data = await response.json();
-                  
-                  console.log('📍 Réponse API géocodage:', data);
-                  
-                  if (data.length > 0) {
-                    if (data[0].centre) {
-                      coordonneesGPS = {
-                        latitude: data[0].centre.coordinates[1],
-                        longitude: data[0].centre.coordinates[0]
-                      };
-                      console.log('✅ Coordonnées GPS:', coordonneesGPS);
-                    }
-                    // Ne changer le code postal que s'il n'existe pas déjà
-                    if (!codePostal && data[0].codesPostaux && data[0].codesPostaux.length > 0) {
-                      codePostal = data[0].codesPostaux[0];
-                      setCodePostalInput(codePostal);
-                      console.log('📮 Code postal attribué:', codePostal);
-                    }
-                  }
-                } catch (error) {
-                  console.error('❌ Impossible de géocoder la ville:', error);
-                }
-                
-                // Construire les nouveaux paramètres avec les valeurs des inputs locaux
-                const newParams = new URLSearchParams({
-                  categorie: categorieInput,
-                  ville: villeInput.trim(),
-                  codePostal: codePostal || '',
-                  dates: JSON.stringify([dateInput]),
-                  flexible: flexibiliteInput !== '0' ? 'true' : 'false',
-                  flexibiliteDays: flexibiliteInput,
-                  urgence: searchParams.get('urgence') || 'normale',
-                });
-                
-                if (coordonneesGPS) {
-                  newParams.append('lat', coordonneesGPS.latitude.toString());
-                  newParams.append('lon', coordonneesGPS.longitude.toString());
-                }
-                
-                console.log('🔄 Redirection avec params:', newParams.toString());
-                router.push(`/resultats?${newParams.toString()}`);
-              }}
-              className="bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-8 py-3 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span>Rechercher</span>
-            </button>
           </div>
         </div>
       </div>
