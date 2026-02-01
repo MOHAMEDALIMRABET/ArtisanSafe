@@ -505,26 +505,22 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
           }
-          
-          /* Masquer TOUT sauf le contenu du devis */
-          body > *:not(#__next) {
-            display: none !important;
+
+          /* N'imprimer que la zone du devis */
+          body * {
+            visibility: hidden;
           }
-          
-          header, nav, footer, aside, .header, .nav, .footer, .sidebar {
-            display: none !important;
+
+          .print-area,
+          .print-area * {
+            visibility: visible;
           }
-          
-          /* Masquer boutons, badges, icônes utilisateur */
-          button:not(.print-show),
-          .user-menu,
-          .avatar,
-          [class*="user-avatar"],
-          [class*="profile"],
-          svg[class*="user"],
-          .fixed,
-          .sticky {
-            display: none !important;
+
+          .print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
           }
           
           /* Réduire espacements */
@@ -569,11 +565,6 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             max-height: 40px !important;
           }
           
-          /* Masquer tous les logos SAUF celui dans .logo-container */
-          img:not(.logo-container img):not(.signature-section img) {
-            display: none !important;
-          }
-          
           /* Titres plus compacts */
           h2 {
             font-size: 1.5rem !important;
@@ -594,9 +585,16 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
           .no-break {
             page-break-inside: avoid;
           }
+
+          /* Forcer Artisan/Client côte à côte à l'impression */
+          .print-two-cols {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            column-gap: 2rem !important;
+          }
         }
       `}</style>
-      <div className="min-h-screen bg-[#F8F9FA] print:bg-white">
+      <div className="min-h-screen bg-[#F8F9FA] print:bg-white print-area">
         {/* Header - masqué à l'impression */}
         <div className="bg-[#2C3E50] text-white py-6 print:hidden">
           <div className="container mx-auto px-4">
@@ -714,9 +712,6 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                   <p className="text-sm text-gray-500">
                     Date : {devis.dateCreation?.toDate().toLocaleDateString('fr-FR')}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    Valable jusqu'au : {devis.dateValidite?.toDate().toLocaleDateString('fr-FR')}
-                  </p>
                 </div>
 
                 {/* Info demande à droite */}
@@ -730,11 +725,10 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             </div>
 
             {/* Informations artisan et client */}
-            <div className="grid md:grid-cols-2 gap-8 mb-8">
+            <div className="grid md:grid-cols-2 gap-8 mb-8 print-two-cols">
               <div>
                 <h3 className="font-bold text-[#2C3E50] mb-3">Artisan</h3>
                 {devis.artisan.raisonSociale && <p className="font-semibold">{devis.artisan.raisonSociale}</p>}
-                {devis.artisan.siret && <p className="text-sm text-gray-600">SIRET: {devis.artisan.siret}</p>}
                 {devis.artisan.adresse && (
                   <p className="text-sm text-gray-600 mt-1">
                     📍 {masquerAdresse(devis.artisan.adresse, devis.statut !== 'paye')}
@@ -875,13 +869,12 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
             {/* Informations complémentaires */}
             {(devis.dateDebutPrevue || devis.delaiRealisation || devis.conditions || devis.notes) && (
-              <div className="border-t pt-6">
-                <h3 className="font-bold text-[#2C3E50] mb-4">Informations complémentaires</h3>
+              <div className="pt-6">
                 
                 {devis.dateDebutPrevue && (
                   <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                    <p className="text-sm font-semibold text-blue-900">📅 Date de début prévue des travaux :</p>
                     <p className="text-blue-800 font-semibold text-lg">
+                      <span className="text-sm font-semibold text-blue-900">📅 Date de début prévue des travaux :</span>{' '}
                       {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
                         weekday: 'long',
                         year: 'numeric',
@@ -916,7 +909,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             )}
 
             {/* Mentions légales */}
-            <div className="border-t pt-6 mt-6">
+            <div className="pt-6 mt-6">
               <p className="text-xs text-gray-500">
                 Ce devis est valable jusqu'au {devis.dateValidite?.toDate().toLocaleDateString('fr-FR')} et ne constitue pas une facture.
                 Une fois accepté, ce devis engage les deux parties selon les conditions décrites.
@@ -952,7 +945,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-semibold text-gray-700 mb-2">Cachet de l'entreprise :</p>
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Signature artisan :</p>
                     <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50">
                       <p className="text-xs text-gray-400 text-center">Espace réservé<br/>au cachet</p>
                     </div>
