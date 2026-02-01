@@ -238,57 +238,58 @@ export default function DashboardPage() {
 
         {/* Dashboard Client */}
         {user?.role === 'client' && (
-          <div className="grid md:grid-cols-2 gap-6">
-            <Link href="/recherche">
-              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800">Rechercher un artisan</h2>
-                    <p className="text-sm text-gray-600">Trouver le bon professionnel</p>
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/client/demandes">
-              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800">Mes demandes</h2>
-                    <p className="text-sm text-gray-600">Suivre vos demandes de devis</p>
+          <>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Link href="/recherche">
+                <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800">Rechercher un artisan</h2>
+                      <p className="text-sm text-gray-600">Trouver le bon professionnel</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
 
-            <Link href="/client/devis">
-              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-[#FF6B00] bg-opacity-10 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800">Mes devis</h2>
-                    <p className="text-sm text-gray-600">Consulter vos devis reçus</p>
+              <Link href="/client/demandes">
+                <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800">Mes demandes</h2>
+                      <p className="text-sm text-gray-600">Suivre vos demandes de devis</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          </div>
+              </Link>
 
-          {/* Section Avis */}
+              <Link href="/client/devis">
+                <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-[#FF6B00] bg-opacity-10 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800">Mes devis</h2>
+                      <p className="text-sm text-gray-600">Consulter vos devis reçus</p>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </div>
+
+            {/* Section Avis */}
           <div className="mt-8 bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -431,15 +432,9 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
-            )}
-          </div>
-                    <h2 className="text-xl font-bold text-gray-800">Mes devis</h2>
-                    <p className="text-sm text-gray-600">Consulter et gérer vos devis</p>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </div>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
