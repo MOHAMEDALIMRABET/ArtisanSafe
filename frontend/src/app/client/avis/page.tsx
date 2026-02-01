@@ -214,7 +214,6 @@ export default function AvisClientPage() {
                 </div>
               </div>
             </div>
-          </div>
         </div>
 
         {/* Filtres et recherche */}
