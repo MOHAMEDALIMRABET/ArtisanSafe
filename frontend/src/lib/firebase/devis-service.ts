@@ -585,3 +585,268 @@ export async function dupliquerDevis(devisId: string): Promise<string> {
   
   return devis.id;
 }
+
+// ============================================
+// GESTION DU CYCLE DE VIE CONTRAT
+// (Remplace la collection 'contrats' - Devis signé = Contrat juridique)
+// ============================================
+
+/**
+ * Artisan déclare le début des travaux
+ * Statut: paye → en_cours
+ */
+export async function declarer DebutTravaux(devisId: string, artisanId: string): Promise<void> {
+  const devisRef = doc(db, COLLECTION_NAME, devisId);
+  const devisSnap = await getDoc(devisRef);
+  
+  if (!devisSnap.exists()) {
+    throw new Error('Devis introuvable');
+  }
+  
+  const devis = { id: devisSnap.id, ...devisSnap.data() } as Devis;
+  
+  // Vérifications
+  if (devis.artisanId !== artisanId) {
+    throw new Error('Non autorisé');
+  }
+  
+  if (devis.statut !== 'paye') {
+    throw new Error(`Impossible de démarrer les travaux (statut actuel: ${devis.statut})`);
+  }
+  
+  // Mettre à jour
+  await updateDoc(devisRef, {
+    statut: 'en_cours',
+    'travaux.dateDebut': Timestamp.now(),
+    dateModification: Timestamp.now(),
+    historiqueStatuts: [
+      ...(devis.historiqueStatuts || []),
+      {
+        statut: 'en_cours' as DevisStatut,
+        date: Timestamp.now(),
+        commentaire: 'Début des travaux déclaré par l\'artisan',
+      },
+    ],
+  });
+  
+  // Notification client
+  await notifyClientDevisRecu(devis.clientId, devisId, {
+    type: 'travaux_demarres',
+    title: 'Travaux démarrés',
+    message: `${devis.artisan.raisonSociale} a démarré les travaux`,
+  });
+}
+
+/**
+ * Artisan déclare la fin des travaux
+ * Statut: en_cours → travaux_termines
+ * Déclenche countdown 7 jours pour validation client
+ */
+export async function declarerFinTravaux(devisId: string, artisanId: string): Promise<void> {
+  const devisRef = doc(db, COLLECTION_NAME, devisId);
+  const devisSnap = await getDoc(devisRef);
+  
+  if (!devisSnap.exists()) {
+    throw new Error('Devis introuvable');
+  }
+  
+  const devis = { id: devisSnap.id, ...devisSnap.data() } as Devis;
+  
+  // Vérifications
+  if (devis.artisanId !== artisanId) {
+    throw new Error('Non autorisé');
+  }
+  
+  if (devis.statut !== 'en_cours') {
+    throw new Error(`Impossible de terminer les travaux (statut actuel: ${devis.statut})`);
+  }
+  
+  const dateValidationAuto = Timestamp.fromDate(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // +7 jours
+  );
+  
+  // Mettre à jour
+  await updateDoc(devisRef, {
+    statut: 'travaux_termines',
+    'travaux.dateFin': Timestamp.now(),
+    'travaux.dateValidationAuto': dateValidationAuto,
+    dateModification: Timestamp.now(),
+    historiqueStatuts: [
+      ...(devis.historiqueStatuts || []),
+      {
+        statut: 'travaux_termines' as DevisStatut,
+        date: Timestamp.now(),
+        commentaire: 'Fin des travaux déclarée par l\'artisan',
+      },
+    ],
+  });
+  
+  // Notification client
+  await notifyClientDevisRecu(devis.clientId, devisId, {
+    type: 'travaux_termines',
+    title: 'Travaux terminés',
+    message: `${devis.artisan.raisonSociale} a terminé les travaux. Vous avez 7 jours pour valider ou signaler un problème.`,
+  });
+}
+
+/**
+ * Client valide les travaux
+ * Statut: travaux_termines → termine_valide
+ * Libère l'escrow (capture Stripe)
+ */
+export async function validerTravaux(devisId: string, clientId: string): Promise<void> {
+  const devisRef = doc(db, COLLECTION_NAME, devisId);
+  const devisSnap = await getDoc(devisRef);
+  
+  if (!devisSnap.exists()) {
+    throw new Error('Devis introuvable');
+  }
+  
+  const devis = { id: devisSnap.id, ...devisSnap.data() } as Devis;
+  
+  // Vérifications
+  if (devis.clientId !== clientId) {
+    throw new Error('Non autorisé');
+  }
+  
+  if (devis.statut !== 'travaux_termines') {
+    throw new Error(`Impossible de valider (statut actuel: ${devis.statut})`);
+  }
+  
+  // Mettre à jour
+  await updateDoc(devisRef, {
+    statut: 'termine_valide',
+    'travaux.dateValidationClient': Timestamp.now(),
+    'paiement.statut': 'libere',
+    'paiement.stripe.captureDate': Timestamp.now(),
+    dateModification: Timestamp.now(),
+    historiqueStatuts: [
+      ...(devis.historiqueStatuts || []),
+      {
+        statut: 'termine_valide' as DevisStatut,
+        date: Timestamp.now(),
+        commentaire: 'Travaux validés par le client',
+      },
+    ],
+  });
+  
+  // TODO: Appeler API backend pour capturer le paiement Stripe
+  // await fetch('/api/v1/payments/capture', { ... })
+  
+  // Notification artisan
+  await notifyClientDevisRecu(devis.artisanId, devisId, {
+    type: 'travaux_valides',
+    title: 'Travaux validés !',
+    message: `${devis.client.prenom} ${devis.client.nom} a validé les travaux. Le paiement sera transféré sous 24-48h.`,
+  });
+}
+
+/**
+ * Client signale un litige
+ * Statut: travaux_termines → litige
+ * Bloque l'escrow en attente de médiation
+ */
+export async function signalerLitige(
+  devisId: string,
+  clientId: string,
+  motif: string
+): Promise<void> {
+  const devisRef = doc(db, COLLECTION_NAME, devisId);
+  const devisSnap = await getDoc(devisRef);
+  
+  if (!devisSnap.exists()) {
+    throw new Error('Devis introuvable');
+  }
+  
+  const devis = { id: devisSnap.id, ...devisSnap.data() } as Devis;
+  
+  // Vérifications
+  if (devis.clientId !== clientId) {
+    throw new Error('Non autorisé');
+  }
+  
+  if (devis.statut !== 'travaux_termines') {
+    throw new Error(`Impossible de signaler un litige (statut actuel: ${devis.statut})`);
+  }
+  
+  // Mettre à jour
+  await updateDoc(devisRef, {
+    statut: 'litige',
+    'travaux.litige': {
+      declarePar: 'client',
+      motif,
+      date: Timestamp.now(),
+      statut: 'ouvert',
+    },
+    dateModification: Timestamp.now(),
+    historiqueStatuts: [
+      ...(devis.historiqueStatuts || []),
+      {
+        statut: 'litige' as DevisStatut,
+        date: Timestamp.now(),
+        commentaire: `Litige signalé par le client: ${motif}`,
+      },
+    ],
+  });
+  
+  // Notification artisan + admin
+  await notifyClientDevisRecu(devis.artisanId, devisId, {
+    type: 'litige_ouvert',
+    title: '⚠️ Litige signalé',
+    message: `${devis.client.prenom} ${devis.client.nom} a signalé un problème. Un médiateur va être contacté.`,
+  });
+  
+  // TODO: Notifier admin pour médiation
+}
+
+/**
+ * Validation automatique après 7 jours (Cloud Function)
+ * Statut: travaux_termines → termine_auto_valide
+ * Libère l'escrow automatiquement
+ */
+export async function validerAutomatiquementTravaux(devisId: string): Promise<void> {
+  const devisRef = doc(db, COLLECTION_NAME, devisId);
+  const devisSnap = await getDoc(devisRef);
+  
+  if (!devisSnap.exists()) {
+    throw new Error('Devis introuvable');
+  }
+  
+  const devis = { id: devisSnap.id, ...devisSnap.data() } as Devis;
+  
+  if (devis.statut !== 'travaux_termines') {
+    throw new Error(`Validation auto impossible (statut: ${devis.statut})`);
+  }
+  
+  // Mettre à jour
+  await updateDoc(devisRef, {
+    statut: 'termine_auto_valide',
+    'travaux.dateValidationAuto': Timestamp.now(),
+    'paiement.statut': 'libere',
+    'paiement.stripe.captureDate': Timestamp.now(),
+    dateModification: Timestamp.now(),
+    historiqueStatuts: [
+      ...(devis.historiqueStatuts || []),
+      {
+        statut: 'termine_auto_valide' as DevisStatut,
+        date: Timestamp.now(),
+        commentaire: 'Travaux validés automatiquement (7 jours sans réclamation)',
+      },
+    ],
+  });
+  
+  // TODO: Appeler API backend pour capturer le paiement Stripe
+  
+  // Notifications
+  await notifyClientDevisRecu(devis.artisanId, devisId, {
+    type: 'travaux_valides',
+    title: 'Travaux validés automatiquement',
+    message: `Le client n'a pas signalé de problème. Le paiement sera transféré sous 24-48h.`,
+  });
+  
+  await notifyClientDevisRecu(devis.clientId, devisId, {
+    type: 'validation_auto',
+    title: 'Validation automatique',
+    message: `Les travaux ont été validés automatiquement (délai de 7 jours écoulé).`,
+  });
+}

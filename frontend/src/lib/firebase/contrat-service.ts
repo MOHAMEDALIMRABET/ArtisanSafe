@@ -1,4 +1,31 @@
 /**
+ * @deprecated
+ * ⚠️ CE FICHIER EST DÉPRÉCIÉ ⚠️
+ * 
+ * La collection 'contrats' a été supprimée pour simplifier l'architecture.
+ * Juridiquement, un devis signé = contrat. Pas besoin de duplication.
+ * 
+ * **Migration** :
+ * - Toutes les fonctions sont maintenant dans `devis-service.ts`
+ * - Nouveaux statuts devis : paye, en_cours, travaux_termines, termine_valide, litige
+ * - Gestion escrow intégrée dans le champ `devis.paiement`
+ * 
+ * **Correspondances** :
+ * - createContrat() → createDevis() + statut 'paye'
+ * - declarerDebutTravaux() → declarerDebutTravaux() (devis-service)
+ * - declarerFinTravaux() → declarerFinTravaux() (devis-service)
+ * - validerTravaux() → validerTravaux() (devis-service)
+ * - signalerLitige() → signalerLitige() (devis-service)
+ * 
+ * **Action requise** :
+ * - Remplacer les imports `contrat-service` par `devis-service`
+ * - Utiliser `Devis` au lieu de `Contrat` dans les types
+ * 
+ * **Date de dépréciation** : 2026-02-01
+ * **À supprimer** : 2026-03-01
+ */
+
+/**
  * Service Firestore pour la gestion des contrats avec escrow (séquestre)
  * 
  * Collection: contrats

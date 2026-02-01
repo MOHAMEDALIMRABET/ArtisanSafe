@@ -106,7 +106,8 @@ service cloud.firestore {
     // ============================================
     // Client et artisan concernés peuvent lire
     // Artisan peut créer et modifier son devis
-    // Client peut accepter/refuser
+    // Client peut accepter/refuser/valider travaux
+    // DEVIS SIGNÉ = CONTRAT JURIDIQUE (pas de duplication)
     
     match /devis/{devisId} {
       allow read: if isAdmin() ||
@@ -117,39 +118,24 @@ service cloud.firestore {
       allow create: if isAuthenticated() && 
                        request.auth.uid == request.resource.data.artisanId &&
                        isArtisan();
-      allow update: if isOwner(resource.data.artisanId) || 
-                       isOwner(resource.data.clientId) ||
+      allow update: if isOwner(resource.data.artisanId) ||  // Artisan: modification devis, début/fin travaux
+                       isOwner(resource.data.clientId) ||   // Client: acceptation, validation travaux, litige
                        isAdmin();
       allow delete: if isOwner(resource.data.artisanId) || isAdmin();
-      
-      // Validation montants
-      allow write: if request.resource.data.montantTTC > 0 &&
-                      request.resource.data.statut in ['brouillon', 'envoye', 'accepte', 'refuse', 'expire'];
     }
     
     // ============================================
-    // 5. COLLECTION: contrats
+    // 5. COLLECTION: contrats (OBSOLÈTE - SUPPRIMÉE)
     // ============================================
-    // Client et artisan concernés peuvent lire
-    // Création après validation devis
-    // Modification limitée selon statut
+    // ⚠️ La collection 'contrats' a été supprimée.
+    // Juridiquement, un devis signé = contrat.
+    // Toutes les données sont dans 'devis' avec statuts étendus:
+    // paye, en_cours, travaux_termines, termine_valide, litige
+    //
+    // Règles conservées temporairement pour éviter erreurs (à supprimer après migration)
     
     match /contrats/{contratId} {
-      allow read: if isAdmin() ||
-                     isOwner(resource.data.clientId) || 
-                     isOwner(resource.data.artisanId);
-      allow create: if isAuthenticated() && 
-                       (request.auth.uid == request.resource.data.clientId ||
-                        request.auth.uid == request.resource.data.artisanId);
-      allow update: if isOwner(resource.data.clientId) || 
-                       isOwner(resource.data.artisanId) ||
-                       isAdmin();
-      allow delete: if isAdmin();
-      
-      // Validation commission 8%
-      allow write: if request.resource.data.commission == request.resource.data.montantTTC * 0.08 &&
-                      request.resource.data.montantArtisan == request.resource.data.montantTTC - request.resource.data.commission &&
-                      request.resource.data.statut in ['signe', 'en_cours', 'termine', 'annule', 'litige'];
+      allow read, write: if false; // Bloquer toute opération
     }
     
     // ============================================
@@ -311,51 +297,6 @@ service cloud.firestore {
     // ============================================
     // 14. COLLECTION: contrats (ESCROW - SYSTÈME SÉQUESTRE)
     // ============================================
-    // Contrats créés après paiement escrow
-    // Lecture: client + artisan + admin
-    // Modification: actions spécifiques selon rôle
-    
-    match /contrats/{contratId} {
-      // Lecture : client, artisan ou admin
-      allow read: if isAdmin() ||
-                     isOwner(resource.data.clientId) ||
-                     isOwner(resource.data.artisanId);
-      
-      // Création : automatique après paiement (via Cloud Function ou API)
-      allow create: if isAuthenticated() && 
-                       request.auth.uid == request.resource.data.clientId;
-      
-      // Mise à jour : selon statut et action
-      allow update: if isAdmin() ||
-                       // Artisan peut déclarer début/fin travaux
-                       (isOwner(resource.data.artisanId) && 
-                        request.resource.data.statut in ['en_cours', 'travaux_termines']) ||
-                       // Client peut valider travaux ou signaler litige
-                       (isOwner(resource.data.clientId) && 
-                        request.resource.data.statut in ['termine_valide', 'litige']);
-      
-      // Suppression : admin uniquement
-      allow delete: if isAdmin();
-      
-      // Validation statut
-      allow write: if request.resource.data.statut in [
-        'en_attente_debut',
-        'en_cours',
-        'travaux_termines',
-        'termine_valide',
-        'termine_auto_valide',
-        'litige',
-        'annule_rembourse'
-      ];
-      
-      // Validation paiement.statut
-      allow write: if request.resource.data.paiement.statut in [
-        'bloque',
-        'libere',
-        'rembourse'
-      ];
-    }
-    
     // ============================================
     // 15. COLLECTION: deleted_accounts
     // ============================================

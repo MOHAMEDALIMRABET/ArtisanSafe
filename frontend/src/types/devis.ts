@@ -14,7 +14,12 @@ export type DevisStatut =
   | 'envoye'                // Devis envoyé au client
   | 'accepte'               // Client a accepté le devis (OBSOLÈTE - remplacé par en_attente_paiement)
   | 'en_attente_paiement'   // Client a signé, paiement en attente (24h max)
-  | 'paye'                  // Devis signé ET payé avec escrow (paiement bloqué) → crée un contrat
+  | 'paye'                  // Devis signé ET payé avec escrow (paiement bloqué) = CONTRAT JURIDIQUE
+  | 'en_cours'              // Travaux en cours (artisan a débuté)
+  | 'travaux_termines'      // Artisan a déclaré les travaux terminés
+  | 'termine_valide'        // Client a validé les travaux (escrow libéré)
+  | 'termine_auto_valide'   // Validation automatique après 7 jours (escrow libéré)
+  | 'litige'                // Client a signalé un problème (escrow bloqué)
   | 'refuse'                // Client a refusé le devis
   | 'expire'                // Date de validité dépassée
   | 'remplace'              // Devis remplacé par une révision
@@ -91,8 +96,31 @@ export interface Devis {
     // - libere: Argent capturé et versé à l'artisan (travaux validés)
     // - echec: Paiement échoué
     // - rembourse: Annulation avec remboursement
+  };
+  
+  // Gestion des travaux (cycle de vie après paiement)
+  travaux?: {
+    dateDebut?: Timestamp;           // Date de début déclarée par artisan
+    dateFin?: Timestamp;             // Date de fin déclarée par artisan
+    dateValidationClient?: Timestamp; // Date validation client
+    dateValidationAuto?: Timestamp;   // Date validation auto (7 jours après dateFin)
     
-    contratId?: string;          // ID du contrat créé après paiement (ref collection 'contrats')
+    // Litige
+    litige?: {
+      declarePar: 'client' | 'artisan';
+      motif: string;
+      date: Timestamp;
+      statut: 'ouvert' | 'en_mediation' | 'resolu_client' | 'resolu_artisan' | 'rembourse';
+      resolutionDate?: Timestamp;
+      commentaireResolution?: string;
+    };
+  };
+  
+  // Commission plateforme (8%)
+  commission?: {
+    taux: number;                // 0.08 (8%)
+    montant: number;             // totaux.totalTTC * 0.08
+    montantArtisan: number;      // totaux.totalTTC - commission.montant
   };
   
   // Délai limite de paiement (24h après signature)
