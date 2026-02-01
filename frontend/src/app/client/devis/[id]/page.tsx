@@ -493,6 +493,83 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
   return (
     <>
+      {/* Styles d'impression optimisés pour tenir sur 1 page */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            margin: 0.5cm;
+            size: A4 portrait;
+          }
+          
+          body {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+          
+          /* Réduire espacements */
+          .print-container {
+            padding: 0.5rem !important;
+            margin: 0 !important;
+          }
+          
+          .print-container > div {
+            margin-bottom: 0.5rem !important;
+          }
+          
+          /* Réduire marges des sections */
+          .mb-6 {
+            margin-bottom: 0.5rem !important;
+          }
+          
+          .mb-8 {
+            margin-bottom: 0.75rem !important;
+          }
+          
+          .pb-6 {
+            padding-bottom: 0.5rem !important;
+          }
+          
+          .pt-6 {
+            padding-top: 0.5rem !important;
+          }
+          
+          /* Tableaux plus compacts */
+          table {
+            font-size: 10px !important;
+          }
+          
+          table th,
+          table td {
+            padding: 0.25rem 0.5rem !important;
+          }
+          
+          /* Logo plus petit */
+          .logo-container img {
+            max-height: 40px !important;
+          }
+          
+          /* Titres plus compacts */
+          h2 {
+            font-size: 1.5rem !important;
+            margin-bottom: 0.25rem !important;
+          }
+          
+          h3 {
+            font-size: 1rem !important;
+            margin-bottom: 0.5rem !important;
+          }
+          
+          /* Signature compacte */
+          .signature-section img {
+            max-height: 50px !important;
+          }
+          
+          /* Éviter coupure de page dans sections importantes */
+          .no-break {
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
       <div className="min-h-screen bg-[#F8F9FA] print:bg-white">
         {/* Header - masqué à l'impression */}
         <div className="bg-[#2C3E50] text-white py-6 print:hidden">
@@ -595,12 +672,12 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
           )}
 
           {/* Contenu du devis */}
-          <div className="bg-white rounded-lg shadow-md p-8 print:shadow-none">
+          <div className="bg-white rounded-lg shadow-md p-8 print:shadow-none print-container">
             {/* En-tête */}
-            <div className="border-b-2 border-[#FF6B00] pb-6 mb-6">
+            <div className="border-b-2 border-[#FF6B00] pb-6 mb-6 no-break">
               <div className="flex justify-between items-start">
                 {/* Logo à gauche */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 logo-container">
                   <Logo size="sm" variant="full" />
                 </div>
 
@@ -706,8 +783,9 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
               </div>
             )}
 
+            {/* Badge "Devis payé" masqué à l'impression - visible uniquement à l'écran */}
             {devis.statut === 'paye' && (
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+              <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded print:hidden">
                 <div className="flex items-start gap-3">
                   <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -721,26 +799,6 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                     <p className="text-green-700 mt-2">
                       Vous pouvez maintenant contacter l'artisan directement avec les coordonnées complètes affichées ci-dessus.
                     </p>
-
-                    {/* Affichage de la signature client */}
-                    {devis.signatureClient?.url && (
-                      <div className="mt-4 bg-white rounded-lg p-4 border border-green-200">
-                        <p className="font-semibold text-gray-800 mb-2">✍️ Votre signature électronique</p>
-                        <div className="flex items-start gap-4">
-                          <div className="border-2 border-gray-300 rounded-lg p-2 bg-white">
-                            <img 
-                              src={devis.signatureClient.url} 
-                              alt="Signature client" 
-                              className="max-w-[300px] h-auto"
-                            />
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            <p>📅 Signée le {devis.signatureClient.date?.toDate().toLocaleDateString('fr-FR')}</p>
-                            <p>⏰ à {devis.signatureClient.date?.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -859,6 +917,44 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                 Une fois accepté, ce devis engage les deux parties selon les conditions décrites.
               </p>
             </div>
+
+            {/* Signature électronique - visible à l'impression */}
+            {devis.statut === 'paye' && devis.signatureClient?.url && (
+              <div className="mt-8 pt-6 border-t-2 border-green-500 signature-section no-break">
+                <div className="text-center mb-4">
+                  <p className="text-sm font-semibold text-green-800">✅ Devis signé et payé</p>
+                  <p className="text-xs text-green-700">
+                    Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')} - 
+                    Référence : <strong>{devis.paiement?.referenceTransaction}</strong>
+                  </p>
+                </div>
+                <div className="flex justify-between items-end">
+                  <div className="text-left">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Signature du client :</p>
+                    <div className="border-2 border-gray-300 rounded p-2 inline-block bg-white">
+                      <img 
+                        src={devis.signatureClient.url} 
+                        alt="Signature client" 
+                        className="h-16 w-auto"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2">
+                      {devis.client.prenom} {devis.client.nom}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Signée le {devis.signatureClient.date?.toDate().toLocaleDateString('fr-FR')} à{' '}
+                      {devis.signatureClient.date?.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Cachet de l'entreprise :</p>
+                    <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50">
+                      <p className="text-xs text-gray-400 text-center">Espace réservé<br/>au cachet</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Boutons bas de page - masqués à l'impression */}
