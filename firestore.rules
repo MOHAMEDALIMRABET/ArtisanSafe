@@ -309,10 +309,28 @@ service cloud.firestore {
     }
     
     // ============================================
-    // 15. COLLECTION: contrats (ESCROW - SYSTÈME SÉQUESTRE)
+    // 15. COLLECTION: avis
+    // ============================================
+    // Avis clients après fin d'intervention
+    // Lecture publique pour transparence
+    // Écriture uniquement par client auteur ou artisan (réponse)
+    
+    match /avis/{avisId} {
+      allow read: if resource.data.visible == true || isAdmin(); // Publics si visibles
+      allow create: if isAuthenticated() && 
+                       isClient() &&
+                       request.auth.uid == request.resource.data.clientId;
+      allow update: if isOwner(resource.data.clientId) || // Client peut modifier
+                       (isArtisan() && request.auth.uid == resource.data.artisanId) || // Artisan peut répondre
+                       isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // 16. COLLECTION: contrats (ESCROW - SYSTÈME SÉQUESTRE)
     // ============================================
     // ============================================
-    // 16. COLLECTION: deleted_accounts
+    // 17. COLLECTION: deleted_accounts
     // ============================================
     // Archives des comptes supprimés
     // Accessible uniquement par admin en lecture seule

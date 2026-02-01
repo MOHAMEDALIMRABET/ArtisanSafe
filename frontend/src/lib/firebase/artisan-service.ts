@@ -74,6 +74,13 @@ export async function getArtisanByUserId(userId: string): Promise<Artisan | null
 }
 
 /**
+ * Récupérer un artisan par son ID de document
+ */
+export async function getArtisanById(artisanId: string): Promise<Artisan | null> {
+  return getArtisanByUserId(artisanId); // Même logique (ID doc = userId)
+}
+
+/**
  * Obtenir les coordonnées géographiques d'une ville via API française
  */
 async function getCoordinatesFromCity(ville: string, codePostal: string): Promise<{ latitude: number; longitude: number } | null> {
