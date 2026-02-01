@@ -126,13 +126,13 @@ export default function ClientDevisPage() {
   const filteredDevis = devis.filter(d => {
     if (filter === 'tous') return true;
     if (filter === 'en_attente') return d.statut === 'envoye';
-    if (filter === 'acceptes') return d.statut === 'accepte';
+    if (filter === 'acceptes') return ['accepte', 'en_attente_paiement', 'paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(d.statut);
     if (filter === 'refuses') return d.statut === 'refuse';
     return true;
   });
 
   const devisEnAttente = devis.filter(d => d.statut === 'envoye');
-  const devisAcceptes = devis.filter(d => d.statut === 'accepte');
+  const devisAcceptes = devis.filter(d => ['accepte', 'en_attente_paiement', 'paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(d.statut));
   const devisRefuses = devis.filter(d => d.statut === 'refuse');
 
   return (
