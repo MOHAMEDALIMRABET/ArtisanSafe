@@ -503,8 +503,8 @@ export default function VoirDevisPage() {
             )}
           </div>
 
-          {/* Signature électronique du client (si devis accepté) */}
-          {devis.statut === 'accepte' && devis.signatureClient && (
+          {/* Signature électronique du client (si devis accepté ou payé) */}
+          {(devis.statut === 'accepte' || devis.statut === 'paye' || devis.statut === 'en_cours' || devis.statut === 'termine_auto_valide' || devis.statut === 'termine_valide' || devis.statut === 'travaux_termines') && devis.signatureClient && (
             <div className="border-t-2 border-green-500 mt-8 pt-6 bg-green-50 rounded-lg p-6">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
@@ -516,7 +516,11 @@ export default function VoirDevisPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-green-800 mb-2 flex items-center gap-2">
-                    ✅ Devis accepté et signé électroniquement
+                    {devis.statut === 'paye' ? (
+                      <>✅ Devis accepté, signé et PAYÉ</>
+                    ) : (
+                      <>✅ Devis accepté et signé électroniquement</>
+                    )}
                   </h3>
                   <p className="text-sm text-green-700 mb-4">
                     Le client <strong>{devis.client.prenom} {devis.client.nom}</strong> a accepté ce devis le{' '}
@@ -528,6 +532,18 @@ export default function VoirDevisPage() {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}</strong>
+                    {devis.statut === 'paye' && devis.paiement?.date && (
+                      <>
+                        {' '}<br />
+                        <span className="font-bold text-green-900">💳 Paiement reçu le{' '}
+                        {devis.paiement.date.toDate().toLocaleDateString('fr-FR', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })} - Réf: {devis.paiement.referenceTransaction}</span>
+                      </>
+                    )}
                   </p>
                   
                   {/* Affichage de la signature */}

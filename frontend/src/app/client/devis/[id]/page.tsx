@@ -712,7 +712,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                   <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <div className="text-sm text-green-800">
+                  <div className="text-sm text-green-800 w-full">
                     <p className="font-semibold mb-1">✅ Devis signé et payé - Coordonnées complètes visibles</p>
                     <p className="text-green-700">
                       Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')} - 
@@ -721,6 +721,26 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                     <p className="text-green-700 mt-2">
                       Vous pouvez maintenant contacter l'artisan directement avec les coordonnées complètes affichées ci-dessus.
                     </p>
+
+                    {/* Affichage de la signature client */}
+                    {devis.signatureClient?.url && (
+                      <div className="mt-4 bg-white rounded-lg p-4 border border-green-200">
+                        <p className="font-semibold text-gray-800 mb-2">✍️ Votre signature électronique</p>
+                        <div className="flex items-start gap-4">
+                          <div className="border-2 border-gray-300 rounded-lg p-2 bg-white">
+                            <img 
+                              src={devis.signatureClient.url} 
+                              alt="Signature client" 
+                              className="max-w-[300px] h-auto"
+                            />
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            <p>📅 Signée le {devis.signatureClient.date?.toDate().toLocaleDateString('fr-FR')}</p>
+                            <p>⏰ à {devis.signatureClient.date?.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
