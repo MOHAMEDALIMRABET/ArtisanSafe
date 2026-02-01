@@ -183,3 +183,54 @@ body {
   max-width: 100% !important;
   overflow: hidden !important;
 }
+
+/* ========================
+   STYLES D'IMPRESSION
+   ======================== */
+
+/* Masquer les éléments non imprimables */
+@media print {
+  .no-print,
+  .print\\:hidden {
+    display: none !important;
+  }
+  
+  /* Masquer header, navigation, footer */
+  header,
+  nav,
+  footer,
+  aside,
+  .header,
+  .navigation,
+  .footer,
+  .sidebar {
+    display: none !important;
+  }
+  
+  /* Masquer tous les boutons et éléments interactifs */
+  button:not(.print-show),
+  .btn,
+  .button,
+  a.button {
+    display: none !important;
+  }
+  
+  /* Optimiser la page pour l'impression */
+  @page {
+    margin: 1cm;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+  
+  /* Éviter les coupures de page dans les éléments importants */
+  .no-break,
+  table,
+  figure,
+  img {
+    page-break-inside: avoid;
+  }
+}

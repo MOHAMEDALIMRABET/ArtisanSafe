@@ -506,6 +506,27 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             -webkit-print-color-adjust: exact;
           }
           
+          /* Masquer TOUT sauf le contenu du devis */
+          body > *:not(#__next) {
+            display: none !important;
+          }
+          
+          header, nav, footer, aside, .header, .nav, .footer, .sidebar {
+            display: none !important;
+          }
+          
+          /* Masquer boutons, badges, icônes utilisateur */
+          button:not(.print-show),
+          .user-menu,
+          .avatar,
+          [class*="user-avatar"],
+          [class*="profile"],
+          svg[class*="user"],
+          .fixed,
+          .sticky {
+            display: none !important;
+          }
+          
           /* Réduire espacements */
           .print-container {
             padding: 0.5rem !important;
@@ -543,9 +564,14 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             padding: 0.25rem 0.5rem !important;
           }
           
-          /* Logo plus petit */
+          /* Logo plus petit - UN SEUL en haut */
           .logo-container img {
             max-height: 40px !important;
+          }
+          
+          /* Masquer tous les logos SAUF celui dans .logo-container */
+          img:not(.logo-container img):not(.signature-section img) {
+            display: none !important;
           }
           
           /* Titres plus compacts */
