@@ -315,6 +315,45 @@ export default function DashboardPage() {
             </Link>
           </div>
         )}
+
+        {/* Section Contrats à noter */}
+        {user?.role === 'client' && contratsANoter.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-[#2C3E50] mb-4">
+              Interventions terminées - Donnez votre avis
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {contratsANoter.map((contrat) => (
+                <div
+                  key={contrat.id}
+                  className="bg-white rounded-lg shadow-md p-5 border-2 border-[#FFC107]"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-[#2C3E50] mb-1">
+                        Intervention terminée
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Partagez votre expérience
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      À noter
+                    </span>
+                  </div>
+                  <Link href={`/client/avis/nouveau/${contrat.id}`}>
+                    <button className="w-full bg-[#FF6B00] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#E56100] transition-colors">
+                      ⭐ Donner un avis
+                    </button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
