@@ -697,7 +697,7 @@ export default function ArtisanDashboardPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-800">Avis Clients</h3>
+                <h3 className="text-xl font-bold text-gray-800">Avis</h3>
                 <p className="text-sm text-gray-600">
                   {statsAvis.total > 0 ? (
                     <>

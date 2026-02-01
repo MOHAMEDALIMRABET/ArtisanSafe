@@ -291,7 +291,7 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">Avis Artisans</h3>
+                  <h3 className="text-xl font-bold text-gray-800">Avis</h3>
                   <p className="text-sm text-gray-600">
                     {avisClient.length > 0 ? (
                       <>{avisClient.length} avis donné{avisClient.length > 1 ? 's' : ''}</>
