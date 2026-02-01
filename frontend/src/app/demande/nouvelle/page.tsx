@@ -58,7 +58,9 @@ function NouvelleDemandeContent() {
             setFormData({
               titre: brouillon.titre,
               description: brouillon.description,
-              budget: brouillon.budget || { min: 0, max: 0 },
+              budget: typeof brouillon.budget === 'number' 
+                ? brouillon.budget 
+                : (brouillon.budget?.min || 0), // Compatibilité ancien format
             });
 
             // Pré-remplir les critères de recherche depuis le brouillon
@@ -90,10 +92,7 @@ function NouvelleDemandeContent() {
   const [formData, setFormData] = useState({
     titre: '',
     description: '',
-    budget: {
-      min: 0,
-      max: 0,
-    },
+    budget: 0, // Budget unique au lieu de min/max
   });
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -440,34 +439,19 @@ function NouvelleDemandeContent() {
               <label className="block text-[#2C3E50] font-semibold mb-2">
                 Budget estimé (optionnel)
               </label>
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  type="number"
-                  label="Minimum (€)"
-                  value={formData.budget.min || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      budget: { ...formData.budget, min: parseInt(e.target.value) || 0 },
-                    })
-                  }
-                  placeholder="500"
-                  min="0"
-                />
-                <Input
-                  type="number"
-                  label="Maximum (€)"
-                  value={formData.budget.max || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      budget: { ...formData.budget, max: parseInt(e.target.value) || 0 },
-                    })
-                  }
-                  placeholder="2000"
-                  min="0"
-                />
-              </div>
+              <Input
+                type="number"
+                label="Montant en €"
+                value={formData.budget || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    budget: parseInt(e.target.value) || 0,
+                  })
+                }
+                placeholder="1000"
+                min="0"
+              />
               <p className="text-sm text-[#6C757D] mt-2">
                 Indiquer un budget aide les artisans à adapter leurs devis
               </p>
