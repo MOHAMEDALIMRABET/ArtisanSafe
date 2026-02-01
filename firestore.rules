@@ -309,7 +309,55 @@ service cloud.firestore {
     }
     
     // ============================================
-    // 14. COLLECTION: deleted_accounts
+    // 14. COLLECTION: contrats (ESCROW - SYSTÈME SÉQUESTRE)
+    // ============================================
+    // Contrats créés après paiement escrow
+    // Lecture: client + artisan + admin
+    // Modification: actions spécifiques selon rôle
+    
+    match /contrats/{contratId} {
+      // Lecture : client, artisan ou admin
+      allow read: if isAdmin() ||
+                     isOwner(resource.data.clientId) ||
+                     isOwner(resource.data.artisanId);
+      
+      // Création : automatique après paiement (via Cloud Function ou API)
+      allow create: if isAuthenticated() && 
+                       request.auth.uid == request.resource.data.clientId;
+      
+      // Mise à jour : selon statut et action
+      allow update: if isAdmin() ||
+                       // Artisan peut déclarer début/fin travaux
+                       (isOwner(resource.data.artisanId) && 
+                        request.resource.data.statut in ['en_cours', 'travaux_termines']) ||
+                       // Client peut valider travaux ou signaler litige
+                       (isOwner(resource.data.clientId) && 
+                        request.resource.data.statut in ['termine_valide', 'litige']);
+      
+      // Suppression : admin uniquement
+      allow delete: if isAdmin();
+      
+      // Validation statut
+      allow write: if request.resource.data.statut in [
+        'en_attente_debut',
+        'en_cours',
+        'travaux_termines',
+        'termine_valide',
+        'termine_auto_valide',
+        'litige',
+        'annule_rembourse'
+      ];
+      
+      // Validation paiement.statut
+      allow write: if request.resource.data.paiement.statut in [
+        'bloque',
+        'libere',
+        'rembourse'
+      ];
+    }
+    
+    // ============================================
+    // 15. COLLECTION: deleted_accounts
     // ============================================
     // Archives des comptes supprimés
     // Accessible uniquement par admin en lecture seule

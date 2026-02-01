@@ -226,6 +226,53 @@ export default function VoirDevisPage() {
             border-color: #000 !important;
           }
           
+          /* Tableau des prestations - Supprimer scroll et ajuster largeurs */
+          .overflow-x-auto {
+            overflow: hidden !important;
+          }
+          
+          table {
+            width: 100% !important;
+            table-layout: auto !important;
+          }
+          
+          /* Ajuster largeurs colonnes pour impression */
+          table th:nth-child(1),
+          table td:nth-child(1) {
+            width: 40% !important;
+          }
+          
+          table th:nth-child(2),
+          table td:nth-child(2),
+          table th:nth-child(3),
+          table td:nth-child(3) {
+            width: 8% !important;
+          }
+          
+          table th:nth-child(4),
+          table td:nth-child(4),
+          table th:nth-child(5),
+          table td:nth-child(5),
+          table th:nth-child(6),
+          table td:nth-child(6) {
+            width: 14% !important;
+          }
+          
+          /* Texte plus petit dans le tableau */
+          table {
+            font-size: 11px !important;
+          }
+          
+          table th {
+            font-size: 11px !important;
+            padding: 6px 4px !important;
+          }
+          
+          table td {
+            font-size: 10px !important;
+            padding: 6px 4px !important;
+          }
+          
           /* Images et logos */
           img {
             max-width: 100% !important;
@@ -393,7 +440,7 @@ export default function VoirDevisPage() {
 
           {/* Tableau des prestations */}
           <div className="mb-8 overflow-x-auto">
-            <table className="w-full border-collapse table-fixed">
+            <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[#2C3E50] text-white">
                   <th className="border border-gray-300 px-4 py-2 text-left w-1/2">Description</th>

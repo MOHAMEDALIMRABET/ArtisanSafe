@@ -36,6 +36,7 @@ export type DemandeStatut =
   | 'publiee' 
   | 'matchee' 
   | 'en_cours' 
+  | 'expiree'      // Date + flexibilité dépassée, demande archivée
   | 'terminee' 
   | 'annulee';
 
@@ -401,6 +402,7 @@ export interface Demande {
   description: string;
   localisation: DemandeLocalisation;
   datesSouhaitees: DatesSouhaitees;
+  dateExpiration?: Timestamp; // Date de fin de fenêtre (dateDebut + flexibilité) - calculée auto
   budgetIndicatif?: number;
   photos?: string[]; // URLs Firebase Storage (ancienne version - pour rétrocompatibilité)
   photosUrls?: string[]; // URLs Firebase Storage (nouvelle version)

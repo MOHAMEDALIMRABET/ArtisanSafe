@@ -12,6 +12,7 @@ import { doc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs, w
 import { db, storage } from '@/lib/firebase/config';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { SignatureCanvas } from '@/components/SignatureCanvas';
+import { PaymentForm, PaymentData } from '@/components/PaymentForm';
 import { notifyArtisanDevisAccepte, notifyArtisanDevisRefuse, notifyArtisanDevisRevision } from '@/lib/firebase/notification-service';
 import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
@@ -20,9 +21,12 @@ import type { Demande } from '@/types/firestore';
 /**
  * Masque un email en ne montrant que les caractères après @
  * Ex: "artisan@gmail.com" → "*******@gmail.com"
+ * Si shouldMask = false (devis payé), affiche l'email complet
  */
-function masquerEmail(email: string): string {
+function masquerEmail(email: string, shouldMask: boolean = true): string {
   if (!email) return '';
+  if (!shouldMask) return email; // Démasqué si devis payé
+  
   const [local, domain] = email.split('@');
   if (!domain) return email;
   return '*'.repeat(local.length) + '@' + domain;
@@ -31,9 +35,11 @@ function masquerEmail(email: string): string {
 /**
  * Masque un numéro de téléphone en ne montrant que les 2 premiers chiffres
  * Ex: "0612345678" → "06 ** ** ** **"
+ * Si shouldMask = false (devis payé), affiche le numéro complet
  */
-function masquerTelephoneComplet(telephone: string): string {
+function masquerTelephoneComplet(telephone: string, shouldMask: boolean = true): string {
   if (!telephone) return '';
+  if (!shouldMask) return telephone; // Démasqué si devis payé
   
   // Nettoyer le numéro (enlever espaces, points, tirets)
   const clean = telephone.replace(/[\s.\-]/g, '');
@@ -56,9 +62,11 @@ function masquerTelephoneComplet(telephone: string): string {
  * Masque l'adresse en ne montrant que le code postal et la ville
  * Ex: "123 rue de la République, 75001 Paris" → "75001 Paris"
  * Ex: "15 avenue Victor Hugo 69003 Lyon" → "69003 Lyon"
+ * Si shouldMask = false (devis payé), affiche l'adresse complète
  */
-function masquerAdresse(adresse: string): string {
+function masquerAdresse(adresse: string, shouldMask: boolean = true): string {
   if (!adresse) return '';
+  if (!shouldMask) return adresse; // Démasqué si devis payé
   
   // Chercher un code postal (5 chiffres) n'importe où dans l'adresse
   const match = adresse.match(/(\d{5})/);
@@ -96,6 +104,8 @@ export default function ClientDevisDetailPage() {
   const [refusalType, setRefusalType] = useState<'variante' | 'artisan' | 'revision'>('variante');
   const [processing, setProcessing] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [signatureDataURL, setSignatureDataURL] = useState<string | null>(null);
 
   const devisId = params.id as string;
   const action = searchParams.get('action');
@@ -202,34 +212,83 @@ export default function ClientDevisDetailPage() {
     setShowSignatureModal(true);
   };
 
-  const handleSignatureValidated = async (signatureDataURL: string) => {
+  const handleSignatureValidated = async (dataURL: string) => {
     if (!devis) return;
 
     try {
       setProcessing(true);
       setShowSignatureModal(false);
 
-      // 1. Uploader la signature dans Firebase Storage
+      console.log('✅ Signature enregistrée en mémoire (pas encore uploadée)');
+
+      // 1. Garder la signature en mémoire (PAS d'upload maintenant)
+      setSignatureDataURL(dataURL);
+
+      // 2. Calculer date limite paiement (24h)
+      const now = new Date();
+      const dateLimite = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24h
+
+      // 3. Mettre à jour le devis : statut en_attente_paiement (SANS signature)
+      await updateDoc(doc(db, 'devis', devisId), {
+        statut: 'en_attente_paiement',
+        dateAcceptation: Timestamp.now(),
+        dateDerniereNotification: Timestamp.now(),
+        vuParArtisan: false,
+        // PAS de signatureClient ici (sera ajouté après paiement)
+        dateLimitePaiement: Timestamp.fromDate(dateLimite),
+        paiement: {
+          montant: devis.totaux.totalTTC,
+          statut: 'en_attente',
+        },
+      });
+
+      console.log('✅ Devis mis à jour : statut en_attente_paiement (signature en attente paiement)');
+
+      // 4. Recharger le devis pour afficher le formulaire de paiement
+      await loadDevis();
+      
+      // 5. Afficher le formulaire de paiement
+      setShowPaymentModal(true);
+    } catch (error) {
+      console.error('Erreur après signature:', error);
+      alert('❌ Erreur lors de l\'enregistrement de la signature. Veuillez réessayer.');
+      setShowSignatureModal(true);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handlePaymentSuccess = async (paymentData: PaymentData) => {
+    if (!devis || !signatureDataURL) return;
+
+    try {
+      setProcessing(true);
+      setShowPaymentModal(false);
+
+      // 1. MAINTENANT uploader la signature (paiement validé)
       const signatureRef = ref(storage, `signatures/${devisId}_${Date.now()}.png`);
       await uploadString(signatureRef, signatureDataURL, 'data_url');
       const signatureURL = await getDownloadURL(signatureRef);
 
-      console.log('✅ Signature uploadée:', signatureURL);
+      console.log('✅ Signature uploadée après paiement:', signatureURL);
 
-      // 2. Mettre à jour le statut du devis avec la signature
+      // 2. Mettre à jour le devis : statut payé + signature + données paiement
       await updateDoc(doc(db, 'devis', devisId), {
-        statut: 'accepte',
-        dateAcceptation: Timestamp.now(),
+        statut: 'paye',
+        datePaiement: paymentData.date,
+        paiement: paymentData,
         dateDerniereNotification: Timestamp.now(),
         vuParArtisan: false,
         signatureClient: {
           url: signatureURL,
           date: Timestamp.now(),
-          ip: '', // TODO: Récupérer l'IP client si nécessaire
+          ip: '',
         },
       });
 
-      // 3. Notifier l'artisan
+      console.log('✅ Paiement enregistré + Signature persistée:', paymentData.referenceTransaction);
+
+      // 2. Notifier l'artisan (devis payé)
       try {
         const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
         await notifyArtisanDevisAccepte(
@@ -238,19 +297,28 @@ export default function ClientDevisDetailPage() {
           clientNom,
           devis.numeroDevis
         );
-        console.log('✅ Artisan notifié de l\'acceptation');
+        console.log('✅ Artisan notifié du paiement');
       } catch (error) {
         console.error('Erreur notification artisan:', error);
       }
 
-      alert('✅ Devis accepté avec succès !\n\nVotre signature électronique a été enregistrée. L\'artisan sera notifié.');
+      // 3. Message de succès
+      alert(`✅ Paiement effectué avec succès !
+
+Référence : ${paymentData.referenceTransaction}
+Montant : ${paymentData.montant.toFixed(2)} €
+
+Votre devis signé et payé a été enregistré.
+Les coordonnées complètes de l'artisan sont maintenant visibles.
+
+L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
       
-      // TODO: Créer le contrat et rediriger vers le paiement
-      router.push('/client/devis');
+      // 4. Recharger pour afficher les données démasquées
+      await loadDevis();
     } catch (error) {
-      console.error('Erreur acceptation devis:', error);
-      alert('❌ Erreur lors de l\'acceptation. Veuillez réessayer.');
-      setShowSignatureModal(true); // Réouvrir la modale en cas d'erreur
+      console.error('Erreur traitement paiement:', error);
+      alert('❌ Erreur lors de l\'enregistrement du paiement. Veuillez contacter le support.');
+      setShowPaymentModal(true);
     } finally {
       setProcessing(false);
     }
@@ -566,10 +634,19 @@ export default function ClientDevisDetailPage() {
                 {devis.artisan.siret && <p className="text-sm text-gray-600">SIRET: {devis.artisan.siret}</p>}
                 {devis.artisan.adresse && (
                   <p className="text-sm text-gray-600 mt-1">
-                    📍 {masquerAdresse(devis.artisan.adresse)}
+                    📍 {masquerAdresse(devis.artisan.adresse, devis.statut !== 'paye')}
                   </p>
                 )}
-                {devis.artisan.telephone && <p className="text-sm">📞 {masquerTelephoneComplet(devis.artisan.telephone)}</p>}
+                {devis.artisan.telephone && (
+                  <p className="text-sm">
+                    📞 {masquerTelephoneComplet(devis.artisan.telephone, devis.statut !== 'paye')}
+                  </p>
+                )}
+                {devis.artisan.email && (
+                  <p className="text-sm">
+                    📧 {masquerEmail(devis.artisan.email, devis.statut !== 'paye')}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -585,6 +662,69 @@ export default function ClientDevisDetailPage() {
                 )}
               </div>
             </div>
+
+            {/* Bannière information masquage/démasquage */}
+            {devis.statut === 'envoye' && (
+              <div className="bg-orange-50 border-l-4 border-[#FF6B00] p-4 mb-6 rounded">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div className="text-sm text-orange-800">
+                    <p className="font-semibold mb-1">🔒 Coordonnées masquées</p>
+                    <p className="text-orange-700">
+                      Les coordonnées complètes de l'artisan (téléphone, email, adresse) seront démasquées après <strong>signature ET paiement</strong> du devis.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {devis.statut === 'en_attente_paiement' && devis.dateLimitePaiement && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                  </svg>
+                  <div className="text-sm text-red-800">
+                    <p className="font-semibold mb-1">⏰ Paiement en attente - Coordonnées masquées</p>
+                    <p className="text-red-700 mb-2">
+                      Vous avez signé ce devis le {devis.signatureClient?.date?.toDate().toLocaleDateString('fr-FR')}.
+                      <strong> Il vous reste jusqu'au {devis.dateLimitePaiement.toDate().toLocaleDateString('fr-FR')} à {devis.dateLimitePaiement.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} pour payer.</strong>
+                    </p>
+                    <p className="text-red-700">
+                      Les coordonnées de l'artisan seront démasquées après paiement.
+                    </p>
+                    <button
+                      onClick={() => setShowPaymentModal(true)}
+                      className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                    >
+                      💳 Payer maintenant ({devis.totaux.totalTTC.toFixed(2)} €)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {devis.statut === 'paye' && (
+              <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <div className="text-sm text-green-800">
+                    <p className="font-semibold mb-1">✅ Devis signé et payé - Coordonnées complètes visibles</p>
+                    <p className="text-green-700">
+                      Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')} - 
+                      Référence : <strong>{devis.paiement?.referenceTransaction}</strong>
+                    </p>
+                    <p className="text-green-700 mt-2">
+                      Vous pouvez maintenant contacter l'artisan directement avec les coordonnées complètes affichées ci-dessus.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Titre */}
             <div className="mb-6">
@@ -727,6 +867,23 @@ export default function ClientDevisDetailPage() {
         <SignatureCanvas
           onSave={handleSignatureValidated}
           onCancel={() => setShowSignatureModal(false)}
+        />
+      )}
+
+      {/* Modal de paiement (après signature) */}
+      {showPaymentModal && devis && devis.dateLimitePaiement && (
+        <PaymentForm
+          devisId={devisId}
+          montantTTC={devis.totaux.totalTTC}
+          numeroDevis={devis.numeroDevis}
+          dateLimitePaiement={devis.dateLimitePaiement}
+          onSuccess={handlePaymentSuccess}
+          onCancel={() => {
+            if (confirm('⚠️ Attention : Vous avez 24h pour payer ce devis.\n\nSi vous annulez maintenant, vous pourrez revenir payer plus tard, mais le devis sera automatiquement annulé après 24h.\n\nVoulez-vous vraiment reporter le paiement ?')) {
+              setShowPaymentModal(false);
+              router.push('/client/devis');
+            }
+          }}
         />
       )}
 

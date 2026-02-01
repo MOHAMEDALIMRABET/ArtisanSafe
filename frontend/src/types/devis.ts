@@ -10,13 +10,15 @@ import { Timestamp } from 'firebase/firestore';
 // ============================================
 
 export type DevisStatut = 
-  | 'brouillon'    // Devis en cours de création
-  | 'envoye'       // Devis envoyé au client
-  | 'accepte'      // Client a accepté le devis
-  | 'refuse'       // Client a refusé le devis
-  | 'expire'       // Date de validité dépassée
-  | 'remplace'     // Devis remplacé par une révision
-  | 'annule';      // Devis annulé (ex: autre variante acceptée)
+  | 'brouillon'             // Devis en cours de création
+  | 'envoye'                // Devis envoyé au client
+  | 'accepte'               // Client a accepté le devis (OBSOLÈTE - remplacé par en_attente_paiement)
+  | 'en_attente_paiement'   // Client a signé, paiement en attente (24h max)
+  | 'paye'                  // Devis signé ET payé avec escrow (paiement bloqué) → crée un contrat
+  | 'refuse'                // Client a refusé le devis
+  | 'expire'                // Date de validité dépassée
+  | 'remplace'              // Devis remplacé par une révision
+  | 'annule';               // Devis annulé (ex: paiement non effectué dans les 24h)
 
 export type TVARate = 0 | 5.5 | 10 | 20; // Taux de TVA français
 
@@ -69,6 +71,32 @@ export interface Devis {
     date: Timestamp;             // Date de la signature
     ip?: string;                 // IP du client (optionnel, pour traçabilité)
   };
+  
+  // Paiement avec escrow (séquestre) - après signature
+  paiement?: {
+    montant: number;             // Montant payé (doit = totaux.totalTTC)
+    date: Timestamp;             // Date du paiement
+    methode: 'carte_bancaire' | 'virement' | 'cheque' | 'especes';
+    
+    // Stripe escrow (séquestre)
+    stripe?: {
+      paymentIntentId: string;   // Stripe PaymentIntent (capture_method: manual)
+      chargeId?: string;          // Stripe Charge ID (après capture)
+      captureDate?: Timestamp;    // Date de capture (= libération argent)
+    };
+    
+    statut: 'en_attente' | 'bloque' | 'libere' | 'echec' | 'rembourse';
+    // - en_attente: Paiement initié mais pas confirmé
+    // - bloque: Argent bloqué en escrow (travaux en cours)
+    // - libere: Argent capturé et versé à l'artisan (travaux validés)
+    // - echec: Paiement échoué
+    // - rembourse: Annulation avec remboursement
+    
+    contratId?: string;          // ID du contrat créé après paiement (ref collection 'contrats')
+  };
+  
+  // Délai limite de paiement (24h après signature)
+  dateLimitePaiement?: Timestamp;  // Calculé automatiquement (dateSignature + 24h)
   
   // Devis alternatifs (pour proposer plusieurs options au client)
   varianteGroupe?: string;       // ID du groupe de variantes (même pour tous les devis alternatifs)

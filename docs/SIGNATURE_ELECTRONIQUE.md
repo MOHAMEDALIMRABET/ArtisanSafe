@@ -1,38 +1,72 @@
-# Signature Électronique pour l'Acceptation de Devis
+# Signature Électronique + Paiement pour l'Acceptation de Devis
 
 ## 📋 Vue d'ensemble
 
-Le système de signature électronique permet aux clients de signer numériquement un devis avant son acceptation, garantissant ainsi une valeur juridique équivalente à une signature manuscrite (conformément au règlement eIDAS).
+Le système de **signature électronique + paiement obligatoire** garantit un engagement contractuel complet du client. Le workflow complet est :
+
+1. **Signature électronique** (valeur juridique eIDAS)
+2. **Paiement dans les 24h** (engagement financier)
+3. **Démasquage coordonnées** (accès complet aux données)
+
+⚠️ **IMPORTANT** : Si le client ne paie pas dans les 24h, le devis est **automatiquement annulé** (comme un refus).
 
 ## ✨ Fonctionnalités
 
 ### Pour le Client
 
-1. **Processus d'acceptation amélioré**
-   - Clic sur le bouton "✅ Accepter ce devis"
-   - Affichage d'une modale plein écran avec canvas de signature
-   - Signature à la souris ou au tactile
-   - Possibilité d'effacer et recommencer
-   - Validation de la signature
+#### 1. Signature Électronique
 
-2. **Modale de signature**
-   - Canvas HTML5 responsive (700x300px)
-   - Support souris + tactile (mobile/tablette)
-   - Boutons :
-     - ❌ Annuler : Ferme la modale sans signer
-     - 🔄 Effacer : Recommence la signature
-     - ✅ Valider : Accepte le devis avec signature
+**Processus** :
+- Clic sur "✅ Accepter ce devis"
+- Modale plein écran avec canvas de signature
+- Signature à la souris ou au tactile
+- Possibilité d'effacer et recommencer
+- Validation de la signature
 
-3. **Sauvegarde sécurisée**
-   - Signature convertie en image PNG (base64)
-   - Upload automatique dans Firebase Storage (`signatures/`)
-   - URL stockée dans Firestore avec métadonnées
+**Canvas de signature** :
+- Taille : 700x300px responsive
+- Support : Souris + tactile (mobile/tablette)
+- Boutons :
+  - ❌ Annuler : Ferme sans signer
+  - 🔄 Effacer : Recommence
+  - ✅ Valider : Passe au paiement
+
+#### 2. Paiement Obligatoire (24h)
+
+**Après signature** :
+- Modale de paiement s'ouvre automatiquement
+- Formulaire carte bancaire (numéro, nom, expiration, CVV)
+- **Compte à rebours 24h** affiché en temps réel
+- ⚠️ Alerte si < 2h restantes
+
+**Délai 24h** :
+- Stocké dans `devis.dateLimitePaiement`
+- Calcul : `now + 24 heures`
+- Si dépassé → **Annulation automatique** (Cloud Function)
+
+**Formulaire paiement** :
+- Auto-formatage : XXXX XXXX XXXX XXXX
+- Validation : Luhn algorithm (carte), expiration, CVV
+- Simulation : 2s de traitement (TODO: Stripe Phase 2)
+
+#### 3. Démasquage Coordonnées
+
+**Avant paiement** (`statut: 'envoye'` ou `'en_attente_paiement'`) :
+- Email : `j***@gmail.com`
+- Téléphone : `06 ** ** ** 89`
+- Adresse : `32 rue *********, 75001 Paris`
+
+**Après paiement** (`statut: 'paye'`) :
+- Email : `john@gmail.com` ✅
+- Téléphone : `06 12 34 56 89` ✅
+- Adresse : `32 rue Jean Jaurès, 75001 Paris` ✅
 
 ### Pour l'Artisan
 
-- La signature est visible dans le devis accepté
-- Preuve d'engagement contractuel du client
-- Traçabilité complète (date, heure, IP optionnelle)
+- **Signature visible** dans le devis (preuve d'engagement)
+- **Notification paiement** quand client paie
+- **Notification annulation** si client ne paie pas (24h)
+- **Coordonnées complètes** visibles après paiement
 
 ## 🔧 Architecture Technique
 
@@ -54,33 +88,50 @@ interface SignatureCanvasProps {
 - Conversion canvas → image PNG base64
 - Validation (signature obligatoire avant validation)
 
-### 2. Modification Page Devis Client
+### 2. Composant `PaymentForm`
+
+**Fichier** : `frontend/src/components/PaymentForm.tsx`
+
+```typescript
+interface PaymentFormProps {
+  montant: number;
+  devisId: string;
+  dateLimitePaiement: Timestamp;
+  onSuccess: (paymentData: PaymentData) => void;
+  onCancel: () => void;
+}
+```
+
+**Fonctionnalités** :
+- Formulaire carte bancaire avec validation complète
+- Auto-formatage : XXXX XXXX XXXX XXXX (espaces automatiques)
+- Validation Luhn algorithm (numéro carte)
+- Validation expiration (MM/YY, pas dans le passé)
+- Validation CVV (3-4 chiffres selon type carte)
+- **Compte à rebours 24h** (affichage heures/minutes restantes)
+- ⚠️ Alerte rouge si < 2h restantes
+- Simulation paiement : 2s de traitement (TODO: Stripe Phase 2)
+
+### 3. Workflow Complet Page Devis Client
 
 **Fichier** : `frontend/src/app/client/devis/[id]/page.tsx`
 
-**Changements** :
-
-1. **Imports** :
-```typescript
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { SignatureCanvas } from '@/components/SignatureCanvas';
-```
-
-2. **États** :
+#### États gérés :
 ```typescript
 const [showSignatureModal, setShowSignatureModal] = useState(false);
+const [showPaymentModal, setShowPaymentModal] = useState(false);
+const [showRefusalModal, setShowRefusalModal] = useState(false);
 ```
 
-3. **Fonction `handleAccepter`** :
+#### Fonction 1 : `handleAccepter`
 ```typescript
-// Ancienne version : acceptait directement avec confirm()
-// Nouvelle version : ouvre la modale de signature
 const handleAccepter = async () => {
+  // Ouvre modale de signature
   setShowSignatureModal(true);
 };
 ```
 
-4. **Nouvelle fonction `handleSignatureValidated`** :
+#### Fonction 2 : `handleSignatureValidated`
 ```typescript
 const handleSignatureValidated = async (signatureDataURL: string) => {
   // 1. Upload signature dans Firebase Storage
@@ -88,40 +139,185 @@ const handleSignatureValidated = async (signatureDataURL: string) => {
   await uploadString(signatureRef, signatureDataURL, 'data_url');
   const signatureURL = await getDownloadURL(signatureRef);
 
-  // 2. Update devis avec signature
+  // 2. Calculer deadline paiement (+24h)
+  const now = Date.now();
+  const deadline = new Date(now + 24 * 60 * 60 * 1000);
+
+  // 3. Update devis : statut → 'en_attente_paiement'
   await updateDoc(doc(db, 'devis', devisId), {
-    statut: 'accepte',
+    statut: 'en_attente_paiement',  // ← Nouveau statut
     dateAcceptation: Timestamp.now(),
+    dateLimitePaiement: Timestamp.fromDate(deadline),  // ← Deadline 24h
     signatureClient: {
       url: signatureURL,
       date: Timestamp.now(),
-      ip: '', // Optionnel
+      ip: '',
     },
   });
 
-  // 3. Notifier artisan
-  await notifyArtisanDevisAccepte(...);
+  // 4. Recharger devis et ouvrir paiement
+  setShowSignatureModal(false);
+  setShowPaymentModal(true);
 };
 ```
 
-### 3. Type Devis Mis à Jour
+#### Fonction 3 : `handlePaymentSuccess`
+```typescript
+const handlePaymentSuccess = async (paymentData: PaymentData) => {
+  // 1. Update devis : statut → 'paye'
+  await updateDoc(doc(db, 'devis', devisId), {
+    statut: 'paye',  // ← Statut final
+    datePaiement: Timestamp.now(),
+    paiement: {
+      montant: paymentData.montant,
+      date: Timestamp.now(),
+      methode: 'carte_bancaire',
+      referenceTransaction: paymentData.referenceTransaction,
+      statut: 'confirme',
+    },
+  });
+
+  // 2. Notifier artisan
+  await createNotification({
+    recipientId: devis.artisanId,
+    type: 'devis_paye',
+    title: 'Devis payé !',
+    message: `Le client a payé le devis ${devis.numeroDevis}`,
+  });
+
+  // 3. Recharger pour afficher données démasquées
+  window.location.reload();
+};
+```
+
+#### Fonction masking :
+```typescript
+function masquerEmail(email: string, shouldMask: boolean = true): string {
+  if (!shouldMask) return email;  // ← Démasque si payé
+  const [local, domain] = email.split('@');
+  return `${local[0]}${'*'.repeat(local.length - 1)}@${domain}`;
+}
+
+function masquerTelephoneComplet(telephone: string, shouldMask: boolean = true): string {
+  if (!shouldMask) return telephone;  // ← Démasque si payé
+  const cleaned = telephone.replace(/\s/g, '');
+  return `${cleaned.slice(0, 2)} ** ** ** ${cleaned.slice(-2)}`;
+}
+
+function masquerAdresse(adresse: string, shouldMask: boolean = true): string {
+  if (!shouldMask) return adresse;  // ← Démasque si payé
+  const [numero, ...rest] = adresse.split(' ');
+  return `${numero} ${'*'.repeat(15)}, ${rest.slice(-2).join(' ')}`;
+}
+
+// Usage dans l'affichage
+const shouldMask = devis.statut !== 'paye';  // ← Clé du système
+```
+
+### 4. Type Devis Mis à Jour
 
 **Fichier** : `frontend/src/types/devis.ts`
 
 ```typescript
+export type DevisStatut = 
+  | 'brouillon'               // Devis en cours de création
+  | 'envoye'                  // Envoyé au client (coordonnées masquées)
+  | 'en_attente_paiement'     // Signé, en attente paiement 24h
+  | 'paye'                    // Payé (coordonnées démasquées)
+  | 'refuse'                  // Refusé par client
+  | 'annule';                 // Annulé (timeout paiement ou autre)
+
 export interface Devis {
   // ... autres champs
+  statut: DevisStatut;
   
   // Signature électronique (lors de l'acceptation)
   signatureClient?: {
-    url: string;       // URL Firebase Storage
-    date: Timestamp;   // Date de signature
-    ip?: string;       // IP client (optionnel)
+    url: string;              // URL Firebase Storage
+    date: Timestamp;          // Date/heure signature
+    ip?: string;              // IP client (optionnel)
   };
+  
+  // Paiement (après signature)
+  dateLimitePaiement?: Timestamp;  // Deadline 24h (now + 24h)
+  datePaiement?: Timestamp;        // Date paiement effectif
+  paiement?: {
+    montant: number;               // Montant TTC payé
+    date: Timestamp;               // Date transaction
+    methode: 'carte_bancaire';     // Méthode paiement
+    referenceTransaction: string;  // ID transaction (Stripe)
+    statut: 'confirme' | 'en_attente' | 'echoue';
+  };
+  
+  // Annulation (si timeout paiement)
+  dateAnnulation?: Timestamp;
+  motifAnnulation?: string;  // Ex: "Paiement non effectué dans les 24h"
 }
 ```
 
-### 4. Firebase Storage
+### 5. Cloud Function - Annulation Automatique
+
+**Fichier** : `functions/src/scheduledJobs/annulerDevisNonPayes.ts`
+
+```typescript
+/**
+ * S'exécute toutes les heures
+ * Annule devis non payés après 24h
+ */
+export const annulerDevisNonPayes = functions.pubsub
+  .schedule('every 1 hours')
+  .timeZone('Europe/Paris')
+  .onRun(async () => {
+    const db = admin.firestore();
+    const now = Timestamp.now();
+
+    // Requête: devis en attente avec deadline dépassée
+    const snapshot = await db
+      .collection('devis')
+      .where('statut', '==', 'en_attente_paiement')
+      .where('dateLimitePaiement', '<', now)
+      .get();
+
+    if (snapshot.empty) return null;
+
+    const batch = db.batch();
+
+    snapshot.forEach((doc) => {
+      const devis = doc.data();
+
+      // Annuler le devis
+      batch.update(doc.ref, {
+        statut: 'annule',
+        dateAnnulation: now,
+        motifAnnulation: 'Paiement non effectué dans les 24h après signature',
+      });
+
+      // Notifier artisan (comme refus)
+      batch.set(db.collection('notifications').doc(), {
+        recipientId: devis.artisanId,
+        type: 'devis_annule_non_paye',
+        title: `Devis ${devis.numeroDevis} annulé`,
+        message: `Le client n'a pas payé dans les 24h.`,
+        relatedId: doc.id,
+        lue: false,
+        dateCreation: now,
+      });
+    });
+
+    await batch.commit();
+    return { devisAnnules: snapshot.size };
+  });
+```
+
+**Déploiement** :
+```bash
+cd functions
+npm install
+npm run build
+firebase deploy --only functions:annulerDevisNonPayes
+```
+
+### 6. Firebase Storage
 
 **Structure** :
 ```

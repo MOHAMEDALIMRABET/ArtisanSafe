@@ -1,0 +1,28 @@
+# Compiled JavaScript files
+lib/
+*.js
+*.js.map
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Node.js dependencies
+node_modules/
+
+# Environment variables (CRITICAL - ne jamais commit)
+.env
+.env.local
+.runtimeconfig.json
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+firebase-debug.log
+
+# OS
+.DS_Store
+Thumbs.db

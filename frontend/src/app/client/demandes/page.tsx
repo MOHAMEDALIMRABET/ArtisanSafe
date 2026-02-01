@@ -130,7 +130,7 @@ export default function MesDemandesPage() {
 
     const labels = {
       brouillon: '📝 Brouillon',
-      publiee: '📢 Publiée',
+      publiee: '� Envoyée',
       matchee: '🤝 Artisan trouvé',
       en_cours: '⏳ En cours',
       terminee: '✅ Terminée',

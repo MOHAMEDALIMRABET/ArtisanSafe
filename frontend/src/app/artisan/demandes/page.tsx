@@ -211,12 +211,17 @@ export default function ArtisanDemandesPage() {
   }
 
   const filteredDemandes = demandes.filter(demande => {
+    // Exclure les demandes expirées et annulées de la vue principale
+    if (demande.statut === 'expiree' || demande.statut === 'annulee') {
+      return false;
+    }
+    
     // Si un demandeId est spécifié dans l'URL, afficher uniquement cette demande
     if (highlightedDemandeId) {
       return demande.id === highlightedDemandeId;
     }
     
-    // Sinon, afficher toutes les demandes
+    // Sinon, afficher toutes les demandes actives
     return true;
   });
 

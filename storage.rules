@@ -36,5 +36,21 @@ service firebase.storage {
                       request.resource.size < 5 * 1024 * 1024 && // Max 5MB
                       request.resource.contentType.matches('image/(jpeg|jpg|png)|application/pdf');
     }
+    
+    // Signatures électroniques des clients (acceptation devis)
+    match /signatures/{signatureId} {
+      // Lecture: Tout utilisateur authentifié peut lire les signatures
+      // (Client doit voir sa signature, artisan doit voir signature du client)
+      allow read: if request.auth != null;
+      
+      // Création: Seulement clients authentifiés peuvent créer des signatures
+      allow create: if request.auth != null && 
+                       request.auth.token.role == 'client' &&
+                       request.resource.size < 5 * 1024 * 1024 && // Max 5MB
+                       request.resource.contentType.matches('image/png');
+      
+      // Modification/Suppression: Interdit (signatures immuables)
+      allow update, delete: if false;
+    }
   }
 }

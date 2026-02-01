@@ -34,12 +34,29 @@ export async function createDemande(
 ): Promise<Demande> {
   const demandesRef = collection(db, COLLECTION_NAME);
   
+  // Calculer automatiquement dateExpiration si dates souhaitées fournies
+  let dateExpiration: Timestamp | undefined;
+  if (demandeData.datesSouhaitees?.dates?.[0]) {
+    const dateClient = demandeData.datesSouhaitees.dates[0]; // Timestamp
+    const flexDays = demandeData.datesSouhaitees.flexibiliteDays || 0;
+    
+    // Date d'expiration = date souhaitée + flexibilité
+    const dateExp = new Date(dateClient.toDate());
+    dateExp.setDate(dateExp.getDate() + flexDays);
+    dateExp.setHours(23, 59, 59, 999); // Fin de journée
+    
+    dateExpiration = Timestamp.fromDate(dateExp);
+    
+    console.log(`📅 Date expiration calculée: ${dateExp.toLocaleDateString('fr-FR')} (date: ${dateClient.toDate().toLocaleDateString('fr-FR')} + ${flexDays} jours)`);
+  }
+  
   const newDemande = {
     ...demandeData,
     statut: demandeData.statut || 'brouillon' as DemandeStatut,
     photos: demandeData.photos || [],
     photosUrls: demandeData.photosUrls || [], // URLs Firebase Storage
     devisRecus: 0,
+    dateExpiration, // Calculée automatiquement
     dateCreation: Timestamp.now(),
     dateModification: Timestamp.now(),
   };
