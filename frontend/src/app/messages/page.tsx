@@ -24,6 +24,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { validateMessage } from '@/lib/antiBypassValidator';
+import { validateMessageWithHistory } from '@/lib/firebase/conversation-history-validator';
 
 interface Message {
   id: string;
@@ -330,6 +331,8 @@ export default function MessagesPage() {
   const handleMessageChange = (value: string) => {
     setMessageContent(value);
     
+    // Validation instantanée (affichage warning en temps réel)
+    // La validation complète multi-couches se fera à l'envoi
     const validation = validateMessage(value);
     if (!validation.isValid) {
       setValidationWarning(validation.message || '');
@@ -338,22 +341,30 @@ export default function MessagesPage() {
     }
   };
 
-  // Envoyer un message
+  // Envoyer un message avec validation multi-couches
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user || !selectedConversation || !messageContent.trim()) return;
 
-    // Validation anti-bypass
-    const validation = validateMessage(messageContent);
-    if (!validation.isValid) {
-      alert(validation.message);
-      return;
-    }
-
     setSending(true);
 
     try {
+      // ========================================
+      // VALIDATION MULTI-COUCHES (historique)
+      // ========================================
+      const validation = await validateMessageWithHistory(
+        messageContent.trim(),
+        selectedConversation,
+        user.uid
+      );
+
+      if (!validation.isValid) {
+        alert(validation.message);
+        setSending(false);
+        return;
+      }
+
       const conv = conversations.find(c => c.id === selectedConversation);
       if (!conv) return;
 

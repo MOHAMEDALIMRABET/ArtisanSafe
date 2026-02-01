@@ -15,6 +15,71 @@ import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
 
+/**
+ * Masque un email en ne montrant que les caractères après @
+ * Ex: "artisan@gmail.com" → "*******@gmail.com"
+ */
+function masquerEmail(email: string): string {
+  if (!email) return '';
+  const [local, domain] = email.split('@');
+  if (!domain) return email;
+  return '*'.repeat(local.length) + '@' + domain;
+}
+
+/**
+ * Masque un numéro de téléphone en ne montrant que les 2 premiers chiffres
+ * Ex: "0612345678" → "06 ** ** ** **"
+ */
+function masquerTelephoneComplet(telephone: string): string {
+  if (!telephone) return '';
+  
+  // Nettoyer le numéro (enlever espaces, points, tirets)
+  const clean = telephone.replace(/[\s.\-]/g, '');
+  
+  // Format français standard 10 chiffres
+  if (clean.length === 10) {
+    return `${clean.substring(0, 2)} ** ** ** **`;
+  }
+  
+  // Format international +33
+  if (clean.startsWith('+33') && clean.length === 12) {
+    return `+33 ${clean.substring(3, 4)} ** ** ** **`;
+  }
+  
+  // Format par défaut : afficher 2 premiers et masquer le reste
+  return `${clean.substring(0, 2)}${'*'.repeat(Math.max(0, clean.length - 2))}`;
+}
+
+/**
+ * Masque l'adresse en ne montrant que le code postal et la ville
+ * Ex: "123 rue de la République, 75001 Paris" → "75001 Paris"
+ * Ex: "15 avenue Victor Hugo 69003 Lyon" → "69003 Lyon"
+ */
+function masquerAdresse(adresse: string): string {
+  if (!adresse) return '';
+  
+  // Chercher un code postal (5 chiffres) n'importe où dans l'adresse
+  const match = adresse.match(/(\d{5})/);
+  
+  if (match) {
+    const codePostal = match[1];
+    // Extraire tout ce qui suit le code postal (= la ville)
+    const indexCodePostal = adresse.indexOf(codePostal);
+    const apresCodePostal = adresse.substring(indexCodePostal + 5).trim();
+    
+    // Si il y a quelque chose après le code postal, c'est la ville
+    if (apresCodePostal) {
+      return `${codePostal} ${apresCodePostal}`;
+    }
+    
+    // Sinon juste le code postal
+    return codePostal;
+  }
+  
+  // Si pas de code postal détecté, masquer complètement
+  return '*'.repeat(adresse.length);
+}
+
 export default function ClientDevisDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -28,8 +93,6 @@ export default function ClientDevisDetailPage() {
   const [refusalReason, setRefusalReason] = useState('');
   const [refusalType, setRefusalType] = useState<'variante' | 'artisan' | 'revision'>('variante');
   const [processing, setProcessing] = useState(false);
-
-  const [actionExecuted, setActionExecuted] = useState(false);
 
   const devisId = params.id as string;
   const action = searchParams.get('action');
@@ -176,6 +239,12 @@ export default function ClientDevisDetailPage() {
 
   const handleRefuser = async () => {
     if (!devis || processing) return;
+
+    // Validation : motif obligatoire pour révision
+    if (refusalType === 'revision' && !refusalReason.trim()) {
+      alert('⚠️ Le motif du refus est obligatoire pour demander une nouvelle option.\n\nCela permet à l\'artisan de comprendre vos attentes et de vous proposer une offre mieux adaptée.');
+      return;
+    }
 
     try {
       setProcessing(true);
@@ -474,17 +543,14 @@ export default function ClientDevisDetailPage() {
             <div className="grid md:grid-cols-2 gap-8 mb-8">
               <div>
                 <h3 className="font-bold text-[#2C3E50] mb-3">Artisan</h3>
-                <p className="font-semibold">{devis.artisan.prenom} {devis.artisan.nom}</p>
-                {devis.artisan.raisonSociale && <p>{devis.artisan.raisonSociale}</p>}
+                {devis.artisan.raisonSociale && <p className="font-semibold">{devis.artisan.raisonSociale}</p>}
                 {devis.artisan.siret && <p className="text-sm text-gray-600">SIRET: {devis.artisan.siret}</p>}
-                {devis.artisan.email && <p className="text-sm">📧 {devis.artisan.email}</p>}
-                {devis.artisan.telephone && <p className="text-sm">📞 {devis.artisan.telephone}</p>}
                 {devis.artisan.adresse && (
                   <p className="text-sm text-gray-600 mt-1">
-                    {devis.artisan.adresse.rue}<br />
-                    {devis.artisan.adresse.codePostal} {devis.artisan.adresse.ville}
+                    📍 {masquerAdresse(devis.artisan.adresse)}
                   </p>
                 )}
+                {devis.artisan.telephone && <p className="text-sm">📞 {masquerTelephoneComplet(devis.artisan.telephone)}</p>}
               </div>
 
               <div>
@@ -501,12 +567,9 @@ export default function ClientDevisDetailPage() {
               </div>
             </div>
 
-            {/* Titre et description */}
+            {/* Titre */}
             <div className="mb-6">
               <h3 className="text-xl font-bold text-[#2C3E50] mb-2">{devis.titre}</h3>
-              {devis.description && (
-                <p className="text-gray-700 whitespace-pre-wrap">{devis.description}</p>
-              )}
             </div>
 
             {/* Détail des prestations */}
@@ -692,14 +755,22 @@ export default function ClientDevisDetailPage() {
             )}
             
             <p className="text-gray-600 mb-3">
-              Motif du refus (optionnel) :
+              Motif du refus {refusalType === 'revision' && <span className="text-red-600 font-semibold">(obligatoire pour nouvelle option)</span>} {refusalType !== 'revision' && '(optionnel)'} :
             </p>
             <textarea
               value={refusalReason}
               onChange={(e) => setRefusalReason(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+              className={`w-full border rounded-lg p-3 mb-4 focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent ${
+                refusalType === 'revision' && !refusalReason.trim()
+                  ? 'border-red-500 bg-red-50'
+                  : 'border-gray-300'
+              }`}
               rows={3}
-              placeholder="Ex: Tarif trop élevé, délai trop long, prestation non adaptée..."
+              placeholder={refusalType === 'revision' 
+                ? "Ex: Le prix est trop élevé, je souhaite une option moins chère avec des matériaux standards..."
+                : "Ex: Tarif trop élevé, délai trop long, prestation non adaptée..."
+              }
+              required={refusalType === 'revision'}
             />
 
             <p className="text-gray-700 font-semibold mb-3">
@@ -767,6 +838,11 @@ export default function ClientDevisDetailPage() {
                       : "L'artisan pourra vous proposer une option alternative améliorée"
                     }
                   </p>
+                  {refusalType === 'revision' && (
+                    <p className="text-sm text-blue-700 font-medium mt-2">
+                      ⚠️ Vous devez préciser le motif du refus pour que l'artisan comprenne vos attentes
+                    </p>
+                  )}
                 </div>
               </label>
             </div>

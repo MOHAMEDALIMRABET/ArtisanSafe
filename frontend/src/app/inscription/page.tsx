@@ -38,6 +38,9 @@ export default function InscriptionPage() {
   // Champs spécifiques artisan
   const [entreprise, setEntreprise] = useState('');
   const [siret, setSiret] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
 
   // Fonction pour formater le téléphone au format international
   const formatPhoneNumber = (phone: string): string => {
@@ -94,6 +97,12 @@ export default function InscriptionPage() {
 
     if (role === 'artisan' && !representantLegal.trim()) {
       setError('Le nom du représentant légal est obligatoire pour vérifier votre KBIS');
+      return;
+    }
+
+    // Validation du code postal français (5 chiffres)
+    if (role === 'artisan' && postalCode && !/^\d{5}$/.test(postalCode)) {
+      setError('Le code postal doit être composé de 5 chiffres');
       return;
     }
 
@@ -174,9 +183,9 @@ export default function InscriptionPage() {
           siret: siret,
           metiers: [],
           location: {
-            address: '',
-            city: '',
-            postalCode: ''
+            address: address.trim(),
+            city: city.trim(),
+            postalCode: postalCode.trim()
           }
         });
         router.push('/artisan/dashboard');
@@ -394,6 +403,33 @@ export default function InscriptionPage() {
                 placeholder="14 chiffres"
                 helperText="Votre numéro SIRET sera vérifié"
               />
+
+              <Input
+                label="Adresse de l'entreprise"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+                placeholder="123 rue de la République"
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Ville"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                  placeholder="Paris"
+                />
+                <Input
+                  label="Code postal"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  required
+                  placeholder="75001"
+                  maxLength={5}
+                  helperText="5 chiffres"
+                />
+              </div>
             </>
           )}
 

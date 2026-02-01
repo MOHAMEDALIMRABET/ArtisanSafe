@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId, updateArtisan } from '@/lib/firebase/artisan-service';
 import { Button, Input, Logo } from '@/components/ui';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { METIERS_MAP, METIERS_DISPONIBLES } from '@/lib/constants/metiers';
 import { artisanDoitDecennale } from '@/lib/decennale-helper';
 import type { Categorie, Artisan, ZoneIntervention } from '@/types/firestore';
@@ -31,6 +32,7 @@ export default function ProfilArtisanPage() {
   // Formulaire
   const [siret, setSiret] = useState('');
   const [raisonSociale, setRaisonSociale] = useState('');
+  const [adresse, setAdresse] = useState('');
   const [metiers, setMetiers] = useState<Categorie[]>([]);
   const [ville, setVille] = useState('');
   const [codePostal, setCodePostal] = useState('');
@@ -71,6 +73,7 @@ export default function ProfilArtisanPage() {
       // Pré-remplir le formulaire
       setSiret(artisanData.siret || '');
       setRaisonSociale(artisanData.raisonSociale || '');
+      setAdresse(artisanData.adresse || '');
       
       // Assurer que metiers est bien un tableau
       const metiersArray = Array.isArray(artisanData.metiers) 
@@ -160,6 +163,11 @@ export default function ProfilArtisanPage() {
       return;
     }
 
+    if (!adresse.trim()) {
+      setError('L\'adresse de l\'entreprise est obligatoire');
+      return;
+    }
+
     if (metiers.length === 0) {
       setError('Veuillez sélectionner au moins un métier');
       return;
@@ -193,6 +201,7 @@ export default function ProfilArtisanPage() {
       await updateArtisan(artisan.userId, {
         siret: siret.replace(/\s/g, ''),
         raisonSociale: raisonSociale.trim(),
+        adresse: adresse.trim(),
         metiers,
         zonesIntervention,
         presentation: presentation.trim() || undefined
@@ -293,6 +302,16 @@ export default function ProfilArtisanPage() {
                 onChange={(e) => setRaisonSociale(e.target.value)}
                 placeholder="Mon Entreprise SARL"
                 required
+              />
+              
+              <Input
+                label="Adresse de l'entreprise"
+                type="text"
+                value={adresse}
+                onChange={(e) => setAdresse(e.target.value)}
+                placeholder="123 rue de la République, 75001 Paris"
+                required
+                helper="Adresse complète de votre entreprise"
               />
             </div>
           </div>

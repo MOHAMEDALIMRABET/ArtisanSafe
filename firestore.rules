@@ -167,6 +167,24 @@ service cloud.firestore {
       allow update: if isAdmin() ||
                        (isAuthenticated() && request.auth.uid in resource.data.participants);
       allow delete: if false; // ⛔ JAMAIS SUPPRIMER - Archive obligatoire pour litiges
+      
+      // ============================================
+      // 6.1 SOUS-COLLECTION: conversations/{conversationId}/messages
+      // ============================================
+      // Messages dans une conversation spécifique
+      // Nécessaire pour la validation anti-bypass avec historique
+      
+      match /messages/{messageId} {
+        allow read: if isAdmin() || 
+                       (isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants);
+        allow list: if isAuthenticated() && 
+                       request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if isAuthenticated() &&
+                         request.auth.uid == request.resource.data.authorId &&
+                         request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow update: if isOwner(resource.data.authorId) || isAdmin();
+        allow delete: if false; // ⛔ JAMAIS SUPPRIMER - Archive obligatoire pour litiges
+      }
     }
     
     // ============================================
@@ -178,6 +196,7 @@ service cloud.firestore {
     
     match /messages/{messageId} {
       allow read: if isAdmin() || isAuthenticated(); // Admin a accès total
+      allow list: if isAuthenticated(); // ✅ Permettre queries pour validation historique
       allow create: if isAuthenticated() &&
                        request.auth.uid == request.resource.data.senderId;
       allow update: if isOwner(resource.data.senderId) || isAdmin();

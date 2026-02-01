@@ -20,6 +20,31 @@ import { db } from '@/lib/firebase/config';
 import { validateMessage } from '@/lib/antiBypassValidator';
 
 /**
+ * Masque un numéro de téléphone en ne montrant que les 2 premiers chiffres
+ * Ex: "0612345678" → "06 ** ** ** **"
+ * Ex: "+33612345678" → "+33 6 ** ** ** **"
+ */
+function masquerTelephone(telephone: string): string {
+  if (!telephone) return '';
+  
+  // Nettoyer le numéro (enlever espaces, points, tirets)
+  const clean = telephone.replace(/[\s.\-]/g, '');
+  
+  // Format français standard 10 chiffres
+  if (clean.length === 10) {
+    return `${clean.substring(0, 2)} ** ** ** **`;
+  }
+  
+  // Format international +33
+  if (clean.startsWith('+33') && clean.length === 12) {
+    return `+33 ${clean.substring(3, 4)} ** ** ** **`;
+  }
+  
+  // Format par défaut : afficher 2 premiers et masquer le reste
+  return `${clean.substring(0, 2)}${'*'.repeat(Math.max(0, clean.length - 2))}`;
+}
+
+/**
  * Fonction de validation anti-contournement
  * Utilise le même système que la messagerie (antiBypassValidator)
  * Détecte 40+ patterns : téléphones, emails, adresses, réseaux sociaux
@@ -168,7 +193,8 @@ export default function NouveauDevisPage() {
 
   // États
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [savingBrouillon, setSavingBrouillon] = useState(false);
+  const [savingEnvoi, setSavingEnvoi] = useState(false);
   const [demande, setDemande] = useState<Demande | null>(null);
   const [ancienDevisId, setAncienDevisId] = useState<string | null>(null);
   const [modeEdition, setModeEdition] = useState(false); // true si modification d'un brouillon
@@ -185,6 +211,7 @@ export default function NouveauDevisPage() {
   
   // Lignes spéciales Prestations
   const [mainOeuvreQuantite, setMainOeuvreQuantite] = useState<number>(1);
+  const [mainOeuvreUnite, setMainOeuvreUnite] = useState<string>('j'); // h ou j
   const [mainOeuvrePrixHT, setMainOeuvrePrixHT] = useState<number>(0);
   const [mainOeuvreTVA, setMainOeuvreTVA] = useState<TVARate>(20);
   const [ajouterMatierePremiere, setAjouterMatierePremiere] = useState(false);
@@ -369,14 +396,8 @@ export default function NouveauDevisPage() {
             prenom: artisan.prenom,
             email: artisan.email || user.email || '',
             telephone: artisan.telephone || '',
+            adresse: artisan.adresse || '', // Adresse complète de l'entreprise
           };
-          if (artisan.adresse) {
-            artisanData.adresse = {
-              rue: artisan.adresse,
-              ville: '', // TODO: Adapter selon votre structure
-              codePostal: '',
-            };
-          }
           setArtisanInfo(artisanData);
         }
 
@@ -857,8 +878,17 @@ export default function NouveauDevisPage() {
       alert('Veuillez indiquer une quantité valide pour la main d\'\u0153uvre (nombre de jours)');
       return;
     }
+    
+    if (lignes.length === 0) {
+      alert('Veuillez ajouter au moins une prestation');
+      return;
+    }
+    if (lignes.some(l => !l.description.trim() || l.prixUnitaireHT <= 0)) {
+      alert('Toutes les lignes doivent avoir une description et un prix');
+      return;
+    }
 
-    setSaving(true);
+    setSavingBrouillon(true);
     try {
       const devisData: any = {
         ...(demandeId && { demandeId: demandeId }),
@@ -970,7 +1000,7 @@ export default function NouveauDevisPage() {
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde';
       alert(errorMessage);
     } finally {
-      setSaving(false);
+      setSavingBrouillon(false);
     }
   };
 
@@ -1016,17 +1046,15 @@ export default function NouveauDevisPage() {
       dateMax.setDate(dateMax.getDate() + flexDays);
       
       if (dateProposee < dateMin || dateProposee > dateMax) {
-        const confirmEnvoi = confirm(
-          `⚠️ ATTENTION : La date de début prévue (${dateProposee.toLocaleDateString('fr-FR')}) est en dehors des préférences du client.\n\n` +
-          `Le client souhaite : ${dateClient.toLocaleDateString('fr-FR')} (±${flexDays} jours)\n` +
-          `Plage acceptée : du ${dateMin.toLocaleDateString('fr-FR')} au ${dateMax.toLocaleDateString('fr-FR')}\n\n` +
-          `⚠️ Le client pourrait refuser ce devis.\n\n` +
-          `Voulez-vous vraiment envoyer ce devis avec une date hors préférences ?`
+        alert(
+          `❌ DEVIS BLOQUÉ : Date hors préférences du client\n\n` +
+          `📅 Date proposée : ${dateProposee.toLocaleDateString('fr-FR')}\n` +
+          `✅ Date souhaitée par le client : ${dateClient.toLocaleDateString('fr-FR')} (±${flexDays} jours)\n` +
+          `📆 Plage acceptée : du ${dateMin.toLocaleDateString('fr-FR')} au ${dateMax.toLocaleDateString('fr-FR')}\n\n` +
+          `⚠️ Le client refusera très probablement ce devis.\n\n` +
+          `💡 Modifiez la "Date de début prévue" pour qu'elle soit dans la plage acceptée.`
         );
-        
-        if (!confirmEnvoi) {
-          return; // Annuler l'envoi
-        }
+        return; // Bloquer l'envoi
       }
     }
     
@@ -1052,12 +1080,12 @@ export default function NouveauDevisPage() {
       const validation = detecterInformationsInterdites(champ.valeur);
       if (!validation.valide) {
         alert(`❌ ${validation.raison}\n\nChamp concerné : ${champ.nom}\n\n💬 Utilisez le bouton "Contacter client" pour échanger via la messagerie sécurisée de la plateforme.`);
-        setSaving(false);
+        setSavingEnvoi(false);
         return;
       }
     }
 
-    setSaving(true);
+    setSavingEnvoi(true);
     try {
       const devisData: any = {
         ...(demandeId && { demandeId: demandeId }),
@@ -1170,7 +1198,7 @@ export default function NouveauDevisPage() {
       const errorMessage = error instanceof Error ? error.message : "Erreur lors de l'envoi du devis";
       alert(errorMessage);
     } finally {
-      setSaving(false);
+      setSavingEnvoi(false);
     }
   };
 
@@ -1259,27 +1287,6 @@ export default function NouveauDevisPage() {
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                   placeholder="Ex: Rénovation salle de bain"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#2C3E50] mb-1">
-                  Description (optionnel)
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => {
-                    const validation = detecterInformationsInterdites(e.target.value);
-                    if (!validation.valide) {
-                      setErreurValidation(validation.raison || null);
-                      return;
-                    }
-                    setErreurValidation(null);
-                    setDescription(e.target.value);
-                  }}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                  placeholder="Description détaillée des travaux..."
                 />
               </div>
 
@@ -1424,22 +1431,6 @@ export default function NouveauDevisPage() {
                     );
                   })()}
 
-                  <div className="flex items-start gap-3 mb-4">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold text-[#2C3E50] mb-1">
-                    Proposer plusieurs options au client
-                  </h2>
-                  <p className="text-sm text-[#6C757D]">
-                    Créez des devis alternatifs (Économique, Standard, Premium) pour la même demande. Le client pourra comparer et choisir.
-                  </p>
-                </div>
-              </div>
-
                   {variantesExistantes.length > 0 && (
                 <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
                   <h3 className="font-medium text-[#2C3E50] mb-2">
@@ -1489,8 +1480,20 @@ export default function NouveauDevisPage() {
                     <label className="block text-xs text-[#6C757D] mb-1">Quantité</label>
                     <input
                       type="number"
-                      value={mainOeuvreQuantite}
-                      onChange={(e) => setMainOeuvreQuantite(parseFloat(e.target.value) || 0)}
+                      value={mainOeuvreQuantite || ''}
+                      onChange={(e) => {
+                        if (e.target.value === '') {
+                          setMainOeuvreQuantite(0);
+                          return;
+                        }
+                        const num = parseFloat(e.target.value);
+                        setMainOeuvreQuantite(isNaN(num) ? 0 : num);
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === '' || parseFloat(e.target.value) < 0) {
+                          setMainOeuvreQuantite(0);
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                       min="0"
                       step="0.01"
@@ -1500,10 +1503,11 @@ export default function NouveauDevisPage() {
                   <div>
                     <label className="block text-xs text-[#6C757D] mb-1">Unité</label>
                     <select
-                      value="j"
-                      disabled
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100"
+                      value={mainOeuvreUnite}
+                      onChange={(e) => setMainOeuvreUnite(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                     >
+                      <option value="h">h</option>
                       <option value="j">j</option>
                     </select>
                   </div>
@@ -1512,10 +1516,19 @@ export default function NouveauDevisPage() {
                     <label className="block text-xs text-[#6C757D] mb-1">Prix HT (€)</label>
                     <input
                       type="number"
-                      value={mainOeuvrePrixHT}
+                      value={mainOeuvrePrixHT || ''}
                       onChange={(e) => {
-                        const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                        setMainOeuvrePrixHT(isNaN(value) ? 0 : value);
+                        if (e.target.value === '') {
+                          setMainOeuvrePrixHT(0);
+                          return;
+                        }
+                        const num = parseFloat(e.target.value);
+                        setMainOeuvrePrixHT(isNaN(num) ? 0 : num);
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === '' || parseFloat(e.target.value) < 0) {
+                          setMainOeuvrePrixHT(0);
+                        }
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                       min="0"
@@ -1573,8 +1586,20 @@ export default function NouveauDevisPage() {
                       <label className="block text-xs text-[#6C757D] mb-1">Quantité</label>
                       <input
                         type="number"
-                        value={matierePremiereQuantite}
-                        onChange={(e) => setMatierePremiereQuantite(parseFloat(e.target.value) || 0)}
+                        value={matierePremiereQuantite || ''}
+                        onChange={(e) => {
+                          if (e.target.value === '') {
+                            setMatierePremiereQuantite(0);
+                            return;
+                          }
+                          const num = parseFloat(e.target.value);
+                          setMatierePremiereQuantite(isNaN(num) ? 0 : num);
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value === '' || parseFloat(e.target.value) < 0) {
+                            setMatierePremiereQuantite(0);
+                          }
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                         min="0"
                         step="0.01"
@@ -1596,10 +1621,19 @@ export default function NouveauDevisPage() {
                       <label className="block text-xs text-[#6C757D] mb-1">Prix HT (€)</label>
                       <input
                         type="number"
-                        value={matierePremierePrixHT}
+                        value={matierePremierePrixHT || ''}
                         onChange={(e) => {
-                          const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                          setMatierePremierePrixHT(isNaN(value) ? 0 : value);
+                          if (e.target.value === '') {
+                            setMatierePremierePrixHT(0);
+                            return;
+                          }
+                          const num = parseFloat(e.target.value);
+                          setMatierePremierePrixHT(isNaN(num) ? 0 : num);
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value === '' || parseFloat(e.target.value) < 0) {
+                            setMatierePremierePrixHT(0);
+                          }
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                         min="0"
@@ -1668,8 +1702,20 @@ export default function NouveauDevisPage() {
                         <label className="block text-xs text-[#6C757D] mb-1">Quantité</label>
                         <input
                           type="number"
-                          value={ligne.quantite}
-                          onChange={(e) => mettreAJourLigne(ligne.id, { quantite: parseFloat(e.target.value) || 0 })}
+                          value={ligne.quantite || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '') {
+                              mettreAJourLigne(ligne.id, { quantite: 0 });
+                              return;
+                            }
+                            const num = parseFloat(e.target.value);
+                            mettreAJourLigne(ligne.id, { quantite: isNaN(num) ? 0 : num });
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value === '' || parseFloat(e.target.value) < 0) {
+                              mettreAJourLigne(ligne.id, { quantite: 0 });
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                           min="0"
                           step="0.01"
@@ -1696,10 +1742,19 @@ export default function NouveauDevisPage() {
                         <label className="block text-xs text-[#6C757D] mb-1">Prix HT (€)</label>
                         <input
                           type="number"
-                          value={ligne.prixUnitaireHT}
+                          value={ligne.prixUnitaireHT || ''}
                           onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                            mettreAJourLigne(ligne.id, { prixUnitaireHT: isNaN(value) ? 0 : value });
+                            if (e.target.value === '') {
+                              mettreAJourLigne(ligne.id, { prixUnitaireHT: 0 });
+                              return;
+                            }
+                            const num = parseFloat(e.target.value);
+                            mettreAJourLigne(ligne.id, { prixUnitaireHT: isNaN(num) ? 0 : num });
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value === '' || parseFloat(e.target.value) < 0) {
+                              mettreAJourLigne(ligne.id, { prixUnitaireHT: 0 });
+                            }
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                           min="0"
@@ -1740,41 +1795,21 @@ export default function NouveauDevisPage() {
             </div>
           </div>
 
-          {/* Conditions */}
-          <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
-            <h2 className="text-xl font-semibold text-[#2C3E50] mb-4">Conditions particulières</h2>
-            <textarea
-              value={conditions}
-              onChange={(e) => {
-                const validation = detecterInformationsInterdites(e.target.value);
-                if (!validation.valide) {
-                  setErreurValidation(validation.raison || null);
-                  return;
-                }
-                setErreurValidation(null);
-                setConditions(e.target.value);
-              }}
-              rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-              placeholder="Conditions de paiement, garanties, etc..."
-            />
-          </div>
-
           {/* Actions */}
           <div className="flex gap-4">
             <button
               onClick={sauvegarderBrouillon}
-              disabled={saving}
+              disabled={savingBrouillon || savingEnvoi}
               className="flex-1 bg-gray-200 text-[#2C3E50] px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50"
             >
-              {saving ? '⏳ Génération...' : '📄 Générer le devis'}
+              {savingBrouillon ? '⏳ Génération...' : '📄 Générer le devis'}
             </button>
             <button
               onClick={envoyerDevis}
-              disabled={saving}
+              disabled={savingBrouillon || savingEnvoi}
               className="flex-1 bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50"
             >
-              {saving ? '⏳ Envoi...' : '📨 Envoyer le devis'}
+              {savingEnvoi ? '⏳ Envoi...' : '📨 Envoyer le devis'}
             </button>
           </div>
         </div>
@@ -1813,7 +1848,7 @@ export default function NouveauDevisPage() {
                 <div className="text-sm">
                   <p className="font-semibold">{artisanInfo?.raisonSociale}</p>
                   <p className="text-[#6C757D]">SIRET : {artisanInfo?.siret}</p>
-                  <p className="text-[#6C757D]">{artisanInfo?.email}</p>
+                  {artisanInfo?.adresse && <p className="text-[#6C757D]">{artisanInfo.adresse}</p>}
                   <p className="text-[#6C757D]">{artisanInfo?.telephone}</p>
                 </div>
               </div>
@@ -1822,6 +1857,11 @@ export default function NouveauDevisPage() {
                 <h3 className="text-sm font-semibold text-[#2C3E50] mb-2">POUR :</h3>
                 <div className="text-sm">
                   <p className="font-semibold">{clientInfo?.prenom} {clientInfo?.nom}</p>
+                  {clientInfo?.telephone && (
+                    <p className="text-[#6C757D] mt-1">
+                      📞 {masquerTelephone(clientInfo.telephone)}
+                    </p>
+                  )}
                   {clientInfo?.adresse && (
                     <p className="text-[#6C757D] mt-2">
                       {clientInfo.adresse.rue}<br />
@@ -1836,7 +1876,6 @@ export default function NouveauDevisPage() {
             {titre && (
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">{titre}</h2>
-                {description && <p className="text-[#6C757D]">{description}</p>}
               </div>
             )}
 
@@ -1976,14 +2015,6 @@ export default function NouveauDevisPage() {
               </div>
             </div>
           </div>
-
-          {/* Conditions */}
-          {conditions && (
-            <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-sm font-semibold text-[#2C3E50] mb-2">Conditions particulières</h3>
-              <p className="text-sm text-[#6C757D] whitespace-pre-wrap">{conditions}</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

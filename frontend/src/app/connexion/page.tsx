@@ -12,10 +12,24 @@ export default function ConnexionPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+
+  // Validation email côté client
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    setEmailError('');
+
+    if (value && !value.includes('@')) {
+      setEmailError('Format d\'email invalide');
+    } else if (value && value.includes('@') && !value.split('@')[1]?.includes('.')) {
+      setEmailError('Format d\'email invalide');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setEmailError('');
     setIsLoading(true);
 
     try {
@@ -52,21 +66,40 @@ export default function ConnexionPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error}
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm font-medium">{error}</p>
+            <div className="mt-3 space-y-2">
+              <Link 
+                href="/mot-de-passe-oublie" 
+                className="block text-sm text-[#FF6B00] hover:underline"
+              >
+                → Réinitialiser mon mot de passe
+              </Link>
+              <Link 
+                href="/inscription" 
+                className="block text-sm text-[#FF6B00] hover:underline"
+              >
+                → Créer un nouveau compte
+              </Link>
+            </div>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="votre@email.com"
-            autoComplete="email"
-          />
+          <div>
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => handleEmailChange(e.target.value)}
+              required
+              placeholder="votre@email.com"
+              autoComplete="email"
+            />
+            {emailError && (
+              <p className="mt-1 text-sm text-red-600">{emailError}</p>
+            )}
+          </div>
 
           <Input
             label="Mot de passe"

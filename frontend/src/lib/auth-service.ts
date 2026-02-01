@@ -33,9 +33,8 @@ function translateAuthError(error: any): string {
       return 'Ce compte a été désactivé.';
     case 'auth/user-not-found':
     case 'auth/invalid-credential':
-      return 'Aucun compte ne correspond à cette adresse email.';
     case 'auth/wrong-password':
-      return 'Mot de passe incorrect.';
+      return 'Email ou mot de passe incorrect. Vérifiez vos identifiants.';
     case 'auth/too-many-requests':
       return 'Trop de tentatives. Veuillez réessayer plus tard.';
     case 'auth/network-request-failed':
@@ -229,7 +228,7 @@ export const authService = {
   },
 
   /**
-   * Connexion
+   * Connexion (approche sécurisée avec message générique)
    */
   async signIn(email: string, password: string) {
     try {

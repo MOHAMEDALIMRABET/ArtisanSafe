@@ -1,18 +1,53 @@
 # ArtisanSafe - Instructions Copilot
 
+> **Plateforme marketplace française** connectant clients et artisans qualifiés (plombiers, électriciens, menuisiers, maçons). Bilingue français/anglais, avec focus sécurité, profils vérifiés et paiements sécurisés.
+
 ## 🚀 Quick Start for AI Agents
 
 **Start here for immediate productivity:**
 
-1. **Run dev servers**: `cd frontend && npm run dev` (port 3000) | `cd backend && npm run dev` (port 5000)
-2. **Color scheme**: ALWAYS use `bg-[#FF6B00]` (orange) for primary buttons, `bg-[#2C3E50]` (blue) for headers - NEVER use generic blue/green
-3. **Services pattern**: ALWAYS use `frontend/src/lib/firebase/*-service.ts` - NEVER access Firestore directly
-4. **Anti-bypass**: ALWAYS use `antiBypassValidator.ts` for message validation - blocks 40+ patterns (phone/email/address)
-5. **Firestore queries**: NEVER combine `where()` + `orderBy()` on different fields → sort client-side with `.sort()` to avoid composite indexes
-6. **Critical files**: 
-   - Validation: `frontend/src/lib/antiBypassValidator.ts` (285 lines)
-   - OCR: `frontend/src/lib/firebase/document-parser.ts` (1105 lines)
-   - Patterns: `frontend/src/lib/firebase/soft-delete.ts`, `schema-versioning.ts`
+### 1. Development Environment (Windows)
+```bash
+# Frontend (Next.js 15, port 3000)
+cd frontend && npm run dev
+
+# Backend (Node.js + Express, port 5000)
+cd backend && npm run dev
+
+# Verify setup
+node verify-setup.js
+```
+
+### 2. CRITICAL Rules - Read Before Any Code Change
+
+⚠️ **NEVER do these** (will break the app):
+- ❌ Access Firestore directly - ALWAYS use `frontend/src/lib/firebase/*-service.ts`
+- ❌ Combine `where()` + `orderBy()` on different fields - sort client-side with `.sort()`
+- ❌ Use `bg-blue-600` or `text-blue-500` - ONLY `bg-[#FF6B00]` (orange) and `bg-[#2C3E50]` (blue)
+- ❌ Create local validation patterns - ALWAYS use `antiBypassValidator.ts`
+- ❌ Modify `.github/copilot-instructions.md` without reading the entire file first
+
+✅ **ALWAYS do these**:
+- Use service layer: `artisan-service.ts`, `devis-service.ts`, `user-service.ts`, etc.
+- Validate messages with `validateMessage()` from `antiBypassValidator.ts`
+- Use `bg-[#FF6B00]` for primary buttons, `bg-[#2C3E50]` for headers/navigation
+- Check `docs/` folder for workflow documentation before implementing features
+- Run `npx ts-node` with `--project scripts/tsconfig.json` for scripts
+
+### 3. Most Important Files (Memorize These)
+```
+frontend/src/lib/
+├── firebase/
+│   ├── artisan-service.ts       # Artisan CRUD
+│   ├── devis-service.ts          # Quote/estimate lifecycle
+│   ├── demande-service.ts        # Client requests
+│   ├── notification-service.ts   # Real-time notifications
+│   ├── soft-delete.ts            # RGPD-compliant deletion (30-day retention)
+│   ├── schema-versioning.ts      # Progressive data migrations
+│   └── document-parser.ts        # OCR Tesseract.js (1105 lines)
+├── antiBypassValidator.ts        # ⚠️ CRITICAL - Blocks 40+ contact sharing patterns
+└── auth-service.ts               # signUpClient, signUpArtisan, signIn, signOut
+```
 
 **Common tasks:**
 ```bash
@@ -25,7 +60,7 @@ cd frontend/scripts && npx ts-node migrate-metiers.ts
 # Delete user data (RGPD)
 cd backend/scripts && node delete-user-data.js <UID>
 
-# Test patterns
+# Test patterns (soft delete + schema versioning)
 cd frontend/scripts && npx ts-node test-patterns.ts
 ```
 
@@ -197,9 +232,12 @@ className="bg-white border border-[#E9ECEF] hover:border-[#FF6B00] rounded-lg sh
 ### ✅ Recently Fixed (2026-01)
 1. **Validation anti-bypass renforcée** (`antiBypassValidator.ts`)
    - Fixed: Numéros collés aux lettres (`NUMEROtelephione066882710`)
+   - Fixed: Patterns `/[a-z]\d{9,}/gi` détecte lettres + 9 chiffres
+   - Fixed: Patterns `/\d{9,}[a-z]/gi` détecte 9 chiffres + lettres
    - Added: 9+ digit detection patterns
    - Added: Ville française detection (Paris, Lyon, etc.)
    - Added: Address patterns with street numbers
+   - See: `docs/FIX_VALIDATION_TELEPHONE_COLLE.md` for details
 
 2. **Soft Delete Pattern** (RGPD compliance)
    - Implemented: `frontend/src/lib/firebase/soft-delete.ts`
@@ -216,6 +254,7 @@ className="bg-white border border-[#E9ECEF] hover:border-[#FF6B00] rounded-lg sh
 1. **Testing implementation** (TODO - See "Stratégie de tests" section)
    - Phase 1: Critical tests (Auth, Devis, KBIS validation)
    - Setup: Jest + React Testing Library
+   - Status: Only 1 test file exists (`frontend/src/tests/antiBypass.test.ts`)
    - Estimated: 4-6 hours for Phase 1
 
 2. **Stripe payment integration** (Phase 2)
@@ -228,9 +267,10 @@ className="bg-white border border-[#E9ECEF] hover:border-[#FF6B00] rounded-lg sh
 
 ### ⚠️ Known Limitations
 - No Cloud Functions deployed (functions/ empty)
-- Tests not implemented yet (1 test file exists)
+- Tests not implemented yet (only 1 test file: `frontend/src/tests/antiBypass.test.ts`)
 - SIRENE API not activated
 - Email verification uses Firebase defaults (can't customize templates)
+- TailwindCSS 4: No config file (uses CSS-based configuration)
 
 
 ## Statut du projet
@@ -900,9 +940,18 @@ Credentials disponibles via admin - voir `docs/ADMIN_CREDENTIALS_SHARING.md`
 - `docs/FIREBASE.md` - Structure Firestore complète
 - `docs/ARCHITECTURE_TECHNIQUE.md` - Vue d'ensemble système
 
+**Fixes récents :**
+- `docs/FIX_VALIDATION_TELEPHONE_COLLE.md` - Numéros collés aux lettres (2026-01)
+- `docs/FIX_CORS_UPLOAD.md` - Configuration CORS Firebase Storage
+- `docs/DEPANNAGE_BOUCLE_INFINIE.md` - Résolution boucles re-render
+- `docs/FIX_TELEPHONE_FRAGMENTE.md` - Validation numéros fragmentés
+
 **Admin :**
 - `docs/ADMIN_UPLOAD_HISTORY.md` - Gestion uploads documents
+- `docs/ADMIN_CREDENTIALS_SHARING.md` - Partage credentials Firebase
 - `scripts/create-admin.js` - Créer compte admin Firebase
+
+**Note**: Le dossier `docs/` contient 50+ fichiers markdown documentant chaque aspect du projet.
 
 ## API Backend - Endpoints disponibles
 

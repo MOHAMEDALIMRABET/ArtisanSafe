@@ -198,11 +198,10 @@ export function validateMessage(content: string): ValidationResult {
   }
 
   if (blockedPatterns.length > 0) {
-    const messages = blockedPatterns.map(cat => WARNING_MESSAGES[cat]).join(', ');
     return {
       isValid: false,
       blockedPatterns,
-      message: `❌ Message bloqué : ${messages}\n\n⚠️ Le partage de coordonnées personnelles est interdit avant l'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanSafe pour discuter en toute sécurité.`,
+      message: `⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanSafe pour discuter en toute sécurité.`,
     };
   }
 

@@ -15,6 +15,30 @@ import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
 import Head from 'next/head';
 
+/**
+ * Masque un numéro de téléphone en ne montrant que les 2 premiers chiffres
+ * Ex: "0612345678" → "06 ** ** ** **"
+ */
+function masquerTelephone(telephone: string): string {
+  if (!telephone) return '';
+  
+  // Nettoyer le numéro (enlever espaces, points, tirets)
+  const clean = telephone.replace(/[\s.\-]/g, '');
+  
+  // Format français standard 10 chiffres
+  if (clean.length === 10) {
+    return `${clean.substring(0, 2)} ** ** ** **`;
+  }
+  
+  // Format international +33
+  if (clean.startsWith('+33') && clean.length === 12) {
+    return `+33 ${clean.substring(3, 4)} ** ** ** **`;
+  }
+  
+  // Format par défaut : afficher 2 premiers et masquer le reste
+  return `${clean.substring(0, 2)}${'*'.repeat(Math.max(0, clean.length - 2))}`;
+}
+
 export default function VoirDevisPage() {
   const router = useRouter();
   const params = useParams();
@@ -273,14 +297,8 @@ export default function VoirDevisPage() {
                   )}
                   <p>{devis.artisan.nom} {devis.artisan.prenom}</p>
                   {devis.artisan.siret && <p>SIRET: {devis.artisan.siret}</p>}
-                  <p>{devis.artisan.email}</p>
+                  {devis.artisan.adresse && <p>{devis.artisan.adresse}</p>}
                   {devis.artisan.telephone && <p>{devis.artisan.telephone}</p>}
-                  {devis.artisan.adresse && (
-                    <>
-                      <p>{devis.artisan.adresse.rue}</p>
-                      <p>{devis.artisan.adresse.codePostal} {devis.artisan.adresse.ville}</p>
-                    </>
-                  )}
                 </div>
               </div>
 
@@ -289,6 +307,11 @@ export default function VoirDevisPage() {
                 <h3 className="font-bold text-[#2C3E50] mb-2">Pour :</h3>
                 <div className="text-sm">
                   <p className="font-semibold">{devis.client.prenom} {devis.client.nom}</p>
+                  {devis.client.telephone && (
+                    <p className="mt-2">
+                      📞 {masquerTelephone(devis.client.telephone)}
+                    </p>
+                  )}
                   {devis.client.adresse && (
                     <>
                       <p className="mt-2">{devis.client.adresse.rue}</p>
@@ -299,14 +322,6 @@ export default function VoirDevisPage() {
               </div>
             </div>
           </div>
-
-          {/* Description */}
-          {devis.description && (
-            <div className="mb-8">
-              <h3 className="font-bold text-[#2C3E50] mb-2">Description :</h3>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{devis.description}</p>
-            </div>
-          )}
 
           {/* Date de début prévue */}
           {devis.dateDebutPrevue && (
@@ -377,27 +392,27 @@ export default function VoirDevisPage() {
           )}
 
           {/* Tableau des prestations */}
-          <div className="mb-8">
-            <table className="w-full border-collapse">
+          <div className="mb-8 overflow-x-auto">
+            <table className="w-full border-collapse table-fixed">
               <thead>
                 <tr className="bg-[#2C3E50] text-white">
-                  <th className="border border-gray-300 px-4 py-2 text-left">Description</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center">Qté</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center">Unité</th>
-                  <th className="border border-gray-300 px-4 py-2 text-right">P.U. HT</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center">TVA</th>
-                  <th className="border border-gray-300 px-4 py-2 text-right">Total HT</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left w-1/2">Description</th>
+                  <th className="border border-gray-300 px-4 py-2 text-center w-24">Qté</th>
+                  <th className="border border-gray-300 px-4 py-2 text-center w-24">Unité</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right w-32">P.U. HT</th>
+                  <th className="border border-gray-300 px-4 py-2 text-center w-24">TVA</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right w-32">Total HT</th>
                 </tr>
               </thead>
               <tbody>
                 {devis.lignes.map((ligne, index) => (
                   <tr key={ligne.id || index}>
-                    <td className="border border-gray-300 px-4 py-2">{ligne.description}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{ligne.quantite}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{ligne.unite}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">{ligne.prixUnitaireHT.toFixed(2)} €</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{ligne.tauxTVA}%</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right font-semibold">{ligne.totalHT.toFixed(2)} €</td>
+                    <td className="border border-gray-300 px-4 py-2 break-all overflow-hidden">{ligne.description}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.quantite}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.unite}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">{ligne.prixUnitaireHT.toFixed(2)} €</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.tauxTVA}%</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right font-semibold whitespace-nowrap">{ligne.totalHT.toFixed(2)} €</td>
                   </tr>
                 ))}
               </tbody>
