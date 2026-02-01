@@ -919,7 +919,7 @@ export default function NouveauDevisPage() {
         }),
         totaux: calculerTotauxGlobaux(),
         delaiRealisation,
-        ...(dateDebutPrevue && { dateDebutPrevue: Timestamp.fromDate(new Date(dateDebutPrevue)) }),
+        dateDebutPrevue: Timestamp.fromDate(new Date(dateDebutPrevue)), // OBLIGATOIRE
         dateValidite: Timestamp.fromDate(
           new Date(Date.now() + dateValidite * 24 * 60 * 60 * 1000)
         ),

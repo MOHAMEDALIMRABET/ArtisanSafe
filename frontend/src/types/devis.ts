@@ -195,7 +195,7 @@ export interface Devis {
   
   // Informations complémentaires
   delaiRealisation?: string;     // Ex: "2 semaines"
-  dateDebutPrevue?: Timestamp;   // Date de début prévue
+  dateDebutPrevue: Timestamp;    // Date de début prévue (OBLIGATOIRE)
   conditions?: string;           // Conditions particulières
   notes?: string;                // Notes internes (non visibles par le client)
   
