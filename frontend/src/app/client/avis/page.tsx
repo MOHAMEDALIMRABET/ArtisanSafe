@@ -220,64 +220,66 @@ export default function AvisClientPage() {
         {/* Filtres et recherche */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="grid md:grid-cols-3 gap-4">
-              {/* Filtre par note */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filtrer par note
-                </label>
-                <select
-                  value={filtreNote || ''}
-                  onChange={(e) => setFiltreNote(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
-                >
-                  <option value="">Toutes les notes</option>
-                  <option value="5">5 étoiles</option>
-                  <option value="4">4 étoiles</option>
-                  <option value="3">3 étoiles</option>
-                  <option value="2">2 étoiles</option>
-                  <option value="1">1 étoile</option>
-                </select>
-              </div>
+            {/* Filtre par note */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filtrer par note
+              </label>
+              <select
+                value={filtreNote || ''}
+                onChange={(e) => setFiltreNote(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+              >
+                <option value="">Toutes les notes</option>
+                <option value="5">5 étoiles</option>
+                <option value="4">4 étoiles</option>
+                <option value="3">3 étoiles</option>
+                <option value="2">2 étoiles</option>
+                <option value="1">1 étoile</option>
+              </select>
+            </div>
 
-              {/* Tri */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Trier par
-                </label>
-                <select
-                  value={tri}
-                  onChange={(e) => setTri(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
-                >
-                  <option value="recent">Plus récents</option>
-                  <option value="ancien">Plus anciens</option>
-                  <option value="note-haute">Note la plus élevée</option>
-                  <option value="note-basse">Note la plus basse</option>
-                </select>
-              </div>
+            {/* Tri */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Trier par
+              </label>
+              <select
+                value={tri}
+                onChange={(e) => setTri(e.target.value as any)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+              >
+                <option value="recent">Plus récents</option>
+                <option value="ancien">Plus anciens</option>
+                <option value="note-haute">Note la plus élevée</option>
+                <option value="note-basse">Note la plus basse</option>
+              </select>
+            </div>
 
-              {/* Recherche */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rechercher
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={recherche}
-                    onChange={(e) => setRecherche(e.target.value)}
-                    placeholder="Mot-clé dans les avis..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
-                  />
-                  <svg
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
+            {/* Recherche */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rechercher
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={recherche}
+                  onChange={(e) => setRecherche(e.target.value)}
+                  placeholder="Mot-clé dans les avis..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+                />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
               </div>
             </div>
 
