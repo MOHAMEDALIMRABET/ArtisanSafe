@@ -288,7 +288,50 @@ export default function ClientDevisDetailPage() {
 
       console.log('✅ Paiement enregistré + Signature persistée:', paymentData.referenceTransaction);
 
-      // 2. Notifier l'artisan (devis payé)
+      // 3. FERMER LA DEMANDE : marquer comme attribuée
+      if (devis.demandeId) {
+        try {
+          await updateDoc(doc(db, 'demandes', devis.demandeId), {
+            statut: 'attribuee',
+            devisAccepteId: devisId,
+            artisanAttributaireId: devis.artisanId,
+            dateAttribution: Timestamp.now(),
+          });
+          console.log('✅ Demande fermée : statut → attribuee');
+        } catch (error) {
+          console.error('Erreur mise à jour demande:', error);
+        }
+      }
+
+      // 4. REFUSER AUTOMATIQUEMENT les autres devis en attente
+      if (devis.demandeId) {
+        try {
+          const autresDevisQuery = query(
+            collection(db, 'devis'),
+            where('demandeId', '==', devis.demandeId),
+            where('statut', '==', 'envoye')
+          );
+          
+          const autresDevisSnapshot = await getDocs(autresDevisQuery);
+          const batch = writeBatch(db);
+          
+          autresDevisSnapshot.docs.forEach(doc => {
+            batch.update(doc.ref, {
+              statut: 'refuse',
+              typeRefus: 'automatique',
+              motifRefus: 'Demande déjà attribuée à un autre artisan',
+              dateRefus: Timestamp.now(),
+            });
+          });
+          
+          await batch.commit();
+          console.log(`✅ ${autresDevisSnapshot.size} devis auto-refusés`);
+        } catch (error) {
+          console.error('Erreur refus automatique autres devis:', error);
+        }
+      }
+
+      // 5. Notifier l'artisan (devis payé)
       try {
         const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
         await notifyArtisanDevisAccepte(

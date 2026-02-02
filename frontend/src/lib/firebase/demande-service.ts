@@ -114,6 +114,7 @@ export async function getDemandesByClient(clientId: string): Promise<Demande[]> 
 /**
  * Récupérer les demandes matchées pour un artisan
  * ⚠️ ÉVITER index composite : where() seul, tri en JavaScript après
+ * Exclut les demandes déjà attribuées à un autre artisan
  */
 export async function getDemandesForArtisan(artisanId: string): Promise<Demande[]> {
   const demandesRef = collection(db, COLLECTION_NAME);
@@ -130,7 +131,13 @@ export async function getDemandesForArtisan(artisanId: string): Promise<Demande[
 
   // Filtrage et tri côté client
   return demandes
-    .filter(d => d.statut === 'publiee' || d.statut === 'matchee')
+    .filter(d => {
+      // Exclure demandes attribuées
+      if (d.statut === 'attribuee') return false;
+      
+      // Garder seulement publiée ou matchée
+      return d.statut === 'publiee' || d.statut === 'matchee';
+    })
     .sort((a, b) => {
       const dateA = a.dateCreation?.toMillis() || 0;
       const dateB = b.dateCreation?.toMillis() || 0;
