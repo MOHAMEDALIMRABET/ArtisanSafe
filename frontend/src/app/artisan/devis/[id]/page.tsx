@@ -356,7 +356,12 @@ export default function VoirDevisPage() {
                   <p className="font-semibold">{devis.client.prenom} {devis.client.nom}</p>
                   {devis.client.telephone && (
                     <p className="mt-2">
-                      📞 {masquerTelephone(devis.client.telephone)}
+                      📞 {
+                        // Afficher numéro complet si devis payé (contrat signé)
+                        ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(devis.statut)
+                          ? devis.client.telephone
+                          : masquerTelephone(devis.client.telephone)
+                      }
                     </p>
                   )}
                   {devis.client.adresse && (
