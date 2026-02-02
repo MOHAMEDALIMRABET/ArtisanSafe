@@ -36,6 +36,7 @@ export type DemandeStatut =
   | 'publiee' 
   | 'matchee' 
   | 'en_cours' 
+  | 'attribuee'    // Devis accepté et payé, demande fermée
   | 'expiree'      // Date + flexibilité dépassée, demande archivée
   | 'terminee' 
   | 'annulee';
@@ -44,6 +45,8 @@ export type DevisStatut =
   | 'brouillon' 
   | 'envoye' 
   | 'accepte' 
+  | 'en_attente_paiement'  // Devis accepté, en attente de paiement
+  | 'paye'                 // Devis payé et signé
   | 'refuse' 
   | 'expire';
 
@@ -484,6 +487,9 @@ export interface Demande {
   artisanRefuseId?: string; // ID de l'artisan qui a refusé (pour historique)
   artisanRefuseNom?: string; // Raison sociale de l'artisan qui a refusé
   dateRefus?: Timestamp; // Date du refus
+  devisAccepteId?: string; // ID du devis accepté et payé
+  artisanAttributaireId?: string; // ID de l'artisan qui a remporté la demande
+  dateAttribution?: Timestamp; // Date d'attribution du devis
   dateCreation: Timestamp;
   dateModification: Timestamp;
 }
