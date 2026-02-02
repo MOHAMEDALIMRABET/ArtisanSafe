@@ -20,7 +20,7 @@ export default function ArtisanDemandesPage() {
   const [user, setUser] = useState<User | null>(null);
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'devis_envoyes' | 'refusees'>('toutes');
+  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'devis_envoyes' | 'attribuees' | 'refusees'>('toutes');
   const [refusingDemandeId, setRefusingDemandeId] = useState<string | null>(null);
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
   const [demandesRefusStatut, setDemandesRefusStatut] = useState<Map<string, { definitif: boolean; revision: boolean }>>(new Map());
@@ -221,7 +221,21 @@ export default function ArtisanDemandesPage() {
       return demande.id === highlightedDemandeId;
     }
     
-    // Sinon, afficher toutes les demandes actives
+    // Filtrage par onglet
+    if (filter === 'nouvelles') {
+      return demande.statut === 'publiee' && (!demande.devisRecus || demande.devisRecus === 0);
+    }
+    if (filter === 'devis_envoyes') {
+      return demande.devisRecus && demande.devisRecus > 0 && demande.statut !== 'attribuee';
+    }
+    if (filter === 'attribuees') {
+      return demande.statut === 'attribuee';
+    }
+    if (filter === 'refusees') {
+      return demande.statut === 'annulee';
+    }
+    
+    // 'toutes' : afficher toutes les demandes actives
     return true;
   });
 
@@ -271,15 +285,61 @@ export default function ArtisanDemandesPage() {
           </div>
         </div>
 
-        {/* En-tête simplifié - Masqué si on affiche une demande spécifique */}
+        {/* Filtres par onglets - Masqué si on affiche une demande spécifique */}
         {!highlightedDemandeId && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-bold text-[#2C3E50]">
-              📋 Mes demandes reçues ({demandes.length})
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Liste des demandes de travaux qui vous ont été envoyées
-            </p>
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setFilter('toutes')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  filter === 'toutes'
+                    ? 'bg-[#FF6B00] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                📋 Toutes ({demandes.filter(d => d.statut !== 'expiree').length})
+              </button>
+              <button
+                onClick={() => setFilter('nouvelles')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  filter === 'nouvelles'
+                    ? 'bg-[#FF6B00] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🆕 Nouvelles ({demandes.filter(d => d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)).length})
+              </button>
+              <button
+                onClick={() => setFilter('devis_envoyes')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  filter === 'devis_envoyes'
+                    ? 'bg-[#FF6B00] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                📤 Devis envoyés ({demandes.filter(d => d.devisRecus && d.devisRecus > 0 && d.statut !== 'attribuee').length})
+              </button>
+              <button
+                onClick={() => setFilter('attribuees')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  filter === 'attribuees'
+                    ? 'bg-[#FF6B00] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                ✅ Attribuées ({demandes.filter(d => d.statut === 'attribuee').length})
+              </button>
+              <button
+                onClick={() => setFilter('refusees')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  filter === 'refusees'
+                    ? 'bg-[#FF6B00] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                ❌ Refusées ({demandes.filter(d => d.statut === 'annulee').length})
+              </button>
+            </div>
           </div>
         )}
 
