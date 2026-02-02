@@ -43,7 +43,7 @@ export default function ChoisirTypeDemanPage() {
           {/* Demande Directe */}
           <div className="bg-white rounded-lg shadow-md hover:shadow-2xl transition-shadow duration-300 cursor-pointer group p-8"
                 onClick={() => router.push('/recherche')}>
-            <div>
+            <div className="flex flex-col h-full">
               {/* Icône */}
               <div className="mb-6">
                 <div className="w-20 h-20 bg-gradient-to-br from-[#FF6B00] to-[#E56100] rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
@@ -105,7 +105,7 @@ export default function ChoisirTypeDemanPage() {
               {/* Bouton */}
               <button
                 onClick={() => router.push('/recherche')}
-                className="w-full bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group-hover:scale-105 transform duration-200"
+                className="w-full bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group-hover:scale-105 transform duration-200 mt-auto"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -121,7 +121,7 @@ export default function ChoisirTypeDemanPage() {
           {/* Demande Publique */}
           <div className="bg-white rounded-lg shadow-md hover:shadow-2xl transition-shadow duration-300 cursor-pointer group border-2 border-[#2C3E50] p-8"
                 onClick={() => router.push('/demande/publique/nouvelle')}>
-            <div>
+            <div className="flex flex-col h-full">
               {/* Icône */}
               <div className="mb-6">
                 <div className="w-20 h-20 bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
@@ -183,7 +183,7 @@ export default function ChoisirTypeDemanPage() {
               {/* Bouton */}
               <button
                 onClick={() => router.push('/demande/publique/nouvelle')}
-                className="w-full bg-[#2C3E50] hover:bg-[#1A3A5C] text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group-hover:scale-105 transform duration-200"
+                className="w-full bg-[#2C3E50] hover:bg-[#1A3A5C] text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group-hover:scale-105 transform duration-200 mt-auto"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />

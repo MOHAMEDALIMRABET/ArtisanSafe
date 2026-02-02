@@ -378,7 +378,7 @@ export default function RecherchePage() {
               {/* Calendrier */}
               <div>
                 <label className="block text-sm font-medium text-[#2C3E50] mb-2">
-                  Date souhaitée *
+                  Date de début souhaitée *
                 </label>
                 <input
                   type="date"

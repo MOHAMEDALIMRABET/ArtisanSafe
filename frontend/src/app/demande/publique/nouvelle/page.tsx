@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { createDemande } from '@/lib/firebase/demande-service';
@@ -11,6 +11,13 @@ import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { Timestamp } from 'firebase/firestore';
 import type { Categorie } from '@/types/firestore';
+
+interface VilleSuggestion {
+  nom: string;
+  code: string;
+  codesPostaux: string[];
+  _score?: number;
+}
 
 const CATEGORIES: { value: Categorie; label: string }[] = [
   { value: 'plomberie', label: 'Plomberie' },
@@ -43,6 +50,12 @@ export default function NouvelleDemandePubliquePage() {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
+  const [villeSuggestions, setVilleSuggestions] = useState<VilleSuggestion[]>([]);
+  const [showVilleSuggestions, setShowVilleSuggestions] = useState(false);
+  const [codePostalSuggestions, setCodePostalSuggestions] = useState<VilleSuggestion[]>([]);
+  const [showCodePostalSuggestions, setShowCodePostalSuggestions] = useState(false);
+  const villeInputRef = useRef<HTMLInputElement>(null);
+  const codePostalInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     metier: 'plomberie' as Categorie,
@@ -52,8 +65,7 @@ export default function NouvelleDemandePubliquePage() {
     rayon: 50,
     titre: '',
     description: '',
-    budgetMin: 0,
-    budgetMax: 0,
+    budget: 0,
     dateDebut: '',
     dateFin: '',
     flexible: true,
@@ -65,6 +77,137 @@ export default function NouvelleDemandePubliquePage() {
     router.push('/connexion');
     return null;
   }
+
+  // Autocomplétion ville avec API geo.gouv.fr
+  const searchVilles = async (query: string) => {
+    if (query.length < 2) {
+      setVilleSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,code,codesPostaux&boost=population&limit=10`
+      );
+      const data: VilleSuggestion[] = await response.json();
+      setVilleSuggestions(data);
+      setShowVilleSuggestions(true);
+    } catch (error) {
+      console.error('Erreur recherche villes:', error);
+    }
+  };
+
+  // Autocomplétion code postal avec API geo.gouv.fr
+  const searchByCodePostal = async (codePostal: string) => {
+    if (codePostal.length < 2) {
+      setCodePostalSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?codePostal=${encodeURIComponent(codePostal)}&fields=nom,code,codesPostaux&boost=population&limit=10`
+      );
+      const data: VilleSuggestion[] = await response.json();
+      setCodePostalSuggestions(data);
+      setShowCodePostalSuggestions(true);
+    } catch (error) {
+      console.error('Erreur recherche par code postal:', error);
+    }
+  };
+
+  // Gérer changement ville
+  const handleVilleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({...formData, ville: value});
+    
+    if (value.length >= 3) {
+      searchVilles(value);
+      
+      // Remplissage auto du code postal avec la première ville trouvée
+      try {
+        const response = await fetch(
+          `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(value)}&fields=nom,code,codesPostaux&boost=population&limit=1`
+        );
+        const data: VilleSuggestion[] = await response.json();
+        if (data.length > 0 && data[0].nom.toLowerCase() === value.toLowerCase()) {
+          setFormData(prev => ({
+            ...prev,
+            ville: data[0].nom,
+            codePostal: data[0].codesPostaux[0] || prev.codePostal
+          }));
+        }
+      } catch (error) {
+        console.error('Erreur auto-remplissage code postal:', error);
+      }
+    }
+  };
+
+  // Gérer changement code postal
+  const handleCodePostalChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({...formData, codePostal: value});
+    
+    if (value.length >= 2) {
+      searchByCodePostal(value);
+    }
+    
+    // Remplissage auto de la ville quand code postal complet (5 chiffres)
+    if (value.length === 5) {
+      try {
+        const response = await fetch(
+          `https://geo.api.gouv.fr/communes?codePostal=${encodeURIComponent(value)}&fields=nom,code,codesPostaux&boost=population&limit=1`
+        );
+        const data: VilleSuggestion[] = await response.json();
+        if (data.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            ville: data[0].nom,
+            codePostal: value
+          }));
+        }
+      } catch (error) {
+        console.error('Erreur auto-remplissage ville:', error);
+      }
+    }
+  };
+
+  // Sélectionner une ville dans les suggestions
+  const selectVille = (ville: VilleSuggestion) => {
+    setFormData({
+      ...formData,
+      ville: ville.nom,
+      codePostal: ville.codesPostaux[0] || '',
+    });
+    setShowVilleSuggestions(false);
+    setVilleSuggestions([]);
+  };
+
+  // Sélectionner depuis suggestions code postal
+  const selectFromCodePostal = (ville: VilleSuggestion) => {
+    setFormData({
+      ...formData,
+      ville: ville.nom,
+      codePostal: ville.codesPostaux[0] || '',
+    });
+    setShowCodePostalSuggestions(false);
+    setCodePostalSuggestions([]);
+  };
+
+  // Fermer suggestions si clic en dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (villeInputRef.current && !villeInputRef.current.contains(event.target as Node)) {
+        setShowVilleSuggestions(false);
+      }
+      if (codePostalInputRef.current && !codePostalInputRef.current.contains(event.target as Node)) {
+        setShowCodePostalSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -188,8 +331,8 @@ export default function NouvelleDemandePubliquePage() {
       };
 
       // Ajouter budget seulement si renseigné
-      if (formData.budgetMax > 0) {
-        demandeData.budgetIndicatif = formData.budgetMax;
+      if (formData.budget > 0) {
+        demandeData.budgetIndicatif = formData.budget;
       }
 
       console.log('🔨 Création de la demande publique dans Firestore...');
@@ -338,33 +481,75 @@ export default function NouvelleDemandePubliquePage() {
                 </div>
 
                 {/* Ville */}
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Ville <span className="text-red-500">*</span>
                   </label>
                   <Input
+                    ref={villeInputRef}
                     type="text"
                     value={formData.ville}
-                    onChange={(e) => setFormData({...formData, ville: e.target.value})}
+                    onChange={handleVilleChange}
+                    onFocus={() => formData.ville.length >= 2 && setShowVilleSuggestions(true)}
                     placeholder="Ex: Paris"
+                    autoComplete="off"
                     required
                   />
+                  
+                  {/* Suggestions dropdown */}
+                  {showVilleSuggestions && villeSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {villeSuggestions.map((ville, index) => (
+                        <button
+                          key={`${ville.code}-${index}`}
+                          type="button"
+                          onClick={() => selectVille(ville)}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex justify-between items-center"
+                        >
+                          <span className="font-medium text-gray-800">{ville.nom}</span>
+                          <span className="text-sm text-gray-500">{ville.codesPostaux[0]}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Code postal */}
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Code postal <span className="text-red-500">*</span>
                   </label>
                   <Input
+                    ref={codePostalInputRef}
                     type="text"
                     value={formData.codePostal}
-                    onChange={(e) => setFormData({...formData, codePostal: e.target.value})}
+                    onChange={handleCodePostalChange}
+                    onFocus={() => formData.codePostal.length >= 2 && setShowCodePostalSuggestions(true)}
                     placeholder="Ex: 75001"
                     pattern="[0-9]{5}"
                     maxLength={5}
+                    autoComplete="off"
                     required
                   />
+                  
+                  {/* Suggestions dropdown */}
+                  {showCodePostalSuggestions && codePostalSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {codePostalSuggestions.map((ville, index) => (
+                        <button
+                          key={`${ville.code}-${index}`}
+                          type="button"
+                          onClick={() => selectFromCodePostal(ville)}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex justify-between items-center"
+                        >
+                          <span className="font-medium text-gray-800">{ville.nom}</span>
+                          <span className="text-sm text-gray-500">{ville.codesPostaux[0]}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-gray-500 mt-1">Tapez pour voir les villes correspondantes</p>
                 </div>
 
                 {/* Adresse (optionnel) */}
@@ -429,58 +614,34 @@ export default function NouvelleDemandePubliquePage() {
                 </div>
 
                 {/* Budget indicatif */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Budget minimum (optionnel)
-                    </label>
-                    <Input
-                      type="number"
-                      value={formData.budgetMin || ''}
-                      onChange={(e) => setFormData({...formData, budgetMin: Number(e.target.value)})}
-                      placeholder="Ex: 500"
-                      min="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Budget maximum (optionnel)
-                    </label>
-                    <Input
-                      type="number"
-                      value={formData.budgetMax || ''}
-                      onChange={(e) => setFormData({...formData, budgetMax: Number(e.target.value)})}
-                      placeholder="Ex: 1500"
-                      min="0"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Budget indicatif (optionnel)
+                  </label>
+                  <Input
+                    type="number"
+                    value={formData.budget || ''}
+                    onChange={(e) => setFormData({...formData, budget: Number(e.target.value)})}
+                    placeholder="Ex: 1500"
+                    min="0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Indiquez un budget approximatif pour votre projet
+                  </p>
                 </div>
 
-                {/* Dates */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date de début souhaitée <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="date"
-                      value={formData.dateDebut}
-                      onChange={(e) => setFormData({...formData, dateDebut: e.target.value})}
-                      min={new Date().toISOString().split('T')[0]}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date de fin souhaitée (optionnel)
-                    </label>
-                    <Input
-                      type="date"
-                      value={formData.dateFin}
-                      onChange={(e) => setFormData({...formData, dateFin: e.target.value})}
-                      min={formData.dateDebut || new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
+                {/* Date de début */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date de début souhaitée <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="date"
+                    value={formData.dateDebut}
+                    onChange={(e) => setFormData({...formData, dateDebut: e.target.value})}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
                 </div>
 
                 {/* Flexibilité */}
