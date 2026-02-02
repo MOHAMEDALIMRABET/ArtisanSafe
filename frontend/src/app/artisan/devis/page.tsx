@@ -14,7 +14,7 @@ import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
 
 type TabType = 'devis' | 'factures';
-type DevisFilter = 'tous' | 'brouillon' | 'envoye' | 'paye' | 'revision' | 'refuse';
+type DevisFilter = 'tous' | 'brouillon' | 'envoye' | 'en_attente_paiement' | 'paye' | 'revision' | 'refuse';
 
 // Type pour stocker les infos des demandes
 type DemandeInfo = {
@@ -63,6 +63,7 @@ export default function MesDevisPage() {
       if (filtre === 'tous') return true;
       if (filtre === 'brouillon') return d.statut === 'brouillon';
       if (filtre === 'envoye') return d.statut === 'envoye';
+      if (filtre === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
       if (filtre === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
       if (filtre === 'revision') return d.statut === 'refuse' && d.typeRefus === 'revision';
       if (filtre === 'refuse') return d.statut === 'refuse' && d.typeRefus !== 'revision';
@@ -322,6 +323,7 @@ export default function MesDevisPage() {
   const devisActifs = devis.filter(d => d.statut !== 'remplace');
   const devisBrouillon = devisActifs.filter(d => d.statut === 'brouillon');
   const devisEnvoyes = devisActifs.filter(d => d.statut === 'envoye');
+  const devisEnAttentePaiement = devisActifs.filter(d => d.statut === 'en_attente_paiement');
   const devisPayes = devisActifs.filter(d => ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut));
   const devisRefuses = devisActifs.filter(d => d.statut === 'refuse' && d.typeRefus !== 'revision');
   const devisRevisionDemandee = devisActifs.filter(d => d.statut === 'refuse' && d.typeRefus === 'revision');
@@ -341,6 +343,7 @@ export default function MesDevisPage() {
       if (filter === 'tous') return true;
       if (filter === 'brouillon') return d.statut === 'brouillon';
       if (filter === 'envoye') return d.statut === 'envoye';
+      if (filter === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
       if (filter === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
       if (filter === 'revision') return d.statut === 'refuse' && d.typeRefus === 'revision';
       if (filter === 'refuse') return d.statut === 'refuse' && d.typeRefus !== 'revision';
@@ -587,7 +590,7 @@ export default function MesDevisPage() {
         {/* Statistiques rapides - Cliquables pour filtrer - Masquées si devis spécifique */}
         {activeTab === 'devis' && !highlightedDevisId && (
           <>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-4">
             <button
               onClick={() => setFilter('tous')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
@@ -627,6 +630,20 @@ export default function MesDevisPage() {
               {compterReponsesRecentes('envoye') > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
                   {compterReponsesRecentes('envoye')}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setFilter('en_attente_paiement')}
+              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
+                filter === 'en_attente_paiement' ? 'bg-yellow-600 text-white ring-4 ring-yellow-600 ring-opacity-50' : 'bg-white border-2 border-yellow-400'
+              }`}
+            >
+              <div className={`text-2xl font-bold ${filter === 'en_attente_paiement' ? 'text-white' : 'text-yellow-600'}`}>{devisEnAttentePaiement.length}</div>
+              <div className={`text-sm ${filter === 'en_attente_paiement' ? 'text-white' : 'text-yellow-700'} font-semibold`}>⏳ En attente</div>
+              {compterReponsesRecentes('en_attente_paiement') > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
+                  {compterReponsesRecentes('en_attente_paiement')}
                 </span>
               )}
             </button>
