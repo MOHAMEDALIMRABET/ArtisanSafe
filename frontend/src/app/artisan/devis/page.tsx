@@ -14,7 +14,7 @@ import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
 
 type TabType = 'devis' | 'factures';
-type DevisFilter = 'tous' | 'brouillon' | 'envoye' | 'accepte' | 'revision' | 'refuse';
+type DevisFilter = 'tous' | 'brouillon' | 'envoye' | 'paye' | 'revision' | 'refuse';
 
 // Type pour stocker les infos des demandes
 type DemandeInfo = {
@@ -63,7 +63,7 @@ export default function MesDevisPage() {
       if (filtre === 'tous') return true;
       if (filtre === 'brouillon') return d.statut === 'brouillon';
       if (filtre === 'envoye') return d.statut === 'envoye';
-      if (filtre === 'accepte') return d.statut === 'accepte';
+      if (filtre === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
       if (filtre === 'revision') return d.statut === 'refuse' && d.typeRefus === 'revision';
       if (filtre === 'refuse') return d.statut === 'refuse' && d.typeRefus !== 'revision';
       return false;
@@ -322,7 +322,7 @@ export default function MesDevisPage() {
   const devisActifs = devis.filter(d => d.statut !== 'remplace');
   const devisBrouillon = devisActifs.filter(d => d.statut === 'brouillon');
   const devisEnvoyes = devisActifs.filter(d => d.statut === 'envoye');
-  const devisAcceptes = devisActifs.filter(d => d.statut === 'accepte');
+  const devisPayes = devisActifs.filter(d => ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut));
   const devisRefuses = devisActifs.filter(d => d.statut === 'refuse' && d.typeRefus !== 'revision');
   const devisRevisionDemandee = devisActifs.filter(d => d.statut === 'refuse' && d.typeRefus === 'revision');
   const devisRemplace = devis.filter(d => d.statut === 'remplace');
@@ -341,7 +341,7 @@ export default function MesDevisPage() {
       if (filter === 'tous') return true;
       if (filter === 'brouillon') return d.statut === 'brouillon';
       if (filter === 'envoye') return d.statut === 'envoye';
-      if (filter === 'accepte') return d.statut === 'accepte';
+      if (filter === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
       if (filter === 'revision') return d.statut === 'refuse' && d.typeRefus === 'revision';
       if (filter === 'refuse') return d.statut === 'refuse' && d.typeRefus !== 'revision';
       return true;
@@ -631,16 +631,16 @@ export default function MesDevisPage() {
               )}
             </button>
             <button
-              onClick={() => setFilter('accepte')}
+              onClick={() => setFilter('paye')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
-                filter === 'accepte' ? 'bg-green-600 text-white ring-4 ring-green-600 ring-opacity-50' : 'bg-white'
+                filter === 'paye' ? 'bg-green-600 text-white ring-4 ring-green-600 ring-opacity-50' : 'bg-white'
               }`}
             >
-              <div className={`text-2xl font-bold ${filter === 'accepte' ? 'text-white' : 'text-green-600'}`}>{devisAcceptes.length}</div>
-              <div className={`text-sm ${filter === 'accepte' ? 'text-white' : 'text-gray-600'}`}>Acceptés</div>
-              {compterReponsesRecentes('accepte') > 0 && (
+              <div className={`text-2xl font-bold ${filter === 'paye' ? 'text-white' : 'text-green-600'}`}>{devisPayes.length}</div>
+              <div className={`text-sm ${filter === 'paye' ? 'text-white' : 'text-gray-600'}`}>💰 Payés</div>
+              {compterReponsesRecentes('paye') > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
-                  {compterReponsesRecentes('accepte')}
+                  {compterReponsesRecentes('paye')}
                 </span>
               )}
             </button>
