@@ -218,18 +218,28 @@ export default function ArtisanDemandesPage() {
     
     // Filtrage par onglet
     if (filter === 'nouvelles') {
+      // Nouvelles : statut publiée, aucun devis envoyé, pas annulée
       return demande.statut === 'publiee' && (!demande.devisRecus || demande.devisRecus === 0) && demande.statut !== 'annulee';
     }
     if (filter === 'devis_envoyes') {
-      return demande.devisRecus && demande.devisRecus > 0 && demande.statut !== 'attribuee' && demande.statut !== 'annulee';
+      // Devis envoyés : au moins 1 devis, demande PAS attribuée (devis pas encore payé), pas annulée
+      return (
+        demande.devisRecus && 
+        demande.devisRecus > 0 && 
+        demande.statut === 'publiee' &&  // Doit rester en statut publiee tant que pas payé
+        demande.statut !== 'annulee'
+      );
     }
     if (filter === 'attribuees') {
+      // Attribuées : devis accepté ET payé (contrat signé)
       return demande.statut === 'attribuee';
     }
     if (filter === 'refusees') {
+      // Refusées : demandes annulées par l'artisan
       return demande.statut === 'annulee';
     }
     if (filter === 'fermees') {
+      // Fermées : demandes expirées
       return demande.statut === 'expiree';
     }
     
