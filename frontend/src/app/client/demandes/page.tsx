@@ -21,6 +21,7 @@ export default function MesDemandesPage() {
   const [showAnnulees, setShowAnnulees] = useState(false);
   const [filtreStatut, setFiltreStatut] = useState<'toutes' | 'publiee' | 'annulee' | 'brouillon'>('toutes');
   const [filtreDateTravaux, setFiltreDateTravaux] = useState<string>('');
+  const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
 
   useEffect(() => {
     // Attendre que l'auth soit chargée
@@ -136,12 +137,29 @@ export default function MesDemandesPage() {
       terminee: '✅ Terminée',
       annulee: '❌ Refusée',
     };
-
     return (
-      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${badges[statut]}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[statut]}`}>
         {labels[statut]}
       </span>
     );
+  }
+
+  function getTypeBadge(type?: 'directe' | 'publique') {
+    const demandeType = type || 'directe'; // Par défaut 'directe' pour compatibilité
+    
+    if (demandeType === 'publique') {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 flex items-center gap-1">
+          📢 Demande publique
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 flex items-center gap-1">
+          🎯 Demande directe
+        </span>
+      );
+    }
   }
 
   if (loading || authLoading) {
@@ -168,10 +186,10 @@ export default function MesDemandesPage() {
             </div>
             
             <Button
-              onClick={() => router.push('/recherche')}
+              onClick={() => router.push('/demande/choisir-type')}
               className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
             >
-              + Nouvelle recherche
+              + Nouvelle demande
             </Button>
           </div>
         </div>
@@ -183,7 +201,23 @@ export default function MesDemandesPage() {
         <div className="mb-6 bg-white p-6 rounded-lg shadow-sm space-y-4">
           <h3 className="font-semibold text-[#2C3E50] mb-3">Filtrer les demandes</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Filtre par type */}
+            <div>
+              <label className="block text-sm font-medium text-[#6C757D] mb-2">
+                Type de demande
+              </label>
+              <select
+                value={filtreType}
+                onChange={(e) => setFiltreType(e.target.value as any)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+              >
+                <option value="toutes">Tous les types</option>
+                <option value="directe">🎯 Demandes directes</option>
+                <option value="publique">📢 Demandes publiques</option>
+              </select>
+            </div>
+
             {/* Filtre par statut */}
             <div>
               <label className="block text-sm font-medium text-[#6C757D] mb-2">
@@ -216,11 +250,12 @@ export default function MesDemandesPage() {
           </div>
 
           {/* Bouton réinitialiser */}
-          {(filtreStatut !== 'toutes' || filtreDateTravaux) && (
+          {(filtreStatut !== 'toutes' || filtreDateTravaux || filtreType !== 'toutes') && (
             <button
               onClick={() => {
                 setFiltreStatut('toutes');
                 setFiltreDateTravaux('');
+                setFiltreType('toutes');
               }}
               className="text-sm text-[#FF6B00] hover:underline font-medium"
             >
@@ -249,6 +284,14 @@ export default function MesDemandesPage() {
           <div className="space-y-4">
             {demandes
               .filter(demande => {
+                // Filtre par type
+                if (filtreType !== 'toutes') {
+                  const demandeType = demande.type || 'directe'; // Par défaut 'directe' pour compatibilité
+                  if (demandeType !== filtreType) {
+                    return false;
+                  }
+                }
+
                 // Filtre par statut
                 if (filtreStatut !== 'toutes' && demande.statut !== filtreStatut) {
                   return false;
@@ -298,6 +341,7 @@ export default function MesDemandesPage() {
                         )}
                       </div>
                       
+                      {getTypeBadge(demande.type)}
                       {getStatutBadge(demande.statut)}
                       
                       {/* Badge devis refusé après le badge Publié */}

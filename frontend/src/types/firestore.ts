@@ -31,6 +31,8 @@ export type Categorie =
 
 export type Urgence = 'normal' | 'rapide' | 'urgent';
 
+export type DemandeType = 'directe' | 'publique';
+
 export type DemandeStatut = 
   | 'brouillon' 
   | 'publiee' 
@@ -468,6 +470,12 @@ export interface DatesSouhaitees {
   urgence: Urgence;
 }
 
+export interface CritereRecherche {
+  metier: string;  // Métier recherché ('plomberie', 'electricite', etc.)
+  ville: string;   // Ville de recherche
+  rayon?: number;  // Rayon de recherche en km (pour demandes publiques)
+}
+
 export interface Demande {
   id: string;
   clientId: string;
@@ -481,15 +489,31 @@ export interface Demande {
   photos?: string[]; // URLs Firebase Storage (ancienne version - pour rétrocompatibilité)
   photosUrls?: string[]; // URLs Firebase Storage (nouvelle version)
   statut: DemandeStatut;
+  
+  // ⭐ NOUVEAU : Type de demande
+  type?: DemandeType; // 'directe' | 'publique' (défaut = 'directe' pour rétrocompatibilité)
+  
+  // Pour toutes les demandes
   artisansMatches?: string[]; // IDs artisans matchés
   devisRecus?: number;
   urgence?: boolean;
+  
+  // Refus
   artisanRefuseId?: string; // ID de l'artisan qui a refusé (pour historique)
   artisanRefuseNom?: string; // Raison sociale de l'artisan qui a refusé
   dateRefus?: Timestamp; // Date du refus
+  
+  // Attribution
   devisAccepteId?: string; // ID du devis accepté et payé
   artisanAttributaireId?: string; // ID de l'artisan qui a remporté la demande
   dateAttribution?: Timestamp; // Date d'attribution du devis
+  
+  // ⭐ NOUVEAU : Pour demandes publiques
+  artisansNotifiesIds?: string[];   // Artisans déjà notifiés (éviter doublons)
+  artisansInteressesIds?: string[]; // Artisans ayant consulté la demande
+  critereRecherche?: CritereRecherche; // Critères de matching automatique
+  
+  // Dates
   dateCreation: Timestamp;
   dateModification: Timestamp;
 }

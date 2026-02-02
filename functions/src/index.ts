@@ -70,8 +70,26 @@ export {
 
 
 // ========================================
-// FIRESTORE TRIGGERS (À ajouter si besoin)
+// FIRESTORE TRIGGERS
 // ========================================
+
+/**
+ * Notification automatique artisans pour demandes publiques
+ * 
+ * DÉCLENCHEUR: Lorsque verificationStatus d'un artisan passe à 'approved'
+ * 
+ * Workflow:
+ * 1. Artisan inscrit → Admin approuve → verificationStatus = 'approved'
+ * 2. Cette fonction récupère toutes demandes publiques actives
+ * 3. Vérifie correspondance métier + localisation
+ * 4. Notifie artisan si match trouvé
+ * 5. Ajoute artisanId à demande.artisansNotifiesIds (évite notifications multiples)
+ * 
+ * Feature: Système 2 types de demandes (directe vs publique)
+ * - Directe: Client choisit artisan AVANT demande
+ * - Publique: Client publie critères, artisans matchés automatiquement
+ */
+export { onArtisanVerified } from './triggers/artisanTriggers';
 
 // Exemple: Envoyer email quand devis payé
 // export { onDevisPaye } from './triggers/devisTriggers';

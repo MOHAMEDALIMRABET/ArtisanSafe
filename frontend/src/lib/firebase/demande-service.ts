@@ -52,10 +52,13 @@ export async function createDemande(
   
   const newDemande = {
     ...demandeData,
+    type: demandeData.type || 'directe' as const, // Type par défaut = 'directe' (rétrocompatibilité)
     statut: demandeData.statut || 'brouillon' as DemandeStatut,
     photos: demandeData.photos || [],
     photosUrls: demandeData.photosUrls || [], // URLs Firebase Storage
     devisRecus: 0,
+    artisansNotifiesIds: demandeData.artisansNotifiesIds || [], // Pour demandes publiques
+    artisansInteressesIds: demandeData.artisansInteressesIds || [], // Pour demandes publiques
     dateExpiration, // Calculée automatiquement
     dateCreation: Timestamp.now(),
     dateModification: Timestamp.now(),
@@ -268,6 +271,73 @@ export async function searchDemandesByCategorie(
     id: doc.id,
     ...doc.data(),
   } as Demande));
+}
+
+/**
+ * Récupérer les demandes publiques actives correspondant au profil d'un artisan
+ * (métier + zone géographique)
+ */
+export async function getDemandesPubliquesForArtisan(
+  artisan: { metiers: string[]; location: { city: string; coordinates?: { latitude: number; longitude: number } } }
+): Promise<Demande[]> {
+  try {
+    const demandesRef = collection(db, COLLECTION_NAME);
+    
+    // Requête simple (éviter index composite)
+    const q = query(
+      demandesRef,
+      where('type', '==', 'publique'),
+      where('statut', '==', 'publiee')
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      return [];
+    }
+    
+    const demandes = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Demande));
+    
+    // Filtrage côté client par métier
+    const demandesFiltrees = demandes.filter(d => {
+      // Vérifier si un des métiers de l'artisan correspond
+      const metierMatch = artisan.metiers.some(metier => 
+        d.critereRecherche?.metier === metier
+      );
+      
+      if (!metierMatch) return false;
+      
+      // Vérifier distance si coordonnées disponibles
+      if (d.localisation?.coordonneesGPS && artisan.location?.coordinates) {
+        const { calculateDistance } = require('./matching-service');
+        const distance = calculateDistance(
+          d.localisation.coordonneesGPS.latitude,
+          d.localisation.coordonneesGPS.longitude,
+          artisan.location.coordinates.latitude,
+          artisan.location.coordinates.longitude
+        );
+        const rayon = d.critereRecherche?.rayon || 50;
+        return distance <= rayon;
+      }
+      
+      // Sinon vérifier ville
+      return d.localisation?.ville?.toLowerCase() === artisan.location.city?.toLowerCase();
+    });
+    
+    // Tri par date de création (plus récentes en premier)
+    return demandesFiltrees.sort((a, b) => {
+      const dateA = a.dateCreation?.toMillis() || 0;
+      const dateB = b.dateCreation?.toMillis() || 0;
+      return dateB - dateA;
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur récupération demandes publiques:', error);
+    return [];
+  }
 }
 
 /**

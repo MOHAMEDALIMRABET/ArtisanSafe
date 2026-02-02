@@ -559,3 +559,261 @@ export function getDistanceToArtisan(
 
   return minDistance === Infinity ? null : Math.round(minDistance * 10) / 10;
 }
+
+// ============================================
+// NOUVELLES FONCTIONS POUR DEMANDES PUBLIQUES
+// ============================================
+
+/**
+ * Chercher artisans qui matchent une demande publique
+ * Filtre par métier, ville et rayon géographique
+ */
+export async function findMatchingArtisansForPublicDemande(
+  demande: Demande
+): Promise<Artisan[]> {
+  if (!demande.critereRecherche) {
+    console.warn('⚠️ Critères de recherche manquants pour la demande', demande.id);
+    return [];
+  }
+  
+  const { metier, ville, rayon = 50 } = demande.critereRecherche;
+  
+  console.log(`🔍 Recherche artisans publique: métier=${metier}, ville=${ville}, rayon=${rayon}km`);
+  
+  try {
+    // Requête Firestore simple (éviter index composite)
+    const artisansRef = collection(db, 'artisans');
+    const q = query(
+      artisansRef,
+      where('metiers', 'array-contains', metier),
+      where('verificationStatus', '==', 'approved')
+    );
+    
+    const snapshot = await getDocs(q);
+    console.log(`📊 ${snapshot.size} artisan(s) trouvé(s) pour métier ${metier}`);
+    
+    if (snapshot.empty) {
+      return [];
+    }
+    
+    const artisans = snapshot.docs.map(doc => ({
+      id: doc.id,
+      userId: doc.id,
+      ...doc.data()
+    } as Artisan));
+    
+    // Filtrage distance côté client si coordonnées GPS disponibles
+    if (demande.localisation?.coordonneesGPS) {
+      const artisansFiltres = artisans.filter(artisan => {
+        // Vérifier que l'artisan a des coordonnées
+        if (!artisan.location?.coordinates) {
+          console.log(`⏭️  Artisan ${artisan.raisonSociale} sans coordonnées GPS`);
+          return false;
+        }
+        
+        const distance = calculateDistance(
+          demande.localisation.coordonneesGPS!.latitude,
+          demande.localisation.coordonneesGPS!.longitude,
+          artisan.location.coordinates.latitude,
+          artisan.location.coordinates.longitude
+        );
+        
+        const isInRange = distance <= rayon;
+        
+        console.log(
+          `📏 ${artisan.raisonSociale}: ${distance.toFixed(2)}km ${isInRange ? '✅' : '❌'} (max: ${rayon}km)`
+        );
+        
+        return isInRange;
+      });
+      
+      console.log(`✅ ${artisansFiltres.length} artisan(s) dans le rayon de ${rayon}km`);
+      return artisansFiltres;
+    }
+    
+    // Si pas de coordonnées GPS, filtrer par ville uniquement
+    const artisansMemeVille = artisans.filter(a => {
+      const match = a.location?.city?.toLowerCase() === ville.toLowerCase();
+      if (match) {
+        console.log(`✅ ${a.raisonSociale} - même ville (${ville})`);
+      }
+      return match;
+    });
+    
+    console.log(`✅ ${artisansMemeVille.length} artisan(s) dans la ville ${ville}`);
+    return artisansMemeVille;
+    
+  } catch (error) {
+    console.error('❌ Erreur recherche artisans matching:', error);
+    return [];
+  }
+}
+
+/**
+ * Notifier artisans matchant une demande publique
+ * Exclut les artisans déjà notifiés
+ */
+export async function notifyMatchingArtisansForPublicDemande(
+  demande: Demande,
+  artisans: Artisan[]
+): Promise<number> {
+  if (artisans.length === 0) {
+    console.log('⏭️  Aucun artisan à notifier');
+    return 0;
+  }
+  
+  try {
+    // Filtrer artisans déjà notifiés
+    const artisansNonNotifies = artisans.filter(a => 
+      !demande.artisansNotifiesIds?.includes(a.userId)
+    );
+    
+    if (artisansNonNotifies.length === 0) {
+      console.log('⏭️  Tous les artisans ont déjà été notifiés');
+      return 0;
+    }
+    
+    console.log(`🔔 Envoi notifications à ${artisansNonNotifies.length} artisan(s)...`);
+    
+    const { sendBulkNotifications } = await import('./notification-service');
+    
+    const artisanIds = artisansNonNotifies.map(a => a.userId);
+    
+    await sendBulkNotifications(artisanIds, {
+      type: 'nouvelle_demande',
+      titre: `📢 Nouvelle demande publique : ${demande.categorie}`,
+      message: `Un client cherche un ${demande.categorie} à ${demande.localisation.ville}. Consultez la demande pour envoyer un devis.`,
+      lien: `/artisan/demandes?demandeId=${demande.id}`,
+    });
+    
+    console.log(`✅ ${artisansNonNotifies.length} notification(s) envoyée(s)`);
+    
+    return artisansNonNotifies.length;
+    
+  } catch (error) {
+    console.error('❌ Erreur envoi notifications:', error);
+    throw error;
+  }
+}
+
+/**
+ * Workflow complet : Matching + Notification + Marquage
+ * Utilisé lors de la création d'une demande publique
+ */
+export async function matchAndNotifyArtisansForPublicDemande(
+  demande: Demande
+): Promise<{ matched: number; notified: number }> {
+  console.log(`\n🎯 Début matching pour demande publique ${demande.id}`);
+  
+  try {
+    // 1. Chercher artisans matchant
+    const artisansMatching = await findMatchingArtisansForPublicDemande(demande);
+    
+    if (artisansMatching.length === 0) {
+      console.log('⚠️ Aucun artisan ne correspond aux critères');
+      return { matched: 0, notified: 0 };
+    }
+    
+    // 2. Notifier artisans
+    const notifiedCount = await notifyMatchingArtisansForPublicDemande(demande, artisansMatching);
+    
+    // 3. Marquer comme notifiés
+    if (notifiedCount > 0) {
+      const { updateDemande } = await import('./demande-service');
+      const artisanIds = artisansMatching.map(a => a.userId);
+      
+      // Récupérer liste actuelle et fusionner
+      const currentNotified = demande.artisansNotifiesIds || [];
+      const allNotified = [...new Set([...currentNotified, ...artisanIds])];
+      
+      await updateDemande(demande.id, {
+        artisansNotifiesIds: allNotified
+      });
+    }
+    
+    console.log(`\n✅ Matching terminé: ${artisansMatching.length} matchés, ${notifiedCount} notifiés\n`);
+    
+    return {
+      matched: artisansMatching.length,
+      notified: notifiedCount
+    };
+    
+  } catch (error) {
+    console.error('❌ Erreur workflow matching:', error);
+    throw error;
+  }
+}
+
+/**
+ * Récupérer demandes publiques actives pour un métier et une ville
+ * Utilisé par Cloud Function lors de la création d'un nouvel artisan
+ */
+export async function getActiveDemandesPubliques(
+  metier: string,
+  ville?: string
+): Promise<Demande[]> {
+  try {
+    const demandesRef = collection(db, 'demandes');
+    
+    // Requête simple (éviter index composite)
+    const q = query(
+      demandesRef,
+      where('type', '==', 'publique'),
+      where('statut', '==', 'publiee')
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      return [];
+    }
+    
+    const demandes = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Demande));
+    
+    // Filtrage côté client par métier et ville
+    return demandes.filter(d => {
+      const matchMetier = d.critereRecherche?.metier === metier;
+      const matchVille = !ville || d.localisation?.ville?.toLowerCase() === ville.toLowerCase();
+      return matchMetier && matchVille;
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur récupération demandes publiques:', error);
+    return [];
+  }
+}
+
+/**
+ * Vérifier si un artisan matche une demande publique
+ * Utilisé pour vérifications ponctuelles
+ */
+export function doesArtisanMatchPublicDemande(
+  artisan: Artisan,
+  demande: Demande
+): boolean {
+  if (!demande.critereRecherche) return false;
+  
+  const { metier, ville, rayon = 50 } = demande.critereRecherche;
+  
+  // Vérifier métier
+  if (!artisan.metiers?.includes(metier)) {
+    return false;
+  }
+  
+  // Vérifier distance si coordonnées disponibles
+  if (demande.localisation?.coordonneesGPS && artisan.location?.coordinates) {
+    const distance = calculateDistance(
+      demande.localisation.coordonneesGPS.latitude,
+      demande.localisation.coordonneesGPS.longitude,
+      artisan.location.coordinates.latitude,
+      artisan.location.coordinates.longitude
+    );
+    return distance <= rayon;
+  }
+  
+  // Sinon vérifier ville
+  return artisan.location?.city?.toLowerCase() === ville.toLowerCase();
+}
