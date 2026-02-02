@@ -218,10 +218,10 @@ export default function ArtisanDemandesPage() {
     
     // Filtrage par onglet
     if (filter === 'nouvelles') {
-      return demande.statut === 'publiee' && (!demande.devisRecus || demande.devisRecus === 0);
+      return demande.statut === 'publiee' && (!demande.devisRecus || demande.devisRecus === 0) && demande.statut !== 'annulee';
     }
     if (filter === 'devis_envoyes') {
-      return demande.devisRecus && demande.devisRecus > 0 && demande.statut !== 'attribuee';
+      return demande.devisRecus && demande.devisRecus > 0 && demande.statut !== 'attribuee' && demande.statut !== 'annulee';
     }
     if (filter === 'attribuees') {
       return demande.statut === 'attribuee';
