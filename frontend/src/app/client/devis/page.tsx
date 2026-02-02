@@ -14,9 +14,13 @@ import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
 import Link from 'next/link';
 
-// Helper: Devis considérés comme "acceptés" (cycle complet après acceptation)
+// Helper: Devis considérés comme "acceptés" (en attente de paiement)
 const isDevisAccepte = (statut: string) => 
-  ['accepte', 'en_attente_paiement', 'paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(statut);
+  ['accepte', 'en_attente_paiement'].includes(statut);
+
+// Helper: Devis considérés comme "payés" (contrats signés)
+const isDevisPaye = (statut: string) => 
+  ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(statut);
 
 export default function ClientDevisPage() {
   const router = useRouter();
@@ -24,7 +28,7 @@ export default function ClientDevisPage() {
   const [devis, setDevis] = useState<Devis[]>([]);
   const [demandes, setDemandes] = useState<Map<string, Demande>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'tous' | 'en_attente' | 'acceptes' | 'refuses'>('en_attente');
+  const [filter, setFilter] = useState<'tous' | 'en_attente' | 'acceptes' | 'payes' | 'refuses'>('en_attente');
 
   useEffect(() => {
     if (authLoading) return;
@@ -131,12 +135,14 @@ export default function ClientDevisPage() {
     if (filter === 'tous') return true;
     if (filter === 'en_attente') return d.statut === 'envoye';
     if (filter === 'acceptes') return isDevisAccepte(d.statut);
+    if (filter === 'payes') return isDevisPaye(d.statut);
     if (filter === 'refuses') return d.statut === 'refuse';
     return true;
   });
 
   const devisEnAttente = devis.filter(d => d.statut === 'envoye');
   const devisAcceptes = devis.filter(d => isDevisAccepte(d.statut));
+  const devisPayes = devis.filter(d => isDevisPaye(d.statut));
   const devisRefuses = devis.filter(d => d.statut === 'refuse');
 
   return (
@@ -190,7 +196,17 @@ export default function ClientDevisPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ✅ Acceptés ({devisAcceptes.length})
+              ✅ Acceptés / En attente ({devisAcceptes.length})
+            </button>
+            <button
+              onClick={() => setFilter('payes')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filter === 'payes'
+                  ? 'bg-[#FF6B00] text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              💰 Payés ({devisPayes.length})
             </button>
             <button
               onClick={() => setFilter('refuses')}

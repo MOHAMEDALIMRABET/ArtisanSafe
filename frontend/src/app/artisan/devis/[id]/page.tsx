@@ -111,6 +111,13 @@ export default function VoirDevisPage() {
     const styles: { [key: string]: string } = {
       brouillon: 'bg-gray-100 text-gray-800',
       envoye: 'bg-blue-100 text-blue-800',
+      en_attente_paiement: 'bg-yellow-100 text-yellow-800',
+      paye: 'bg-green-100 text-green-800',
+      en_cours: 'bg-cyan-100 text-cyan-800',
+      travaux_termines: 'bg-purple-100 text-purple-800',
+      termine_valide: 'bg-emerald-100 text-emerald-800',
+      termine_auto_valide: 'bg-emerald-100 text-emerald-800',
+      litige: 'bg-red-100 text-red-800',
       accepte: 'bg-green-100 text-green-800',
       refuse: 'bg-red-100 text-red-800',
       expire: 'bg-orange-100 text-orange-800',
@@ -119,6 +126,13 @@ export default function VoirDevisPage() {
     const labels: { [key: string]: string } = {
       brouillon: '📝 Brouillon',
       envoye: '📤 Envoyé',
+      en_attente_paiement: '⏳ En attente de paiement',
+      paye: '💰 Payé - Contrat signé',
+      en_cours: '🔨 Travaux en cours',
+      travaux_termines: '✅ Travaux terminés',
+      termine_valide: '🎉 Validé par le client',
+      termine_auto_valide: '🎉 Validé automatiquement',
+      litige: '⚠️ Litige en cours',
       accepte: '✅ Accepté',
       refuse: '❌ Refusé',
       expire: '⏰ Expiré',
@@ -299,6 +313,7 @@ export default function VoirDevisPage() {
               <h1 className="text-2xl font-bold">Devis {devis.numeroDevis}</h1>
               <p className="text-gray-300 mt-1">{devis.titre}</p>
             </div>
+            {getStatutBadge(devis.statut)}
           </div>
         </div>
       </div>
