@@ -509,12 +509,20 @@ export default function ArtisanDemandesPage() {
                     // Sinon : affichage normal
                     return (
                       <>
-                        <button
-                          onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`)}
-                          className="flex-1 bg-[#FF6B00] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
-                        >
-                          📝 Envoyer un devis
-                        </button>
+                        {/* Masquer le bouton si demande déjà attribuée */}
+                        {demande.statut !== 'attribuee' && (
+                          <button
+                            onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`)}
+                            className="flex-1 bg-[#FF6B00] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
+                          >
+                            📝 Envoyer un devis
+                          </button>
+                        )}
+                        {demande.statut === 'attribuee' && (
+                          <div className="flex-1 bg-gray-100 text-gray-600 px-4 py-3 rounded-lg font-semibold border-2 border-gray-300 text-center">
+                            ✅ Demande déjà attribuée
+                          </div>
+                        )}
                         <button
                           onClick={() => router.push(`/messages?userId=${demande.clientId}`)}
                           className="px-6 py-3 border-2 border-[#2C3E50] text-[#2C3E50] rounded-lg font-semibold hover:bg-[#2C3E50] hover:text-white transition"
