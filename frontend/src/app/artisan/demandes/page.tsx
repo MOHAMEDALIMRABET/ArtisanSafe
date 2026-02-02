@@ -20,7 +20,7 @@ export default function ArtisanDemandesPage() {
   const [user, setUser] = useState<User | null>(null);
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'devis_envoyes' | 'attribuees' | 'refusees'>('toutes');
+  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'devis_envoyes' | 'attribuees' | 'refusees' | 'fermees'>('toutes');
   const [refusingDemandeId, setRefusingDemandeId] = useState<string | null>(null);
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
   const [demandesRefusStatut, setDemandesRefusStatut] = useState<Map<string, { definitif: boolean; revision: boolean }>>(new Map());
@@ -211,11 +211,6 @@ export default function ArtisanDemandesPage() {
   }
 
   const filteredDemandes = demandes.filter(demande => {
-    // Exclure les demandes expirées et annulées de la vue principale
-    if (demande.statut === 'expiree' || demande.statut === 'annulee') {
-      return false;
-    }
-    
     // Si un demandeId est spécifié dans l'URL, afficher uniquement cette demande
     if (highlightedDemandeId) {
       return demande.id === highlightedDemandeId;
@@ -234,8 +229,15 @@ export default function ArtisanDemandesPage() {
     if (filter === 'refusees') {
       return demande.statut === 'annulee';
     }
+    if (filter === 'fermees') {
+      return demande.statut === 'expiree';
+    }
     
-    // 'toutes' : afficher toutes les demandes actives
+    // 'toutes' : afficher toutes les demandes actives (exclure expirées et annulées)
+    if (filter === 'toutes') {
+      return demande.statut !== 'expiree' && demande.statut !== 'annulee';
+    }
+    
     return true;
   });
 
@@ -338,6 +340,16 @@ export default function ArtisanDemandesPage() {
                 }`}
               >
                 ❌ Refusées ({demandes.filter(d => d.statut === 'annulee').length})
+              </button>
+              <button
+                onClick={() => setFilter('fermees')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  filter === 'fermees'
+                    ? 'bg-[#FF6B00] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🔒 Fermées ({demandes.filter(d => d.statut === 'expiree').length})
               </button>
             </div>
           </div>
