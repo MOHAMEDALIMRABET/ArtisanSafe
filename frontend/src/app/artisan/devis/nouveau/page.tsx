@@ -1809,7 +1809,7 @@ export default function NouveauDevisPage() {
                 </div>
               ))}
 
-              {lignes.length === 0 && (
+              {lignes.length === 0 && mainOeuvrePrixHT === 0 && (
                 <div className="text-center py-8 text-[#6C757D]">
                   Aucune prestation ajoutée. Cliquez sur "Ajouter une ligne" pour commencer.
                 </div>
@@ -2005,7 +2005,7 @@ export default function NouveauDevisPage() {
                   </tr>
                 ))}
 
-                {lignes.length === 0 && (
+                {lignes.length === 0 && mainOeuvrePrixHT === 0 && (
                   <tr>
                     <td colSpan={5} className="px-4 py-8 text-center text-[#6C757D] italic">
                       Aucune prestation ajoutée

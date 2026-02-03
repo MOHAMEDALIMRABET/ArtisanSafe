@@ -17,6 +17,7 @@ import {
 } from '@/lib/firebase/devis-service';
 import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
+import type { Demande } from '@/types/firestore';
 import Head from 'next/head';
 
 /**
@@ -49,6 +50,7 @@ export default function VoirDevisPage() {
   const devisId = params?.id as string;
   const { user, loading: authLoading } = useAuth();
   const [devis, setDevis] = useState<Devis | null>(null);
+  const [demande, setDemande] = useState<Demande | null>(null);
   const [loading, setLoading] = useState(true);
   const [duplicationEnCours, setDuplicationEnCours] = useState(false);
   const [declarationEnCours, setDeclarationEnCours] = useState(false);
@@ -61,10 +63,23 @@ export default function VoirDevisPage() {
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        setDevis({
+        const devisData = {
           id: docSnap.id,
           ...docSnap.data(),
-        } as Devis);
+        } as Devis;
+        setDevis(devisData);
+
+        // Charger la demande associée si elle existe
+        if (devisData.demandeId) {
+          const demandeRef = doc(db, 'demandes', devisData.demandeId);
+          const demandeSnap = await getDoc(demandeRef);
+          if (demandeSnap.exists()) {
+            setDemande({
+              id: demandeSnap.id,
+              ...demandeSnap.data(),
+            } as Demande);
+          }
+        }
       } else {
         alert('Devis introuvable');
         router.push('/artisan/devis');
@@ -387,87 +402,97 @@ export default function VoirDevisPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto print-container">
           {/* En-tête du devis */}
-          <div className="mb-8">
-            {/* Logo + Titre DEVIS + Dates */}
-            <div className="flex justify-between items-start mb-8">
+          <div className="border-b-2 border-[#FF6B00] pb-6 mb-6 no-break">
+            <div className="flex justify-between items-start">
               {/* Logo à gauche */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 logo-container">
                 <Logo size="sm" variant="full" />
               </div>
 
               {/* Titre DEVIS au centre */}
               <div className="flex-1 text-center">
-                <h2 className="text-4xl font-bold text-[#2C3E50] mb-2">DEVIS</h2>
-                <p className="text-[#6C757D]">N° {devis.numeroDevis}</p>
+                <h2 className="text-3xl font-bold text-[#2C3E50] mb-2">DEVIS</h2>
+                <p className="text-gray-600">N° {devis.numeroDevis}</p>
+                <p className="text-sm text-gray-500">
+                  Date : {devis.dateCreation?.toDate().toLocaleDateString('fr-FR')}
+                </p>
               </div>
 
-              {/* Dates à droite */}
-              <div className="text-right flex-shrink-0">
-                <p className="text-sm text-[#6C757D]">Date</p>
-                <p className="font-semibold">{devis.dateCreation?.toDate().toLocaleDateString('fr-FR')}</p>
-                {devis.dateValidite && (
-                  <>
-                    <p className="text-sm text-[#6C757D] mt-2">Valide jusqu'au</p>
-                    <p className="font-semibold">{devis.dateValidite.toDate().toLocaleDateString('fr-FR')}</p>
-                  </>
-                )}
-              </div>
+              {/* Info demande à droite */}
+              {devis.demandeId && demande && (
+                <div className="text-right text-sm flex-shrink-0">
+                  <p className="text-gray-600 font-semibold">Demande N° {devis.demandeId.slice(-6).toUpperCase()}</p>
+                  <p className="text-gray-500">{demande.titre || demande.categorie}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Informations artisan et client */}
+          <div className="grid md:grid-cols-2 gap-8 mb-8 print-two-cols">
+            {/* Artisan */}
+            <div>
+              <h3 className="font-bold text-[#2C3E50] mb-3">Artisan</h3>
+              {devis.artisan.raisonSociale && (
+                <p className="font-semibold">{devis.artisan.raisonSociale}</p>
+              )}
+              {devis.artisan.siret && <p className="text-sm text-gray-600">SIRET: {devis.artisan.siret}</p>}
+              {devis.artisan.adresse && (
+                <p className="text-sm text-gray-600 mt-1">
+                  📍 {devis.artisan.adresse}
+                </p>
+              )}
+              {devis.artisan.telephone && (
+                <p className="text-sm">
+                  📞 {devis.artisan.telephone}
+                </p>
+              )}
+              {devis.artisan.email && (
+                <p className="text-sm">
+                  📧 {devis.artisan.email}
+                </p>
+              )}
             </div>
 
-            {/* Informations artisan et client */}
-            <div className="grid grid-cols-2 gap-8 mb-8">
-              {/* Artisan */}
-              <div>
-                <h3 className="font-bold text-[#2C3E50] mb-2">De :</h3>
-                <div className="text-sm">
-                  {devis.artisan.raisonSociale && (
-                    <p className="font-semibold">{devis.artisan.raisonSociale}</p>
+            {/* Client */}
+            <div>
+              <h3 className="font-bold text-[#2C3E50] mb-3">Client</h3>
+              <p className="font-semibold">{devis.client.prenom} {devis.client.nom}</p>
+              {devis.client.email && (
+                <p className="text-sm">
+                  📧 {masquerEmail(
+                    devis.client.email,
+                    !['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devis.statut)
                   )}
-                  <p>{devis.artisan.nom} {devis.artisan.prenom}</p>
-                  {devis.artisan.siret && <p>SIRET: {devis.artisan.siret}</p>}
-                  {devis.artisan.adresse && <p>{devis.artisan.adresse}</p>}
-                  {devis.artisan.telephone && <p>{devis.artisan.telephone}</p>}
-                </div>
-              </div>
-
-              {/* Client */}
-              <div>
-                <h3 className="font-bold text-[#2C3E50] mb-2">Pour :</h3>
-                <div className="text-sm">
-                  <p className="font-semibold">{devis.client.prenom} {devis.client.nom}</p>
-                  {devis.client.email && (
-                    <p className="mt-2">
-                      📧 {masquerEmail(
-                        devis.client.email,
-                        !['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devis.statut)
-                      )}
-                    </p>
+                </p>
+              )}
+              {devis.client.telephone && (
+                <p className="text-sm">
+                  📞 {masquerTelephoneComplet(
+                    devis.client.telephone,
+                    !['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devis.statut)
                   )}
-                  {devis.client.telephone && (
-                    <p className="mt-2">
-                      📞 {masquerTelephoneComplet(
-                        devis.client.telephone,
-                        !['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devis.statut)
-                      )}
-                    </p>
-                  )}
-                  {devis.client.adresse && (
-                    <>
-                      <p className="mt-2">{devis.client.adresse.rue}</p>
-                      <p>{devis.client.adresse.codePostal} {devis.client.adresse.ville}</p>
-                    </>
-                  )}
-                </div>
-              </div>
+                </p>
+              )}
+              {devis.client.adresse && (
+                <p className="text-sm text-gray-600 mt-1">
+                  {devis.client.adresse.rue}<br />
+                  {devis.client.adresse.codePostal} {devis.client.adresse.ville}
+                </p>
+              )}
             </div>
+          </div>
+
+          {/* Titre du devis */}
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-[#2C3E50] mb-2">{devis.titre}</h3>
           </div>
 
           {/* Date de début prévue */}
           {devis.dateDebutPrevue && (
             <div className="mb-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-              <p className="text-sm font-semibold text-blue-900">📅 Date de début prévue des travaux :</p>
-              <p className="text-blue-800 font-semibold text-lg">
-                {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
+              <p className="text-blue-900 font-semibold">
+                📅 Date de début prévue des travaux : {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
@@ -530,50 +555,49 @@ export default function VoirDevisPage() {
             </div>
           )}
 
-          {/* Tableau des prestations */}
-          <div className="mb-8 overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-[#2C3E50] text-white">
-                  <th className="border border-gray-300 px-4 py-2 text-left w-1/2">Description</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center w-24">Qté</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center w-24">Unité</th>
-                  <th className="border border-gray-300 px-4 py-2 text-right w-32">P.U. HT</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center w-24">TVA</th>
-                  <th className="border border-gray-300 px-4 py-2 text-right w-32">Total HT</th>
-                </tr>
-              </thead>
-              <tbody>
-                {devis.lignes.map((ligne, index) => (
-                  <tr key={ligne.id || index}>
-                    <td className="border border-gray-300 px-4 py-2 break-all overflow-hidden">{ligne.description}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.quantite}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.unite}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">{ligne.prixUnitaireHT.toFixed(2)} €</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.tauxTVA}%</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right font-semibold whitespace-nowrap">{ligne.totalHT.toFixed(2)} €</td>
+          {/* Détail des prestations */}
+          <div className="mb-8">
+            <h3 className="font-bold text-[#2C3E50] mb-4">Détail des prestations</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Désignation</th>
+                    <th className="border border-gray-300 px-4 py-2 text-center">Quantité</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">Prix unitaire HT</th>
+                    <th className="border border-gray-300 px-4 py-2 text-center">TVA</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">Total HT</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {devis.lignes.map((ligne, index) => (
+                    <tr key={ligne.id || index}>
+                      <td className="border border-gray-300 px-4 py-2 break-all overflow-hidden">{ligne.description}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.quantite} {ligne.unite}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">{ligne.prixUnitaireHT.toFixed(2)} €</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.tauxTVA}%</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right font-semibold whitespace-nowrap">{ligne.totalHT.toFixed(2)} €</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Totaux */}
           <div className="flex justify-end mb-8">
-            <div className="w-80">
-              <div className="flex justify-between py-2 border-b">
-                <span className="font-semibold">Total HT</span>
+            <div className="w-80 bg-gray-50 p-4 rounded-lg">
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-700">Total HT:</span>
                 <span className="font-semibold">{devis.totaux.totalHT.toFixed(2)} €</span>
               </div>
-              {Object.entries(devis.totaux.totalTVA).map(([taux, montant]) => (
-                <div key={taux} className="flex justify-between py-2 border-b text-sm">
-                  <span>TVA {taux}%</span>
-                  <span>{montant.toFixed(2)} €</span>
-                </div>
-              ))}
-              <div className="flex justify-between py-3 border-t-2 border-[#2C3E50] mt-2">
-                <span className="text-xl font-bold text-[#2C3E50]">Total TTC</span>
-                <span className="text-xl font-bold text-[#FF6B00]">{devis.totaux.totalTTC.toFixed(2)} €</span>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-700">TVA:</span>
+                <span className="font-semibold">{devis.totaux.totalTVAGlobal.toFixed(2)} €</span>
+              </div>
+              <div className="flex justify-between text-xl font-bold text-[#FF6B00] pt-2 border-t-2 border-[#FF6B00]">
+                <span>Total TTC:</span>
+                <span>{devis.totaux.totalTTC.toFixed(2)} €</span>
               </div>
             </div>
           </div>

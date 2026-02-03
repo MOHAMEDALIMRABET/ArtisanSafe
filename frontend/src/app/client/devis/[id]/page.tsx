@@ -915,6 +915,20 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
               <h3 className="text-xl font-bold text-[#2C3E50] mb-2">{devis.titre}</h3>
             </div>
 
+            {/* Date de début prévue */}
+            {devis.dateDebutPrevue && (
+              <div className="mb-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                <p className="text-blue-900 font-semibold">
+                  📅 Date de début prévue des travaux : {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              </div>
+            )}
+
             {/* Détail des prestations */}
             <div className="mb-8">
               <h3 className="font-bold text-[#2C3E50] mb-4">Détail des prestations</h3>
@@ -975,21 +989,8 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             </div>
 
             {/* Informations complémentaires */}
-            {(devis.dateDebutPrevue || devis.delaiRealisation || devis.conditions || devis.notes) && (
+            {(devis.delaiRealisation || devis.conditions || devis.notes) && (
               <div className="pt-6">
-                
-                {devis.dateDebutPrevue && (
-                  <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                    <p className="text-blue-900 font-semibold">
-                      📅 Date de début prévue des travaux : {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                )}
 
                 {devis.delaiRealisation && (
                   <div className="mb-4">
