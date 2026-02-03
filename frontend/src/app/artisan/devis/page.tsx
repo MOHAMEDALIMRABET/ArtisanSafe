@@ -565,10 +565,14 @@ export default function MesDevisPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-blue-800 font-semibold mb-1">ℹ️ Gestion automatique des devis refusés</p>
+              <p className="text-blue-800 font-semibold mb-1">ℹ️ Gestion automatique des devis</p>
               <p className="text-blue-700 text-sm">
-                Les devis refusés par le client (refus définitif ou demande de révision) sont automatiquement masqués après <strong>24 heures</strong> pour garder votre liste organisée. 
-                <span className="block mt-1">💡 Vous pouvez toujours les retrouver dans vos archives.</span>
+                <span className="block mb-1.5">
+                  <strong>Devis refusés :</strong> Supprimés automatiquement après <strong>24 heures</strong>.
+                </span>
+                <span className="block">
+                  <strong>Devis en révision :</strong> Supprimés immédiatement après création de la variante.
+                </span>
               </p>
             </div>
           </div>
@@ -612,7 +616,7 @@ export default function MesDevisPage() {
                   : 'text-gray-600 hover:text-[#FF6B00]'
               }`}
             >
-              📋 Devis ({devis.length})
+              📋 Devis ({devisActifs.length})
             </button>
             <button
               onClick={() => setActiveTab('factures')}
@@ -637,7 +641,7 @@ export default function MesDevisPage() {
                 filter === 'tous' ? 'bg-[#FF6B00] text-white ring-4 ring-[#FF6B00] ring-opacity-50' : 'bg-white'
               }`}
             >
-              <div className={`text-2xl font-bold ${filter === 'tous' ? 'text-white' : 'text-[#FF6B00]'}`}>{devis.length}</div>
+              <div className={`text-2xl font-bold ${filter === 'tous' ? 'text-white' : 'text-[#FF6B00]'}`}>{devisActifs.length}</div>
               <div className={`text-sm ${filter === 'tous' ? 'text-white' : 'text-gray-600'}`}>Tous</div>
               {compterReponsesRecentes('tous') > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
