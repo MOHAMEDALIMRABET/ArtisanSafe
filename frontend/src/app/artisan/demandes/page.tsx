@@ -26,6 +26,7 @@ export default function ArtisanDemandesPage() {
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
   const [demandesRefusStatut, setDemandesRefusStatut] = useState<Map<string, { definitif: boolean; revision: boolean }>>(new Map());
   const [demandesTermineesIds, setDemandesTermineesIds] = useState<Set<string>>(new Set());
+  const [demandesAvecDevisPayeIds, setDemandesAvecDevisPayeIds] = useState<Set<string>>(new Set());
   const [clientsInfo, setClientsInfo] = useState<Map<string, { nom: string; prenom: string }>>(new Map());
   const demandeRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
 
@@ -77,6 +78,7 @@ export default function ArtisanDemandesPage() {
       // Vérifier le statut de refus des devis pour chaque demande
       const refusStatutMap = new Map<string, { definitif: boolean; revision: boolean }>();
       const demandesTermineesSet = new Set<string>();
+      const demandesAvecDevisPayeSet = new Set<string>();
       
       for (const demande of demandesData) {
         try {
@@ -96,6 +98,23 @@ export default function ArtisanDemandesPage() {
             const devis = doc.data() as Devis;
             if (devis.typeRefus === 'definitif') hasDefinitif = true;
             if (devis.typeRefus === 'revision') hasRevision = true;
+          });
+          
+          // Vérifier si la demande a un devis payé
+          const devisPayeQuery = query(
+            collection(db, 'devis'),
+            where('demandeId', '==', demande.id),
+            where('artisanId', '==', authUser.uid)
+          );
+          const devisPayeSnapshot = await getDocs(devisPayeQuery);
+          
+          devisPayeSnapshot.docs.forEach(doc => {
+            const devis = doc.data() as Devis;
+            // Statuts indiquant que le devis a été payé
+            const statutsPaye = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
+            if (statutsPaye.includes(devis.statut)) {
+              demandesAvecDevisPayeSet.add(demande.id);
+            }
           });
           
           if (hasDefinitif || hasRevision) {
@@ -125,6 +144,7 @@ export default function ArtisanDemandesPage() {
       }
       setDemandesRefusStatut(refusStatutMap);
       setDemandesTermineesIds(demandesTermineesSet);
+      setDemandesAvecDevisPayeIds(demandesAvecDevisPayeSet);
       
       // Charger les métadonnées des photos (noms originaux)
       const metadata = new Map<string, string>();
@@ -619,6 +639,42 @@ export default function ArtisanDemandesPage() {
                 <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
                   {demande.statut === 'publiee' && (() => {
                     const refusStatut = demandesRefusStatut.get(demande.id);
+                    const hasDevisPaye = demandesAvecDevisPayeIds.has(demande.id);
+                    
+                    // Si devis payé : afficher message + bouton contrat
+                    if (hasDevisPaye) {
+                      return (
+                        <div className="flex-1 space-y-3">
+                          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                              <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <div className="flex-1">
+                                <p className="font-bold text-green-700 mb-1">✅ Devis accepté et payé - Contrat en cours</p>
+                                <p className="text-sm text-green-600">
+                                  Cette demande vous a été attribuée. Le client a signé et payé votre devis.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => router.push(`/artisan/contrats?demandeId=${demande.id}`)}
+                              className="flex-1 bg-[#FF6B00] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
+                            >
+                              📋 Voir le contrat
+                            </button>
+                            <button
+                              onClick={() => router.push(`/messages?userId=${demande.clientId}`)}
+                              className="px-6 py-3 border-2 border-[#2C3E50] text-[#2C3E50] rounded-lg font-semibold hover:bg-[#2C3E50] hover:text-white transition"
+                            >
+                              💬 Contacter client
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
                     
                     // Si refus définitif : bloquer complètement
                     if (refusStatut?.definitif) {
