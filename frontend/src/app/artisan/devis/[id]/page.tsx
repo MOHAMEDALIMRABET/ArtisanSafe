@@ -107,6 +107,29 @@ export default function VoirDevisPage() {
     }
   };
 
+  // Fonctions de masquage des coordonnées (similaires au client)
+  const masquerEmail = (email: string, shouldMask: boolean = true): string => {
+    if (!email || !shouldMask) return email;
+    const [local, domain] = email.split('@');
+    if (!domain) return email;
+    const maskedLocal = local.length > 2 ? `${local[0]}${'•'.repeat(local.length - 1)}` : local;
+    return `${maskedLocal}@${domain}`;
+  };
+
+  const masquerTelephoneComplet = (telephone: string, shouldMask: boolean = true): string => {
+    if (!telephone || !shouldMask) return telephone;
+    const chiffres = telephone.replace(/\D/g, '');
+    if (chiffres.length >= 4) {
+      return `${chiffres.slice(0, 2)}••••${chiffres.slice(-2)}`;
+    }
+    return telephone;
+  };
+
+  const masquerAdresse = (adresse: string, shouldMask: boolean = true): string => {
+    if (!adresse || !shouldMask) return adresse;
+    return '•'.repeat(Math.min(adresse.length, 20));
+  };
+
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
       genere: 'bg-gray-100 text-gray-800',
@@ -369,14 +392,20 @@ export default function VoirDevisPage() {
                 <h3 className="font-bold text-[#2C3E50] mb-2">Pour :</h3>
                 <div className="text-sm">
                   <p className="font-semibold">{devis.client.prenom} {devis.client.nom}</p>
+                  {devis.client.email && (
+                    <p className="mt-2">
+                      📧 {masquerEmail(
+                        devis.client.email,
+                        !['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devis.statut)
+                      )}
+                    </p>
+                  )}
                   {devis.client.telephone && (
                     <p className="mt-2">
-                      📞 {
-                        // Afficher numéro complet si devis payé (contrat signé)
-                        ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(devis.statut)
-                          ? devis.client.telephone
-                          : masquerTelephone(devis.client.telephone)
-                      }
+                      📞 {masquerTelephoneComplet(
+                        devis.client.telephone,
+                        !['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devis.statut)
+                      )}
                     </p>
                   )}
                   {devis.client.adresse && (
@@ -523,8 +552,46 @@ export default function VoirDevisPage() {
             )}
           </div>
 
-          {/* Signature électronique du client (si devis accepté ou payé) */}
-          {(devis.statut === 'accepte' || devis.statut === 'paye' || devis.statut === 'en_cours' || devis.statut === 'termine_auto_valide' || devis.statut === 'termine_valide' || devis.statut === 'travaux_termines') && devis.signatureClient && (
+          {/* Signature électronique - visible à l'impression (NOUVEAU FORMAT) */}
+          {devis.statut === 'paye' && devis.signatureClient?.url && (
+            <div className="mt-8 pt-6 border-t-2 border-green-500 signature-section no-break">
+              <div className="text-center mb-4">
+                <p className="text-sm font-semibold text-green-800">✅ Devis signé et payé</p>
+                <p className="text-xs text-green-700">
+                  Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')} - 
+                  Référence : <strong>{devis.paiement?.referenceTransaction}</strong>
+                </p>
+              </div>
+              <div className="flex justify-between items-end">
+                <div className="text-left">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Signature du client :</p>
+                  <div className="border-2 border-gray-300 rounded p-2 inline-block bg-white">
+                    <img 
+                      src={devis.signatureClient.url} 
+                      alt="Signature client" 
+                      className="h-16 w-auto"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">
+                    {devis.client.prenom} {devis.client.nom}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Signée le {devis.signatureClient.date?.toDate().toLocaleDateString('fr-FR')} à{' '}
+                    {devis.signatureClient.date?.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Signature artisan :</p>
+                  <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50">
+                    <p className="text-xs text-gray-400 text-center">Espace réservé<br/>au cachet</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Informations supplémentaires pour statuts accepté/en cours (non payé) */}
+          {(devis.statut === 'accepte' || devis.statut === 'en_cours' || devis.statut === 'travaux_termines' || devis.statut === 'termine_valide' || devis.statut === 'termine_auto_valide') && !['paye'].includes(devis.statut) && devis.signatureClient && (
             <div className="border-t-2 border-green-500 mt-8 pt-6 bg-green-50 rounded-lg p-6">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
@@ -535,13 +602,7 @@ export default function VoirDevisPage() {
                   </div>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-green-800 mb-2 flex items-center gap-2">
-                    {devis.statut === 'paye' ? (
-                      <>✅ Devis accepté, signé et PAYÉ</>
-                    ) : (
-                      <>✅ Devis accepté et signé électroniquement</>
-                    )}
-                  </h3>
+                  <h3 className="text-lg font-bold text-green-800 mb-2">✅ Devis accepté et signé électroniquement</h3>
                   <p className="text-sm text-green-700 mb-4">
                     Le client <strong>{devis.client.prenom} {devis.client.nom}</strong> a accepté ce devis le{' '}
                     <strong>{devis.dateAcceptation?.toDate().toLocaleDateString('fr-FR', {
@@ -552,21 +613,8 @@ export default function VoirDevisPage() {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}</strong>
-                    {devis.statut === 'paye' && devis.paiement?.date && (
-                      <>
-                        {' '}<br />
-                        <span className="font-bold text-green-900">💳 Paiement reçu le{' '}
-                        {devis.paiement.date.toDate().toLocaleDateString('fr-FR', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })} - Réf: {devis.paiement.referenceTransaction}</span>
-                      </>
-                    )}
                   </p>
                   
-                  {/* Affichage de la signature */}
                   <div className="bg-white border-2 border-green-300 rounded-lg p-4">
                     <p className="text-sm font-semibold text-gray-700 mb-3">Signature du client :</p>
                     <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 inline-block">
@@ -589,7 +637,6 @@ export default function VoirDevisPage() {
                     </p>
                   </div>
 
-                  {/* Message d'action */}
                   <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                     <div className="flex items-start gap-3">
                       <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">

@@ -59,8 +59,12 @@ export default function ClientDevisPage() {
         ...doc.data(),
       } as Devis));
 
-      // Filtrer pour exclure les brouillons (le client ne doit voir que les devis envoyés)
-      const devisData = allDevis.filter(d => d.statut !== 'genere');
+      // Filtrer pour exclure les brouillons ET les devis remplacés/en révision (le client ne doit voir que les devis actifs)
+      const devisData = allDevis.filter(d => 
+        d.statut !== 'genere' && 
+        d.statut !== 'remplace' && 
+        d.statut !== 'en_revision'
+      );
 
       // Trier par date de création décroissante
       devisData.sort((a, b) => {
@@ -113,7 +117,7 @@ export default function ClientDevisPage() {
 
     const labels: { [key: string]: string } = {
       genere: '📝 Brouillon',
-      envoye: '⏳ En attente',
+      envoye: '🆕 Nouveau',
       en_revision: '🔄 En révision',
       accepte: '✅ Accepté',
       en_attente_paiement: '💳 Attente paiement',
@@ -207,7 +211,7 @@ export default function ClientDevisPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ⏳ En attente ({devisEnAttente.length})
+              🆕 Nouveaux ({devisEnAttente.length})
             </button>
             <button
               onClick={() => setFilter('acceptes')}
@@ -312,21 +316,21 @@ export default function ClientDevisPage() {
 
                   {/* Boutons d'action */}
                   <div className="flex gap-3 pt-4 border-t">
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        const targetUrl = `/client/devis/${d.id}`;
-                        console.log('🔗 Navigation vers:', targetUrl);
-                        router.push(targetUrl);
-                      }}
-                      className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
-                    >
-                      📄 Voir le détail
-                    </div>
-                    
+                    {/* Devis envoyé : Voir détail + Accepter + Refuser */}
                     {d.statut === 'envoye' && (
                       <>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const targetUrl = `/client/devis/${d.id}`;
+                            console.log('🔗 Navigation vers:', targetUrl);
+                            router.push(targetUrl);
+                          }}
+                          className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
+                        >
+                          📄 Voir le détail
+                        </div>
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
@@ -348,6 +352,7 @@ export default function ClientDevisPage() {
                       </>
                     )}
 
+                    {/* Devis accepté/en attente paiement : Seulement Procéder au paiement */}
                     {(d.statut === 'accepte' || d.statut === 'en_attente_paiement') && (
                       <button 
                         onClick={(e) => {
@@ -360,16 +365,20 @@ export default function ClientDevisPage() {
                       </button>
                     )}
 
+                    {/* Devis payé : Seulement Voir le détail */}
                     {(isDevisPaye(d.statut)) && (
-                      <button 
+                      <div
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/client/contrats?devis=${d.id}`);
+                          e.preventDefault();
+                          const targetUrl = `/client/devis/${d.id}`;
+                          console.log('🔗 Navigation vers:', targetUrl);
+                          router.push(targetUrl);
                         }}
-                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                        className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
                       >
-                        📋 Voir le contrat
-                      </button>
+                        📄 Voir le détail
+                      </div>
                     )}
                   </div>
                 </div>

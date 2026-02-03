@@ -17,11 +17,13 @@ export default function MesDemandesPage() {
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [artisansMap, setArtisansMap] = useState<Map<string, Artisan>>(new Map());
   const [devisMap, setDevisMap] = useState<Map<string, Devis[]>>(new Map());
+  const [demandesAvecDevisPayeIds, setDemandesAvecDevisPayeIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [showAnnulees, setShowAnnulees] = useState(false);
   const [filtreStatut, setFiltreStatut] = useState<'toutes' | 'publiee' | 'annulee' | 'genere'>('toutes');
   const [filtreDateTravaux, setFiltreDateTravaux] = useState<string>('');
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
+  const [filtreSection, setFiltreSection] = useState<'toutes' | 'contrats' | 'devis_recus' | 'en_attente' | 'publiees' | 'refusees' | 'terminees'>('toutes');
 
   useEffect(() => {
     // Attendre que l'auth soit chargée
@@ -61,17 +63,28 @@ export default function MesDemandesPage() {
         setArtisansMap(map);
       }
 
-      // Charger les devis pour chaque demande
+      // Charger les devis pour chaque demande et détecter les devis payés
       const devisMapTemp = new Map<string, Devis[]>();
+      const demandesAvecDevisPayeSet = new Set<string>();
+      
       for (const demande of userDemandes) {
         try {
           const devisForDemande = await getDevisByDemande(demande.id);
           devisMapTemp.set(demande.id, devisForDemande);
+          
+          // Vérifier si un devis est payé
+          const statutsPaye = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
+          const hasDevisPaye = devisForDemande.some(devis => statutsPaye.includes(devis.statut));
+          
+          if (hasDevisPaye) {
+            demandesAvecDevisPayeSet.add(demande.id);
+          }
         } catch (error) {
           console.error(`Erreur chargement devis pour demande ${demande.id}:`, error);
         }
       }
       setDevisMap(devisMapTemp);
+      setDemandesAvecDevisPayeIds(demandesAvecDevisPayeSet);
     } catch (error) {
       console.error('Erreur chargement demandes:', error);
     } finally {
@@ -162,6 +175,128 @@ export default function MesDemandesPage() {
     }
   }
 
+  // Fonctions pour organiser les demandes par sections
+  
+  /**
+   * DEMANDES PUBLIÉES
+   * - Définition : Demandes créées par le client et publiées PUBLIQUEMENT
+   * - Caractéristiques :
+   *   • Pas d'artisan spécifique assigné (artisansMatches vide ou absent)
+   *   • Visibles par TOUS les artisans (dans leur espace "Demandes publiées")
+   *   • Les artisans voient ces demandes SI elles matchent leurs critères (métier, localisation)
+   *   • Pas encore de devis reçus
+   * - Workflow : Client publie → Artisans découvrent → Artisan s'assigne → Devient "En attente"
+   */
+  function getDemandesPubliees(demandes: Demande[]) {
+    return demandes.filter(d => {
+      const hasArtisan = d.artisansMatches && d.artisansMatches.length > 0;
+      const hasDevis = devisMap.get(d.id) && (devisMap.get(d.id)?.length || 0) > 0;
+      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
+      
+      // Demande publiquée = AUCUN artisan assigné, AUCUN devis, statut normal
+      return !hasArtisan && !hasDevis && !hasDevisPaye && 
+             d.statut !== 'annulee' && d.statut !== 'terminee' && d.statut !== 'attribuee';
+    });
+  }
+
+  /**
+   * DEMANDES EN ATTENTE
+   * - Définition : Demandes envoyées à un artisan SPÉCIFIQUE (demande directe)
+   * - Caractéristiques :
+   *   • Artisan spécifique assigné (artisansMatches contient 1 artisan)
+   *   • Artisan n'a pas encore répondu (pas de devis)
+   *   • Client attend la réponse de cet artisan
+   * - Workflow : Client choisit artisan → Envoie demande directe → Attend devis
+   */
+
+  function getDemandesEnAttente(demandes: Demande[]) {
+    return demandes.filter(d => {
+      const hasArtisan = d.artisansMatches && d.artisansMatches.length > 0;
+      const hasDevis = devisMap.get(d.id) && (devisMap.get(d.id)?.length || 0) > 0;
+      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
+      
+      // En attente = artisan assigné + AUCUN devis encore + AUCUN contrat
+      return hasArtisan && !hasDevis && !hasDevisPaye && 
+             d.statut !== 'annulee' && d.statut !== 'terminee';
+    });
+  }
+
+  /**
+   * DEMANDES AVEC DEVIS REÇUS
+   * - Définition : Demandes ayant reçu au moins 1 proposition de devis
+   * - Caractéristiques :
+   *   • Au moins 1 devis reçu (devisMap contient des devis)
+   *   • Devis pas encore accepté/payé
+   *   • Client doit décider : accepter ou refuser
+   * - Workflow : Artisan envoie devis → Client reçoit → Client accepte → Devient "Contrat"
+   */
+
+  function getDemandesAvecDevis(demandes: Demande[]) {
+    return demandes.filter(d => {
+      const devis = devisMap.get(d.id) || [];
+      const hasDevis = devis.length > 0;
+      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
+      
+      // Devis reçus = devis présents + AUCUN payé + statut normal
+      return hasDevis && !hasDevisPaye && 
+             d.statut !== 'annulee' && d.statut !== 'terminee' && d.statut !== 'attribuee';
+    });
+  }
+
+  /**
+   * DEMANDES ATTRIBUÉES
+   * - Définition : Demandes avec devis accepté MAIS pas encore payé
+   * - Caractéristiques :
+   *   • Client a accepté un devis (statut 'attribuee')
+   *   • Artisan officiellement assigné au projet
+   *   • En attente du paiement
+   * - Workflow : Client accepte devis → Attribuée → Client paie → Devient "Contrat"
+   */
+
+  function getDemandesAttribuees(demandes: Demande[]) {
+    return demandes.filter(d => d.statut === 'attribuee');
+  }
+
+  /**
+   * CONTRATS EN COURS
+   * - Définition : Demandes avec devis payés (phase travaux)
+   * - Caractéristiques :
+   *   • Devis accepté ET payé (détecté via statutsPaye)
+   *   • Travaux en cours ou terminés
+   *   • Contrat actif entre client et artisan
+   * - Workflow : Client paie → Travaux commencent → Travaux terminés → Devient "Terminée"
+   */
+  function getDemandesContratsEnCours(demandes: Demande[]) {
+    return demandes.filter(d => 
+      demandesAvecDevisPayeIds.has(d.id) && d.statut !== 'terminee'
+    );
+  }
+
+  /**
+   * DEMANDES REFUSÉES
+   * - Définition : Demandes refusées par l'artisan contacté
+   * - Caractéristiques :
+   *   • Statut 'annulee'
+   *   • Artisan a refusé la demande
+   *   • Client peut relancer une nouvelle recherche
+   */
+
+  function getDemandesRefusees(demandes: Demande[]) {
+    return demandes.filter(d => d.statut === 'annulee');
+  }
+
+  /**
+   * DEMANDES TERMINÉES
+   * - Définition : Demandes avec travaux terminés et validés
+   * - Caractéristiques :
+   *   • Statut 'terminee'
+   *   • Travaux complétés et acceptés par le client
+   *   • Projet clos
+   */
+  function getDemandesTerminees(demandes: Demande[]) {
+    return demandes.filter(d => d.statut === 'terminee');
+  }
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
@@ -197,71 +332,105 @@ export default function MesDemandesPage() {
 
       {/* Contenu */}
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Filtres */}
-        <div className="mb-6 bg-white p-6 rounded-lg shadow-sm space-y-4">
-          <h3 className="font-semibold text-[#2C3E50] mb-3">Filtrer les demandes</h3>
+        {/* Onglets de filtrage */}
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mb-6">
+          <button
+            onClick={() => setFiltreSection('toutes')}
+            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
+              filtreSection === 'toutes' ? 'bg-[#FF6B00] text-white ring-4 ring-[#FF6B00] ring-opacity-50' : 'bg-white'
+            }`}
+          >
+            <div className={`text-2xl font-bold ${
+              filtreSection === 'toutes' ? 'text-white' : 'text-[#FF6B00]'
+            }`}>{demandes.length}</div>
+            <div className={`text-sm ${
+              filtreSection === 'toutes' ? 'text-white' : 'text-gray-600'
+            }`}>Toutes</div>
+          </button>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Filtre par type */}
-            <div>
-              <label className="block text-sm font-medium text-[#6C757D] mb-2">
-                Type de demande
-              </label>
-              <select
-                value={filtreType}
-                onChange={(e) => setFiltreType(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-              >
-                <option value="toutes">Tous les types</option>
-                <option value="directe">🎯 Demandes directes</option>
-                <option value="publique">📢 Demandes publiques</option>
-              </select>
-            </div>
-
-            {/* Filtre par statut */}
-            <div>
-              <label className="block text-sm font-medium text-[#6C757D] mb-2">
-                Statut
-              </label>
-              <select
-                value={filtreStatut}
-                onChange={(e) => setFiltreStatut(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-              >
-                <option value="toutes">Toutes les demandes</option>
-                <option value="genere">📝 Générés</option>
-                <option value="publiee">📢 Publiées</option>
-                <option value="annulee">❌ Refusées</option>
-              </select>
-            </div>
-
-            {/* Filtre date début travaux */}
-            <div>
-              <label className="block text-sm font-medium text-[#6C757D] mb-2">
-                Date de début des travaux
-              </label>
-              <input
-                type="date"
-                value={filtreDateTravaux}
-                onChange={(e) => setFiltreDateTravaux(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Bouton réinitialiser */}
-          {(filtreStatut !== 'toutes' || filtreDateTravaux || filtreType !== 'toutes') && (
-            <button
-              onClick={() => {
-                setFiltreStatut('toutes');
-                setFiltreDateTravaux('');
-                setFiltreType('toutes');
-              }}
-              className="text-sm text-[#FF6B00] hover:underline font-medium"
-            >
-              ↺ Réinitialiser les filtres
-            </button>
-          )}
+          <button
+            onClick={() => setFiltreSection('contrats')}
+            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
+              filtreSection === 'contrats' ? 'bg-green-600 text-white ring-4 ring-green-600 ring-opacity-50' : 'bg-white'
+            }`}
+          >
+            <div className={`text-2xl font-bold ${
+              filtreSection === 'contrats' ? 'text-white' : 'text-green-600'
+            }`}>{getDemandesContratsEnCours(demandes).length}</div>
+            <div className={`text-sm ${
+              filtreSection === 'contrats' ? 'text-white' : 'text-gray-600'
+            }`}>✅ Contrats</div>
+          </button>
+          
+          <button
+            onClick={() => setFiltreSection('devis_recus')}
+            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
+              filtreSection === 'devis_recus' ? 'bg-blue-600 text-white ring-4 ring-blue-600 ring-opacity-50' : 'bg-white'
+            }`}
+          >
+            <div className={`text-2xl font-bold ${
+              filtreSection === 'devis_recus' ? 'text-white' : 'text-blue-600'
+            }`}>{getDemandesAvecDevis(demandes).length}</div>
+            <div className={`text-sm ${
+              filtreSection === 'devis_recus' ? 'text-white' : 'text-gray-600'
+            }`}>📬 Devis reçus</div>
+          </button>
+          
+          <button
+            onClick={() => setFiltreSection('en_attente')}
+            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
+              filtreSection === 'en_attente' ? 'bg-[#FFC107] text-white ring-4 ring-[#FFC107] ring-opacity-50' : 'bg-white'
+            }`}
+          >
+            <div className={`text-2xl font-bold ${
+              filtreSection === 'en_attente' ? 'text-white' : 'text-[#FFC107]'
+            }`}>{getDemandesEnAttente(demandes).length}</div>
+            <div className={`text-sm ${
+              filtreSection === 'en_attente' ? 'text-white' : 'text-gray-600'
+            }`}>📤 En attente</div>
+          </button>
+          
+          <button
+            onClick={() => setFiltreSection('publiees')}
+            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
+              filtreSection === 'publiees' ? 'bg-purple-600 text-white ring-4 ring-purple-600 ring-opacity-50' : 'bg-white'
+            }`}
+          >
+            <div className={`text-2xl font-bold ${
+              filtreSection === 'publiees' ? 'text-white' : 'text-purple-600'
+            }`}>{getDemandesPubliees(demandes).length}</div>
+            <div className={`text-sm ${
+              filtreSection === 'publiees' ? 'text-white' : 'text-gray-600'
+            }`}>📢 Publiées</div>
+          </button>
+          
+          <button
+            onClick={() => setFiltreSection('refusees')}
+            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
+              filtreSection === 'refusees' ? 'bg-red-600 text-white ring-4 ring-red-600 ring-opacity-50' : 'bg-white'
+            }`}
+          >
+            <div className={`text-2xl font-bold ${
+              filtreSection === 'refusees' ? 'text-white' : 'text-red-600'
+            }`}>{getDemandesRefusees(demandes).length}</div>
+            <div className={`text-sm ${
+              filtreSection === 'refusees' ? 'text-white' : 'text-gray-600'
+            }`}>❌ Refusées</div>
+          </button>
+          
+          <button
+            onClick={() => setFiltreSection('terminees')}
+            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
+              filtreSection === 'terminees' ? 'bg-gray-700 text-white ring-4 ring-gray-700 ring-opacity-50' : 'bg-white'
+            }`}
+          >
+            <div className={`text-2xl font-bold ${
+              filtreSection === 'terminees' ? 'text-white' : 'text-gray-700'
+            }`}>{getDemandesTerminees(demandes).length}</div>
+            <div className={`text-sm ${
+              filtreSection === 'terminees' ? 'text-white' : 'text-gray-600'
+            }`}>🏁 Terminées</div>
+          </button>
         </div>
 
         {demandes.length === 0 ? (
@@ -282,38 +451,25 @@ export default function MesDemandesPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {demandes
-              .filter(demande => {
-                // Filtre par type
-                if (filtreType !== 'toutes') {
-                  const demandeType = demande.type || 'directe'; // Par défaut 'directe' pour compatibilité
-                  if (demandeType !== filtreType) {
-                    return false;
-                  }
-                }
+            {(() => {
+              // Filtrer les demandes selon l'onglet sélectionné
+              let demandesFiltrees = demandes;
+              
+              if (filtreSection === 'contrats') {
+                demandesFiltrees = getDemandesContratsEnCours(demandes);
+              } else if (filtreSection === 'devis_recus') {
+                demandesFiltrees = getDemandesAvecDevis(demandes);
+              } else if (filtreSection === 'en_attente') {
+                demandesFiltrees = getDemandesEnAttente(demandes);
+              } else if (filtreSection === 'publiees') {
+                demandesFiltrees = getDemandesPubliees(demandes);
+              } else if (filtreSection === 'refusees') {
+                demandesFiltrees = getDemandesRefusees(demandes);
+              } else if (filtreSection === 'terminees') {
+                demandesFiltrees = getDemandesTerminees(demandes);
+              }
 
-                // Filtre par statut
-                if (filtreStatut !== 'toutes' && demande.statut !== filtreStatut) {
-                  return false;
-                }
-
-                // Filtre par date de début des travaux
-                if (filtreDateTravaux) {
-                  const dateTravaux = demande.datesSouhaitees?.dates?.[0]?.toDate();
-                  const dateFiltre = new Date(filtreDateTravaux);
-                  if (!dateTravaux || dateTravaux.toDateString() !== dateFiltre.toDateString()) {
-                    return false;
-                  }
-                }
-                
-                // Exclure les demandes sans artisan assigné (Non assigné)
-                const hasArtisan = 
-                  (demande.statut === 'annulee' && demande.artisanRefuseNom) || // Refusée avec artisan
-                  (demande.artisansMatches && demande.artisansMatches.length > 0); // Avec artisan assigné
-                
-                return hasArtisan;
-              })
-              .map((demande) => (
+              const renderDemande = (demande: Demande) => (
               <Card
                 key={demande.id}
                 className="p-6 hover:border-[#FF6B00] transition-all"
@@ -341,7 +497,7 @@ export default function MesDemandesPage() {
                         )}
                       </div>
                       
-                      {getTypeBadge(demande.type)}
+                      {/* {getTypeBadge(demande.type)} */}
                       {getStatutBadge(demande.statut)}
                       
                       {/* Badge devis refusé après le badge Publié */}
@@ -542,6 +698,107 @@ export default function MesDemandesPage() {
                   </div>
                 </div>
 
+                {/* Message vert pour les demandes avec devis payé (contrats) */}
+                {demandesAvecDevisPayeIds.has(demande.id) && (() => {
+                  const devisForDemande = devisMap.get(demande.id) || [];
+                  const statutsPaye = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
+                  const devisPaye = devisForDemande.find(d => statutsPaye.includes(d.statut));
+                  
+                  return (
+                    <div className="mt-4">
+                      <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="flex-1">
+                            <p className="font-bold text-green-700 mb-1">✅ Devis accepté et payé - Contrat en cours</p>
+                            <p className="text-sm text-green-600 mb-3">
+                              Cette demande vous a été attribuée. Vous avez signé et payé le devis de l'artisan.
+                            </p>
+                            
+                            {/* Affichage du devis payé */}
+                            {devisPaye && (
+                              <div className="bg-white border border-green-200 rounded-lg p-4 mt-3">
+                                <div className="flex items-start justify-between mb-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-700">Devis N° {devisPaye.numeroDevis}</p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Date: {devisPaye.dateCreation?.toDate().toLocaleDateString('fr-FR')}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-xl font-bold text-green-600">
+                                      {devisPaye.totaux?.totalTTC?.toFixed(2) || '0.00'} €
+                                    </div>
+                                    <div className="text-xs text-gray-500">TTC</div>
+                                  </div>
+                                </div>
+                                
+                                {devisPaye.prestations && devisPaye.prestations.length > 0 && (
+                                  <div className="border-t border-gray-200 pt-3">
+                                    <p className="text-xs font-semibold text-gray-600 mb-2">Prestations :</p>
+                                    <div className="space-y-2">
+                                      {devisPaye.prestations.slice(0, 3).map((p, idx) => (
+                                        <div key={idx} className="flex justify-between items-start text-xs">
+                                          <span className="text-gray-700 flex-1">{p.designation}</span>
+                                          <span className="text-gray-600 ml-2">
+                                            {p.quantite} × {p.prixUnitaireHT?.toFixed(2) || '0.00'} €
+                                          </span>
+                                        </div>
+                                      ))}
+                                      {devisPaye.prestations.length > 3 && (
+                                        <p className="text-xs text-gray-500 italic">
+                                          +{devisPaye.prestations.length - 3} autre(s) prestation(s)
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {devisPaye.delaiRealisation && (
+                                  <div className="mt-3 pt-3 border-t border-gray-200">
+                                    <p className="text-xs text-gray-600">
+                                      <span className="font-semibold">Délai :</span> {devisPaye.delaiRealisation}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-3 mt-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (devisPaye?.id) {
+                              router.push(`/client/devis/${devisPaye.id}`);
+                            } else {
+                              router.push(`/client/contrats?demandeId=${demande.id}`);
+                            }
+                          }}
+                          className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                        >
+                          📋 Voir devis payé
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const artisanId = demande.artisansMatches?.[0];
+                            if (artisanId) {
+                              router.push(`/messages?userId=${artisanId}`);
+                            }
+                          }}
+                          className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
+                        >
+                          💬 Contacter client
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  );
+                })()}
+
                 {/* Bouton Chercher un autre artisan en bas au centre si devis refusé */}
                 {(() => {
                   const devisForDemande = devisMap.get(demande.id) || [];
@@ -586,7 +843,59 @@ export default function MesDemandesPage() {
                   return null;
                 })()}
               </Card>
-            ))}
+              );
+
+              return (
+                <>
+                  {/* Titre de la section active */}
+                  {filtreSection !== 'toutes' && demandesFiltrees.length > 0 && (
+                    <div className="mb-4">
+                      <h2 className="text-2xl font-bold text-[#2C3E50]">
+                        {filtreSection === 'contrats' && '✅ Contrats en cours'}
+                        {filtreSection === 'devis_recus' && '📬 Devis reçus'}
+                        {filtreSection === 'en_attente' && '📤 En attente de réponse'}
+                        {filtreSection === 'publiees' && '📢 Publiées'}
+                        {filtreSection === 'refusees' && '❌ Refusées'}
+                        {filtreSection === 'terminees' && '🏁 Terminées'}
+                      </h2>
+                      <p className="text-sm text-[#6C757D] mt-1">
+                        {filtreSection === 'contrats' && 'Demandes avec devis accepté et payé - Travaux en cours ou terminés'}
+                        {filtreSection === 'devis_recus' && 'Demandes pour lesquelles vous avez reçu des propositions de devis'}
+                        {filtreSection === 'en_attente' && 'Demandes envoyées à un artisan spécifique en attente de sa réponse'}
+                        {filtreSection === 'publiees' && 'Demandes publiées publiquement, pas encore envoyées à un artisan spécifique'}
+                        {filtreSection === 'refusees' && 'Demandes refusées par l\'artisan contacté'}
+                        {filtreSection === 'terminees' && 'Demandes avec travaux terminés et validés'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Liste des demandes filtrées */}
+                  {demandesFiltrees.length > 0 ? (
+                    <div className="space-y-4">
+                      {demandesFiltrees.map(renderDemande)}
+                    </div>
+                  ) : (
+                    <Card className="p-12 text-center">
+                      <div className="text-6xl mb-4">🔍</div>
+                      <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
+                        Aucune demande dans cette catégorie
+                      </h2>
+                      <p className="text-[#6C757D] mb-6">
+                        {filtreSection === 'toutes' ? 'Vous n\'avez pas encore créé de demande' : 'Essayez une autre catégorie'}
+                      </p>
+                      {filtreSection !== 'toutes' && (
+                        <button
+                          onClick={() => setFiltreSection('toutes')}
+                          className="text-[#FF6B00] hover:underline font-medium"
+                        >
+                          ← Voir toutes les demandes
+                        </button>
+                      )}
+                    </Card>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </main>
