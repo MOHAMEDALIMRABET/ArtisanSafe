@@ -116,7 +116,9 @@ export const cleanupRefusedDevis = functions
       console.log(`
 📊 RÉSUMÉ NETTOYAGE DEVIS REFUSÉS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ ${devisASupprimerCount} devis refusés supprimés (>24h)
+✅ ${devisASupprimerCount} devis supprimés
+   - Devis refusés : supprimés après 24h
+   - Devis remplacés : supprimés immédiatement
 ℹ️  Les révisions (statut='en_revision') ne sont jamais supprimées
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       `);
@@ -124,7 +126,6 @@ export const cleanupRefusedDevis = functions
       return {
         success: true,
         devisSupprimes: devisASupprimerCount,
-        devisConserves: devisConservesCount,
       };
     } catch (error) {
       console.error('❌ Erreur lors du nettoyage:', error);
