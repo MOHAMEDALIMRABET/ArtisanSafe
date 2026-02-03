@@ -1184,11 +1184,33 @@ export default function NouveauDevisPage() {
         // Mise à jour + envoi du brouillon existant
         console.log('📝 Mise à jour et envoi du brouillon:', devisBrouillonId);
         await updateDevis(devisBrouillonId, devisData);
+        
+        // Si c'est une révision, marquer le devis original comme remplacé
+        if (revisionDevisId && revisionDevisId !== devisBrouillonId) {
+          console.log('🔄 Marquage devis original comme remplacé:', revisionDevisId);
+          await updateDevis(revisionDevisId, {
+            statut: 'remplace',
+            devisRevisionId: devisBrouillonId,
+            dateRemplacement: Timestamp.now()
+          });
+        }
+        
         alert('✅ Devis envoyé au client !');
       } else {
         // Création + envoi d'un nouveau devis
         console.log('➕ Création et envoi nouveau devis');
-        await createDevis(devisData);
+        const nouveauDevisId = await createDevis(devisData);
+        
+        // Si c'est une révision, marquer le devis original comme remplacé
+        if (revisionDevisId) {
+          console.log('🔄 Marquage devis original comme remplacé:', revisionDevisId);
+          await updateDevis(revisionDevisId, {
+            statut: 'remplace',
+            devisRevisionId: nouveauDevisId,
+            dateRemplacement: Timestamp.now()
+          });
+        }
+        
         alert('✅ Devis envoyé au client !');
       }
       

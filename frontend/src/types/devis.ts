@@ -72,6 +72,10 @@ export interface Devis {
   dateRevision?: Timestamp;      // Date de la demande de révision
   nombreRevisions?: number;      // Compteur de révisions (cycle DV-001 → DV-001-A → DV-001-B)
   
+  // Champs pour devis remplacés
+  devisRevisionId?: string;      // ID du nouveau devis qui remplace celui-ci
+  dateRemplacement?: Timestamp;  // Date à laquelle ce devis a été remplacé
+  
   dateModification: Timestamp;
   dateDerniereNotification?: Timestamp; // Date de la dernière notification importante (acceptation, refus, etc.)
   vuParArtisan?: boolean;        // L'artisan a-t-il consulté ce devis après action client (système lu/non lu)

@@ -61,7 +61,15 @@ async function cleanupDevisRefuses() {
 
     console.log(`📊 ${devisRefusesSnapshot.size} devis avec statut 'refuse' trouvés\n`);
 
-    if (devisRefusesSnapshot.empty) {
+    // Récupérer tous les devis remplacés (à supprimer immédiatement)
+    const devisRemplacesSnapshot = await db
+      .collection('devis')
+      .where('statut', '==', 'remplace')
+      .get();
+
+    console.log(`🔄 ${devisRemplacesSnapshot.size} devis avec statut 'remplace' trouvés\n`);
+
+    if (devisRefusesSnapshot.empty && devisRemplacesSnapshot.empty) {
       console.log('✅ Aucun devis à nettoyer');
       process.exit(0);
     }
@@ -73,7 +81,7 @@ async function cleanupDevisRefuses() {
     // Les révisions ont maintenant leur propre statut 'en_revision'
     // Tous les devis avec statut='refuse' sont de vrais refus à supprimer
 
-    // Analyser chaque devis
+    // Analyser chaque devis refusé
     for (const docSnap of devisRefusesSnapshot.docs) {
       const devis = docSnap.data();
       const devisId = docSnap.id;

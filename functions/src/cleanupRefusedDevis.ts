@@ -45,10 +45,17 @@ export const cleanupRefusedDevis = functions
         .where('statut', '==', 'refuse')
         .get();
 
+      // Récupérer aussi les devis remplacés (suppression immédiate)
+      const devisRemplacesQuery = await db
+        .collection('devis')
+        .where('statut', '==', 'remplace')
+        .get();
+
       let devisASupprimerCount = 0;
       const batch = db.batch();
       let batchCount = 0;
 
+      // 1. Traiter les devis refusés (avec délai 24h)
       for (const docSnap of devisRefusesQuery.docs) {
         const devis = docSnap.data();
         const dateRefus = devis.dateRefus;
@@ -73,6 +80,30 @@ export const cleanupRefusedDevis = functions
             console.log(`✅ Batch de ${batchCount} devis supprimés`);
             batchCount = 0;
           }
+        }
+      }
+
+      // 2. Traiter les devis remplacés (suppression IMMÉDIATE)
+      console.log('\n🔄 Suppression devis remplacés (immédiate)...');
+      
+      for (const docSnap of devisRemplacesQuery.docs) {
+        const devis = docSnap.data();
+        const dateRemplacement = devis.dateRemplacement;
+        const tempsEcoule = dateRemplacement
+          ? Math.round((now.toMillis() - dateRemplacement.toMillis()) / 1000 / 60)
+          : 'Inconnu';
+
+        console.log(`🗑️  Suppression devis ${docSnap.id} (remplacé depuis ${tempsEcoule} min)`);
+        
+        batch.delete(docSnap.ref);
+        batchCount++;
+        devisASupprimerCount++;
+
+        // Firestore limite : 500 opérations par batch
+        if (batchCount >= 500) {
+          await batch.commit();
+          console.log(`✅ Batch de ${batchCount} devis supprimés`);
+          batchCount = 0;
         }
       }
 
