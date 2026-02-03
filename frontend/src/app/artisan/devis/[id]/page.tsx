@@ -10,7 +10,11 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { dupliquerDevis } from '@/lib/firebase/devis-service';
+import { 
+  dupliquerDevis,
+  declarerDebutTravaux,
+  declarerFinTravaux 
+} from '@/lib/firebase/devis-service';
 import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
 import Head from 'next/head';
@@ -47,6 +51,7 @@ export default function VoirDevisPage() {
   const [devis, setDevis] = useState<Devis | null>(null);
   const [loading, setLoading] = useState(true);
   const [duplicationEnCours, setDuplicationEnCours] = useState(false);
+  const [declarationEnCours, setDeclarationEnCours] = useState(false);
 
   const loadDevis = async () => {
     if (!devisId) return;
@@ -104,6 +109,44 @@ export default function VoirDevisPage() {
       alert('❌ Erreur lors de la création du nouveau devis');
     } finally {
       setDuplicationEnCours(false);
+    }
+  };
+
+  const handleDeclarerDebut = async () => {
+    if (!devis || !user) return;
+    
+    if (!confirm('Confirmer le démarrage des travaux ?')) return;
+    
+    try {
+      setDeclarationEnCours(true);
+      await declarerDebutTravaux(devis.id, user.uid);
+      
+      alert('✅ Début des travaux déclaré ! Le client a été notifié.');
+      await loadDevis(); // Recharger le devis pour voir le nouveau statut
+    } catch (error: any) {
+      console.error('Erreur déclaration début:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible de déclarer le début des travaux'}`);
+    } finally {
+      setDeclarationEnCours(false);
+    }
+  };
+
+  const handleDeclarerFin = async () => {
+    if (!devis || !user) return;
+    
+    if (!confirm('Confirmer la fin des travaux ? Le client aura 7 jours pour valider.')) return;
+    
+    try {
+      setDeclarationEnCours(true);
+      await declarerFinTravaux(devis.id, user.uid);
+      
+      alert('✅ Fin des travaux déclarée ! Le client a 7 jours pour valider.');
+      await loadDevis(); // Recharger le devis
+    } catch (error: any) {
+      console.error('Erreur déclaration fin:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible de déclarer la fin des travaux'}`);
+    } finally {
+      setDeclarationEnCours(false);
     }
   };
 
@@ -652,6 +695,190 @@ export default function VoirDevisPage() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================= */}
+          {/* SECTION GESTION TRAVAUX (selon statut)   */}
+          {/* ========================================= */}
+
+          {/* Statut: paye - Prêt à démarrer */}
+          {devis.statut === 'paye' && (
+            <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6 mb-6 no-print">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">✅</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-green-800">Devis payé - Prêt à démarrer</h3>
+                  <p className="text-sm text-green-700">Le client a signé et payé. Vous pouvez démarrer les travaux.</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleDeclarerDebut}
+                disabled={declarationEnCours}
+                className="bg-[#FF6B00] hover:bg-[#E56100] text-white px-6 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {declarationEnCours ? 'Enregistrement...' : '🚀 Déclarer le début des travaux'}
+              </button>
+              
+              <p className="text-xs text-gray-600 mt-3">
+                💡 Une fois démarrés, le client sera notifié et le suivi des travaux sera activé.
+              </p>
+            </div>
+          )}
+
+          {/* Statut: en_cours - Travaux en cours */}
+          {devis.statut === 'en_cours' && (
+            <div className="bg-blue-50 border-2 border-blue-500 rounded-lg p-6 mb-6 no-print">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">⚙️</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-blue-800">Travaux en cours</h3>
+                  <p className="text-sm text-blue-700">
+                    Démarré le : {devis.travaux?.dateDebut?.toDate().toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleDeclarerFin}
+                disabled={declarationEnCours}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {declarationEnCours ? 'Enregistrement...' : '✅ Déclarer la fin des travaux'}
+              </button>
+              
+              <p className="text-xs text-gray-600 mt-3">
+                💡 Le client aura 7 jours pour valider les travaux. Passé ce délai, validation automatique.
+              </p>
+            </div>
+          )}
+
+          {/* Statut: travaux_termines - En attente validation */}
+          {devis.statut === 'travaux_termines' && (
+            <div className="bg-orange-50 border-2 border-orange-500 rounded-lg p-6 mb-6 no-print">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">⏳</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-orange-800">En attente de validation client</h3>
+                  <p className="text-sm text-orange-700">
+                    Vous avez déclaré avoir terminé les travaux le {devis.travaux?.dateFin?.toDate().toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-orange-200">
+                <h4 className="font-semibold text-gray-800 mb-2">⏱️ Délai de validation :</h4>
+                <p className="text-sm text-gray-700">
+                  Le client a <strong>7 jours</strong> pour valider ou signaler un problème.
+                  <br />
+                  Validation automatique le : {devis.travaux?.dateValidationAuto?.toDate().toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+                
+                <div className="mt-3 p-3 bg-green-50 rounded border border-green-200">
+                  <p className="text-sm text-green-800">
+                    💰 <strong>Paiement</strong> : Vous recevrez <strong>{((devis.totaux?.totalTTC || 0) * 0.9).toFixed(2)}€</strong> après validation
+                    <br />
+                    <span className="text-xs text-green-700">(Commission plateforme : {((devis.totaux?.totalTTC || 0) * 0.1).toFixed(2)}€)</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Statut: termine_valide ou termine_auto_valide - Paiement libéré */}
+          {['termine_valide', 'termine_auto_valide'].includes(devis.statut) && (
+            <div className="bg-emerald-50 border-2 border-emerald-500 rounded-lg p-6 mb-6 no-print">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">🎉</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-emerald-800">
+                    {devis.statut === 'termine_valide' ? '✅ Travaux validés par le client' : '✅ Travaux validés automatiquement'}
+                  </h3>
+                  <p className="text-sm text-emerald-700">
+                    Validé le : {devis.travaux?.dateValidationClient?.toDate().toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-emerald-200">
+                <h4 className="font-semibold text-gray-800 mb-2">💰 Paiement en cours</h4>
+                <p className="text-sm text-gray-700 mb-3">
+                  Montant net artisan : <strong className="text-emerald-700 text-lg">{((devis.totaux?.totalTTC || 0) * 0.9).toFixed(2)}€</strong>
+                  <br />
+                  <span className="text-xs text-gray-600">(Commission plateforme : {((devis.totaux?.totalTTC || 0) * 0.1).toFixed(2)}€)</span>
+                </p>
+                
+                <div className="p-3 bg-blue-50 rounded border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    ℹ️ Vous recevrez le paiement sous <strong>24-48 heures</strong> par virement bancaire.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Statut: litige - Problème signalé */}
+          {devis.statut === 'litige' && (
+            <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6 mb-6 no-print">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">⚠️</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-red-800">Litige en cours</h3>
+                  <p className="text-sm text-red-700">
+                    Le client a signalé un problème le {devis.travaux?.litige?.date?.toDate().toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-red-200">
+                <h4 className="font-semibold text-gray-800 mb-2">Motif du litige :</h4>
+                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded border border-gray-200">
+                  {devis.travaux?.litige?.motif || 'Non spécifié'}
+                </p>
+                
+                <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+                  <p className="text-sm text-yellow-800">
+                    ⏳ <strong>En attente de médiation</strong>
+                    <br />
+                    Un administrateur va examiner le litige et prendre contact avec vous sous 24-48h.
+                    <br />
+                    Le paiement reste bloqué jusqu'à résolution.
+                  </p>
                 </div>
               </div>
             </div>

@@ -13,7 +13,15 @@ import { db, storage } from '@/lib/firebase/config';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { SignatureCanvas } from '@/components/SignatureCanvas';
 import { PaymentForm, PaymentData } from '@/components/PaymentForm';
-import { notifyArtisanDevisAccepte, notifyArtisanDevisRefuse, notifyArtisanDevisRevision } from '@/lib/firebase/notification-service';
+import { 
+  notifyArtisanDevisAccepte, 
+  notifyArtisanDevisRefuse, 
+  notifyArtisanDevisRevision 
+} from '@/lib/firebase/notification-service';
+import { 
+  validerTravaux, 
+  signalerLitige 
+} from '@/lib/firebase/devis-service';
 import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
@@ -106,6 +114,10 @@ export default function ClientDevisDetailPage() {
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [signatureDataURL, setSignatureDataURL] = useState<string | null>(null);
+  const [validationEnCours, setValidationEnCours] = useState(false);
+  const [showLitigeModal, setShowLitigeModal] = useState(false);
+  const [motifLitige, setMotifLitige] = useState('');
+  const [litigeEnCours, setLitigeEnCours] = useState(false);
 
   const devisId = params.id as string;
   const action = searchParams.get('action');
@@ -490,6 +502,58 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
     } finally {
       setProcessing(false);
       setShowRefusalModal(false);
+    }
+  };
+
+  const handleValiderTravaux = async () => {
+    if (!devis || !user) return;
+    
+    if (!confirm('Confirmer que les travaux sont conformes et terminés ?\n\nCette action libérera le paiement à l\'artisan.')) return;
+    
+    try {
+      setValidationEnCours(true);
+      
+      // Valider les travaux
+      await validerTravaux(devis.id, user.uid);
+      
+      // TODO Phase 2: Appeler API backend pour capturer le paiement Stripe
+      // const response = await fetch('/api/v1/payments/release-escrow', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ contratId: devis.id, validePar: 'client' })
+      // });
+      
+      alert('✅ Travaux validés !\n\nL\'artisan sera payé sous 24-48h.\n\nMerci d\'avoir utilisé ArtisanDispo !');
+      await loadDevis(); // Recharger le devis
+    } catch (error: any) {
+      console.error('Erreur validation:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible de valider les travaux'}`);
+    } finally {
+      setValidationEnCours(false);
+    }
+  };
+
+  const handleSignalerLitige = async () => {
+    if (!devis || !user || !motifLitige.trim()) {
+      alert('Veuillez décrire le problème rencontré');
+      return;
+    }
+    
+    try {
+      setLitigeEnCours(true);
+      
+      // Signaler le litige
+      await signalerLitige(devis.id, user.uid, motifLitige);
+      
+      alert('⚠️ Litige signalé.\n\nNotre équipe va examiner votre demande et vous contacter sous 24-48h.\n\nLe paiement reste bloqué jusqu\'à résolution.');
+      setShowLitigeModal(false);
+      setMotifLitige('');
+      await loadDevis(); // Recharger le devis
+    } catch (error: any) {
+      console.error('Erreur litige:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible de signaler le litige'}`);
+    } finally {
+      setLitigeEnCours(false);
     }
   };
 
@@ -997,6 +1061,200 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             )}
           </div>
 
+          {/* ========================================= */}
+          {/* SECTION SUIVI TRAVAUX (selon statut)     */}
+          {/* ========================================= */}
+
+          {/* Statut: paye - En attente démarrage */}
+          {devis.statut === 'paye' && (
+            <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 mb-6 print:hidden">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">⏳</span>
+                <div>
+                  <h3 className="text-lg font-bold text-yellow-800">En attente du démarrage des travaux</h3>
+                  <p className="text-sm text-yellow-700">
+                    L'artisan doit déclarer le début des travaux. Vous serez notifié.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-yellow-200">
+                <p className="text-sm text-gray-700">
+                  💰 <strong>Paiement sécurisé</strong> : Votre paiement de <strong>{devis.totaux.totalTTC.toFixed(2)}€</strong> est bloqué en sécurité.
+                  <br />
+                  <span className="text-xs text-gray-600">Il sera libéré à l'artisan uniquement après validation des travaux.</span>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Statut: en_cours - Travaux en cours */}
+          {devis.statut === 'en_cours' && (
+            <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-6 mb-6 print:hidden">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">⚙️</span>
+                <div>
+                  <h3 className="text-lg font-bold text-blue-800">Travaux en cours</h3>
+                  <p className="text-sm text-blue-700">
+                    Démarré le : {devis.travaux?.dateDebut?.toDate().toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <p className="text-sm text-gray-700">
+                  L'artisan <strong>{devis.artisan.raisonSociale}</strong> réalise actuellement les travaux.
+                  <br />
+                  Vous pourrez valider une fois qu'il aura déclaré avoir terminé.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Statut: travaux_termines - VALIDATION REQUISE */}
+          {devis.statut === 'travaux_termines' && (
+            <div className="bg-orange-50 border-2 border-orange-500 rounded-lg p-6 mb-6 print:hidden">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">✅</span>
+                <div>
+                  <h3 className="text-lg font-bold text-orange-800">Travaux terminés - Validation requise</h3>
+                  <p className="text-sm text-orange-700">
+                    L'artisan a déclaré avoir terminé les travaux le {devis.travaux?.dateFin?.toDate().toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-orange-300 mb-4">
+                <p className="text-sm text-gray-700 mb-3">
+                  Vous avez <strong>7 jours</strong> pour valider les travaux ou signaler un problème.
+                  <br />
+                  Validation automatique le : <strong>{devis.travaux?.dateValidationAuto?.toDate().toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}</strong>
+                </p>
+                
+                <div className="p-3 bg-blue-50 rounded border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Que se passe-t-il ensuite ?</strong>
+                    <br />
+                    • Si vous validez : l'artisan reçoit le paiement sous 24-48h
+                    <br />
+                    • Si vous signalez un problème : notre équipe intervient comme médiateur
+                    <br />
+                    • Si aucune action : validation automatique après 7 jours
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={handleValiderTravaux}
+                  disabled={validationEnCours}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {validationEnCours ? 'Validation...' : '✅ Valider les travaux'}
+                </button>
+                
+                <button
+                  onClick={() => setShowLitigeModal(true)}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+                >
+                  ⚠️ Signaler un problème
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Statut: termine_valide ou termine_auto_valide - Travaux validés */}
+          {['termine_valide', 'termine_auto_valide'].includes(devis.statut) && (
+            <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6 mb-6 print:hidden">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">🎉</span>
+                <div>
+                  <h3 className="text-lg font-bold text-green-800">Travaux validés</h3>
+                  <p className="text-sm text-green-700">
+                    {devis.statut === 'termine_valide' 
+                      ? `Validé par vous le ${devis.travaux?.dateValidationClient?.toDate().toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}`
+                      : `Validé automatiquement le ${devis.travaux?.dateValidationClient?.toDate().toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}`
+                    }
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-green-200">
+                <p className="text-sm text-gray-700 mb-3">
+                  ✅ Le paiement a été transféré à l'artisan.
+                  <br />
+                  💰 Montant : <strong>{devis.totaux.totalTTC.toFixed(2)}€</strong>
+                </p>
+                
+                <div className="p-3 bg-blue-50 rounded border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Merci d'avoir utilisé ArtisanDispo !</strong>
+                    <br />
+                    Vous pouvez laisser un avis sur l'artisan pour aider d'autres clients.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Statut: litige - Problème signalé */}
+          {devis.statut === 'litige' && (
+            <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6 mb-6 print:hidden">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">⚠️</span>
+                <div>
+                  <h3 className="text-lg font-bold text-red-800">Litige en cours</h3>
+                  <p className="text-sm text-red-700">
+                    Vous avez signalé un problème le {devis.travaux?.litige?.date?.toDate().toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 border border-red-200">
+                <h4 className="font-semibold text-gray-800 mb-2">Votre signalement :</h4>
+                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded border border-gray-200 mb-4">
+                  {devis.travaux?.litige?.motif || 'Non spécifié'}
+                </p>
+                
+                <div className="p-3 bg-yellow-50 rounded border border-yellow-200">
+                  <p className="text-sm text-yellow-800">
+                    ⏳ <strong>En cours de traitement</strong>
+                    <br />
+                    Un médiateur va examiner votre demande et contacter les deux parties sous 24-48h.
+                    <br />
+                    Le paiement reste bloqué jusqu'à résolution du litige.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Boutons bas de page - masqués à l'impression */}
           <div className="mt-6 flex gap-4 print:hidden">
             <button
@@ -1204,6 +1462,73 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                 className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition disabled:bg-gray-400"
               >
                 {processing ? 'Traitement...' : 'Confirmer le refus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Signaler Litige */}
+      {showLitigeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:hidden">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">⚠️ Signaler un problème</h3>
+              <button
+                onClick={() => {
+                  setShowLitigeModal(false);
+                  setMotifLitige('');
+                }}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Décrivez précisément le problème rencontré avec les travaux. Notre équipe de médiation interviendra sous 24-48h pour résoudre le litige.
+            </p>
+            
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+              <p className="text-sm text-yellow-800">
+                <strong>⚠️ Important :</strong> Le signalement d'un litige bloquera le paiement jusqu'à résolution.
+                Un médiateur contactera les deux parties pour trouver une solution équitable.
+              </p>
+            </div>
+            
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Description du problème :
+            </label>
+            <textarea
+              placeholder="Exemple : Les joints de la salle de bain ne sont pas étanches, il y a des fuites d'eau. Les carreaux présentent des fissures..."
+              value={motifLitige}
+              onChange={(e) => setMotifLitige(e.target.value)}
+              className="w-full border-2 border-gray-300 rounded-lg p-3 text-gray-800 mb-4 focus:border-[#FF6B00] focus:outline-none"
+              rows={6}
+            />
+            
+            <p className="text-xs text-gray-500 mb-4">
+              💡 Plus votre description est précise, plus notre équipe pourra intervenir rapidement et efficacement.
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowLitigeModal(false);
+                  setMotifLitige('');
+                }}
+                disabled={litigeEnCours}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-semibold transition"
+              >
+                Annuler
+              </button>
+              
+              <button
+                onClick={handleSignalerLitige}
+                disabled={litigeEnCours || !motifLitige.trim()}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {litigeEnCours ? 'Envoi...' : 'Envoyer le signalement'}
               </button>
             </div>
           </div>

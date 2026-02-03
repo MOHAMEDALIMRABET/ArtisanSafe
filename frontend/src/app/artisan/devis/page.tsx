@@ -12,6 +12,7 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc, updateDoc, Tim
 import { db } from '@/lib/firebase/config';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
+import { declarerDebutTravaux, declarerFinTravaux } from '@/lib/firebase/devis-service';
 
 type TabType = 'devis' | 'factures';
 type DevisFilter = 'tous' | 'genere' | 'envoye' | 'en_attente_paiement' | 'paye' | 'revision' | 'refuse';
@@ -35,6 +36,7 @@ export default function MesDevisPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<DevisFilter>('tous');
   const [showRemplace, setShowRemplace] = useState(false);
+  const [actionEnCours, setActionEnCours] = useState<string | null>(null);
   const devisRefs = useRef<{[key: string]: HTMLTableRowElement | null}>({});
 
   // Helper pour vérifier si un devis a une réponse client récente (notification récente)
@@ -269,6 +271,59 @@ export default function MesDevisPage() {
     } catch (error) {
       console.error('❌ Erreur envoi devis:', error);
       alert('❌ Erreur lors de l\'envoi du devis. Veuillez réessayer.');
+    }
+  };
+
+  // 🔨 ACTIONS RAPIDES : Déclarer le début des travaux
+  const handleDeclarerDebutRapide = async (devisId: string, numeroDevis: string) => {
+    if (actionEnCours) return; // Éviter les double-clics
+
+    const confirmer = confirm(
+      `🔨 Déclarer le début des travaux ?\n\n` +
+      `Devis : ${numeroDevis}\n\n` +
+      `Cela marquera le début de la prestation et informera le client.`
+    );
+
+    if (!confirmer) return;
+
+    try {
+      setActionEnCours(devisId);
+      await declarerDebutTravaux(devisId, user!.uid);
+      console.log('✅ Début des travaux déclaré');
+      alert('✅ Début des travaux déclaré avec succès !');
+      await loadDevis(); // Recharger la liste
+    } catch (error) {
+      console.error('❌ Erreur déclaration début:', error);
+      alert('❌ Erreur lors de la déclaration. Veuillez réessayer.');
+    } finally {
+      setActionEnCours(null);
+    }
+  };
+
+  // 🏁 ACTIONS RAPIDES : Déclarer la fin des travaux
+  const handleDeclarerFinRapide = async (devisId: string, numeroDevis: string) => {
+    if (actionEnCours) return; // Éviter les double-clics
+
+    const confirmer = confirm(
+      `🏁 Déclarer la fin des travaux ?\n\n` +
+      `Devis : ${numeroDevis}\n\n` +
+      `Le client aura 7 jours pour valider les travaux.\n` +
+      `Après ce délai, les travaux seront validés automatiquement.`
+    );
+
+    if (!confirmer) return;
+
+    try {
+      setActionEnCours(devisId);
+      await declarerFinTravaux(devisId, user!.uid);
+      console.log('✅ Fin des travaux déclarée');
+      alert('✅ Fin des travaux déclarée avec succès !\n\nLe client a maintenant 7 jours pour valider.');
+      await loadDevis(); // Recharger la liste
+    } catch (error) {
+      console.error('❌ Erreur déclaration fin:', error);
+      alert('❌ Erreur lors de la déclaration. Veuillez réessayer.');
+    } finally {
+      setActionEnCours(null);
     }
   };
 
@@ -922,11 +977,13 @@ export default function MesDevisPage() {
                             className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-xs font-semibold"
                           >
                             📝 Créer révision
-                          </button>                        ) : d.statut === 'refuse' ? (
+                          </button>
+                        ) : d.statut === 'refuse' ? (
                           <div className="flex flex-col gap-1">
                             <span className="text-xs text-gray-500 italic">Refus définitif</span>
                             <span className="text-[10px] text-gray-400">Pas de nouvelle proposition</span>
-                          </div>                        ) : d.statut === 'genere' ? (
+                          </div>
+                        ) : d.statut === 'genere' ? (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleEnvoyerDevis(d.id)}
@@ -945,6 +1002,93 @@ export default function MesDevisPage() {
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                               </svg>
+                            </button>
+                          </div>
+                        ) : d.statut === 'paye' ? (
+                          // 🔨 ACTION RAPIDE : Déclarer le début des travaux + Lien Voir
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => handleDeclarerDebutRapide(d.id, d.numeroDevis)}
+                              disabled={actionEnCours === d.id}
+                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-semibold flex items-center gap-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Déclarer le début des travaux"
+                            >
+                              {actionEnCours === d.id ? (
+                                <>⏳ Chargement...</>
+                              ) : (
+                                <>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                  </svg>
+                                  🔨 Déclarer début
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
+                              className="text-[#FF6B00] hover:underline text-xs"
+                            >
+                              Voir détails
+                            </button>
+                          </div>
+                        ) : d.statut === 'en_cours' ? (
+                          // 🏁 ACTION RAPIDE : Déclarer la fin des travaux + Lien Voir
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => handleDeclarerFinRapide(d.id, d.numeroDevis)}
+                              disabled={actionEnCours === d.id}
+                              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold flex items-center gap-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Déclarer la fin des travaux"
+                            >
+                              {actionEnCours === d.id ? (
+                                <>⏳ Chargement...</>
+                              ) : (
+                                <>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  🏁 Déclarer fin
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
+                              className="text-[#FF6B00] hover:underline text-xs"
+                            >
+                              Voir détails
+                            </button>
+                          </div>
+                        ) : d.statut === 'travaux_termines' ? (
+                          // ⏳ EN ATTENTE VALIDATION CLIENT + Lien Voir
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-blue-600 font-semibold">⏳ Attente validation</span>
+                            <button
+                              onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
+                              className="text-[#FF6B00] hover:underline text-xs"
+                            >
+                              Voir détails
+                            </button>
+                          </div>
+                        ) : ['termine_valide', 'termine_auto_valide'].includes(d.statut) ? (
+                          // ✅ TRAVAUX VALIDÉS - PAIEMENT LIBÉRÉ + Lien Voir
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-green-600 font-semibold">✅ Validé</span>
+                            <button
+                              onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
+                              className="text-[#FF6B00] hover:underline text-xs"
+                            >
+                              Voir détails
+                            </button>
+                          </div>
+                        ) : d.statut === 'litige' ? (
+                          // ⚠️ LITIGE EN COURS
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-red-600 font-semibold">⚠️ Litige</span>
+                            <button
+                              onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
+                              className="text-[#FF6B00] hover:underline text-xs"
+                            >
+                              Voir détails
                             </button>
                           </div>
                         ) : (

@@ -10,6 +10,8 @@ import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
 import { getAvisByArtisanId, calculateAverageRating } from '@/lib/firebase/avis-service';
 import { useNotifications } from '@/hooks/useNotifications';
 import { artisanDoitDecennale } from '@/lib/decennale-helper';
+import { db } from '@/lib/firebase/config';
+import { collection, query, where, or, onSnapshot } from 'firebase/firestore';
 import type { User, Artisan, Avis } from '@/types/firestore';
 
 export default function ArtisanDashboardPage() {
@@ -25,6 +27,7 @@ export default function ArtisanDashboardPage() {
   const [nouvellesDemandes, setNouvellesDemandes] = useState(0);
   const [avisRecents, setAvisRecents] = useState<Avis[]>([]);
   const [statsAvis, setStatsAvis] = useState({ moyenne: 0, total: 0 });
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   // Hook pour les notifications
   const { notifications, unreadCount } = useNotifications(user?.uid);
@@ -45,6 +48,28 @@ export default function ArtisanDashboardPage() {
   useEffect(() => {
     loadUserData();
   }, []);
+
+  // Compter les messages non lus en temps réel
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const q = query(
+      collection(db, 'conversations'),
+      or(where('participants', 'array-contains', user.uid))
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let totalUnread = 0;
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const unreadForUser = data.unreadCount?.[user.uid] || 0;
+        totalUnread += unreadForUser;
+      });
+      setUnreadMessagesCount(totalUnread);
+    });
+
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   async function loadUserData() {
     try {
@@ -686,6 +711,53 @@ export default function ArtisanDashboardPage() {
             </div>
           </Link>
 
+          {/* Messages */}
+          <Link href="/messages">
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00] relative">
+              {/* Badge notification */}
+              {unreadMessagesCount > 0 && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg animate-pulse">
+                  {unreadMessagesCount}
+                </div>
+              )}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center relative">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                  {unreadMessagesCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadMessagesCount}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-800">Messages</h2>
+                    {unreadMessagesCount > 0 && (
+                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
+                        {unreadMessagesCount} non lu{unreadMessagesCount > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">Conversations avec vos clients</p>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500">
+                {unreadMessagesCount > 0 ? (
+                  <p className="text-red-600 font-medium">💬 {unreadMessagesCount} message{unreadMessagesCount > 1 ? 's' : ''} non lu{unreadMessagesCount > 1 ? 's' : ''}</p>
+                ) : (
+                  <p className="text-gray-500">📭 Aucun nouveau message</p>
+                )}
+              </div>
+            </div>
+          </Link>
+
           {/* Avis */}
           <Link href="/artisan/avis">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
@@ -711,31 +783,6 @@ export default function ArtisanDashboardPage() {
               </div>
             </div>
           </Link>
-        </div>
-
-        {/* Statistiques (Section future) */}
-        <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Aperçu rapide</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-[#FF6B00]">{nouvellesDemandes}</div>
-              <div className="text-sm text-gray-600">Demandes en attente</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">0</div>
-              <div className="text-sm text-gray-600">Devis envoyés</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">0</div>
-              <div className="text-sm text-gray-600">Projets terminés</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-yellow-600">
-                {statsAvis.total > 0 ? statsAvis.moyenne.toFixed(1) : '-'}
-              </div>
-              <div className="text-sm text-gray-600">Note moyenne</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
