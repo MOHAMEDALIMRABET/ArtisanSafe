@@ -38,36 +38,30 @@ export const cleanupRefusedDevis = functions
     );
 
     try {
-      // Récupérer tous les devis refusés SAUF révisions
+      // Les révisions ont maintenant leur propre statut 'en_revision'
+      // Tous les devis avec statut='refuse' sont de vrais refus à supprimer
       const devisRefusesQuery = await db
         .collection('devis')
         .where('statut', '==', 'refuse')
         .get();
 
       let devisASupprimerCount = 0;
-      let devisConservesCount = 0;
       const batch = db.batch();
       let batchCount = 0;
 
       for (const docSnap of devisRefusesQuery.docs) {
         const devis = docSnap.data();
-        const typeRefus = devis.typeRefus;
         const dateRefus = devis.dateRefus;
 
-        // GARDER les révisions (typeRefus === 'revision')
-        if (typeRefus === 'revision') {
-          devisConservesCount++;
+        // Vérifier si dateRefus existe
+        if (!dateRefus) {
+          console.warn(`  ⚠️  Devis sans dateRefus: ${docSnap.id}`);
           continue;
         }
 
         // SUPPRIMER si refusé depuis > 24h
-        // Types concernés : 'artisan', 'variante', 'automatique', 'definitif'
-        if (
-          dateRefus &&
-          dateRefus.toMillis() < dateLimite.toMillis() &&
-          (typeRefus === 'artisan' || typeRefus === 'variante' || typeRefus === 'automatique' || typeRefus === 'definitif')
-        ) {
-          console.log(`🗑️  Suppression devis ${docSnap.id} (typeRefus: ${typeRefus}, refusé depuis ${Math.round((now.toMillis() - dateRefus.toMillis()) / 1000 / 60 / 60)}h)`);
+        if (dateRefus.toMillis() < dateLimite.toMillis()) {
+          console.log(`🗑️  Suppression devis ${docSnap.id} (refusé depuis ${Math.round((now.toMillis() - dateRefus.toMillis()) / 1000 / 60 / 60)}h)`);
           
           batch.delete(docSnap.ref);
           batchCount++;
@@ -91,8 +85,8 @@ export const cleanupRefusedDevis = functions
       console.log(`
 📊 RÉSUMÉ NETTOYAGE DEVIS REFUSÉS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ ${devisASupprimerCount} devis supprimés (typeRefus: artisan/variante/automatique)
-🔄 ${devisConservesCount} révisions conservées (typeRefus: revision)
+✅ ${devisASupprimerCount} devis refusés supprimés (>24h)
+ℹ️  Les révisions (statut='en_revision') ne sont jamais supprimées
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       `);
 

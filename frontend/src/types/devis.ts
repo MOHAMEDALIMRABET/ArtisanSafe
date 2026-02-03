@@ -12,6 +12,7 @@ import { Timestamp } from 'firebase/firestore';
 export type DevisStatut = 
   | 'genere'                // Devis généré par l'artisan
   | 'envoye'                // Devis envoyé au client
+  | 'en_revision'           // Client demande des modifications (statut dédié, jamais supprimé)
   | 'accepte'               // Client a accepté le devis (OBSOLÈTE - remplacé par en_attente_paiement)
   | 'en_attente_paiement'   // Client a signé, paiement en attente (24h max)
   | 'paye'                  // Devis signé ET payé avec escrow (paiement bloqué) = CONTRAT JURIDIQUE
@@ -20,7 +21,7 @@ export type DevisStatut =
   | 'termine_valide'        // Client a validé les travaux (escrow libéré)
   | 'termine_auto_valide'   // Validation automatique après 7 jours (escrow libéré)
   | 'litige'                // Client a signalé un problème (escrow bloqué)
-  | 'refuse'                // Client a refusé le devis
+  | 'refuse'                // Client a refusé le devis (supprimé après 24h)
   | 'expire'                // Date de validité dépassée
   | 'remplace'              // Devis remplacé par une révision
   | 'annule';               // Devis annulé (ex: paiement non effectué dans les 24h)
@@ -64,7 +65,13 @@ export interface Devis {
   dateAcceptation?: Timestamp;   // Date d'acceptation par le client
   dateRefus?: Timestamp;         // Date de refus par le client
   motifRefus?: string;           // Motif de refus saisi par le client
-  typeRefus?: 'revision' | 'definitif'; // Type de refus
+  typeRefus?: 'definitif';       // Type de refus (revision retiré, maintenant statut dédié)
+  
+  // Champs dédiés aux révisions (nouveau)
+  motifRevision?: string;        // Motif de la demande de révision
+  dateRevision?: Timestamp;      // Date de la demande de révision
+  nombreRevisions?: number;      // Compteur de révisions (cycle DV-001 → DV-001-A → DV-001-B)
+  
   dateModification: Timestamp;
   dateDerniereNotification?: Timestamp; // Date de la dernière notification importante (acceptation, refus, etc.)
   vuParArtisan?: boolean;        // L'artisan a-t-il consulté ce devis après action client (système lu/non lu)

@@ -51,7 +51,7 @@ export default function MesDevisPage() {
   // Obtenir le texte du badge selon le statut
   const getTexteBadgeReponse = (devis: Devis): string => {
     if (devis.statut === 'accepte') return '✅ Accepté';
-    if (devis.statut === 'refuse' && devis.typeRefus === 'revision') return '🔄 Révision';
+    if (devis.statut === 'en_revision') return '🔄 Révision';
     if (devis.statut === 'refuse') return '❌ Refusé';
     return 'Nouveau';
   };
@@ -65,8 +65,8 @@ export default function MesDevisPage() {
       if (filtre === 'envoye') return d.statut === 'envoye';
       if (filtre === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
       if (filtre === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
-      if (filtre === 'revision') return d.statut === 'refuse' && d.typeRefus === 'revision';
-      if (filtre === 'refuse') return d.statut === 'refuse' && d.typeRefus !== 'revision';
+      if (filtre === 'revision') return d.statut === 'en_revision';
+      if (filtre === 'refuse') return d.statut === 'refuse';
       return false;
     }).length;
   };
@@ -130,13 +130,13 @@ export default function MesDevisPage() {
       const VINGT_QUATRE_HEURES = 24 * 60 * 60 * 1000;
       
       devisData = devisData.filter(devis => {
-        // Si le devis est refusé MAIS en révision, on le garde visible
-        if (devis.statut === 'refuse' && devis.typeRefus === 'revision') {
-          return true; // Ne pas masquer les révisions
+        // Les révisions ne sont jamais masquées (statut dédié)
+        if (devis.statut === 'en_revision') {
+          return true;
         }
         
         // Si le devis est refusé définitivement
-        if (devis.statut === 'refuse' && devis.typeRefus !== 'revision') {
+        if (devis.statut === 'refuse') {
           const dateRefus = devis.dateRefus?.toMillis() || 0;
           const deltaTemps = maintenant - dateRefus;
           
@@ -349,8 +349,8 @@ export default function MesDevisPage() {
   const devisEnvoyes = devisActifs.filter(d => d.statut === 'envoye');
   const devisEnAttentePaiement = devisActifs.filter(d => d.statut === 'en_attente_paiement');
   const devisPayes = devisActifs.filter(d => ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut));
-  const devisRefuses = devisActifs.filter(d => d.statut === 'refuse' && d.typeRefus !== 'revision');
-  const devisRevisionDemandee = devisActifs.filter(d => d.statut === 'refuse' && d.typeRefus === 'revision');
+  const devisRefuses = devisActifs.filter(d => d.statut === 'refuse');
+  const devisRevisionDemandee = devisActifs.filter(d => d.statut === 'en_revision');
   const devisRemplace = devis.filter(d => d.statut === 'remplace');
 
   // Filtrage des devis selon le filtre actif
@@ -369,8 +369,8 @@ export default function MesDevisPage() {
       if (filter === 'envoye') return d.statut === 'envoye';
       if (filter === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
       if (filter === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
-      if (filter === 'revision') return d.statut === 'refuse' && d.typeRefus === 'revision';
-      if (filter === 'refuse') return d.statut === 'refuse' && d.typeRefus !== 'revision';
+      if (filter === 'revision') return d.statut === 'en_revision';
+      if (filter === 'refuse') return d.statut === 'refuse';
       return true;
     })
     // TRI PRIORITAIRE : Devis avec notifications récentes EN HAUT
@@ -646,16 +646,16 @@ export default function MesDevisPage() {
               )}
             </button>
             <button
-              onClick={() => setFilter('brouillon')}
+              onClick={() => setFilter('genere')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
-                filter === 'brouillon' ? 'bg-gray-600 text-white ring-4 ring-gray-600 ring-opacity-50' : 'bg-white'
+                filter === 'genere' ? 'bg-gray-600 text-white ring-4 ring-gray-600 ring-opacity-50' : 'bg-white'
               }`}
             >
-              <div className={`text-2xl font-bold ${filter === 'brouillon' ? 'text-white' : 'text-gray-600'}`}>{devisBrouillon.length}</div>
-              <div className={`text-sm ${filter === 'brouillon' ? 'text-white' : 'text-gray-600'}`}>Générés</div>
-              {compterReponsesRecentes('brouillon') > 0 && (
+              <div className={`text-2xl font-bold ${filter === 'genere' ? 'text-white' : 'text-gray-600'}`}>{devisGeneres.length}</div>
+              <div className={`text-sm ${filter === 'genere' ? 'text-white' : 'text-gray-600'}`}>Générés</div>
+              {compterReponsesRecentes('genere') > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
-                  {compterReponsesRecentes('brouillon')}
+                  {compterReponsesRecentes('genere')}
                 </span>
               )}
             </button>
@@ -761,7 +761,7 @@ export default function MesDevisPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <p className="text-gray-600 mb-4">
-                  {filter === 'tous' ? 'Aucun devis pour le moment' : `Aucun devis ${filter === 'genere' ? 'généré' : filter === 'envoye' ? 'envoyé' : filter === 'accepte' ? 'accepté' : filter === 'revision' ? 'en révision' : 'refusé'}`}
+                  {filter === 'tous' ? 'Aucun devis pour le moment' : `Aucun devis ${filter === 'genere' ? 'généré' : filter === 'envoye' ? 'envoyé' : filter === 'en_attente_paiement' ? 'en attente de paiement' : filter === 'paye' ? 'payé' : filter === 'revision' ? 'en révision' : 'refusé'}`}
                 </p>
                 {filter === 'tous' ? (
                   <button
@@ -893,11 +893,11 @@ export default function MesDevisPage() {
                               → Voir la révision
                             </button>
                           </div>
-                        ) : d.statut === 'refuse' && d.typeRefus === 'revision' ? (
+                        ) : d.statut === 'en_revision' ? (
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
                             🔄 Révision demandée
                           </span>
-                        ) : d.statut === 'brouillon' ? (
+                        ) : d.statut === 'genere' ? (
                           <button
                             onClick={() => router.push(`/artisan/devis/${d.id}`)}
                             className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
@@ -912,17 +912,17 @@ export default function MesDevisPage() {
                         {d.dateCreation?.toDate().toLocaleDateString('fr-FR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {d.statut === 'refuse' && d.typeRefus === 'revision' && d.demandeId ? (
+                        {d.statut === 'en_revision' && d.demandeId ? (
                           <button
                             onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${d.demandeId}&revisionDevisId=${d.id}`)}
                             className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-xs font-semibold"
                           >
                             📝 Créer révision
-                          </button>                        ) : d.statut === 'refuse' && d.typeRefus === 'definitif' ? (
+                          </button>                        ) : d.statut === 'refuse' ? (
                           <div className="flex flex-col gap-1">
                             <span className="text-xs text-gray-500 italic">Refus définitif</span>
                             <span className="text-[10px] text-gray-400">Pas de nouvelle proposition</span>
-                          </div>                        ) : d.statut === 'brouillon' ? (
+                          </div>                        ) : d.statut === 'genere' ? (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleEnvoyerDevis(d.id)}

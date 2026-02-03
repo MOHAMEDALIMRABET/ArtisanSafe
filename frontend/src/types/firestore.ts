@@ -45,7 +45,8 @@ export type DemandeStatut =
 
 export type DevisStatut = 
   | 'genere' 
-  | 'envoye' 
+  | 'envoye'
+  | 'en_revision'          // Client demande des modifications (statut dédié)
   | 'accepte' 
   | 'en_attente_paiement'  // Devis accepté, en attente de paiement
   | 'paye'                 // Devis payé et signé

@@ -461,13 +461,13 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
       
       // CAS 3 : DEMANDER UNE RÉVISION
       else if (refusalType === 'revision' && devis.demandeId) {
-        console.log('🔄 Refus avec demande de révision');
+        console.log('🔄 Demande de révision (nouveau statut dédié)');
         
         await updateDoc(doc(db, 'devis', devisId), {
-          statut: 'refuse',
-          dateRefus: Timestamp.now(),
-          motifRefus: refusalReason || 'Aucun motif précisé',
-          typeRefus: 'revision',
+          statut: 'en_revision',
+          motifRevision: refusalReason || 'Aucun motif précisé',
+          dateRevision: Timestamp.now(),
+          nombreRevisions: (devis.nombreRevisions || 0) + 1,
           dateDerniereNotification: Timestamp.now(),
           vuParArtisan: false,
         });
@@ -480,7 +480,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
           refusalReason
         );
         
-        alert('🔄 Devis refusé avec demande de révision.\n\nL\'artisan pourra vous envoyer une nouvelle proposition améliorée.');
+        alert('🔄 Demande de révision enregistrée.\n\nL\'artisan pourra vous envoyer une nouvelle proposition améliorée.');
       }
       
       router.push('/client/devis');

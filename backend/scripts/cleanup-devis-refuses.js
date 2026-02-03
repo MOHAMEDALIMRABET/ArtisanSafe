@@ -67,9 +67,11 @@ async function cleanupDevisRefuses() {
     }
 
     let devisASupprimerCount = 0;
-    let devisConservesCount = 0;
     let devisTropRecentsCount = 0;
     const devisASupprimerIds = [];
+
+    // Les révisions ont maintenant leur propre statut 'en_revision'
+    // Tous les devis avec statut='refuse' sont de vrais refus à supprimer
 
     // Analyser chaque devis
     for (const docSnap of devisRefusesSnapshot.docs) {
