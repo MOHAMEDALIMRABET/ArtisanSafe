@@ -569,8 +569,8 @@ export default function NouveauDevisPage() {
         return;
       }
 
-      if (devisBrouillon.statut !== 'brouillon') {
-        alert('Seuls les devis brouillons peuvent être modifiés');
+      if (devisBrouillon.statut !== 'genere') {
+        alert('Seuls les devis générés peuvent être modifiés');
         router.push('/artisan/devis');
         return;
       }
@@ -894,7 +894,7 @@ export default function NouveauDevisPage() {
         ...(demandeId && { demandeId: demandeId }),
         ...(demande && { clientId: demande.clientId }),
         artisanId: user.uid,
-        statut: 'brouillon',
+        statut: 'genere',
         ...(ancienDevisId && { devisOriginalId: ancienDevisId }),
         client: cleanObject(clientInfo),
         artisan: cleanObject(artisanInfo),

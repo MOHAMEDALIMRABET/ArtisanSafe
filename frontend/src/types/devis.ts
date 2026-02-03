@@ -10,7 +10,7 @@ import { Timestamp } from 'firebase/firestore';
 // ============================================
 
 export type DevisStatut = 
-  | 'brouillon'             // Devis en cours de création
+  | 'genere'                // Devis généré par l'artisan
   | 'envoye'                // Devis envoyé au client
   | 'accepte'               // Client a accepté le devis (OBSOLÈTE - remplacé par en_attente_paiement)
   | 'en_attente_paiement'   // Client a signé, paiement en attente (24h max)

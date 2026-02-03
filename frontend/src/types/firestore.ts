@@ -34,7 +34,7 @@ export type Urgence = 'normal' | 'rapide' | 'urgent';
 export type DemandeType = 'directe' | 'publique';
 
 export type DemandeStatut = 
-  | 'brouillon' 
+  | 'genere' 
   | 'publiee' 
   | 'matchee' 
   | 'en_cours' 
@@ -44,7 +44,7 @@ export type DemandeStatut =
   | 'annulee';
 
 export type DevisStatut = 
-  | 'brouillon' 
+  | 'genere' 
   | 'envoye' 
   | 'accepte' 
   | 'en_attente_paiement'  // Devis accepté, en attente de paiement

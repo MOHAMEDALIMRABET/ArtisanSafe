@@ -60,7 +60,7 @@ export default function ClientDevisPage() {
       } as Devis));
 
       // Filtrer pour exclure les brouillons (le client ne doit voir que les devis envoyés)
-      const devisData = allDevis.filter(d => d.statut !== 'brouillon');
+      const devisData = allDevis.filter(d => d.statut !== 'genere');
 
       // Trier par date de création décroissante
       devisData.sort((a, b) => {

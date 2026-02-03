@@ -53,7 +53,7 @@ export async function createDemande(
   const newDemande = {
     ...demandeData,
     type: demandeData.type || 'directe' as const, // Type par défaut = 'directe' (rétrocompatibilité)
-    statut: demandeData.statut || 'brouillon' as DemandeStatut,
+    statut: demandeData.statut || 'genere' as DemandeStatut,
     photos: demandeData.photos || [],
     photosUrls: demandeData.photosUrls || [], // URLs Firebase Storage
     devisRecus: 0,

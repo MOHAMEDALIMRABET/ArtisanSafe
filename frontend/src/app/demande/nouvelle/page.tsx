@@ -51,7 +51,7 @@ function NouvelleDemandeContent() {
       if (brouillonId && user) {
         try {
           const brouillon = await getDemandeById(brouillonId);
-          if (brouillon && brouillon.clientId === user.uid && brouillon.statut === 'brouillon') {
+          if (brouillon && brouillon.clientId === user.uid && brouillon.statut === 'genere') {
             setIsEditingBrouillon(true);
             
             // Pré-remplir le formulaire avec les données du brouillon
@@ -197,7 +197,7 @@ function NouvelleDemandeContent() {
         },
         urgence: criteria.urgence,
         photosUrls: photoUrls, // URLs Firebase Storage au lieu des noms de fichiers
-        statut: 'brouillon' as const,
+        statut: 'genere' as const,
         devisRecus: 0,
         artisansMatches: artisanPreselect ? [artisanPreselect] : [],
       };
@@ -230,7 +230,7 @@ function NouvelleDemandeContent() {
         await addArtisansMatches(demandeId, [artisanPreselect]);
       }
 
-      // Publier la demande (change statut brouillon → publiee ou matchee)
+      // Publier la demande (change statut genere → publiee ou matchee)
       console.log('📢 Publication de la demande...');
       await publierDemande(demandeId);
       console.log('✅ Demande publiée');

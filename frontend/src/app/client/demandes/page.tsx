@@ -19,7 +19,7 @@ export default function MesDemandesPage() {
   const [devisMap, setDevisMap] = useState<Map<string, Devis[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [showAnnulees, setShowAnnulees] = useState(false);
-  const [filtreStatut, setFiltreStatut] = useState<'toutes' | 'publiee' | 'annulee' | 'brouillon'>('toutes');
+  const [filtreStatut, setFiltreStatut] = useState<'toutes' | 'publiee' | 'annulee' | 'genere'>('toutes');
   const [filtreDateTravaux, setFiltreDateTravaux] = useState<string>('');
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
 
@@ -229,7 +229,7 @@ export default function MesDemandesPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
               >
                 <option value="toutes">Toutes les demandes</option>
-                <option value="brouillon">📝 Brouillons</option>
+                <option value="genere">📝 Générés</option>
                 <option value="publiee">📢 Publiées</option>
                 <option value="annulee">❌ Refusées</option>
               </select>
@@ -368,7 +368,7 @@ export default function MesDemandesPage() {
                   {/* Boutons d'action pour brouillon et annulée */}
                   <div className="flex gap-3 ml-4">
                     {/* Bouton Compléter pour brouillon uniquement */}
-                    {demande.statut === 'brouillon' && (
+                    {demande.statut === 'genere' && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -423,7 +423,7 @@ export default function MesDemandesPage() {
                     )}
                     
                     {/* Bouton Supprimer pour brouillon et annulée */}
-                    {(demande.statut === 'brouillon' || demande.statut === 'annulee') && (
+                    {(demande.statut === 'genere' || demande.statut === 'annulee') && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -490,7 +490,7 @@ export default function MesDemandesPage() {
                           const devisRefuse = devisForDemande.find(d => d.statut === 'refuse');
                           const devisEnAttente = devisForDemande.find(d => d.statut === 'envoye');
 
-                          if (demande.statut === 'brouillon') {
+                          if (demande.statut === 'genere') {
                             return <p className="text-xs text-[#6C757D] mt-1 font-medium">📋 Brouillon non publié</p>;
                           } else if (devisAccepte) {
                             return (

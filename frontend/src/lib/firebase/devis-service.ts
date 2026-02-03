@@ -180,7 +180,7 @@ export async function createDevis(
     dateModification: maintenant,
     historiqueStatuts: [
       {
-        statut: devisData.statut || 'brouillon' as DevisStatut,
+        statut: devisData.statut || 'genere' as DevisStatut,
         date: maintenant,
         commentaire: 'Création du devis',
       }
@@ -314,7 +314,7 @@ export async function updateDevis(
       updateData.dateEnvoi = Timestamp.now();
       
       // Incrémenter devisRecus si le devis passe de brouillon à envoyé
-      if (devisActuel.statut === 'brouillon' && devisActuel.demandeId) {
+      if (devisActuel.statut === 'genere' && devisActuel.demandeId) {
         try {
           const demandeRef = doc(db, 'demandes', devisActuel.demandeId);
           await updateDoc(demandeRef, {
@@ -551,8 +551,8 @@ export async function deleteDevis(devisId: string): Promise<void> {
   
   const devis = devisDoc.data() as Devis;
   
-  if (devis.statut !== 'brouillon') {
-    throw new Error('Seuls les devis brouillons peuvent être supprimés');
+  if (devis.statut !== 'genere') {
+    throw new Error('Seuls les devis générés peuvent être supprimés');
   }
   
   await deleteDoc(devisRef);
@@ -605,7 +605,7 @@ export async function dupliquerDevis(devisId: string): Promise<string> {
     demandeId: devisOriginal.demandeId,
     clientId: devisOriginal.clientId,
     artisanId: devisOriginal.artisanId,
-    statut: 'brouillon',
+    statut: 'genere',
     dateValidite: Timestamp.fromDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // +30 jours
     client: { ...devisOriginal.client },
     artisan: { ...devisOriginal.artisan },

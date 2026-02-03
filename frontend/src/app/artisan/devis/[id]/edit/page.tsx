@@ -49,9 +49,9 @@ export default function EditDevisPage() {
           return;
         }
 
-        // Vérifier que c'est bien un brouillon
-        if (devisData.statut !== 'brouillon') {
-          alert('Seuls les devis en brouillon peuvent être modifiés');
+        // Vérifier que c'est bien un devis généré
+        if (devisData.statut !== 'genere') {
+          alert('Seuls les devis générés peuvent être modifiés');
           router.push('/artisan/devis');
           return;
         }

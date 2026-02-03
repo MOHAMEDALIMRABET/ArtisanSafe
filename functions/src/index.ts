@@ -28,6 +28,29 @@ export {
 } from './scheduledJobs/annulerDevisNonPayes';
 
 /**
+ * Suppression automatique des devis refusés après 24h
+ * Exécution: Tous les jours à 3h du matin
+ * 
+ * Workflow:
+ * 1. Client refuse devis → statut: 'refuse', typeRefus: 'artisan'|'variante'|'automatique'
+ * 2. Cette function s'exécute tous les jours à 3h
+ * 3. Supprime définitivement les devis refusés depuis > 24h (SAUF révisions)
+ * 
+ * Types de refus supprimés:
+ * - 'artisan' : Client a bloqué cet artisan définitivement
+ * - 'variante' : Client a refusé cette option
+ * - 'automatique' : Devis auto-refusé car demande déjà attribuée
+ * - 'definitif' : Refus définitif
+ * 
+ * Type de refus CONSERVÉ:
+ * - 'revision' : Client demande modification → artisan peut répondre
+ */
+export {
+  cleanupRefusedDevis,
+  cleanupRefusedDevisManual  // Version HTTP pour tests manuels
+} from './cleanupRefusedDevis';
+
+/**
  * Expiration automatique des demandes passées
  * Exécution: Tous les jours à 1h du matin
  * 

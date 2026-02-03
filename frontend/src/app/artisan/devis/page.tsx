@@ -14,7 +14,7 @@ import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
 
 type TabType = 'devis' | 'factures';
-type DevisFilter = 'tous' | 'brouillon' | 'envoye' | 'en_attente_paiement' | 'paye' | 'revision' | 'refuse';
+type DevisFilter = 'tous' | 'genere' | 'envoye' | 'en_attente_paiement' | 'paye' | 'revision' | 'refuse';
 
 // Type pour stocker les infos des demandes
 type DemandeInfo = {
@@ -61,7 +61,7 @@ export default function MesDevisPage() {
     return devis.filter(d => {
       if (!aReponseClienteRecente(d)) return false;
       if (filtre === 'tous') return true;
-      if (filtre === 'brouillon') return d.statut === 'brouillon';
+      if (filtre === 'genere') return d.statut === 'genere';
       if (filtre === 'envoye') return d.statut === 'envoye';
       if (filtre === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
       if (filtre === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
@@ -124,6 +124,30 @@ export default function MesDevisPage() {
       if (filtreDemandeId) {
         devisData = devisData.filter(d => d.demandeId === filtreDemandeId);
       }
+
+      // Filtrer les devis refusés de plus de 24h (sauf révisions)
+      const maintenant = Date.now();
+      const VINGT_QUATRE_HEURES = 24 * 60 * 60 * 1000;
+      
+      devisData = devisData.filter(devis => {
+        // Si le devis est refusé MAIS en révision, on le garde visible
+        if (devis.statut === 'refuse' && devis.typeRefus === 'revision') {
+          return true; // Ne pas masquer les révisions
+        }
+        
+        // Si le devis est refusé définitivement
+        if (devis.statut === 'refuse' && devis.typeRefus !== 'revision') {
+          const dateRefus = devis.dateRefus?.toMillis() || 0;
+          const deltaTemps = maintenant - dateRefus;
+          
+          // Si refusé depuis plus de 24h, masquer
+          if (deltaTemps > VINGT_QUATRE_HEURES) {
+            console.log(`🗑️ Devis ${devis.numeroDevis} masqué (refus définitif depuis ${Math.floor(deltaTemps / (60 * 60 * 1000))}h)`);
+            return false;
+          }
+        }
+        return true;
+      });
 
       // Trier par date de création décroissante
       devisData.sort((a, b) => {
@@ -321,7 +345,7 @@ export default function MesDevisPage() {
 
   // Exclure les devis remplacés des statistiques principales
   const devisActifs = devis.filter(d => d.statut !== 'remplace');
-  const devisBrouillon = devisActifs.filter(d => d.statut === 'brouillon');
+  const devisGeneres = devisActifs.filter(d => d.statut === 'genere');
   const devisEnvoyes = devisActifs.filter(d => d.statut === 'envoye');
   const devisEnAttentePaiement = devisActifs.filter(d => d.statut === 'en_attente_paiement');
   const devisPayes = devisActifs.filter(d => ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut));
@@ -341,7 +365,7 @@ export default function MesDevisPage() {
       if (!showRemplace && d.statut === 'remplace') return false;
       
       if (filter === 'tous') return true;
-      if (filter === 'brouillon') return d.statut === 'brouillon';
+      if (filter === 'genere') return d.statut === 'genere';
       if (filter === 'envoye') return d.statut === 'envoye';
       if (filter === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
       if (filter === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
@@ -534,6 +558,22 @@ export default function MesDevisPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Message informatif sur la suppression automatique */}
+        <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+          <div className="flex items-start gap-3">
+            <svg className="w-6 h-6 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p className="text-blue-800 font-semibold mb-1">ℹ️ Gestion automatique des devis refusés</p>
+              <p className="text-blue-700 text-sm">
+                Les devis refusés par le client (refus définitif ou demande de révision) sont automatiquement masqués après <strong>24 heures</strong> pour garder votre liste organisée. 
+                <span className="block mt-1">💡 Vous pouvez toujours les retrouver dans vos archives.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Bannière de notification si devis spécifique */}
         {highlightedDevisId && (
           <div className="mb-6 bg-gradient-to-r from-[#FF6B00] to-[#E56100] text-white p-4 rounded-lg shadow-lg flex items-center justify-between animate-pulse">
@@ -721,7 +761,7 @@ export default function MesDevisPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <p className="text-gray-600 mb-4">
-                  {filter === 'tous' ? 'Aucun devis pour le moment' : `Aucun devis ${filter === 'brouillon' ? 'brouillon' : filter === 'envoye' ? 'envoyé' : filter === 'accepte' ? 'accepté' : filter === 'revision' ? 'en révision' : 'refusé'}`}
+                  {filter === 'tous' ? 'Aucun devis pour le moment' : `Aucun devis ${filter === 'genere' ? 'généré' : filter === 'envoye' ? 'envoyé' : filter === 'accepte' ? 'accepté' : filter === 'revision' ? 'en révision' : 'refusé'}`}
                 </p>
                 {filter === 'tous' ? (
                   <button

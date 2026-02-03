@@ -109,7 +109,7 @@ export default function VoirDevisPage() {
 
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
-      brouillon: 'bg-gray-100 text-gray-800',
+      genere: 'bg-gray-100 text-gray-800',
       envoye: 'bg-blue-100 text-blue-800',
       en_attente_paiement: 'bg-yellow-100 text-yellow-800',
       paye: 'bg-green-100 text-green-800',
@@ -124,7 +124,7 @@ export default function VoirDevisPage() {
     };
 
     const labels: { [key: string]: string } = {
-      brouillon: '📝 Brouillon',
+      genere: '📝 Généré',
       envoye: '📤 Envoyé',
       en_attente_paiement: '⏳ En attente de paiement',
       paye: '💰 Payé - Contrat signé',

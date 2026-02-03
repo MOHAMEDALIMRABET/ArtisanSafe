@@ -86,20 +86,22 @@ service cloud.firestore {
     // 3. COLLECTION: demandes
     // ============================================
     // Client peut créer/modifier ses demandes
-    // Artisans matchés peuvent lire
+    // Artisans matchés peuvent lire (demandes directes)
+    // Artisans vérifiés peuvent lire les demandes publiques
     // Admin peut tout lire
     
     match /demandes/{demandeId} {
       allow read: if isAdmin() ||
                      isOwner(resource.data.clientId) ||
-                     (isAuthenticated() && request.auth.uid in resource.data.get('artisansMatches', []));
+                     (isAuthenticated() && request.auth.uid in resource.data.get('artisansMatches', [])) ||
+                     (isArtisan() && resource.data.get('type', 'directe') == 'publique' && isVerified());
       allow create: if isAuthenticated() && 
                        request.auth.uid == request.resource.data.clientId;
       allow update: if isOwner(resource.data.clientId) || isAdmin();
       allow delete: if isOwner(resource.data.clientId) || isAdmin();
       
       // Validation statut
-      allow write: if request.resource.data.statut in ['brouillon', 'publiee', 'matchee', 'en_cours', 'terminee', 'annulee'];
+      allow write: if request.resource.data.statut in ['genere', 'publiee', 'matchee', 'en_cours', 'terminee', 'annulee'];
     }
     
     // ============================================
