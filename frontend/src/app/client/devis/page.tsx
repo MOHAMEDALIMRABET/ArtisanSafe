@@ -94,19 +94,39 @@ export default function ClientDevisPage() {
 
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
-      brouillon: 'bg-gray-100 text-gray-800',
+      genere: 'bg-gray-100 text-gray-800',
       envoye: 'bg-blue-100 text-blue-800',
+      en_revision: 'bg-purple-100 text-purple-800',
       accepte: 'bg-green-100 text-green-800',
+      en_attente_paiement: 'bg-yellow-100 text-yellow-800',
+      paye: 'bg-green-600 text-white',
+      en_cours: 'bg-blue-600 text-white',
+      travaux_termines: 'bg-indigo-100 text-indigo-800',
+      termine_valide: 'bg-green-700 text-white',
+      termine_auto_valide: 'bg-green-600 text-white',
+      litige: 'bg-red-600 text-white',
       refuse: 'bg-red-100 text-red-800',
       expire: 'bg-orange-100 text-orange-800',
+      remplace: 'bg-gray-200 text-gray-600',
+      annule: 'bg-gray-300 text-gray-700',
     };
 
     const labels: { [key: string]: string } = {
-      brouillon: '📝 Brouillon',
+      genere: '📝 Brouillon',
       envoye: '⏳ En attente',
+      en_revision: '🔄 En révision',
       accepte: '✅ Accepté',
+      en_attente_paiement: '💳 Attente paiement',
+      paye: '💰 Payé',
+      en_cours: '🚧 En cours',
+      travaux_termines: '✅ Travaux terminés',
+      termine_valide: '✔️ Validé',
+      termine_auto_valide: '✔️ Auto-validé',
+      litige: '⚠️ Litige',
       refuse: '❌ Refusé',
       expire: '⏰ Expiré',
+      remplace: '🔄 Remplacé',
+      annule: '🚫 Annulé',
     };
 
     return (
@@ -136,14 +156,15 @@ export default function ClientDevisPage() {
     if (filter === 'en_attente') return d.statut === 'envoye';
     if (filter === 'acceptes') return isDevisAccepte(d.statut);
     if (filter === 'payes') return isDevisPaye(d.statut);
-    if (filter === 'refuses') return d.statut === 'refuse';
+    if (filter === 'refuses') return ['refuse', 'expire', 'annule'].includes(d.statut);
     return true;
   });
 
   const devisEnAttente = devis.filter(d => d.statut === 'envoye');
   const devisAcceptes = devis.filter(d => isDevisAccepte(d.statut));
   const devisPayes = devis.filter(d => isDevisPaye(d.statut));
-  const devisRefuses = devis.filter(d => d.statut === 'refuse');
+  const devisRefuses = devis.filter(d => ['refuse', 'expire', 'annule'].includes(d.statut));
+  const totalDevis = devis.length; // Total tous devis visibles (hors brouillons)
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
@@ -176,7 +197,7 @@ export default function ClientDevisPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              📋 Tous ({devis.length})
+              📋 Tous ({totalDevis})
             </button>
             <button
               onClick={() => setFilter('en_attente')}
@@ -216,7 +237,7 @@ export default function ClientDevisPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ❌ Refusés ({devisRefuses.length})
+              ❌ Refusés/Expirés ({devisRefuses.length})
             </button>
           </div>
         </div>
@@ -327,9 +348,27 @@ export default function ClientDevisPage() {
                       </>
                     )}
 
-                    {d.statut === 'accepte' && (
-                      <button className="flex-1 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition">
-                        💬 Contacter l'artisan
+                    {(d.statut === 'accepte' || d.statut === 'en_attente_paiement') && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/client/devis/${d.id}?action=payer`);
+                        }}
+                        className="flex-1 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition"
+                      >
+                        💳 Procéder au paiement
+                      </button>
+                    )}
+
+                    {(isDevisPaye(d.statut)) && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/client/contrats?devis=${d.id}`);
+                        }}
+                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                      >
+                        📋 Voir le contrat
                       </button>
                     )}
                   </div>
