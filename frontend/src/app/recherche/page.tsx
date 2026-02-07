@@ -24,6 +24,7 @@ interface SearchCriteria {
     flexibiliteDays?: number;
   };
   urgence: Urgence;
+  rayonMax: number;
 }
 
 interface VilleSuggestion {
@@ -51,6 +52,7 @@ export default function RecherchePage() {
       flexible: false,
     },
     urgence: 'normale',
+    rayonMax: 20,
   });
 
   useEffect(() => {
@@ -64,6 +66,7 @@ export default function RecherchePage() {
     const datesParam = searchParams.get('dates');
     const flexibleParam = searchParams.get('flexible');
     const flexibilityDaysParam = searchParams.get('flexibiliteDays');
+    const rayonMaxParam = searchParams.get('rayonMax');
     
     if (categorieParam || villeParam || codePostalParam) {
       const newCriteria: SearchCriteria = {
@@ -79,6 +82,7 @@ export default function RecherchePage() {
           flexibiliteDays: flexibilityDaysParam ? parseInt(flexibilityDaysParam) : undefined,
         },
         urgence: (urgenceParam as Urgence) || 'normale',
+        rayonMax: rayonMaxParam ? parseInt(rayonMaxParam) : 20,
       };
       
       setCriteria(newCriteria);
@@ -196,6 +200,7 @@ export default function RecherchePage() {
       flexible: criteria.datesSouhaitees.flexible.toString(),
       flexibiliteDays: criteria.datesSouhaitees.flexibiliteDays?.toString() || '0',
       urgence: criteria.urgence,
+      rayonMax: criteria.rayonMax.toString(),
     });
 
     // Ajouter coordonnées GPS si disponibles
@@ -365,6 +370,44 @@ export default function RecherchePage() {
               placeholder="123 Rue de la République"
               className="mt-4"
             />
+            
+            {/* Rayon de recherche */}
+            <div className="mt-6 bg-gradient-to-br from-white to-[#FAFBFC] border border-[#E9ECEF] rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-semibold text-[#2C3E50] flex items-center gap-2">
+                  <svg className="w-5 h-5 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Rayon de recherche
+                </label>
+                <span className="text-base font-bold text-[#FF6B00] bg-[#FFF3E0] px-3 py-1.5 rounded-lg">
+                  {criteria.rayonMax} km
+                </span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="100"
+                step="5"
+                value={criteria.rayonMax}
+                onChange={(e) =>
+                  setCriteria({
+                    ...criteria,
+                    rayonMax: parseInt(e.target.value),
+                  })
+                }
+                className="w-full h-2 bg-[#E9ECEF] rounded-lg appearance-none cursor-pointer accent-[#FF6B00] slider"
+                style={{
+                  background: `linear-gradient(to right, #FF6B00 0%, #FF6B00 ${((criteria.rayonMax - 5) / 95) * 100}%, #E9ECEF ${((criteria.rayonMax - 5) / 95) * 100}%, #E9ECEF 100%)`
+                }}
+              />
+              <div className="flex justify-between text-xs text-[#6C757D] mt-2">
+                <span>5 km</span>
+                <span className="text-[#95A5A6]">Distance maximale autour de votre adresse</span>
+                <span>100 km</span>
+              </div>
+            </div>
           </section>
 
           {/* Étape 3: Dates - FEATURE CLÉS */}

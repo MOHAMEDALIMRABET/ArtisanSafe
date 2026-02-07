@@ -339,7 +339,7 @@ export default function MesDemandesPage() {
             </div>
             
             <Button
-              onClick={() => router.push('/demande/choisir-type')}
+              onClick={() => router.push('/recherche')}
               className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
             >
               + Nouvelle demande
