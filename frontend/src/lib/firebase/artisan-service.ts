@@ -403,3 +403,60 @@ export async function deleteArtisan(userId: string): Promise<void> {
   const artisanRef = doc(db, COLLECTION_NAME, userId);
   await deleteDoc(artisanRef);
 }
+
+/**
+ * Récupérer les artisans qualifiés par métier et localisation
+ * Utilisé pour notifier les artisans d'une nouvelle demande publique
+ */
+export async function getArtisansByMetierAndLocation(
+  metier: string,
+  ville: string,
+  rayonKm: number = 50
+): Promise<Artisan[]> {
+  try {
+    const artisansRef = collection(db, COLLECTION_NAME);
+    
+    // Requête simple (éviter index composite)
+    const q = query(
+      artisansRef,
+      where('verificationStatus', '==', 'approved')
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      return [];
+    }
+    
+    const artisans = snapshot.docs.map(doc => ({
+      userId: doc.id,
+      ...doc.data()
+    } as Artisan));
+    
+    // Filtrage côté client
+    const artisansFiltres = artisans.filter(artisan => {
+      // Vérifier métier
+      if (!artisan.metiers?.includes(metier)) {
+        return false;
+      }
+      
+      // Vérifier si actif (email vérifié)
+      const { getUserById } = require('./user-service');
+      // Note: Cette vérification sera async, donc on la fait après
+      
+      // Vérifier localisation (ville ou rayon si coordonnées disponibles)
+      if (artisan.location?.city?.toLowerCase() === ville?.toLowerCase()) {
+        return true;
+      }
+      
+      // TODO: Ajouter calcul distance si coordonnées disponibles
+      return false;
+    });
+    
+    return artisansFiltres;
+    
+  } catch (error) {
+    console.error('❌ Erreur getArtisansByMetierAndLocation:', error);
+    return [];
+  }
+}

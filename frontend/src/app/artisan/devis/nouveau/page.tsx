@@ -1270,6 +1270,44 @@ export default function NouveauDevisPage() {
             </p>
           </div>
 
+          {/* Avertissement limite de devis (demandes publiques) */}
+          {demande && demande.type === 'publique' && demande.devisRecus >= 8 && (
+            <div className={`mb-6 border-l-4 p-4 rounded-lg ${
+              demande.devisRecus >= 10 
+                ? 'bg-red-50 border-red-500' 
+                : 'bg-yellow-50 border-yellow-500'
+            }`}>
+              <div className="flex items-start">
+                <span className="text-2xl mr-3">
+                  {demande.devisRecus >= 10 ? '🚫' : '⚠️'}
+                </span>
+                <div>
+                  <h3 className={`font-semibold mb-1 ${
+                    demande.devisRecus >= 10 ? 'text-red-800' : 'text-yellow-800'
+                  }`}>
+                    {demande.devisRecus >= 10 
+                      ? 'Limite de devis atteinte' 
+                      : 'Demande très sollicitée'
+                    }
+                  </h3>
+                  <p className={`text-sm ${
+                    demande.devisRecus >= 10 ? 'text-red-700' : 'text-yellow-700'
+                  }`}>
+                    {demande.devisRecus >= 10 
+                      ? `Cette demande a déjà reçu ${demande.devisRecus} devis (limite maximale). Le client ne pourra pas traiter plus de devis.`
+                      : `Cette demande a déjà reçu ${demande.devisRecus} devis. Le client risque d'être submergé et pourrait ne pas consulter tous les devis.`
+                    }
+                  </p>
+                  {demande.devisRecus < 10 && (
+                    <p className="text-yellow-600 text-xs mt-2">
+                      💡 <strong>Conseil</strong> : Démarquez-vous avec une offre claire et compétitive.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Alerte de validation anti-contournement */}
           {erreurValidation && (
             <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
@@ -1804,19 +1842,31 @@ export default function NouveauDevisPage() {
           <div className="flex gap-4">
             <button
               onClick={sauvegarderBrouillon}
-              disabled={savingBrouillon || savingEnvoi}
-              className="flex-1 bg-gray-200 text-[#2C3E50] px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50"
+              disabled={savingBrouillon || savingEnvoi || (demande?.type === 'publique' && (demande?.devisRecus || 0) >= 10)}
+              className="flex-1 bg-gray-200 text-[#2C3E50] px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {savingBrouillon ? '⏳ Génération...' : '📄 Générer le devis'}
             </button>
             <button
               onClick={envoyerDevis}
-              disabled={savingBrouillon || savingEnvoi}
-              className="flex-1 bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50"
+              disabled={savingBrouillon || savingEnvoi || (demande?.type === 'publique' && (demande?.devisRecus || 0) >= 10)}
+              className="flex-1 bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {savingEnvoi ? '⏳ Envoi...' : '📨 Envoyer le devis'}
             </button>
           </div>
+          
+          {/* Message blocage si limite atteinte */}
+          {demande?.type === 'publique' && (demande?.devisRecus || 0) >= 10 && (
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+              <p className="text-red-700 font-semibold">
+                🚫 Cette demande ne peut plus recevoir de devis (limite maximale atteinte)
+              </p>
+              <p className="text-red-600 text-sm mt-1">
+                {demande.devisRecus} devis ont déjà été envoyés. Le client ne peut pas en traiter davantage.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

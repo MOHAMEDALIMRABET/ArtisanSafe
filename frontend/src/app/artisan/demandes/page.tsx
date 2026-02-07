@@ -776,7 +776,16 @@ export default function ArtisanDemandesPage() {
                       return (
                         <>
                           <button
-                            onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`)}
+                            onClick={async () => {
+                              // Tracker consultation pour demandes publiques
+                              if (demande.type === 'publique' && authUser) {
+                                const { markDemandeAsViewed } = await import('@/lib/firebase/demande-service');
+                                markDemandeAsViewed(demande.id, authUser.uid).catch(error => {
+                                  console.error('⚠️ Erreur tracking consultation:', error);
+                                });
+                              }
+                              router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`);
+                            }}
                             className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-600 transition"
                           >
                             🔄 Créer un devis révisé
@@ -805,7 +814,16 @@ export default function ArtisanDemandesPage() {
                         {/* Masquer le bouton si demande déjà attribuée */}
                         {demande.statut !== 'attribuee' && (
                           <button
-                            onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`)}
+                            onClick={async () => {
+                              // Tracker consultation pour demandes publiques
+                              if (demande.type === 'publique' && authUser) {
+                                const { markDemandeAsViewed } = await import('@/lib/firebase/demande-service');
+                                markDemandeAsViewed(demande.id, authUser.uid).catch(error => {
+                                  console.error('⚠️ Erreur tracking consultation:', error);
+                                });
+                              }
+                              router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`);
+                            }}
                             className="flex-1 bg-[#FF6B00] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
                           >
                             📝 Envoyer un devis

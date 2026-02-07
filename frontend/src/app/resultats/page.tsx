@@ -593,7 +593,7 @@ function ResultatsContent() {
 
                             // Importer Timestamp et createDemande
                             const { Timestamp } = await import('firebase/firestore');
-                            const { createDemande } = await import('@/lib/firebase/demande-service');
+                            const { createDemande, notifyQualifiedArtisans } = await import('@/lib/firebase/demande-service');
 
                             // Convertir les dates string en Timestamp Firestore
                             const datesTimestamps = dates.map(dateStr => {
@@ -626,6 +626,12 @@ function ResultatsContent() {
                               },
                               artisansMatches: [], // Demande publique, pas de matches
                               devisRecus: 0,
+                            });
+
+                            // Notifier les artisans qualifiés (en arrière-plan)
+                            notifyQualifiedArtisans(demandeId).catch(error => {
+                              console.error('⚠️ Erreur notification artisans:', error);
+                              // Ne pas bloquer la redirection si notification échoue
                             });
 
                             // Rediriger vers la page des demandes du client avec message de succès

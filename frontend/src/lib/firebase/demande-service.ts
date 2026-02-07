@@ -358,3 +358,98 @@ export async function getRecentDemandes(limitCount: number = 10): Promise<Demand
     ...doc.data(),
   } as Demande));
 }
+
+/**
+ * Marquer qu'un artisan a consulté une demande publique
+ * Ajoute l'artisan à artisansInteressesIds
+ */
+export async function markDemandeAsViewed(demandeId: string, artisanId: string): Promise<void> {
+  try {
+    const demandeRef = doc(db, COLLECTION_NAME, demandeId);
+    const demandeSnap = await getDoc(demandeRef);
+    
+    if (!demandeSnap.exists()) {
+      console.warn(`⚠️ Demande ${demandeId} n'existe pas`);
+      return;
+    }
+    
+    const demande = demandeSnap.data() as Demande;
+    const artisansInteressesIds = demande.artisansInteressesIds || [];
+    
+    // Ajouter seulement si pas déjà présent
+    if (!artisansInteressesIds.includes(artisanId)) {
+      await updateDoc(demandeRef, {
+        artisansInteressesIds: [...artisansInteressesIds, artisanId],
+        dateModification: Timestamp.now()
+      });
+      console.log(`✅ Artisan ${artisanId} marqué comme intéressé par demande ${demandeId}`);
+    }
+  } catch (error) {
+    console.error('❌ Erreur markDemandeAsViewed:', error);
+  }
+}
+
+/**
+ * Notifier les artisans qualifiés qu'une nouvelle demande publique est disponible
+ * Retourne les IDs des artisans notifiés
+ */
+export async function notifyQualifiedArtisans(demandeId: string): Promise<string[]> {
+  try {
+    const demandeRef = doc(db, COLLECTION_NAME, demandeId);
+    const demandeSnap = await getDoc(demandeRef);
+    
+    if (!demandeSnap.exists()) {
+      console.warn(`⚠️ Demande ${demandeId} n'existe pas`);
+      return [];
+    }
+    
+    const demande = demandeSnap.data() as Demande;
+    
+    if (demande.type !== 'publique') {
+      console.warn(`⚠️ Demande ${demandeId} n'est pas publique`);
+      return [];
+    }
+    
+    // Récupérer tous les artisans qualifiés
+    const { getArtisansByMetierAndLocation } = await import('./artisan-service');
+    const artisansQualifies = await getArtisansByMetierAndLocation(
+      demande.critereRecherche?.metier || demande.categorie,
+      demande.localisation?.ville || '',
+      demande.critereRecherche?.rayon || 50
+    );
+    
+    const artisansIds = artisansQualifies.map(a => a.userId);
+    
+    if (artisansIds.length === 0) {
+      console.log('ℹ️ Aucun artisan qualifié trouvé');
+      return [];
+    }
+    
+    // Créer notifications pour chaque artisan
+    const { createNotification } = await import('./notification-service');
+    
+    for (const artisanId of artisansIds) {
+      await createNotification({
+        recipientId: artisanId,
+        type: 'nouvelle_demande_publique',
+        title: '📢 Nouvelle demande publique',
+        message: `Nouvelle demande de ${demande.categorie} à ${demande.localisation?.ville}`,
+        relatedId: demandeId,
+        isRead: false,
+      });
+    }
+    
+    // Enregistrer les artisans notifiés
+    await updateDoc(demandeRef, {
+      artisansNotifiesIds: artisansIds,
+      dateModification: Timestamp.now()
+    });
+    
+    console.log(`✅ ${artisansIds.length} artisans notifiés pour demande ${demandeId}`);
+    return artisansIds;
+    
+  } catch (error) {
+    console.error('❌ Erreur notifyQualifiedArtisans:', error);
+    return [];
+  }
+}
