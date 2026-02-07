@@ -482,15 +482,143 @@ function ResultatsContent() {
           return null;
         })()}
         {results.length === 0 ? (
-          <Card className="p-12 text-center">
-            <div className="text-6xl mb-4">🔍</div>
-            <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
-              Aucun artisan disponible
-            </h2>
-            <p className="text-[#6C757D] mb-6">
-              Essayez d'élargir vos critères de recherche ou d'activer la flexibilité des dates
-            </p>
-          </Card>
+          <div className="space-y-6">
+            {/* Carte "Aucun artisan disponible" */}
+            <Card className="p-12 text-center">
+              <div className="text-6xl mb-4">🔍</div>
+              <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
+                Aucun artisan disponible
+              </h2>
+              <p className="text-[#6C757D] mb-6">
+                Aucun artisan n'est disponible pour vos dates souhaitées.
+              </p>
+            </Card>
+
+            {/* Carte "Publier quand même" */}
+            <Card className="p-8 bg-gradient-to-br from-[#FFF3E0] to-[#FFE0B2] border-2 border-[#FF6B00]">
+              <div className="flex items-start gap-6">
+                <div className="flex-shrink-0 bg-[#FF6B00] rounded-full p-4">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-[#2C3E50] mb-3">
+                    💡 Publiez votre demande en mode public
+                  </h3>
+                  <p className="text-[#6C757D] mb-4 text-base leading-relaxed">
+                    Aucun artisan n'est libre à vos dates ? <strong className="text-[#FF6B00]">Publiez quand même votre demande</strong> !
+                    Les artisans pourront la consulter même s'ils sont occupés : ils pourront ajuster leur planning, vous proposer une date alternative ou s'organiser pour répondre à votre besoin.
+                  </p>
+                  <div className="bg-white rounded-lg p-4 mb-5 border border-[#FF6B00]">
+                    <div className="flex items-start gap-3 mb-2">
+                      <svg className="w-5 h-5 text-[#28A745] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <p className="text-[#2C3E50] text-sm">
+                        <strong>Visible par tous les artisans qualifiés</strong> de votre région
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3 mb-2">
+                      <svg className="w-5 h-5 text-[#28A745] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <p className="text-[#2C3E50] text-sm">
+                        <strong>Les artisans pourront vous proposer d'autres dates</strong> ou ajuster leur planning
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <svg className="w-5 h-5 text-[#28A745] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <p className="text-[#2C3E50] text-sm">
+                        <strong>Recevez plusieurs devis</strong> pour comparer les offres
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    {user ? (
+                      <Button
+                        onClick={async () => {
+                          try {
+                            // Récupérer les critères depuis l'URL
+                            const categorie = searchParams.get('categorie');
+                            const ville = searchParams.get('ville');
+                            const codePostal = searchParams.get('codePostal') ?? '';
+                            const datesStr = searchParams.get('dates');
+                            const flexible = searchParams.get('flexible') === 'true';
+                            const flexibiliteDays = parseInt(searchParams.get('flexibiliteDays') || '0');
+                            const urgence = searchParams.get('urgence') as 'faible' | 'normale' | 'urgent';
+                            const rayonMaxParam = searchParams.get('rayonMax');
+                            const rayonMax = rayonMaxParam ? parseInt(rayonMaxParam) : 10;
+
+                            if (!categorie || !ville || !datesStr) {
+                              alert('Critères de recherche manquants');
+                              return;
+                            }
+
+                            const dates = JSON.parse(datesStr) as string[];
+
+                            // Importer createDemande
+                            const { createDemande } = await import('@/lib/firebase/demande-service');
+
+                            // Créer la demande publique
+                            const demandeId = await createDemande({
+                              clientId: user.uid,
+                              type: 'publique',
+                              statut: 'publiee',
+                              categorie: categorie as any,
+                              description: `Recherche ${categorie} à ${ville}`,
+                              localisation: {
+                                ville,
+                                codePostal,
+                                adresse: ville,
+                              },
+                              datesSouhaitees: {
+                                dates,
+                                flexible,
+                                flexibiliteDays: flexible ? flexibiliteDays : undefined,
+                              },
+                              urgence: urgence || 'normale',
+                              critereRecherche: {
+                                metier: categorie,
+                                ville,
+                                rayon: rayonMax,
+                              },
+                              artisansMatches: [], // Demande publique, pas de matches
+                              devisRecus: 0,
+                            });
+
+                            // Rediriger vers la page des demandes du client avec message de succès
+                            router.push(`/client/demandes?success=demande_publiee&demandeId=${demandeId}`);
+                          } catch (error) {
+                            console.error('Erreur création demande publique:', error);
+                            alert('Impossible de publier la demande. Veuillez réessayer.');
+                          }
+                        }}
+                        className="bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                      >
+                        📢 Publier ma demande
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => router.push('/connexion')}
+                        className="bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                      >
+                        🔑 Se connecter pour publier
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => router.push('/recherche')}
+                      className="border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white font-semibold px-8 py-4 text-lg transition-all duration-200"
+                    >
+                      🔍 Modifier ma recherche
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
         ) : (
           <div className="space-y-4">
             {/* Bandeau pour visiteurs non connectés - MASQUÉ */}

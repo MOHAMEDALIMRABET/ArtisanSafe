@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getDemandesByClient, deleteDemande } from '@/lib/firebase/demande-service';
 import { getArtisansByIds } from '@/lib/firebase/artisan-service';
@@ -13,6 +13,7 @@ import type { Demande, Artisan, Devis } from '@/types/firestore';
 
 export default function MesDemandesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [artisansMap, setArtisansMap] = useState<Map<string, Artisan>>(new Map());
@@ -24,6 +25,7 @@ export default function MesDemandesPage() {
   const [filtreDateTravaux, setFiltreDateTravaux] = useState<string>('');
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
   const [filtreSection, setFiltreSection] = useState<'toutes' | 'contrats' | 'devis_recus' | 'en_attente' | 'publiees' | 'refusees' | 'terminees'>('toutes');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // Attendre que l'auth soit chargée
@@ -39,8 +41,24 @@ export default function MesDemandesPage() {
     }
 
     console.log('✅ Utilisateur connecté:', user.uid);
+    
+    // Afficher le message de succès si présent dans l'URL
+    const success = searchParams.get('success');
+    const demandeId = searchParams.get('demandeId');
+    if (success === 'demande_publiee' && demandeId) {
+      setSuccessMessage('✅ Votre demande a été publiée ! Les artisans qualifiés de votre région peuvent maintenant la consulter et vous envoyer des devis.');
+      setFiltreSection('publiees'); // Basculer automatiquement sur l'onglet "Demandes publiées"
+      
+      // Masquer le message après 8 secondes
+      setTimeout(() => {
+        setSuccessMessage(null);
+        // Nettoyer l'URL
+        router.replace('/client/demandes');
+      }, 8000);
+    }
+    
     loadDemandes();
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, searchParams]);
 
   async function loadDemandes() {
     if (!user) return;
@@ -329,6 +347,32 @@ export default function MesDemandesPage() {
           </div>
         </div>
       </div>
+
+      {/* Message de succès */}
+      {successMessage && (
+        <div className="container mx-auto px-4 pt-6 max-w-6xl">
+          <div className="bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-green-500 p-5 rounded-lg shadow-lg flex items-start gap-4 animate-fade-in">
+            <div className="flex-shrink-0 bg-green-500 rounded-full p-2">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-green-800 font-semibold text-base leading-relaxed">
+                {successMessage}
+              </p>
+            </div>
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="flex-shrink-0 text-green-600 hover:text-green-800 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Contenu */}
       <main className="container mx-auto px-4 py-8 max-w-6xl">
