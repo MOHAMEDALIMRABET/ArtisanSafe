@@ -536,7 +536,7 @@ function ResultatsContent() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold text-[#2C3E50] mb-3">
-                    💡 Publiez votre demande en mode public
+                    💡 Publiez votre demande
                   </h3>
                   <p className="text-[#6C757D] mb-4 text-base leading-relaxed">
                     Aucun artisan n'est libre à vos dates ? <strong className="text-[#FF6B00]">Publiez quand même votre demande</strong> !
@@ -591,8 +591,15 @@ function ResultatsContent() {
 
                             const dates = JSON.parse(datesStr) as string[];
 
-                            // Importer createDemande
+                            // Importer Timestamp et createDemande
+                            const { Timestamp } = await import('firebase/firestore');
                             const { createDemande } = await import('@/lib/firebase/demande-service');
+
+                            // Convertir les dates string en Timestamp Firestore
+                            const datesTimestamps = dates.map(dateStr => {
+                              const date = new Date(dateStr);
+                              return Timestamp.fromDate(date);
+                            });
 
                             // Créer la demande publique
                             const demandeId = await createDemande({
@@ -607,7 +614,7 @@ function ResultatsContent() {
                                 adresse: ville,
                               },
                               datesSouhaitees: {
-                                dates,
+                                dates: datesTimestamps, // Utiliser les Timestamps au lieu des strings
                                 flexible,
                                 flexibiliteDays: flexible ? flexibiliteDays : undefined,
                               },

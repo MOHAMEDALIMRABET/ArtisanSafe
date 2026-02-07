@@ -1603,7 +1603,7 @@ export default function NouveauDevisPage() {
                 </div>
 
                 {ajouterMatierePremiere && (
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs text-[#6C757D] mb-1">Quantité</label>
                       <input
@@ -1626,17 +1626,6 @@ export default function NouveauDevisPage() {
                         min="0"
                         step="0.01"
                       />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs text-[#6C757D] mb-1">Unité</label>
-                      <select
-                        value="unité"
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100"
-                      >
-                        <option value="unité">unité</option>
-                      </select>
                     </div>
 
                     <div>
@@ -1808,12 +1797,6 @@ export default function NouveauDevisPage() {
                   </div>
                 </div>
               ))}
-
-              {lignes.length === 0 && mainOeuvrePrixHT === 0 && (
-                <div className="text-center py-8 text-[#6C757D]">
-                  Aucune prestation ajoutée. Cliquez sur "Ajouter une ligne" pour commencer.
-                </div>
-              )}
             </div>
           </div>
 
@@ -2004,14 +1987,6 @@ export default function NouveauDevisPage() {
                     </td>
                   </tr>
                 ))}
-
-                {lignes.length === 0 && mainOeuvrePrixHT === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-[#6C757D] italic">
-                      Aucune prestation ajoutée
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
