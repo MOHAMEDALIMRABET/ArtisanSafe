@@ -114,8 +114,26 @@ export {
  */
 export { onArtisanVerified } from './triggers/artisanTriggers';
 
-// Exemple: Envoyer email quand devis payé
-// export { onDevisPaye } from './triggers/devisTriggers';
+/**
+ * Gestion automatique compteur devis + quota limite
+ * 
+ * TRIGGERS:
+ * - onDevisCreated: Incrémente devisRecus, ferme demande à 10 devis
+ * - onDevisDeleted: Décrémente devisRecus, rouvre demande si quota libéré
+ * 
+ * HTTP FUNCTION:
+ * - syncDevisCounter: Resynchronise compteur manuellement (admin)
+ * 
+ * Phase 2: Système limite 10 devis par demande publique
+ * - Phase 1 (UI): Warnings 8 devis, blocage 10 devis ✅
+ * - Phase 2 (Cloud Function): Incrémentation atomique + fermeture auto ✅
+ * - Phase 3 (Firestore Rules): Validation sécurité ⏳
+ */
+export { 
+  onDevisCreated,      // Incrément + fermeture quota
+  onDevisDeleted,      // Décrément si suppression
+  syncDevisCounter     // Resync manuel (HTTP)
+} from './triggers/devisTriggers';
 
 
 // ========================================

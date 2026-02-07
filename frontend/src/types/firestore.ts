@@ -38,8 +38,9 @@ export type DemandeStatut =
   | 'publiee' 
   | 'matchee' 
   | 'en_cours' 
-  | 'attribuee'    // Devis accepté et payé, demande fermée
-  | 'expiree'      // Date + flexibilité dépassée, demande archivée
+  | 'attribuee'      // Devis accepté et payé, demande fermée
+  | 'expiree'        // Date + flexibilité dépassée, demande archivée
+  | 'quota_atteint'  // 10 devis reçus, demande automatiquement fermée (Phase 2)
   | 'terminee' 
   | 'annulee';
 

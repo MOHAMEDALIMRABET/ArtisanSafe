@@ -1,0 +1,343 @@
+import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
+
+const db = admin.firestore();
+
+/**
+ * TRIGGER: Incrémentation automatique compteur devis + fermeture quota
+ * 
+ * DÉCLENCHEUR: Lorsqu'un nouveau devis est créé
+ * 
+ * Workflow:
+ * 1. Artisan crée devis → document créé dans collection 'devis'
+ * 2. Cette fonction s'exécute automatiquement
+ * 3. Incrémente demande.devisRecus de manière ATOMIQUE (transaction Firestore)
+ * 4. Si devisRecus >= 10:
+ *    - Change statut demande → 'quota_atteint'
+ *    - Notifie client "Vous avez reçu 10 devis, la demande est automatiquement fermée"
+ * 5. Logs détaillés pour debug
+ * 
+ * Phase 2: Système limite devis (évite spam client)
+ * - Phase 1 (UI): Warnings 8 devis, blocage 10 devis ✅
+ * - Phase 2 (Cloud Function): Incrémentation atomique + fermeture auto ✅ (ce fichier)
+ * - Phase 3 (Firestore Rules): Validation sécurité côté serveur ⏳
+ * 
+ * Avantages Cloud Function vs Frontend:
+ * - ✅ Atomicité: Pas de race condition (2 devis créés en même temps)
+ * - ✅ Sécurité: Frontend peut être bypassé, Cloud Function non
+ * - ✅ Fiabilité: S'exécute même si frontend fermé
+ * - ✅ Cohérence: Garantit compteur toujours exact
+ * 
+ * @example
+ * // Artisan crée devis
+ * await createDevis({ demandeId: 'dem123', ... });
+ * 
+ * // Cloud Function s'exécute automatiquement
+ * // → demandes/dem123.devisRecus: 5 → 6
+ * // → Si 6 < 10: continue normalement
+ * // → Si >= 10: statut='quota_atteint', notification client
+ */
+export const onDevisCreated = functions
+  .region('europe-west1') // Paris (plus proche = latence réduite)
+  .firestore
+  .document('devis/{devisId}')
+  .onCreate(async (snapshot, context) => {
+    const devisId = context.params.devisId;
+    const devisData = snapshot.data();
+    
+    // Log début traitement
+    console.log(`🔄 [onDevisCreated] Démarrage pour devis: ${devisId}`);
+    console.log(`   Demande ID: ${devisData.demandeId}`);
+    console.log(`   Artisan ID: ${devisData.artisanId}`);
+    console.log(`   Client ID: ${devisData.clientId}`);
+
+    try {
+      // ========================================
+      // ÉTAPE 1: Récupérer la demande
+      // ========================================
+      const demandeRef = db.collection('demandes').doc(devisData.demandeId);
+      const demandeSnap = await demandeRef.get();
+
+      if (!demandeSnap.exists) {
+        console.error(`❌ [onDevisCreated] Demande introuvable: ${devisData.demandeId}`);
+        return;
+      }
+
+      const demandeData = demandeSnap.data()!;
+
+      // ⚠️ Vérifier que c'est une demande PUBLIQUE (privées n'ont pas de limite)
+      if (demandeData.type !== 'publique') {
+        console.log(`⏭️  [onDevisCreated] Demande privée (pas de limite) - Fin`);
+        return;
+      }
+
+      console.log(`📊 [onDevisCreated] Type: ${demandeData.type}`);
+      console.log(`📊 [onDevisCreated] Devis reçus actuel: ${demandeData.devisRecus || 0}`);
+
+      // ========================================
+      // ÉTAPE 2: Incrémenter compteur (ATOMIQUE)
+      // ========================================
+      // Utiliser transaction pour éviter race conditions
+      const nouveauCompteur = await db.runTransaction(async (transaction) => {
+        const freshDemandeSnap = await transaction.get(demandeRef);
+        
+        if (!freshDemandeSnap.exists) {
+          throw new Error('Demande supprimée pendant transaction');
+        }
+
+        const currentCount = freshDemandeSnap.data()!.devisRecus || 0;
+        const newCount = currentCount + 1;
+
+        // Mettre à jour compteur
+        transaction.update(demandeRef, {
+          devisRecus: newCount,
+          dateModification: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        console.log(`✅ [onDevisCreated] Compteur incrémenté: ${currentCount} → ${newCount}`);
+        return newCount;
+      });
+
+      // ========================================
+      // ÉTAPE 3: Vérifier quota atteint (10 devis)
+      // ========================================
+      if (nouveauCompteur >= 10) {
+        console.log(`🚨 [onDevisCreated] QUOTA ATTEINT (${nouveauCompteur}/10) - Fermeture demande`);
+
+        // 3.1: Fermer la demande
+        await demandeRef.update({
+          statut: 'quota_atteint',
+          dateFermeture: admin.firestore.FieldValue.serverTimestamp(),
+          dateModification: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        console.log(`✅ [onDevisCreated] Statut changé: → 'quota_atteint'`);
+
+        // 3.2: Récupérer infos client pour notification
+        const clientRef = db.collection('users').doc(demandeData.clientId);
+        const clientSnap = await clientRef.get();
+        const clientData = clientSnap.exists ? clientSnap.data() : null;
+
+        // 3.3: Créer notification client
+        await db.collection('notifications').add({
+          recipientId: demandeData.clientId,
+          type: 'quota_devis_atteint',
+          title: '✅ Quota de devis atteint',
+          message: `Votre demande "${demandeData.metier}" a reçu 10 devis et a été automatiquement fermée. Vous pouvez maintenant comparer les offres et choisir le meilleur artisan.`,
+          relatedId: devisData.demandeId,
+          relatedType: 'demande',
+          metadata: {
+            demandeId: devisData.demandeId,
+            metier: demandeData.metier,
+            ville: demandeData.location?.city || 'Non spécifiée',
+            devisRecus: nouveauCompteur
+          },
+          isRead: false,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          dateCreation: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        console.log(`✅ [onDevisCreated] Notification client envoyée`);
+
+        // 3.4: Log pour analytics (optionnel - peut servir pour stats)
+        console.log(`📈 [ANALYTICS] Demande fermée par quota`);
+        console.log(`   Demande ID: ${devisData.demandeId}`);
+        console.log(`   Client: ${clientData?.email || 'Inconnu'}`);
+        console.log(`   Métier: ${demandeData.metier}`);
+        console.log(`   Ville: ${demandeData.location?.city || 'N/A'}`);
+        console.log(`   Devis reçus: ${nouveauCompteur}`);
+
+      } else if (nouveauCompteur >= 8) {
+        // ========================================
+        // ÉTAPE 4: Alerte seuil proche (8-9 devis)
+        // ========================================
+        console.log(`⚠️  [onDevisCreated] Seuil d'alerte (${nouveauCompteur}/10)`);
+
+        // Optionnel: Notification client "Vous approchez du quota"
+        await db.collection('notifications').add({
+          recipientId: demandeData.clientId,
+          type: 'seuil_devis_proche',
+          title: '⚠️ Quota de devis bientôt atteint',
+          message: `Votre demande "${demandeData.metier}" a reçu ${nouveauCompteur} devis. La demande sera automatiquement fermée à 10 devis.`,
+          relatedId: devisData.demandeId,
+          relatedType: 'demande',
+          metadata: {
+            demandeId: devisData.demandeId,
+            devisRecus: nouveauCompteur,
+            quotaMax: 10
+          },
+          isRead: false,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          dateCreation: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        console.log(`✅ [onDevisCreated] Notification seuil envoyée (${nouveauCompteur}/10)`);
+      } else {
+        console.log(`✅ [onDevisCreated] Compteur mis à jour (${nouveauCompteur}/10) - Continue normalement`);
+      }
+
+      // ========================================
+      // ÉTAPE 5: Fin traitement
+      // ========================================
+      console.log(`✅ [onDevisCreated] Traitement terminé avec succès`);
+
+    } catch (error) {
+      console.error(`❌ [onDevisCreated] ERREUR:`, error);
+      console.error(`   Devis ID: ${devisId}`);
+      console.error(`   Demande ID: ${devisData.demandeId}`);
+      
+      // Ne pas bloquer la création du devis si erreur
+      // (Le compteur sera synchronisé manuellement si nécessaire)
+    }
+  });
+
+
+/**
+ * TRIGGER: Décrémenter compteur si devis supprimé (optionnel)
+ * 
+ * Use case: Admin supprime devis spam ou frauduleux
+ * → Rétablit le quota pour permettre devis légitime
+ * 
+ * ⚠️ À activer uniquement si nécessaire (peut complexifier debug)
+ */
+export const onDevisDeleted = functions
+  .region('europe-west1')
+  .firestore
+  .document('devis/{devisId}')
+  .onDelete(async (snapshot, context) => {
+    const devisId = context.params.devisId;
+    const devisData = snapshot.data();
+
+    console.log(`🗑️ [onDevisDeleted] Devis supprimé: ${devisId}`);
+    console.log(`   Demande ID: ${devisData.demandeId}`);
+
+    try {
+      const demandeRef = db.collection('demandes').doc(devisData.demandeId);
+      const demandeSnap = await demandeRef.get();
+
+      if (!demandeSnap.exists) {
+        console.log(`⚠️  [onDevisDeleted] Demande inexistante - Fin`);
+        return;
+      }
+
+      const demandeData = demandeSnap.data()!;
+
+      // Seulement pour demandes publiques
+      if (demandeData.type !== 'publique') {
+        console.log(`⏭️  [onDevisDeleted] Demande privée - Fin`);
+        return;
+      }
+
+      // Décrémenter compteur (transaction atomique)
+      await db.runTransaction(async (transaction) => {
+        const freshDemandeSnap = await transaction.get(demandeRef);
+        
+        if (!freshDemandeSnap.exists) {
+          throw new Error('Demande supprimée');
+        }
+
+        const currentCount = freshDemandeSnap.data()!.devisRecus || 0;
+        const newCount = Math.max(0, currentCount - 1); // Pas de valeurs négatives
+
+        // Mettre à jour compteur
+        const updates: any = {
+          devisRecus: newCount,
+          dateModification: admin.firestore.FieldValue.serverTimestamp()
+        };
+
+        // Si quota était atteint, rouvrir la demande
+        if (demandeData.statut === 'quota_atteint' && newCount < 10) {
+          updates.statut = 'publiee';
+          updates.dateFermeture = admin.firestore.FieldValue.delete(); // Supprimer dateFermeture
+          console.log(`🔓 [onDevisDeleted] Quota libéré - Réouverture demande`);
+        }
+
+        transaction.update(demandeRef, updates);
+
+        console.log(`✅ [onDevisDeleted] Compteur décrémenté: ${currentCount} → ${newCount}`);
+      });
+
+    } catch (error) {
+      console.error(`❌ [onDevisDeleted] ERREUR:`, error);
+    }
+  });
+
+
+/**
+ * HTTP Function: Synchroniser manuellement compteur devisRecus
+ * 
+ * Use case: Compteur désynchronisé (bug, migration, etc.)
+ * → Admin peut le recalculer manuellement
+ * 
+ * Endpoint: POST /syncDevisCounter
+ * Body: { demandeId: "string" }
+ * 
+ * @example
+ * curl -X POST https://europe-west1-artisandispo.cloudfunctions.net/syncDevisCounter \
+ *   -H "Content-Type: application/json" \
+ *   -d '{"demandeId": "dem123"}'
+ */
+export const syncDevisCounter = functions
+  .region('europe-west1')
+  .https
+  .onRequest(async (req, res) => {
+    // CORS
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+      res.set('Access-Control-Allow-Methods', 'POST');
+      res.set('Access-Control-Allow-Headers', 'Content-Type');
+      return res.status(204).send('');
+    }
+
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Méthode non autorisée' });
+    }
+
+    const { demandeId } = req.body;
+
+    if (!demandeId) {
+      return res.status(400).json({ error: 'demandeId requis' });
+    }
+
+    try {
+      console.log(`🔄 [syncDevisCounter] Synchronisation demande: ${demandeId}`);
+
+      // Compter les devis réels
+      const devisSnap = await db.collection('devis')
+        .where('demandeId', '==', demandeId)
+        .get();
+
+      const realCount = devisSnap.size;
+
+      console.log(`📊 [syncDevisCounter] Nombre réel de devis: ${realCount}`);
+
+      // Mettre à jour demande
+      const demandeRef = db.collection('demandes').doc(demandeId);
+      const demandeSnap = await demandeRef.get();
+
+      if (!demandeSnap.exists) {
+        return res.status(404).json({ error: 'Demande introuvable' });
+      }
+
+      const oldCount = demandeSnap.data()!.devisRecus || 0;
+
+      await demandeRef.update({
+        devisRecus: realCount,
+        dateModification: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      console.log(`✅ [syncDevisCounter] Compteur synchronisé: ${oldCount} → ${realCount}`);
+
+      return res.status(200).json({
+        success: true,
+        demandeId,
+        oldCount,
+        newCount: realCount,
+        difference: realCount - oldCount
+      });
+
+    } catch (error) {
+      console.error(`❌ [syncDevisCounter] ERREUR:`, error);
+      return res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });

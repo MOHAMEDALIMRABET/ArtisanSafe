@@ -588,6 +588,14 @@ export default function ArtisanDemandesPage() {
                           ✅ {demande.devisRecus} devis envoyé{demande.devisRecus > 1 ? 's' : ''}
                         </button>
                       )}
+                      
+                      {/* Badge Quota atteint - Demande fermée à 10 devis */}
+                      {demande.statut === 'quota_atteint' && (
+                        <span className="bg-orange-100 text-orange-800 px-3 py-1.5 rounded-full text-sm font-bold border-2 border-orange-300 flex items-center gap-1.5">
+                          🔒 Quota atteint (10 devis max)
+                        </span>
+                      )}
+                      
                       {(!demande.devisRecus || demande.devisRecus === 0) && demande.statut === 'publiee' && (
                         <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
                           🆕 Nouvelle demande
@@ -811,8 +819,8 @@ export default function ArtisanDemandesPage() {
                     // Sinon : affichage normal
                     return (
                       <>
-                        {/* Masquer le bouton si demande déjà attribuée */}
-                        {demande.statut !== 'attribuee' && (
+                        {/* Masquer le bouton si demande déjà attribuée ou quota atteint */}
+                        {demande.statut !== 'attribuee' && demande.statut !== 'quota_atteint' && (
                           <button
                             onClick={async () => {
                               // Tracker consultation pour demandes publiques
@@ -832,6 +840,11 @@ export default function ArtisanDemandesPage() {
                         {demande.statut === 'attribuee' && (
                           <div className="flex-1 bg-gray-100 text-gray-600 px-4 py-3 rounded-lg font-semibold border-2 border-gray-300 text-center">
                             ✅ Demande déjà attribuée
+                          </div>
+                        )}
+                        {demande.statut === 'quota_atteint' && (
+                          <div className="flex-1 bg-orange-50 text-orange-700 px-4 py-3 rounded-lg font-semibold border-2 border-orange-300 text-center">
+                            🔒 Quota atteint - Demande fermée
                           </div>
                         )}
                         <button

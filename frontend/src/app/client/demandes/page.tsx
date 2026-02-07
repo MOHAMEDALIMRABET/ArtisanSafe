@@ -728,6 +728,19 @@ export default function MesDemandesPage() {
                   <div>
                     <span className="text-[#6C757D]">Devis reçus :</span>
                     <span className="font-semibold text-[#2C3E50] ml-2">{demande.devisRecus || 0}</span>
+                    
+                    {/* Badge Quota atteint */}
+                    {demande.statut === 'quota_atteint' && (
+                      <div className="mt-2 inline-block">
+                        <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold border-2 border-orange-300">
+                          🔒 Quota atteint (10/10)
+                        </span>
+                        <p className="text-xs text-orange-600 mt-1 font-medium">
+                          ✅ Demande fermée automatiquement
+                        </p>
+                      </div>
+                    )}
+                    
                     {(demande.devisRecus && demande.devisRecus > 0) ? (
                       <button
                         onClick={(e) => {
