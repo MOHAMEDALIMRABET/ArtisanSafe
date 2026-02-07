@@ -349,11 +349,25 @@ function ResultatsContent() {
                     value={rayonMaxInput}
                     onChange={(e) => setRayonMaxInput(e.target.value)}
                   >
+                    <option value="5">5 km</option>
                     <option value="10">10 km</option>
+                    <option value="15">15 km</option>
                     <option value="20">20 km</option>
+                    <option value="25">25 km</option>
                     <option value="30">30 km</option>
+                    <option value="35">35 km</option>
+                    <option value="40">40 km</option>
+                    <option value="45">45 km</option>
                     <option value="50">50 km</option>
+                    <option value="55">55 km</option>
+                    <option value="60">60 km</option>
+                    <option value="65">65 km</option>
+                    <option value="70">70 km</option>
+                    <option value="75">75 km</option>
                     <option value="80">80 km</option>
+                    <option value="85">85 km</option>
+                    <option value="90">90 km</option>
+                    <option value="95">95 km</option>
                     <option value="100">100 km</option>
                   </select>
                 </div>
@@ -396,8 +410,16 @@ function ResultatsContent() {
                     <option value="1">±1J</option>
                     <option value="2">±2J</option>
                     <option value="3">±3J</option>
+                    <option value="4">±4J</option>
                     <option value="5">±5J</option>
+                    <option value="6">±6J</option>
                     <option value="7">±7J</option>
+                    <option value="8">±8J</option>
+                    <option value="9">±9J</option>
+                    <option value="10">±10J</option>
+                    <option value="11">±11J</option>
+                    <option value="12">±12J</option>
+                    <option value="13">±13J</option>
                     <option value="14">±14J</option>
                   </select>
                 </div>
