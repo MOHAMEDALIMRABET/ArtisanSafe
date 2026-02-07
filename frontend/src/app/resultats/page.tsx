@@ -23,9 +23,19 @@ function ResultatsContent() {
   const [villeInput, setVilleInput] = useState<string>(searchParams.get('ville') || '');
   const [codePostalInput, setCodePostalInput] = useState<string>(searchParams.get('codePostal') || '');
   const [categorieInput, setCategorieInput] = useState<string>(searchParams.get('categorie') || 'plomberie');
-  const [dateInput, setDateInput] = useState<string>(searchParams.get('dates') ? JSON.parse(searchParams.get('dates')!)[0] : new Date().toISOString().slice(0, 10));
+  const [dateInput, setDateInput] = useState<string>(() => {
+    const datesParam = searchParams.get('dates');
+    if (datesParam) {
+      try {
+        return JSON.parse(datesParam)[0];
+      } catch {
+        return new Date().toISOString().slice(0, 10);
+      }
+    }
+    return new Date().toISOString().slice(0, 10);
+  });
   const [flexibiliteInput, setFlexibiliteInput] = useState<string>(searchParams.get('flexibiliteDays') || '0');
-  const [rayonMaxInput, setRayonMaxInput] = useState<string>(searchParams.get('rayonMax') || '10');
+  const [rayonMaxInput, setRayonMaxInput] = useState<string>(searchParams.get('rayonMax') || '20');
   const [villeSuggestions, setVilleSuggestions] = useState<Array<{nom: string, codePostal: string, departement: string}>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
