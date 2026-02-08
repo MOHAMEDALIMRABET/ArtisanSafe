@@ -650,7 +650,7 @@ export default function VoirDevisPage() {
             {devis.delaiRealisation && (
               <div>
                 <h3 className="font-bold text-[#2C3E50] mb-2">Délai de réalisation :</h3>
-                <p className="text-sm text-gray-700">{devis.delaiRealisation}</p>
+                <p className="text-sm text-gray-700">{devis.delaiRealisation} jour(s)</p>
               </div>
             )}
 

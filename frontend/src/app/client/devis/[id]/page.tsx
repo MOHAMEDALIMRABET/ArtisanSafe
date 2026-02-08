@@ -1045,7 +1045,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                 {devis.delaiRealisation && (
                   <div className="mb-4">
                     <p className="text-sm font-semibold text-gray-700">Délai de réalisation :</p>
-                    <p className="text-gray-600">{devis.delaiRealisation}</p>
+                    <p className="text-gray-600">{devis.delaiRealisation} jour(s)</p>
                   </div>
                 )}
 
