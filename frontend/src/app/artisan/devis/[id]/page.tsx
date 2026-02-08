@@ -243,142 +243,111 @@ export default function VoirDevisPage() {
 
   return (
     <>
-      {/* Styles pour l'impression */}
+      {/* Styles d'impression optimisés pour tenir sur 1 page */}
       <style jsx global>{`
         @media print {
-          /* Configuration de la page - MARGIN 0 pour supprimer URL/pagination */
           @page {
-            margin: 0;
+            margin: 0.5cm;
             size: A4 portrait;
           }
           
-          /* Masquer la navigation et boutons */
-          .no-print {
-            display: none !important;
+          body {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+
+          /* N'imprimer que la zone du devis */
+          body * {
+            visibility: hidden;
+          }
+
+          .print-area,
+          .print-area * {
+            visibility: visible;
+          }
+
+          .print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
           }
           
-          html, body {
-            background: white !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          
-          /* Page container */
-          .min-h-screen {
-            background: white !important;
-            min-height: auto !important;
-          }
-          
-          /* Container du devis - AJOUTER PADDING pour compenser margin 0 */
+          /* Réduire espacements */
           .print-container {
-            max-width: 100% !important;
+            padding: 0.5rem !important;
             margin: 0 !important;
-            padding: 20mm 15mm !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
           }
           
-          /* Éviter les coupures de page */
+          .print-container > div {
+            margin-bottom: 0.5rem !important;
+          }
+          
+          /* Réduire marges des sections */
+          .mb-6 {
+            margin-bottom: 0.5rem !important;
+          }
+          
+          .mb-8 {
+            margin-bottom: 0.75rem !important;
+          }
+          
+          .pb-6 {
+            padding-bottom: 0.5rem !important;
+          }
+          
+          .pt-6 {
+            padding-top: 0.5rem !important;
+          }
+          
+          /* Tableaux plus compacts */
           table {
-            page-break-inside: avoid;
-          }
-          
-          tr {
-            page-break-inside: avoid;
-          }
-          
-          /* Enlever ombres et bordures arrondies */
-          .shadow-md, .rounded-lg {
-            box-shadow: none !important;
-            border-radius: 0 !important;
-          }
-          
-          /* Forcer fond blanc */
-          .bg-\\[\\#F8F9FA\\], .bg-gray-50, .bg-blue-50, .bg-red-50 {
-            background: white !important;
-            padding: 10px !important;
-          }
-          
-          /* Garder les couleurs importantes */
-          .bg-\\[\\#2C3E50\\] {
-            background: #2C3E50 !important;
-            color: white !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          
-          .text-\\[\\#FF6B00\\] {
-            color: #FF6B00 !important;
-            -webkit-print-color-adjust: exact !important;
-          }
-          
-          .text-\\[\\#2C3E50\\] {
-            color: #2C3E50 !important;
-          }
-          
-          /* Bordures des tableaux */
-          table, td, th {
-            border-color: #000 !important;
-          }
-          
-          /* Tableau des prestations - Supprimer scroll et ajuster largeurs */
-          .overflow-x-auto {
-            overflow: hidden !important;
-          }
-          
-          table {
-            width: 100% !important;
-            table-layout: auto !important;
-          }
-          
-          /* Ajuster largeurs colonnes pour impression */
-          table th:nth-child(1),
-          table td:nth-child(1) {
-            width: 40% !important;
-          }
-          
-          table th:nth-child(2),
-          table td:nth-child(2),
-          table th:nth-child(3),
-          table td:nth-child(3) {
-            width: 8% !important;
-          }
-          
-          table th:nth-child(4),
-          table td:nth-child(4),
-          table th:nth-child(5),
-          table td:nth-child(5),
-          table th:nth-child(6),
-          table td:nth-child(6) {
-            width: 14% !important;
-          }
-          
-          /* Texte plus petit dans le tableau */
-          table {
-            font-size: 11px !important;
-          }
-          
-          table th {
-            font-size: 11px !important;
-            padding: 6px 4px !important;
-          }
-          
-          table td {
             font-size: 10px !important;
-            padding: 6px 4px !important;
           }
           
-          /* Images et logos */
-          img {
-            max-width: 100% !important;
-            height: auto !important;
+          table th,
+          table td {
+            padding: 0.25rem 0.5rem !important;
+          }
+          
+          /* Logo plus petit - UN SEUL en haut */
+          .logo-container img {
+            max-height: 40px !important;
+          }
+          
+          /* Titres plus compacts */
+          h2 {
+            font-size: 1.5rem !important;
+            margin-bottom: 0.25rem !important;
+          }
+          
+          h3 {
+            font-size: 1rem !important;
+            margin-bottom: 0.5rem !important;
+          }
+          
+          /* Signature compacte */
+          .signature-section img {
+            max-height: 50px !important;
+          }
+          
+          /* Éviter coupure de page dans sections importantes */
+          .no-break {
+            page-break-inside: avoid;
+          }
+
+          /* Forcer Artisan/Client côte à côte à l'impression */
+          .print-two-cols {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            column-gap: 2rem !important;
           }
         }
       `}</style>
       
-      <div className="min-h-screen bg-[#F8F9FA]">
+      <div className="min-h-screen bg-[#F8F9FA] print:bg-white print-area">
         {/* Header */}
-        <div className="no-print bg-[#2C3E50] text-white py-6">
+        <div className="bg-[#2C3E50] text-white py-6 print:hidden">
         <div className="container mx-auto px-4">
           <button
             onClick={() => router.back()}
@@ -399,7 +368,7 @@ export default function VoirDevisPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 print:py-0">
         <div className="bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto print-container">
           {/* En-tête du devis */}
           <div className="border-b-2 border-[#FF6B00] pb-6 mb-6 no-break">
