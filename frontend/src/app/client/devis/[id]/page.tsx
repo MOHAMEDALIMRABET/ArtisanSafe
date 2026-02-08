@@ -940,6 +940,14 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
               </div>
             )}
 
+            {/* Délai de réalisation */}
+            {devis.delaiRealisation && (
+              <div className="mb-8">
+                <p className="text-sm font-semibold text-gray-700">Délai de réalisation :</p>
+                <p className="text-gray-600">{devis.delaiRealisation} jour(s)</p>
+              </div>
+            )}
+
             {/* Détail des prestations */}
             <div className="mb-8">
               <h3 className="font-bold text-[#2C3E50] mb-4">Détail des prestations</h3>
@@ -1043,16 +1051,8 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             </div>
 
             {/* Informations complémentaires */}
-            {(devis.delaiRealisation || devis.conditions || devis.notes) && (
+            {(devis.conditions || devis.notes) && (
               <div className="pt-6">
-
-                {devis.delaiRealisation && (
-                  <div className="mb-4">
-                    <p className="text-sm font-semibold text-gray-700">Délai de réalisation :</p>
-                    <p className="text-gray-600">{devis.delaiRealisation} jour(s)</p>
-                  </div>
-                )}
-
                 {devis.conditions && (
                   <div className="mb-4">
                     <p className="text-sm font-semibold text-gray-700">Conditions :</p>

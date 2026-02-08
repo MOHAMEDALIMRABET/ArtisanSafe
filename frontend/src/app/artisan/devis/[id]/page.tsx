@@ -475,6 +475,14 @@ export default function VoirDevisPage() {
             </div>
           )}
 
+          {/* Délai de réalisation */}
+          {devis.delaiRealisation && (
+            <div className="mb-8">
+              <h3 className="font-bold text-[#2C3E50] mb-2">Délai de réalisation :</h3>
+              <p className="text-sm text-gray-700">{devis.delaiRealisation} jour(s)</p>
+            </div>
+          )}
+
           {/* Motif de refus ou demande de révision */}
           {devis.statut === 'refuse' && devis.motifRefus && (
             <div className={`mb-8 p-4 border-l-4 rounded ${
@@ -619,21 +627,14 @@ export default function VoirDevisPage() {
           </div>
 
           {/* Informations complémentaires */}
-          <div className="pt-6 space-y-4">
-            {devis.delaiRealisation && (
-              <div>
-                <h3 className="font-bold text-[#2C3E50] mb-2">Délai de réalisation :</h3>
-                <p className="text-sm text-gray-700">{devis.delaiRealisation} jour(s)</p>
-              </div>
-            )}
-
-            {devis.conditions && (
+          {devis.conditions && (
+            <div className="pt-6 space-y-4">
               <div>
                 <h3 className="font-bold text-[#2C3E50] mb-2">Conditions :</h3>
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">{devis.conditions}</p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Signature électronique - visible à l'impression (NOUVEAU FORMAT) */}
           {devis.statut === 'paye' && devis.signatureClient?.url && (
