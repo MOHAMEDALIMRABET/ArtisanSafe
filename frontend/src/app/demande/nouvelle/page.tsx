@@ -198,7 +198,8 @@ function NouvelleDemandeContent() {
         },
         urgence: criteria.urgence,
         photosUrls: photoUrls, // URLs Firebase Storage au lieu des noms de fichiers
-        statut: 'genere' as const,
+        // ✅ Statut intelligent : 'matchee' si artisan présélectionné, sinon 'publiee'
+        statut: (artisanPreselect ? 'matchee' : 'publiee') as const,
         devisRecus: 0,
         artisansMatches: artisanPreselect ? [artisanPreselect] : [],
       };
@@ -225,16 +226,13 @@ function NouvelleDemandeContent() {
         console.log('✅ Demande créée avec ID:', demandeId);
       }
 
-      // Si artisan présélectionné, ajouter le match
+      // Si artisan présélectionné, ajouter le match (déjà fait ci-dessus dans artisansMatches)
       if (artisanPreselect) {
-        console.log('👷 Ajout de l\'artisan pré-sélectionné:', artisanPreselect);
-        await addArtisansMatches(demandeId, [artisanPreselect]);
+        console.log('👷 Artisan pré-sélectionné:', artisanPreselect, '(déjà dans artisansMatches)');
       }
 
-      // Publier la demande (change statut genere → publiee ou matchee)
-      console.log('📢 Publication de la demande...');
-      await publierDemande(demandeId);
-      console.log('✅ Demande publiée');
+      // Pas besoin de publierDemande() car statut déjà correct ('matchee' ou 'publiee')
+      console.log('✅ Demande créée avec statut correct:', demandeData.statut);
 
       // Envoyer notifications aux artisans matchés
       if (demandeData.artisansMatches.length > 0) {
