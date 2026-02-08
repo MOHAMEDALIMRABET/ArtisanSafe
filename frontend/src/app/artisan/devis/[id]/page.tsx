@@ -559,20 +559,63 @@ export default function VoirDevisPage() {
           <div className="mb-8">
             <h3 className="font-bold text-[#2C3E50] mb-4">Détail des prestations</h3>
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full border-collapse table-fixed">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Désignation</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">Quantité</th>
-                    <th className="border border-gray-300 px-4 py-2 text-right">Prix unitaire HT</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">TVA</th>
-                    <th className="border border-gray-300 px-4 py-2 text-right">Total HT</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left w-[40%]">Désignation</th>
+                    <th className="border border-gray-300 px-4 py-2 text-center w-[12%]">Quantité</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right w-[15%]">Prix unitaire HT</th>
+                    <th className="border border-gray-300 px-4 py-2 text-center w-[13%]">TVA</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right w-[20%]">Total HT</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Main d'œuvre (champ obligatoire) */}
+                  {devis.mainOeuvre && (
+                    <tr className="bg-orange-50">
+                      <td className="border border-gray-300 px-4 py-2 break-words">
+                        <span className="font-semibold text-[#FF6B00]">⚡ Main d'œuvre</span>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">
+                        {devis.mainOeuvre.quantite} {devis.mainOeuvre.unite || 'jours'}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">
+                        {devis.mainOeuvre.prixHT.toFixed(2)} €
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">
+                        {devis.mainOeuvre.tauxTVA}%
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right font-semibold whitespace-nowrap">
+                        {(devis.mainOeuvre.quantite * devis.mainOeuvre.prixHT).toFixed(2)} €
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Matière première (champ optionnel) */}
+                  {devis.matierePremiere && (
+                    <tr className="bg-blue-50">
+                      <td className="border border-gray-300 px-4 py-2 break-words">
+                        <span className="font-semibold text-blue-600">🛠️ Matière première</span>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">
+                        {devis.matierePremiere.quantite} {devis.matierePremiere.unite || 'forfait'}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">
+                        {devis.matierePremiere.prixHT.toFixed(2)} €
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">
+                        {devis.matierePremiere.tauxTVA}%
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right font-semibold whitespace-nowrap">
+                        {(devis.matierePremiere.quantite * devis.matierePremiere.prixHT).toFixed(2)} €
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Lignes supplémentaires */}
                   {devis.lignes.map((ligne, index) => (
                     <tr key={ligne.id || index}>
-                      <td className="border border-gray-300 px-4 py-2 break-all overflow-hidden">{ligne.description}</td>
+                      <td className="border border-gray-300 px-4 py-2 break-words">{ligne.description}</td>
                       <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.quantite} {ligne.unite}</td>
                       <td className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">{ligne.prixUnitaireHT.toFixed(2)} €</td>
                       <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">{ligne.tauxTVA}%</td>
