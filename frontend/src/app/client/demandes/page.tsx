@@ -7,6 +7,7 @@ import { getDemandesByClient, deleteDemande } from '@/lib/firebase/demande-servi
 import { getArtisansByIds } from '@/lib/firebase/artisan-service';
 import { getDevisByDemande } from '@/lib/firebase/devis-service';
 import { createNotification } from '@/lib/firebase/notification-service';
+import { getFileMetadata } from '@/lib/firebase/storage-service';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { Demande, Artisan, Devis } from '@/types/firestore';
@@ -27,6 +28,7 @@ export default function MesDemandesPage() {
   const [filtreSection, setFiltreSection] = useState<'toutes' | 'contrats' | 'devis_recus' | 'en_attente' | 'publiees' | 'refusees' | 'terminees'>('toutes');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDemandeIds, setExpandedDemandeIds] = useState<Set<string>>(new Set());
+  const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     // Attendre que l'auth soit chargée
@@ -67,6 +69,25 @@ export default function MesDemandesPage() {
     try {
       const userDemandes = await getDemandesByClient(user.uid);
       setDemandes(userDemandes);
+
+      // Charger les métadonnées des photos (nom original)
+      const metadata = new Map<string, string>();
+      for (const demande of userDemandes) {
+        const photos = demande.photosUrls || demande.photos || [];
+        for (const url of photos) {
+          if (url && url.startsWith('http')) {
+            try {
+              const meta = await getFileMetadata(url);
+              if (meta?.originalName) {
+                metadata.set(url, meta.originalName);
+              }
+            } catch (error) {
+              console.error('Erreur récupération métadonnées photo:', error);
+            }
+          }
+        }
+      }
+      setPhotoMetadata(metadata);
 
       // Récupérer tous les artisans matchés
       const allArtisanIds = new Set<string>();
@@ -795,42 +816,54 @@ export default function MesDemandesPage() {
                         <p className="text-sm font-semibold text-[#6C757D] mb-3">📸 Photos jointes ({(demande.photosUrls || demande.photos)?.length})</p>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                           {(demande.photosUrls || demande.photos)?.map((photoUrl, idx) => {
-                            // Extraire le nom du fichier de l'URL
-                            const fileName = photoUrl.split('/').pop()?.split('?')[0] || `Photo ${idx + 1}`;
-                            const decodedFileName = decodeURIComponent(fileName);
+                            // Récupérer le nom original depuis les métadonnées ou utiliser un nom par défaut
+                            const originalName = photoMetadata.get(photoUrl);
+                            const displayName = originalName || `Photo ${idx + 1}`;
                             
                             return (
-                              <a
+                              <div
                                 key={idx}
-                                href={photoUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title={decodedFileName}
-                                className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#FF6B00] transition-all cursor-pointer bg-gray-100"
+                                className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#FF6B00] transition-all shadow-sm"
+                                style={{ backgroundColor: '#ffffff' }}
                               >
-                                <img
-                                  src={photoUrl}
-                                  alt={`Photo ${idx + 1} - ${demande.titre || demande.categorie}`}
-                                  loading="lazy"
-                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                  onError={(e) => {
-                                    // Afficher un placeholder si l'image ne charge pas
-                                    e.currentTarget.style.display = 'none';
-                                    const parent = e.currentTarget.parentElement;
-                                    if (parent && !parent.querySelector('.photo-error')) {
-                                      const errorDiv = document.createElement('div');
-                                      errorDiv.className = 'photo-error absolute inset-0 flex items-center justify-center bg-gray-200';
-                                      errorDiv.innerHTML = '<svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>';
-                                      parent.appendChild(errorDiv);
-                                    }
-                                  }}
-                                />
-                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity flex items-center justify-center">
-                                  <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                  </svg>
+                                <a
+                                  href={photoUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={displayName}
+                                  className="block w-full h-full"
+                                >
+                                  <img
+                                    src={photoUrl}
+                                    alt={displayName}
+                                    className="w-full h-full object-contain"
+                                    onLoad={(e) => {
+                                      console.log('✅ Photo chargée:', displayName, photoUrl);
+                                    }}
+                                    onError={(e) => {
+                                      console.error('❌ Erreur chargement photo:', displayName, photoUrl);
+                                      // Afficher un placeholder si l'image ne charge pas
+                                      e.currentTarget.style.display = 'none';
+                                      const container = e.currentTarget.parentElement?.parentElement;
+                                      if (container && !container.querySelector('.photo-error')) {
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.className = 'photo-error absolute inset-0 flex flex-col items-center justify-center bg-gray-100';
+                                        errorDiv.innerHTML = `
+                                          <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                          </svg>
+                                          <span class="text-xs text-gray-500 text-center px-2">${displayName}</span>
+                                        `;
+                                        container.appendChild(errorDiv);
+                                      }
+                                    }}
+                                  />
+                                </a>
+                                {/* Tooltip au hover avec le nom du fichier */}
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                                  <p className="text-white text-xs truncate">{displayName}</p>
                                 </div>
-                              </a>
+                              </div>
                             );
                           })}
                         </div>
