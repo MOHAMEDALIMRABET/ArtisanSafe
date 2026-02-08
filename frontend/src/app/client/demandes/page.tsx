@@ -155,6 +155,65 @@ export default function MesDemandesPage() {
     const hasArtisan = demande.artisansMatches && demande.artisansMatches.length > 0;
     const demandeType = demande.type || 'directe';
     const statut = demande.statut;
+    const devisForDemande = devisMap.get(demande.id) || [];
+    
+    // 🔥 PRIORITÉ 1 : CONTRAT EN COURS (devis payé/signé)
+    // → Badge "Contrat" ou badge spécifique selon statut du devis
+    if (demandesAvecDevisPayeIds.has(demande.id)) {
+      const devisPaye = devisForDemande.find(d => 
+        ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut)
+      );
+      
+      if (devisPaye) {
+        // Badges spécifiques selon l'état du contrat
+        if (devisPaye.statut === 'paye') {
+          return (
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border-2 border-green-400">
+              ✅ Contrat signé
+            </span>
+          );
+        }
+        if (devisPaye.statut === 'en_cours') {
+          return (
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border-2 border-blue-400">
+              🚧 Travaux en cours
+            </span>
+          );
+        }
+        if (['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devisPaye.statut)) {
+          return (
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-200 text-green-900 border-2 border-green-500">
+              ✅ Travaux terminés
+            </span>
+          );
+        }
+        if (devisPaye.statut === 'litige') {
+          return (
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border-2 border-red-400">
+              ⚠️ Litige
+            </span>
+          );
+        }
+        
+        // Fallback : badge générique "Contrat"
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border-2 border-green-400">
+            ✅ Contrat en cours
+          </span>
+        );
+      }
+    }
+    
+    // 🎯 PRIORITÉ 2 : DEVIS ACCEPTÉ (en attente de paiement)
+    // → Badge "En attente de paiement"
+    const devisAccepte = devisForDemande.find(d => d.statut === 'accepte');
+    if (devisAccepte) {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border-2 border-yellow-400">
+          💳 En attente de paiement
+        </span>
+      );
+    }
     
     // ✅ DEMANDE DIRECTE (envoyée à un artisan spécifique)
     // → Badge "Attribuée" dès la création (artisan déjà assigné)

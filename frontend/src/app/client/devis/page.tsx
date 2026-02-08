@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
@@ -24,11 +24,20 @@ const isDevisPaye = (statut: string) =>
 
 export default function ClientDevisPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [devis, setDevis] = useState<Devis[]>([]);
   const [demandes, setDemandes] = useState<Map<string, Demande>>(new Map());
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'tous' | 'en_attente' | 'acceptes' | 'payes' | 'refuses'>('en_attente');
+
+  // Restaurer le filtre depuis l'URL au retour
+  useEffect(() => {
+    const returnFilter = searchParams.get('returnFilter');
+    if (returnFilter && ['tous', 'en_attente', 'acceptes', 'payes', 'refuses'].includes(returnFilter)) {
+      setFilter(returnFilter as typeof filter);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -323,7 +332,7 @@ export default function ClientDevisPage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            const targetUrl = `/client/devis/${d.id}`;
+                            const targetUrl = `/client/devis/${d.id}?returnFilter=${filter}`;
                             console.log('🔗 Navigation vers:', targetUrl);
                             router.push(targetUrl);
                           }}
@@ -334,7 +343,7 @@ export default function ClientDevisPage() {
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/client/devis/${d.id}?action=accepter`);
+                            router.push(`/client/devis/${d.id}?action=accepter&returnFilter=${filter}`);
                           }}
                           className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-center font-medium cursor-pointer"
                         >
@@ -343,7 +352,7 @@ export default function ClientDevisPage() {
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/client/devis/${d.id}?action=refuser`);
+                            router.push(`/client/devis/${d.id}?action=refuser&returnFilter=${filter}`);
                           }}
                           className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-center font-medium cursor-pointer"
                         >
@@ -352,17 +361,28 @@ export default function ClientDevisPage() {
                       </>
                     )}
 
-                    {/* Devis accepté/en attente paiement : Seulement Procéder au paiement */}
+                    {/* Devis accepté/en attente paiement : Procéder au paiement + Voir le détail */}
                     {(d.statut === 'accepte' || d.statut === 'en_attente_paiement') && (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/client/devis/${d.id}?action=payer`);
-                        }}
-                        className="flex-1 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition"
-                      >
-                        💳 Procéder au paiement
-                      </button>
+                      <>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?action=payer&returnFilter=${filter}`);
+                          }}
+                          className="flex-1 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition font-medium"
+                        >
+                          💳 Procéder au paiement
+                        </button>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?returnFilter=${filter}`);
+                          }}
+                          className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
+                        >
+                          📄 Voir le détail
+                        </div>
+                      </>
                     )}
 
                     {/* Devis payé : Seulement Voir le détail */}
@@ -371,7 +391,7 @@ export default function ClientDevisPage() {
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
-                          const targetUrl = `/client/devis/${d.id}`;
+                          const targetUrl = `/client/devis/${d.id}?returnFilter=${filter}`;
                           console.log('🔗 Navigation vers:', targetUrl);
                           router.push(targetUrl);
                         }}
