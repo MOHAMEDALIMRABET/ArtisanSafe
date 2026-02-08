@@ -94,8 +94,6 @@ Index complet de la documentation du projet.
 | Document | Description |
 |----------|-------------|
 | [RECHERCHE_INTELLIGENTE.md](./RECHERCHE_INTELLIGENTE.md) | Recherche artisans avancée |
-| [RECHERCHE_RESUME.md](./RECHERCHE_RESUME.md) | Résumé système recherche |
-| [RECHERCHE_STATUS.md](./RECHERCHE_STATUS.md) | État actuel recherche |
 | [DIAGNOSTIC_RECHERCHE.md](./DIAGNOSTIC_RECHERCHE.md) | Diagnostic problèmes recherche |
 | [DEPANNAGE_RECHERCHE.md](./DEPANNAGE_RECHERCHE.md) | Troubleshooting recherche |
 | [TEST_RECHERCHE.md](./TEST_RECHERCHE.md) | Tests recherche |

@@ -75,8 +75,8 @@ export interface Contrat {
   // Paiement escrow (séquestre)
   paiement: {
     montantTotal: number;                   // Montant TTC du devis
-    commission: number;                     // Commission plateforme (10%)
-    montantArtisan: number;                 // Montant net artisan (90%)
+    commission: number;                     // Commission plateforme (8%)
+    montantArtisan: number;                 // Montant net artisan (92%)
     stripe: {
       paymentIntentId: string;              // Stripe PaymentIntent ID (capture_method: manual)
       chargeId?: string;                    // Stripe Charge ID (après capture)

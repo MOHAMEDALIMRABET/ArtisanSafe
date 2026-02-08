@@ -61,7 +61,7 @@ import {
 } from '@/types/contrat';
 
 const CONTRATS_COLLECTION = 'contrats';
-const COMMISSION_RATE = 0.10; // 10% commission plateforme
+const COMMISSION_RATE = 0.08; // 8% commission plateforme
 
 
 /**

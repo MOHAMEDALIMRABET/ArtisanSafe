@@ -29,7 +29,7 @@ Le système escrow permet de **bloquer l'argent du client** jusqu'à ce que les 
 5a. CLIENT VALIDE (< 48h)
     → API /release-escrow capture le paiement
     → statut: termine_valide
-    → Argent LIBÉRÉ à l'artisan (- 10% commission)
+    → Argent LIBÉRÉ à l'artisan (- 8% commission)
     ↓
 5b. AUTO-VALIDATION (> 48h sans action)
     → Cloud Function autoValiderTravaux s'exécute
@@ -131,7 +131,7 @@ const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
 
 **Calculs** :
 ```typescript
-const commission = montantTotal * 0.10; // 10%
+const commission = montantTotal * 0.08; // 8%
 const montantArtisan = montantTotal - commission;
 ```
 
@@ -205,8 +205,8 @@ const contratData = {
   dateCreation: Timestamp.now(),
   paiement: {
     montantTotal,
-    commission: montantTotal * 0.10,
-    montantArtisan: montantTotal * 0.90,
+    commission: montantTotal * 0.08,
+    montantArtisan: montantTotal * 0.92,
     stripe: { paymentIntentId },
     statut: 'bloque',
     dateBlocage: Timestamp.now()
@@ -749,7 +749,7 @@ const handleSubmit = async (e) => {
 ## 💡 Notes importantes
 
 ### Commission plateforme
-Actuellement : **10%** (configurable via `COMMISSION_RATE`)
+Actuellement : **8%** (configurable via `COMMISSION_RATE`)
 
 ### Délai auto-validation
 Actuellement : **48 heures** (ajustable dans Cloud Function)

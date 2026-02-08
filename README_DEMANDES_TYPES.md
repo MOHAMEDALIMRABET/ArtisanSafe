@@ -108,8 +108,7 @@ npm run build
 ## 📚 Documentation complète
 
 **Guide complet** : [`docs/IMPLEMENTATION_DEMANDES_TYPES.md`](docs/IMPLEMENTATION_DEMANDES_TYPES.md) (60 pages)  
-**Workflow technique** : [`docs/WORKFLOW_DEMANDES_TYPES.md`](docs/WORKFLOW_DEMANDES_TYPES.md) (51 pages)  
-**Commit message** : [`COMMIT_MESSAGE_DEMANDES_TYPES.txt`](COMMIT_MESSAGE_DEMANDES_TYPES.txt)
+**Workflow technique** : [`docs/WORKFLOW_DEMANDES_TYPES.md`](docs/WORKFLOW_DEMANDES_TYPES.md) (51 pages)
 
 ---
 

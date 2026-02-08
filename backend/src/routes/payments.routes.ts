@@ -19,7 +19,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-11-20.acacia',
 });
 
-const COMMISSION_RATE = 0.10; // 10% de commission plateforme
+const COMMISSION_RATE = 0.08; // 8% de commission plateforme
 
 /**
  * POST /api/v1/payments/create-escrow
@@ -189,6 +189,33 @@ router.post('/release-escrow', async (req: Request, res: Response) => {
     const commission = Math.round(montantTotal * COMMISSION_RATE * 100) / 100;
     const montantArtisan = Math.round((montantTotal - commission) * 100) / 100;
 
+    // ✅ PHASE 2 : Transférer montantArtisan via Stripe Connect
+    // Récupérer Stripe Account ID de l'artisan
+    const artisanDoc = await db.collection('artisans').doc(contrat.artisanId).get();
+    const artisanStripeAccountId = artisanDoc.data()?.stripeAccountId;
+
+    if (!artisanStripeAccountId) {
+      return res.status(400).json({
+        error: 'Artisan n\'a pas configuré son compte de paiement',
+        details: 'L\'artisan doit compléter l\'onboarding Stripe Connect avant de recevoir des paiements'
+      });
+    }
+
+    // Transférer montantArtisan via Stripe Connect
+    const transfer = await stripe.transfers.create({
+      amount: Math.round(montantArtisan * 100),
+      currency: 'eur',
+      destination: artisanStripeAccountId,
+      metadata: {
+        contratId,
+        devisId: contrat.devisId,
+        artisanId: contrat.artisanId
+      },
+      description: `Paiement travaux - Contrat ${contratId}`,
+    });
+
+    console.log(`✅ Transfert effectué: ${transfer.id} - ${montantArtisan}€ → ${artisanStripeAccountId}`);
+
     // Mettre à jour le contrat dans Firestore
     await contratRef.update({
       statut: validePar === 'auto' ? 'termine_auto_valide' : 'termine_valide',
@@ -197,6 +224,8 @@ router.post('/release-escrow', async (req: Request, res: Response) => {
       'paiement.statut': 'libere',
       'paiement.dateLiberation': Timestamp.now(),
       'paiement.stripe.chargeId': paymentIntent.charges.data[0]?.id || null,
+      'paiement.stripe.transferId': transfer.id,
+      'paiement.dateVirement': Timestamp.now(),
       validationTravaux: {
         date: Timestamp.now(),
         validePar,
@@ -370,6 +399,105 @@ router.post('/refund-escrow', async (req: Request, res: Response) => {
     console.error('❌ Erreur remboursement:', error);
     res.status(500).json({
       error: 'Erreur lors du remboursement',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/v1/payments/create-connect-account
+ * 
+ * Crée un compte Stripe Connect pour un artisan
+ * Génère un lien d'onboarding Stripe Express
+ * 
+ * Body:
+ *   - artisanId: UID de l'artisan
+ *   - email: Email de l'artisan
+ *   - returnUrl: URL de retour après onboarding
+ *   - refreshUrl: URL si onboarding expire
+ * 
+ * Returns:
+ *   - accountId: ID du compte Stripe Connect créé
+ *   - onboardingUrl: URL vers interface onboarding Stripe
+ */
+router.post('/create-connect-account', async (req: Request, res: Response) => {
+  try {
+    const { artisanId, email, returnUrl, refreshUrl } = req.body;
+
+    // Validation
+    if (!artisanId || !email || !returnUrl || !refreshUrl) {
+      return res.status(400).json({
+        error: 'Paramètres manquants',
+        details: 'artisanId, email, returnUrl et refreshUrl sont requis'
+      });
+    }
+
+    // Vérifier si artisan existe
+    const artisanDoc = await db.collection('artisans').doc(artisanId).get();
+    if (!artisanDoc.exists) {
+      return res.status(404).json({ error: 'Artisan non trouvé' });
+    }
+
+    // Vérifier si compte Stripe Connect existe déjà
+    const existingAccountId = artisanDoc.data()?.stripeAccountId;
+    if (existingAccountId) {
+      // Compte existant, créer nouveau lien onboarding
+      console.log(`♻️ Compte Stripe Connect existant: ${existingAccountId}`);
+      
+      const accountLink = await stripe.accountLinks.create({
+        account: existingAccountId,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        type: 'account_onboarding',
+      });
+
+      return res.status(200).json({
+        success: true,
+        accountId: existingAccountId,
+        onboardingUrl: accountLink.url,
+        existing: true,
+        message: 'Compte existant, nouveau lien d\'onboarding généré'
+      });
+    }
+
+    // Créer nouveau compte Stripe Connect (Express)
+    const account = await stripe.accounts.create({
+      type: 'express',
+      country: 'FR',
+      email: email,
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+      business_type: 'individual', // ou 'company' si artisan société
+      metadata: {
+        artisanId: artisanId,
+        platform: 'ArtisanDispo',
+      },
+    });
+
+    // Créer lien onboarding
+    const accountLink = await stripe.accountLinks.create({
+      account: account.id,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
+      type: 'account_onboarding',
+    });
+
+    console.log(`✅ Compte Stripe Connect créé: ${account.id} pour artisan ${artisanId}`);
+
+    res.status(200).json({
+      success: true,
+      accountId: account.id,
+      onboardingUrl: accountLink.url,
+      existing: false,
+      message: 'Compte Stripe Connect créé avec succès'
+    });
+
+  } catch (error: any) {
+    console.error('❌ Erreur création Stripe Connect:', error);
+    res.status(500).json({
+      error: 'Erreur création compte Stripe Connect',
       details: error.message
     });
   }

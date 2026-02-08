@@ -100,8 +100,8 @@ service cloud.firestore {
       allow update: if isOwner(resource.data.clientId) || isAdmin();
       allow delete: if isOwner(resource.data.clientId) || isAdmin();
       
-      // Validation statut
-      allow write: if request.resource.data.statut in ['genere', 'publiee', 'matchee', 'en_cours', 'terminee', 'annulee'];
+      // Validation statut (Phase 3 : ajout 'quota_atteint', 'expiree')
+      allow write: if request.resource.data.statut in ['genere', 'publiee', 'matchee', 'en_cours', 'terminee', 'annulee', 'quota_atteint', 'expiree', 'attribuee'];
     }
     
     // ============================================
@@ -111,6 +111,7 @@ service cloud.firestore {
     // Artisan peut créer et modifier son devis
     // Client peut accepter/refuser/valider travaux
     // DEVIS SIGNÉ = CONTRAT JURIDIQUE (pas de duplication)
+    // ⚠️ PHASE 3 : Validation quota 10 devis par demande publique
     
     match /devis/{devisId} {
       allow read: if isAdmin() ||
@@ -119,9 +120,15 @@ service cloud.firestore {
       // Permettre les requêtes (query) pour artisans (leurs propres devis) et clients (leurs devis reçus)
       // Nécessaire pour page /artisan/devis/nouveau (vérifier devis refusés pour révision)
       allow list: if isAdmin() || isArtisan() || isClient();
+      
+      // ✅ PHASE 3 : Bloquer création si quota atteint (10 devis max par demande publique)
       allow create: if isAuthenticated() && 
                        request.auth.uid == request.resource.data.artisanId &&
-                       isArtisan();
+                       isArtisan() &&
+                       // Vérifier quota demande publique (10 devis max)
+                       (get(/databases/$(database)/documents/demandes/$(request.resource.data.demandeId)).data.get('devisRecus', 0) < 10 &&
+                        get(/databases/$(database)/documents/demandes/$(request.resource.data.demandeId)).data.statut != 'quota_atteint');
+      
       allow update: if isOwner(resource.data.artisanId) ||  // Artisan: modification devis, début/fin travaux
                        isOwner(resource.data.clientId) ||   // Client: acceptation, validation travaux, litige
                        isAdmin();

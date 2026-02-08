@@ -823,9 +823,9 @@ export default function VoirDevisPage() {
                 
                 <div className="mt-3 p-3 bg-green-50 rounded border border-green-200">
                   <p className="text-sm text-green-800">
-                    💰 <strong>Paiement</strong> : Vous recevrez <strong>{((devis.totaux?.totalTTC || 0) * 0.9).toFixed(2)}€</strong> après validation
+                    💰 <strong>Paiement</strong> : Vous recevrez <strong>{((devis.totaux?.totalTTC || 0) * 0.92).toFixed(2)}€</strong> après validation
                     <br />
-                    <span className="text-xs text-green-700">(Commission plateforme : {((devis.totaux?.totalTTC || 0) * 0.1).toFixed(2)}€)</span>
+                    <span className="text-xs text-green-700">(Commission plateforme : {((devis.totaux?.totalTTC || 0) * 0.08).toFixed(2)}€)</span>
                   </p>
                 </div>
               </div>
@@ -856,9 +856,9 @@ export default function VoirDevisPage() {
               <div className="bg-white rounded-lg p-4 border border-emerald-200">
                 <h4 className="font-semibold text-gray-800 mb-2">💰 Paiement en cours</h4>
                 <p className="text-sm text-gray-700 mb-3">
-                  Montant net artisan : <strong className="text-emerald-700 text-lg">{((devis.totaux?.totalTTC || 0) * 0.9).toFixed(2)}€</strong>
+                  Montant net artisan : <strong className="text-emerald-700 text-lg">{((devis.totaux?.totalTTC || 0) * 0.92).toFixed(2)}€</strong>
                   <br />
-                  <span className="text-xs text-gray-600">(Commission plateforme : {((devis.totaux?.totalTTC || 0) * 0.1).toFixed(2)}€)</span>
+                  <span className="text-xs text-gray-600">(Commission plateforme : {((devis.totaux?.totalTTC || 0) * 0.08).toFixed(2)}€)</span>
                 </p>
                 
                 <div className="p-3 bg-blue-50 rounded border border-blue-200">

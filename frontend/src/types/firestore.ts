@@ -84,17 +84,19 @@ export type LitigeMotif =
 
 export type NotificationType = 
   | 'nouvelle_demande'
-  | 'demande_refusee'    // ✅ Ajouté - utilisé dans artisan/demandes
-  | 'nouveau_devis'      // ✅ Ajouté - utilisé dans notification-service
+  | 'nouvelle_demande_publique'  // ✅ Notification artisan pour demande publique
+  | 'demande_expiree'            // ✅ Notification client demande expirée
+  | 'demande_refusee'            // ✅ Ajouté - utilisé dans artisan/demandes
+  | 'nouveau_devis'              // ✅ Ajouté - utilisé dans notification-service
   | 'devis_recu' 
   | 'devis_accepte'
   | 'devis_refuse'
-  | 'devis_revision'     // ✅ Ajouté - demande de révision/nouvelle variante
+  | 'devis_revision'             // ✅ Ajouté - demande de révision/nouvelle variante
   | 'contrat_signe'
   | 'paiement' 
   | 'paiement_libere'
-  | 'nouveau_message'    // ✅ Ajouté - utilisé dans NotificationBell
-  | 'message'            // Gardé pour compatibilité
+  | 'nouveau_message'            // ✅ Ajouté - utilisé dans NotificationBell
+  | 'message'                    // Gardé pour compatibilité
   | 'avis'
   | 'nouvel_avis'
   | 'litige';

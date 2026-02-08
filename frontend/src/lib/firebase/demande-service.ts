@@ -23,6 +23,7 @@ import type {
   CreateDocument,
   DemandeStatut 
 } from '@/types/firestore';
+import { calculateExpirationDate } from '@/lib/dateExpirationUtils';
 
 const COLLECTION_NAME = 'demandes';
 
@@ -34,21 +35,22 @@ export async function createDemande(
 ): Promise<Demande> {
   const demandesRef = collection(db, COLLECTION_NAME);
   
-  // Calculer automatiquement dateExpiration si dates souhaitées fournies
-  let dateExpiration: Timestamp | undefined;
-  if (demandeData.datesSouhaitees?.dates?.[0]) {
-    const dateClient = demandeData.datesSouhaitees.dates[0]; // Timestamp
-    const flexDays = demandeData.datesSouhaitees.flexibiliteDays || 0;
-    
-    // Date d'expiration = date souhaitée + flexibilité
-    const dateExp = new Date(dateClient.toDate());
-    dateExp.setDate(dateExp.getDate() + flexDays);
-    dateExp.setHours(23, 59, 59, 999); // Fin de journée
-    
-    dateExpiration = Timestamp.fromDate(dateExp);
-    
-    console.log(`📅 Date expiration calculée: ${dateExp.toLocaleDateString('fr-FR')} (date: ${dateClient.toDate().toLocaleDateString('fr-FR')} + ${flexDays} jours)`);
-  }
+  // ✅ Calculer dateExpiration avec logique intelligente
+  let dateExpiration: Timestamp;
+  const now = new Date();
+  
+  // Récupérer date de début souhaitée (champ obligatoire dans formulaire)
+  const dateDebutTravaux = demandeData.datesSouhaitees?.dates?.[0]?.toDate();
+  
+  // Calcul intelligent avec fonction utilitaire
+  const expirationDate = calculateExpirationDate(now, dateDebutTravaux || null);
+  dateExpiration = Timestamp.fromDate(expirationDate);
+  
+  console.log(`📅 [createDemande] Date expiration calculée intelligemment:`);
+  console.log(`   - Date création: ${now.toLocaleDateString('fr-FR')}`);
+  console.log(`   - Date début travaux: ${dateDebutTravaux ? dateDebutTravaux.toLocaleDateString('fr-FR') : 'Non précisée'}`);
+  console.log(`   - Date expiration: ${expirationDate.toLocaleDateString('fr-FR')}`);
+  console.log(`   - Délai: ${Math.floor((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} jours`);
   
   const newDemande = {
     ...demandeData,
@@ -59,7 +61,7 @@ export async function createDemande(
     devisRecus: 0,
     artisansNotifiesIds: demandeData.artisansNotifiesIds || [], // Pour demandes publiques
     artisansInteressesIds: demandeData.artisansInteressesIds || [], // Pour demandes publiques
-    dateExpiration, // Calculée automatiquement
+    dateExpiration, // Calculée intelligemment
     dateCreation: Timestamp.now(),
     dateModification: Timestamp.now(),
   };
@@ -192,9 +194,29 @@ export async function addArtisansMatches(
 }
 
 /**
+ * ⚠️ OBSOLÈTE - NE PLUS UTILISER
+ * 
  * Incrémenter le nombre de devis reçus
+ * 
+ * @deprecated Depuis Phase 2 (limite 10 devis), le compteur est géré automatiquement
+ * par la Cloud Function onDevisCreated (functions/src/triggers/devisTriggers.ts)
+ * 
+ * Raisons de l'obsolescence :
+ * - Incrémentation atomique garantie par transaction Firestore (évite race conditions)
+ * - Fermeture automatique demande à 10 devis
+ * - Notifications automatiques (seuil 8 devis, quota atteint 10 devis)
+ * 
+ * Si besoin de resynchronisation manuelle, utiliser :
+ * - Cloud Function HTTP : syncDevisCounter
+ * - Endpoint : POST https://europe-west1-artisansafe.cloudfunctions.net/syncDevisCounter
+ * - Payload : { "demandeId": "dem123" }
+ * 
+ * @see functions/src/triggers/devisTriggers.ts - onDevisCreated
  */
 export async function incrementDevisRecus(demandeId: string): Promise<void> {
+  console.warn('⚠️ incrementDevisRecus() est obsolète. Utiliser Cloud Function onDevisCreated.');
+  
+  // Code conservé pour compatibilité legacy mais ne devrait plus être appelé
   const demande = await getDemandeById(demandeId);
   if (!demande) throw new Error('Demande non trouvée');
 
