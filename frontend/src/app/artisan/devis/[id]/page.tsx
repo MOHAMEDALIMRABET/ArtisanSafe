@@ -747,14 +747,19 @@ export default function VoirDevisPage() {
               </div>
             </div>
           )}
+        </div>
+      </div>
 
+      {/* Sections interactives - EN DEHORS du print-container */}
+      <div className="container mx-auto px-4 pb-8">
+        <div className="max-w-4xl mx-auto">
           {/* ========================================= */}
           {/* SECTION GESTION TRAVAUX (selon statut)   */}
           {/* ========================================= */}
 
           {/* Statut: paye - Prêt à démarrer */}
           {devis.statut === 'paye' && (
-            <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6 mb-6 no-print">
+            <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6 mb-6 print:hidden">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">✅</span>
@@ -781,7 +786,7 @@ export default function VoirDevisPage() {
 
           {/* Statut: en_cours - Travaux en cours */}
           {devis.statut === 'en_cours' && (
-            <div className="bg-blue-50 border-2 border-blue-500 rounded-lg p-6 mb-6 no-print">
+            <div className="bg-blue-50 border-2 border-blue-500 rounded-lg p-6 mb-6 print:hidden">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">⚙️</span>
@@ -814,7 +819,7 @@ export default function VoirDevisPage() {
 
           {/* Statut: travaux_termines - En attente validation */}
           {devis.statut === 'travaux_termines' && (
-            <div className="bg-orange-50 border-2 border-orange-500 rounded-lg p-6 mb-6 no-print">
+            <div className="bg-orange-50 border-2 border-orange-500 rounded-lg p-6 mb-6 print:hidden">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">⏳</span>
@@ -858,7 +863,7 @@ export default function VoirDevisPage() {
 
           {/* Statut: termine_valide ou termine_auto_valide - Paiement libéré */}
           {['termine_valide', 'termine_auto_valide'].includes(devis.statut) && (
-            <div className="bg-emerald-50 border-2 border-emerald-500 rounded-lg p-6 mb-6 no-print">
+            <div className="bg-emerald-50 border-2 border-emerald-500 rounded-lg p-6 mb-6 print:hidden">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">🎉</span>
@@ -896,7 +901,7 @@ export default function VoirDevisPage() {
 
           {/* Statut: litige - Problème signalé */}
           {devis.statut === 'litige' && (
-            <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6 mb-6 no-print">
+            <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6 mb-6 print:hidden">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">⚠️</span>
@@ -933,7 +938,7 @@ export default function VoirDevisPage() {
           )}
 
           {/* Actions */}
-          <div className="no-print mt-8 flex gap-4 justify-end flex-wrap">
+          <div className="print:hidden mt-8 flex gap-4 justify-end flex-wrap">
             <button
               onClick={() => router.push('/artisan/devis')}
               className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
