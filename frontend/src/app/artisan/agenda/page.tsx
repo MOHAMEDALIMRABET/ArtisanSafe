@@ -34,6 +34,7 @@ interface CalendarEvent {
   disponible: boolean;
   recurrence?: 'hebdomadaire' | 'ponctuel';
   allDay?: boolean; // Journée complète ou plage horaire
+  isContrat?: boolean; // Flag pour les périodes de contrat (non supprimables, affichage rouge)
 }
 
 export default function AgendaPage() {
@@ -151,25 +152,31 @@ export default function AgendaPage() {
         };
       });
       
-      // Ajouter les contrats signés comme indisponibilités automatiques
+      // Ajouter les contrats signés (devis payés) comme indisponibilités automatiques
       // ⚡ OPTIMISATION: Limiter aux 6 prochains mois pour éviter surcharge
       const sixMonthsFromNow = addMonths(new Date(), 6);
       const contratEvents: CalendarEvent[] = contrats
-        .filter(contrat => 
-          contrat.statut === 'signe' && 
-          contrat.dateDebut && 
-          contrat.dateFin &&
-          contrat.dateDebut.toDate() <= sixMonthsFromNow // Limite temporelle
+        .filter(devis => 
+          // Un devis payé/en cours = période d'occupation
+          ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devis.statut) && 
+          devis.dateDebutPrevue && 
+          devis.delaiRealisation &&
+          devis.dateDebutPrevue.toDate() <= sixMonthsFromNow // Limite temporelle
         )
-        .flatMap(contrat => {
-          const dateDebut = contrat.dateDebut!.toDate();
-          const dateFin = contrat.dateFin!.toDate();
+        .flatMap(devis => {
+          const dateDebut = devis.dateDebutPrevue!.toDate();
+          
+          // Calculer la date de fin basée sur le délai de réalisation
+          const dateFin = addDays(dateDebut, devis.delaiRealisation);
           
           // ⚡ OPTIMISATION: Limiter à 100 jours par contrat maximum
           const actualDateFin = new Date(Math.min(dateFin.getTime(), addDays(dateDebut, 100).getTime()));
           
           // Créer un événement pour chaque jour du contrat
           const daysInRange = eachDayOfInterval({ start: dateDebut, end: actualDateFin });
+          
+          // Numéro de devis à afficher
+          const numeroDevis = devis.numeroDevis || devis.id.slice(0, 8);
           
           return daysInRange.map((day, index) => {
             const eventStart = new Date(day);
@@ -179,13 +186,14 @@ export default function AgendaPage() {
             eventEnd.setHours(23, 59, 59, 999);
             
             return {
-              id: `contrat_${contrat.id}_${index}`,
-              title: `🔒 Contrat - ${contrat.description || 'Prestation'}`,
+              id: `contrat_${devis.id}_${index}`,
+              title: `🔒 Devis ${numeroDevis}`,
               start: eventStart,
               end: eventEnd,
               disponible: false, // Indisponible
               recurrence: 'ponctuel' as const,
-              allDay: true
+              allDay: true,
+              isContrat: true, // Flag pour le style rouge
             };
           });
         });
@@ -275,6 +283,12 @@ export default function AgendaPage() {
       return;
     }
 
+    // Empêcher la modification des périodes de contrat
+    if (editingEvent.isContrat) {
+      alert('🔒 Impossible de modifier une période de contrat.\n\nCette période est automatiquement générée à partir d\'un devis signé et ne peut pas être modifiée manuellement.');
+      return;
+    }
+
     setEvents(events.map(e => 
       e.id === editingEvent.id 
         ? { ...e, title: editedTitle.trim() }
@@ -287,6 +301,12 @@ export default function AgendaPage() {
 
   const handleDeleteEvent = () => {
     if (!editingEvent) return;
+    
+    // Empêcher la suppression des périodes de contrat
+    if (editingEvent.isContrat) {
+      alert('🔒 Impossible de supprimer une période de contrat.\n\nCette période est automatiquement générée à partir d\'un devis signé et ne peut pas être modifiée ou supprimée manuellement.');
+      return;
+    }
     
     const confirmDelete = window.confirm(`⚠️ Supprimer "${editingEvent.title}" ?`);
     if (confirmDelete) {
@@ -427,6 +447,23 @@ export default function AgendaPage() {
   };
 
   const eventStyleGetter = (event: CalendarEvent) => {
+    // Contrats/devis signés : affichage rouge, non modifiable
+    if (event.isContrat) {
+      return {
+        style: {
+          backgroundColor: '#DC3545', // Rouge
+          borderRadius: '5px',
+          opacity: 0.9,
+          color: 'white',
+          border: '2px solid #A62A2A',
+          display: 'block',
+          fontWeight: 'bold',
+          cursor: 'not-allowed' // Curseur interdit pour indiquer non modifiable
+        }
+      };
+    }
+    
+    // Disponibilités manuelles : vert (disponible) ou rouge (occupé)
     const backgroundColor = event.disponible ? '#28A745' : '#DC3545';
     const style = {
       backgroundColor,
@@ -449,8 +486,8 @@ export default function AgendaPage() {
     try {
       const { disponibiliteService } = await import('@/lib/firebase/disponibilite-service');
       
-      // Filtrer les événements de contrat (ne pas les sauvegarder)
-      const userEvents = events.filter(event => !event.id.startsWith('contrat_'));
+      // Filtrer les événements de contrat (ne pas les sauvegarder car générés automatiquement)
+      const userEvents = events.filter(event => !event.isContrat);
       
       // Convertir CalendarEvent[] en DisponibiliteSlot[] (sans heures)
       const disponibilites: DisponibiliteSlot[] = userEvents.map(event => {
@@ -934,51 +971,103 @@ export default function AgendaPage() {
                 ×
               </button>
 
-              {/* Titre */}
-              <h3 className="text-xl font-bold text-[#2C3E50] mb-6">
-                ✏️ Modifier l'événement
-              </h3>
+              {editingEvent.isContrat ? (
+                // Affichage lecture seule pour les contrats
+                <>
+                  <h3 className="text-xl font-bold text-[#DC3545] mb-6">
+                    🔒 Période de contrat (non modifiable)
+                  </h3>
 
-              {/* Champ de texte pour renommer */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Titre de l'indisponibilité
-                </label>
-                <input
-                  type="text"
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#FF6B00] focus:outline-none text-lg"
-                  placeholder="Ex: Occupé, Congés, Rendez-vous..."
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSaveEdit();
-                    }
-                  }}
-                />
-              </div>
+                  <div className="space-y-4 mb-6">
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                      <p className="text-sm text-red-800 mb-2">
+                        <strong>Cette période est générée automatiquement à partir d'un devis signé.</strong>
+                      </p>
+                      <p className="text-xs text-red-700">
+                        Elle ne peut pas être modifiée ou supprimée manuellement. Pour toute modification, veuillez modifier le devis correspondant.
+                      </p>
+                    </div>
 
-              {/* Boutons d'action */}
-              <div className="flex gap-3">
-                {/* Bouton Supprimer avec croix */}
-                <button
-                  onClick={handleDeleteEvent}
-                  className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center justify-center gap-2"
-                >
-                  <span className="text-xl">×</span>
-                  Supprimer
-                </button>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Titre
+                      </label>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {editingEvent.title}
+                      </p>
+                    </div>
 
-                {/* Bouton Enregistrer */}
-                <button
-                  onClick={handleSaveEdit}
-                  disabled={!editedTitle.trim()}
-                  className="flex-1 px-4 py-3 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ✓ Enregistrer
-                </button>
-              </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date
+                      </label>
+                      <p className="text-gray-900">
+                        {editingEvent.start.toLocaleDateString('fr-FR', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleCloseEditModal}
+                    className="w-full px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
+                  >
+                    Fermer
+                  </button>
+                </>
+              ) : (
+                // Mode édition normal pour les indisponibilités manuelles
+                <>
+                  <h3 className="text-xl font-bold text-[#2C3E50] mb-6">
+                    ✏️ Modifier l'événement
+                  </h3>
+
+                  {/* Champ de texte pour renommer */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Titre de l'indisponibilité
+                    </label>
+                    <input
+                      type="text"
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#FF6B00] focus:outline-none text-lg"
+                      placeholder="Ex: Occupé, Congés, Rendez-vous..."
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSaveEdit();
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Boutons d'action */}
+                  <div className="flex gap-3">
+                    {/* Bouton Supprimer avec croix */}
+                    <button
+                      onClick={handleDeleteEvent}
+                      className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center justify-center gap-2"
+                    >
+                      <span className="text-xl">×</span>
+                      Supprimer
+                    </button>
+
+                    {/* Bouton Enregistrer */}
+                    <button
+                      onClick={handleSaveEdit}
+                      disabled={!editedTitle.trim()}
+                      className="flex-1 px-4 py-3 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ✓ Enregistrer
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </>

@@ -85,7 +85,7 @@ export default function NouveauDevisPage() {
   const [titre, setTitre] = useState('');
   const [description, setDescription] = useState('');
   const [lignes, setLignes] = useState<LigneDevis[]>([]);
-  const [delaiRealisation, setDelaiRealisation] = useState('');
+  const [delaiRealisation, setDelaiRealisation] = useState<number | ''>(15);
   const [dateDebutPrevue, setDateDebutPrevue] = useState('');
   const [dateValidite, setDateValidite] = useState(30); // Jours
   const [conditions, setConditions] = useState('');
@@ -393,7 +393,11 @@ export default function NouveauDevisPage() {
       setTitre(devisOriginal.titre || '');
       setDescription(devisOriginal.description || '');
       setLignes(devisOriginal.lignes || []);
-      setDelaiRealisation(devisOriginal.delaiRealisation || '');
+      // Convertir delaiRealisation en number (support anciens devis avec string)
+      const delaiNum = typeof devisOriginal.delaiRealisation === 'number' 
+        ? devisOriginal.delaiRealisation 
+        : (parseInt(devisOriginal.delaiRealisation as any) || 15);
+      setDelaiRealisation(delaiNum);
       
       // Charger Main d'œuvre
       if (devisOriginal.mainOeuvre) {
@@ -471,7 +475,11 @@ export default function NouveauDevisPage() {
       setTitre(devisBrouillon.titre || '');
       setDescription(devisBrouillon.description || '');
       setLignes(devisBrouillon.lignes || []);
-      setDelaiRealisation(devisBrouillon.delaiRealisation || '');
+      // Convertir delaiRealisation en number (support anciens devis avec string)
+      const delaiNum = typeof devisBrouillon.delaiRealisation === 'number' 
+        ? devisBrouillon.delaiRealisation 
+        : (parseInt(devisBrouillon.delaiRealisation as any) || 15);
+      setDelaiRealisation(delaiNum);
       
       // Charger Main d'œuvre
       if (devisBrouillon.mainOeuvre) {
@@ -567,7 +575,11 @@ export default function NouveauDevisPage() {
       setTitre(devisOriginal.titre || '');
       setDescription(devisOriginal.description || '');
       setLignes(devisOriginal.lignes || []);
-      setDelaiRealisation(devisOriginal.delaiRealisation || '');
+      // Convertir delaiRealisation en number (support anciens devis avec string)
+      const delaiNum2 = typeof devisOriginal.delaiRealisation === 'number' 
+        ? devisOriginal.delaiRealisation 
+        : (parseInt(devisOriginal.delaiRealisation as any) || 15);
+      setDelaiRealisation(delaiNum2);
       
       // Charger Main d'œuvre
       if (devisOriginal.mainOeuvre) {
@@ -952,7 +964,6 @@ export default function NouveauDevisPage() {
     const champsAVerifier = [
       { nom: 'titre', valeur: titre },
       { nom: 'description', valeur: description },
-      { nom: 'délai de réalisation', valeur: delaiRealisation },
       { nom: 'conditions', valeur: conditions },
       ...lignes.map((l, i) => ({ nom: `ligne ${i + 1}`, valeur: l.description }))
     ];
@@ -996,7 +1007,7 @@ export default function NouveauDevisPage() {
           }
         }),
         totaux: calculerTotauxGlobaux(),
-        delaiRealisation,
+        delaiRealisation: delaiRealisation || 15, // Défaut 15 jours si vide
         dateDebutPrevue: Timestamp.fromDate(new Date(dateDebutPrevue)),
         dateValidite: Timestamp.fromDate(
           new Date(Date.now() + dateValidite * 24 * 60 * 60 * 1000)
@@ -1234,15 +1245,18 @@ export default function NouveauDevisPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-[#2C3E50] mb-1">
-                    Délai de réalisation
+                    Délai de réalisation (en jours) *
                   </label>
                   <input
-                    type="text"
+                    type="number"
+                    min="1"
+                    step="1"
                     value={delaiRealisation}
-                    onChange={(e) => setDelaiRealisation(e.target.value)}
+                    onChange={(e) => setDelaiRealisation(e.target.value ? parseInt(e.target.value) : '')}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                    placeholder="Ex: 2 semaines"
+                    placeholder="Ex: 15"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Nombre de jours nécessaires pour réaliser les travaux</p>
                 </div>
 
                 <div>
@@ -1832,7 +1846,7 @@ export default function NouveauDevisPage() {
             {delaiRealisation && (
               <div className="bg-[#FFF3E0] border-l-4 border-[#FF6B00] p-4 mb-6">
                 <p className="text-sm">
-                  <span className="font-semibold">Délai de réalisation :</span> {delaiRealisation}
+                  <span className="font-semibold">Délai de réalisation :</span> {delaiRealisation} jour{delaiRealisation > 1 ? 's' : ''}
                 </p>
               </div>
             )}
@@ -1840,20 +1854,20 @@ export default function NouveauDevisPage() {
 
           {/* Tableau des prestations */}
           <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead className="bg-[#2C3E50] text-white">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Description</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Qté</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">P.U. HT</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">TVA</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">Total TTC</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold w-[40%]">Description</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold w-[12%]">Qté</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold w-[15%]">P.U. HT</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold w-[13%]">TVA</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold w-[20%]">Total TTC</th>
                 </tr>
               </thead>
               <tbody>
                 {/* Main d'œuvre (toujours affichée) */}
                 <tr className="border-t border-gray-200 bg-orange-50">
-                  <td className="px-4 py-3 text-sm">
+                  <td className="px-4 py-3 text-sm break-words">
                     <span className="font-semibold text-[#FF6B00]">⚡ Main d'œuvre</span>
                   </td>
                   <td className="px-4 py-3 text-sm text-center">
@@ -1877,11 +1891,11 @@ export default function NouveauDevisPage() {
                 {/* Matière première (si activée) */}
                 {ajouterMatierePremiere && (
                   <tr className="border-t border-gray-200 bg-blue-50">
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm break-words">
                       <span className="font-semibold text-blue-600">🛠️ Matière première</span>
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
-                      {matierePremiereQuantite} unité
+                      {matierePremiereQuantite}
                     </td>
                     <td className="px-4 py-3 text-sm text-right">
                       {matierePremierePrixHT.toFixed(2)} €
@@ -1901,7 +1915,7 @@ export default function NouveauDevisPage() {
 
                 {lignes.map((ligne) => (
                   <tr key={ligne.id} className="border-t border-gray-200">
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm break-words">
                       {ligne.description || <span className="text-gray-400 italic">Description...</span>}
                     </td>
                     <td className="px-4 py-3 text-sm text-center">

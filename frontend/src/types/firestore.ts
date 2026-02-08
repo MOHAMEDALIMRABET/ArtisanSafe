@@ -543,6 +543,8 @@ export interface Devis {
   dateCreation: Timestamp;
   dateEnvoi?: Timestamp;
   dateValidation?: Timestamp;
+  dateDebutPrevue?: Timestamp; // Date de début des travaux prévue
+  numeroDevis?: string; // Numéro de devis (ex: "DEV-2026-001")
   version: number; // Historique versions
 }
 
