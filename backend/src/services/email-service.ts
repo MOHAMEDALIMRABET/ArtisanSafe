@@ -44,7 +44,7 @@ export async function sendEmail(emailData: EmailNotification): Promise<boolean> 
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: `"ArtisanSafe" <${process.env.SMTP_USER}>`,
+      from: `"ArtisanDispo" <${process.env.SMTP_USER}>`,
       to: emailData.to,
       subject: emailData.subject,
       html: emailData.htmlContent,

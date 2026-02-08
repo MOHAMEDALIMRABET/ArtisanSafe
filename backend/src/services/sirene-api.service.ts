@@ -72,7 +72,7 @@ export async function verifySiret(siret: string, raisonSocialeInput?: string): P
       {
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'ArtisanSafe/1.0'
+          'User-Agent': 'ArtisanDispo/1.0'
         },
         signal: AbortSignal.timeout(15000) // Timeout 15s
       }

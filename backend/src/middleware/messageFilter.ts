@@ -153,7 +153,7 @@ export const messageFilterMiddleware = (
         code: 'MESSAGE_BLOCKED',
         message: '❌ Message bloqué : partage de coordonnées personnelles interdit',
         categories,
-        details: '⚠️ Le partage de numéros de téléphone, emails, adresses ou réseaux sociaux est interdit avant l\'acceptation du devis. Utilisez la messagerie ArtisanSafe pour communiquer en toute sécurité.',
+        details: '⚠️ Le partage de numéros de téléphone, emails, adresses ou réseaux sociaux est interdit avant l\'acceptation du devis. Utilisez la messagerie ArtisanDispo pour communiquer en toute sécurité.',
       },
     });
     return;
