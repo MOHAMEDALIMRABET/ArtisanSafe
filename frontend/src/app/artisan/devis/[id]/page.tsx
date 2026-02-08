@@ -398,14 +398,6 @@ export default function VoirDevisPage() {
                   Date : {devis.dateCreation?.toDate().toLocaleDateString('fr-FR')}
                 </p>
               </div>
-
-              {/* Info demande à droite */}
-              {devis.demandeId && demande && (
-                <div className="text-right text-sm flex-shrink-0 print:hidden">
-                  <p className="text-gray-600 font-semibold">Demande N° {devis.demandeId.slice(-6).toUpperCase()}</p>
-                  <p className="text-gray-500">{demande.titre || demande.categorie}</p>
-                </div>
-              )}
             </div>
           </div>
 

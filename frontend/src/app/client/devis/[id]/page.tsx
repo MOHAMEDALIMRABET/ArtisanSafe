@@ -839,14 +839,6 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                     Date : {devis.dateCreation?.toDate().toLocaleDateString('fr-FR')}
                   </p>
                 </div>
-
-                {/* Info demande à droite */}
-                {demande && (
-                  <div className="text-right text-sm flex-shrink-0 print:hidden">
-                    <p className="text-gray-600 font-semibold">Demande N° {demande.id?.slice(-6).toUpperCase()}</p>
-                    <p className="text-gray-500">{demande.titre || demande.categorie}</p>
-                  </div>
-                )}
               </div>
             </div>
 
