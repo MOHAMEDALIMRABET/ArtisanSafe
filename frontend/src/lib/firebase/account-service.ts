@@ -1,6 +1,6 @@
 /**
  * Service de gestion des comptes utilisateurs (Admin)
- * ArtisanSafe - Gestion comptes artisans et clients
+ * ArtisanDispo - Gestion comptes artisans et clients
  */
 
 import { doc, updateDoc, deleteDoc, setDoc, Timestamp, getDoc, collection, getDocs, query, where } from 'firebase/firestore';

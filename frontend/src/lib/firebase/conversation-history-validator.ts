@@ -3,7 +3,7 @@
  * et autres tentatives de contournement via l'historique de conversation
  * 
  * @module conversation-history-validator
- * @author ArtisanSafe Team
+ * @author ArtisanDispo Team
  * @date 2026-01-31
  */
 

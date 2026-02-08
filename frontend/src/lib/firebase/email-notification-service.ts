@@ -1,6 +1,6 @@
 /**
  * Service de notification email
- * ArtisanSafe - Envoi d'emails pour événements importants
+ * ArtisanDispo - Envoi d'emails pour événements importants
  */
 
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
@@ -60,7 +60,7 @@ function getDeletionWarningTemplate(userName: string, reason: string, deletionDa
           <p>Bonjour ${userName},</p>
           
           <div class="warning-box">
-            <strong>Votre compte ArtisanSafe sera supprimé définitivement le ${formattedDate}.</strong>
+            <strong>Votre compte ArtisanDispo sera supprimé définitivement le ${formattedDate}.</strong>
           </div>
 
           <p><strong>Raison de la suppression :</strong></p>
@@ -99,7 +99,7 @@ function getDeletionWarningTemplate(userName: string, reason: string, deletionDa
           </p>
         </div>
         <div class="footer">
-          <p>ArtisanSafe - Plateforme de mise en relation artisans-clients</p>
+          <p>ArtisanDispo - Plateforme de mise en relation artisans-clients</p>
           <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
         </div>
       </div>
@@ -112,7 +112,7 @@ AVERTISSEMENT DE SUPPRESSION
 
 Bonjour ${userName},
 
-Votre compte ArtisanSafe sera supprimé définitivement le ${formattedDate}.
+Votre compte ArtisanDispo sera supprimé définitivement le ${formattedDate}.
 
 Raison : ${reason}
 
@@ -125,7 +125,7 @@ Données conservées (loi) :
 Vous avez jusqu'au ${formattedDate} pour contester.
 Contact : support@artisandispo.fr
 
-ArtisanSafe
+ArtisanDispo
   `;
 
   return { html, text };
@@ -158,7 +158,7 @@ function getDeletionConfirmationTemplate(userName: string, reason: string): { ht
         <div class="content">
           <p>Bonjour ${userName},</p>
           
-          <p><strong>Votre compte ArtisanSafe a été supprimé définitivement.</strong></p>
+          <p><strong>Votre compte ArtisanDispo a été supprimé définitivement.</strong></p>
 
           <div class="info-box">
             <p><strong>Raison :</strong> ${reason}</p>
@@ -190,7 +190,7 @@ function getDeletionConfirmationTemplate(userName: string, reason: string): { ht
             <strong>Conséquences :</strong>
           </p>
           <ul>
-            <li>Vous ne pouvez plus vous connecter à ArtisanSafe</li>
+            <li>Vous ne pouvez plus vous connecter à ArtisanDispo</li>
             <li>Votre profil est invisible sur la plateforme</li>
             <li>Cette action est <strong>définitive et irréversible</strong></li>
           </ul>
@@ -204,7 +204,7 @@ function getDeletionConfirmationTemplate(userName: string, reason: string): { ht
           </p>
         </div>
         <div class="footer">
-          <p>ArtisanSafe - Plateforme de mise en relation artisans-clients</p>
+          <p>ArtisanDispo - Plateforme de mise en relation artisans-clients</p>
           <p>Pour plus d'informations sur vos droits RGPD : www.cnil.fr</p>
         </div>
       </div>
@@ -217,7 +217,7 @@ COMPTE SUPPRIMÉ
 
 Bonjour ${userName},
 
-Votre compte ArtisanSafe a été supprimé définitivement.
+Votre compte ArtisanDispo a été supprimé définitivement.
 
 Raison : ${reason}
 Date : ${new Date().toLocaleString('fr-FR')}
@@ -229,7 +229,7 @@ Cette action est irréversible.
 
 Contact RGPD : rgpd@artisandispo.fr
 
-ArtisanSafe
+ArtisanDispo
   `;
 
   return { html, text };
@@ -263,7 +263,7 @@ function getSuspensionTemplate(userName: string, reason: string): { html: string
           <p>Bonjour ${userName},</p>
           
           <div class="warning-box">
-            <strong>Votre compte ArtisanSafe a été temporairement suspendu.</strong>
+            <strong>Votre compte ArtisanDispo a été temporairement suspendu.</strong>
           </div>
 
           <p><strong>Raison de la suspension :</strong></p>
@@ -284,7 +284,7 @@ function getSuspensionTemplate(userName: string, reason: string): { html: string
           </p>
         </div>
         <div class="footer">
-          <p>ArtisanSafe - Plateforme de mise en relation artisans-clients</p>
+          <p>ArtisanDispo - Plateforme de mise en relation artisans-clients</p>
         </div>
       </div>
     </body>
@@ -296,7 +296,7 @@ COMPTE SUSPENDU
 
 Bonjour ${userName},
 
-Votre compte ArtisanSafe a été temporairement suspendu.
+Votre compte ArtisanDispo a été temporairement suspendu.
 
 Raison : ${reason}
 
@@ -305,7 +305,7 @@ Cette suspension est temporaire et réversible.
 
 Contact : support@artisandispo.fr
 
-ArtisanSafe
+ArtisanDispo
   `;
 
   return { html, text };
@@ -340,7 +340,7 @@ function getReactivationTemplate(userName: string): { html: string; text: string
           <p>Bonjour ${userName},</p>
           
           <div class="success-box">
-            <strong>Bonne nouvelle ! Votre compte ArtisanSafe a été réactivé.</strong>
+            <strong>Bonne nouvelle ! Votre compte ArtisanDispo a été réactivé.</strong>
           </div>
 
           <p>Vous pouvez à nouveau :</p>
@@ -352,7 +352,7 @@ function getReactivationTemplate(userName: string): { html: string; text: string
           </ul>
 
           <p style="margin-top: 30px;">
-            <a href="http://localhost:3000/connexion" class="button">Se connecter à ArtisanSafe</a>
+            <a href="http://localhost:3000/connexion" class="button">Se connecter à ArtisanDispo</a>
           </p>
 
           <p style="margin-top: 30px;">
@@ -361,7 +361,7 @@ function getReactivationTemplate(userName: string): { html: string; text: string
           </p>
         </div>
         <div class="footer">
-          <p>ArtisanSafe - Plateforme de mise en relation artisans-clients</p>
+          <p>ArtisanDispo - Plateforme de mise en relation artisans-clients</p>
         </div>
       </div>
     </body>
@@ -373,13 +373,13 @@ COMPTE RÉACTIVÉ
 
 Bonjour ${userName},
 
-Bonne nouvelle ! Votre compte ArtisanSafe a été réactivé.
+Bonne nouvelle ! Votre compte ArtisanDispo a été réactivé.
 
 Vous pouvez à nouveau vous connecter et utiliser la plateforme.
 
 Se connecter : http://localhost:3000/connexion
 
-ArtisanSafe
+ArtisanDispo
   `;
 
   return { html, text };
@@ -435,7 +435,7 @@ export async function sendDeletionWarningEmail(
   
   return sendEmailNotification(
     email,
-    '⚠️ Avertissement : Suppression de votre compte ArtisanSafe',
+    '⚠️ Avertissement : Suppression de votre compte ArtisanDispo',
     template.html,
     template.text,
     'deletion_warning',
@@ -455,7 +455,7 @@ export async function sendDeletionConfirmationEmail(
   
   return sendEmailNotification(
     email,
-    '🗑️ Confirmation : Votre compte ArtisanSafe a été supprimé',
+    '🗑️ Confirmation : Votre compte ArtisanDispo a été supprimé',
     template.html,
     template.text,
     'account_deletion',
@@ -475,7 +475,7 @@ export async function sendSuspensionEmail(
   
   return sendEmailNotification(
     email,
-    '🔒 Suspension de votre compte ArtisanSafe',
+    '🔒 Suspension de votre compte ArtisanDispo',
     template.html,
     template.text,
     'account_suspension',
@@ -494,7 +494,7 @@ export async function sendReactivationEmail(
   
   return sendEmailNotification(
     email,
-    '✅ Réactivation de votre compte ArtisanSafe',
+    '✅ Réactivation de votre compte ArtisanDispo',
     template.html,
     template.text,
     'reactivation',
