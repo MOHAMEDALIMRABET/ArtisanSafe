@@ -338,8 +338,24 @@ export async function updateDevis(
       }
       
       // Si c'est un devis avec variantes, annuler automatiquement les autres variantes
-      if (devisActuel.varianteGroupe) {
-        await annulerAutresVariantes(devisId, devisActuel.varianteGroupe);
+      if (devisActuel.varianteGroupe || devisActuel.demandeId) {
+        await annulerAutresVariantes(
+          devisId, 
+          devisActuel.varianteGroupe, 
+          devisActuel.demandeId
+        );
+      }
+    } else if (updates.statut === 'paye') {
+      // 🆕 PAIEMENT : Annuler les autres variantes quand une est payée
+      updateData.datePaiement = Timestamp.now();
+      updateData.dateDerniereNotification = Timestamp.now();
+      
+      if (devisActuel.varianteGroupe || devisActuel.demandeId) {
+        await annulerAutresVariantes(
+          devisId, 
+          devisActuel.varianteGroupe, 
+          devisActuel.demandeId
+        );
       }
     } else if (updates.statut === 'refuse') {
       updateData.dateRefus = Timestamp.now();
@@ -373,25 +389,49 @@ export async function marquerDevisAvecNotification(devisId: string): Promise<voi
 }
 
 /**
- * Annuler toutes les autres variantes d'un groupe quand une est acceptée
+ * Annuler toutes les autres variantes quand une est acceptée/payée
+ * Supporte 2 systèmes : ancien (varianteGroupe) + moderne (demandeId)
  */
 async function annulerAutresVariantes(
   devisAccepteId: string, 
-  varianteGroupe: string
+  varianteGroupe?: string,
+  demandeId?: string
 ): Promise<void> {
   try {
-    // Récupérer tous les devis du même groupe de variantes
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where('varianteGroupe', '==', varianteGroupe)
-    );
+    let querySnapshot;
     
-    const querySnapshot = await getDocs(q);
+    // PRIORITÉ 1 : Utiliser demandeId (système moderne)
+    if (demandeId) {
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('demandeId', '==', demandeId)
+      );
+      querySnapshot = await getDocs(q);
+      console.log(`🔍 Recherche variantes par demandeId: ${demandeId} → ${querySnapshot.docs.length} devis trouvés`);
+    }
+    // FALLBACK : Utiliser varianteGroupe (ancien système)
+    else if (varianteGroupe) {
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('varianteGroupe', '==', varianteGroupe)
+      );
+      querySnapshot = await getDocs(q);
+      console.log(`🔍 Recherche variantes par varianteGroupe: ${varianteGroupe} → ${querySnapshot.docs.length} devis trouvés`);
+    }
+    // Aucun critère fourni
+    else {
+      console.warn('⚠️ Aucun critère fourni pour annuler variantes (ni demandeId ni varianteGroupe)');
+      return;
+    }
+    
     const maintenant = Timestamp.now();
     
-    // Annuler tous les devis sauf celui qui est accepté
+    // Annuler tous les devis sauf celui qui est accepté/payé
     const updatePromises = querySnapshot.docs
-      .filter(doc => doc.id !== devisAccepteId && doc.data().statut !== 'accepte')
+      .filter(doc => {
+        const statut = doc.data().statut;
+        return doc.id !== devisAccepteId && !['accepte', 'paye', 'annule'].includes(statut);
+      })
       .map(doc => 
         updateDoc(doc.ref, {
           statut: 'annule' as DevisStatut,
@@ -401,7 +441,7 @@ async function annulerAutresVariantes(
             {
               statut: 'annule' as DevisStatut,
               date: maintenant,
-              commentaire: 'Annulé automatiquement (autre variante acceptée)',
+              commentaire: 'Annulé automatiquement (autre variante acceptée/payée)',
             }
           ]
         })

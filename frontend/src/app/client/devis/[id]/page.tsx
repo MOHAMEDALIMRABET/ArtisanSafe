@@ -315,31 +315,41 @@ export default function ClientDevisDetailPage() {
         }
       }
 
-      // 4. REFUSER AUTOMATIQUEMENT les autres devis en attente
+      // 4. ANNULER AUTOMATIQUEMENT toutes les autres variantes (même demande)
       if (devis.demandeId) {
         try {
           const autresDevisQuery = query(
             collection(db, 'devis'),
-            where('demandeId', '==', devis.demandeId),
-            where('statut', '==', 'envoye')
+            where('demandeId', '==', devis.demandeId)
           );
           
           const autresDevisSnapshot = await getDocs(autresDevisQuery);
           const batch = writeBatch(db);
           
-          autresDevisSnapshot.docs.forEach(doc => {
-            batch.update(doc.ref, {
-              statut: 'refuse',
-              typeRefus: 'automatique',
-              motifRefus: 'Demande déjà attribuée à un autre artisan',
-              dateRefus: Timestamp.now(),
-            });
+          // Annuler tous les devis de la même demande SAUF celui qui est payé
+          autresDevisSnapshot.docs.forEach(devisDoc => {
+            const devisData = devisDoc.data();
+            const statut = devisData.statut;
+            
+            // Ne pas toucher au devis qu'on vient de payer ni aux devis déjà finalisés
+            if (devisDoc.id !== devisId && !['paye', 'annule', 'refuse'].includes(statut)) {
+              batch.update(devisDoc.ref, {
+                statut: 'annule',
+                typeRefus: 'automatique',
+                motifRefus: 'Autre variante de cette demande acceptée et payée',
+                dateRefus: Timestamp.now(),
+                dateModification: Timestamp.now(),
+              });
+            }
           });
           
           await batch.commit();
-          console.log(`✅ ${autresDevisSnapshot.size} devis auto-refusés`);
+          const nbAnnules = autresDevisSnapshot.docs.filter(d => 
+            d.id !== devisId && !['paye', 'annule', 'refuse'].includes(d.data().statut)
+          ).length;
+          console.log(`✅ ${nbAnnules} variante(s) alternative(s) annulée(s) automatiquement`);
         } catch (error) {
-          console.error('Erreur refus automatique autres devis:', error);
+          console.error('Erreur annulation automatique autres variantes:', error);
         }
       }
 
