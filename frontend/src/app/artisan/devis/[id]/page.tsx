@@ -272,6 +272,18 @@ export default function VoirDevisPage() {
             top: 0;
             width: 100%;
           }
+
+          /* IMPORTANT: Masquer les sections no-print MÊME dans print-area (doit être APRÈS .print-area *) */
+          .print-area .no-print,
+          .print-area .print\\:hidden,
+          .no-print,
+          .print\\:hidden {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+          }
           
           /* Réduire espacements */
           .print-container {
@@ -341,13 +353,6 @@ export default function VoirDevisPage() {
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
             column-gap: 2rem !important;
-          }
-
-          /* IMPORTANT: Masquer les sections no-print même dans print-area */
-          .no-print,
-          .print\\:hidden {
-            display: none !important;
-            visibility: hidden !important;
           }
         }
       `}</style>
