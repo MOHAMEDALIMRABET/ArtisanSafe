@@ -342,6 +342,13 @@ export default function VoirDevisPage() {
             grid-template-columns: 1fr 1fr !important;
             column-gap: 2rem !important;
           }
+
+          /* IMPORTANT: Masquer les sections no-print même dans print-area */
+          .no-print,
+          .print\\:hidden {
+            display: none !important;
+            visibility: hidden !important;
+          }
         }
       `}</style>
       

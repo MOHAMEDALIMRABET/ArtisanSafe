@@ -699,6 +699,13 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             grid-template-columns: 1fr 1fr !important;
             column-gap: 2rem !important;
           }
+
+          /* IMPORTANT: Masquer les sections no-print même dans print-area */
+          .no-print,
+          .print\\:hidden {
+            display: none !important;
+            visibility: hidden !important;
+          }
         }
       `}</style>
       <div className="min-h-screen bg-[#F8F9FA] print:bg-white print-area">
