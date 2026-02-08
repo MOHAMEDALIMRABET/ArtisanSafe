@@ -619,7 +619,7 @@ export default function VoirDevisPage() {
           </div>
 
           {/* Informations complémentaires */}
-          <div className="border-t pt-6 space-y-4">
+          <div className="pt-6 space-y-4">
             {devis.delaiRealisation && (
               <div>
                 <h3 className="font-bold text-[#2C3E50] mb-2">Délai de réalisation :</h3>
