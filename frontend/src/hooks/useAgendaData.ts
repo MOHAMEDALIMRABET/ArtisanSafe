@@ -5,8 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { disponibiliteService } from '@/lib/firebase/disponibilite-service';
-import { getContratsByArtisan } from '@/lib/firebase/contrat-service';
-import type { DisponibiliteSlot, Contrat } from '@/types/firestore';
+import { getDevisByArtisan } from '@/lib/firebase/devis-service';
+import type { DisponibiliteSlot, Devis } from '@/types/firestore';
 
 interface CacheEntry<T> {
   data: T;
@@ -19,7 +19,7 @@ const cache = new Map<string, CacheEntry<any>>();
 
 export function useAgendaData(artisanId: string | null) {
   const [disponibilites, setDisponibilites] = useState<DisponibiliteSlot[]>([]);
-  const [contrats, setContrats] = useState<Contrat[]>([]);
+  const [contrats, setContrats] = useState<Devis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,11 +52,11 @@ export function useAgendaData(artisanId: string | null) {
           console.log(`✅ Disponibilités chargées en ${Date.now() - startTime}ms`);
         }
 
-        // Vérifier le cache pour les contrats
+        // Vérifier le cache pour les contrats (devis signés)
         const contratCacheKey = `contrats_${artisanId}`;
         const cachedContrats = cache.get(contratCacheKey);
         
-        let contratsData: Contrat[];
+        let contratsData: Devis[];
         
         if (cachedContrats && Date.now() - cachedContrats.timestamp < CACHE_DURATION) {
           console.log('✅ Contrats chargés depuis le cache');
@@ -64,7 +64,12 @@ export function useAgendaData(artisanId: string | null) {
         } else {
           console.log('⏳ Chargement des contrats depuis Firestore...');
           const contratsStartTime = Date.now();
-          contratsData = await getContratsByArtisan(artisanId);
+          // Un devis signé = un contrat juridique
+          // Récupérer tous les devis avec statuts contractuels
+          const allDevis = await getDevisByArtisan(artisanId);
+          contratsData = allDevis.filter(d => 
+            ['accepte', 'en_attente_paiement', 'paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut)
+          );
           cache.set(contratCacheKey, { data: contratsData, timestamp: Date.now() });
           console.log(`✅ Contrats chargés en ${Date.now() - contratsStartTime}ms`);
         }

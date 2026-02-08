@@ -4,11 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
-import { getContratById } from '@/lib/firebase/contrat-service';
+import { getDevisById } from '@/lib/firebase/devis-service';
 import { getArtisanById } from '@/lib/firebase/artisan-service';
 import { createAvis } from '@/lib/firebase/avis-service';
-import type { User, Artisan } from '@/types/firestore';
-import type { Contrat } from '@/types/contrat';
+import type { User, Artisan, Devis } from '@/types/firestore';
 import Link from 'next/link';
 
 const POINTS_FORTS_OPTIONS = [
@@ -32,10 +31,10 @@ const POINTS_AMELIORATION_OPTIONS = [
 export default function NouvelAvisPage() {
   const router = useRouter();
   const params = useParams();
-  const contratId = params.contratId as string;
+  const contratId = params.contratId as string; // En réalité, c'est un devisId (devis signé = contrat)
 
   const [user, setUser] = useState<User | null>(null);
-  const [contrat, setContrat] = useState<Contrat | null>(null);
+  const [contrat, setContrat] = useState<Devis | null>(null); // Devis signé = contrat juridique
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -67,8 +66,8 @@ export default function NouvelAvisPage() {
 
       setUser(userData);
 
-      // Charger le contrat
-      const contratData = await getContratById(contratId);
+      // Charger le devis (un devis signé = contrat juridique)
+      const contratData = await getDevisById(contratId);
       if (!contratData) {
         alert('Contrat introuvable');
         router.push('/dashboard');
