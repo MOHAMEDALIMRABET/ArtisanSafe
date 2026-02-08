@@ -286,17 +286,20 @@ export const syncDevisCounter = functions
     if (req.method === 'OPTIONS') {
       res.set('Access-Control-Allow-Methods', 'POST');
       res.set('Access-Control-Allow-Headers', 'Content-Type');
-      return res.status(204).send('');
+      res.status(204).send('');
+      return;
     }
 
     if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Méthode non autorisée' });
+      res.status(405).json({ error: 'Méthode non autorisée' });
+      return;
     }
 
     const { demandeId } = req.body;
 
     if (!demandeId) {
-      return res.status(400).json({ error: 'demandeId requis' });
+      res.status(400).json({ error: 'demandeId requis' });
+      return;
     }
 
     try {
@@ -316,7 +319,8 @@ export const syncDevisCounter = functions
       const demandeSnap = await demandeRef.get();
 
       if (!demandeSnap.exists) {
-        return res.status(404).json({ error: 'Demande introuvable' });
+        res.status(404).json({ error: 'Demande introuvable' });
+        return;
       }
 
       const oldCount = demandeSnap.data()!.devisRecus || 0;
@@ -328,7 +332,7 @@ export const syncDevisCounter = functions
 
       console.log(`✅ [syncDevisCounter] Compteur synchronisé: ${oldCount} → ${realCount}`);
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         demandeId,
         oldCount,
@@ -338,6 +342,6 @@ export const syncDevisCounter = functions
 
     } catch (error) {
       console.error(`❌ [syncDevisCounter] ERREUR:`, error);
-      return res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ error: 'Erreur serveur' });
     }
   });
