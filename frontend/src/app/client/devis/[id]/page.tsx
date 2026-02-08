@@ -1069,13 +1069,15 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
               </div>
             )}
 
-            {/* Mentions légales */}
-            <div className="pt-6 mt-6">
-              <p className="text-xs text-gray-500">
-                Ce devis est valable jusqu'au {devis.dateValidite?.toDate().toLocaleDateString('fr-FR')} et ne constitue pas une facture.
-                Une fois accepté, ce devis engage les deux parties selon les conditions décrites.
-              </p>
-            </div>
+            {/* Mentions légales - masquées pour devis payés */}
+            {devis.statut !== 'paye' && (
+              <div className="pt-6 mt-6">
+                <p className="text-xs text-gray-500">
+                  Ce devis est valable jusqu'au {devis.dateValidite?.toDate().toLocaleDateString('fr-FR')} et ne constitue pas une facture.
+                  Une fois accepté, ce devis engage les deux parties selon les conditions décrites.
+                </p>
+              </div>
+            )}
 
             {/* Signature électronique - visible à l'impression */}
             {devis.statut === 'paye' && devis.signatureClient?.url && (
