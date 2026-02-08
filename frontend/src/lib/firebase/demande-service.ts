@@ -137,11 +137,9 @@ export async function getDemandesForArtisan(artisanId: string): Promise<Demande[
   // Filtrage et tri côté client
   return demandes
     .filter(d => {
-      // Exclure demandes attribuées
-      if (d.statut === 'attribuee') return false;
-      
-      // Garder seulement publiée ou matchée
-      return d.statut === 'publiee' || d.statut === 'matchee';
+      // ✅ Inclure TOUTES les demandes actives (publiée, matchée, attribuée, quota_atteint)
+      // Ne plus exclure les demandes attribuées car l'artisan doit voir ses contrats
+      return ['publiee', 'matchee', 'attribuee', 'quota_atteint'].includes(d.statut);
     })
     .sort((a, b) => {
       const dateA = a.dateCreation?.toMillis() || 0;

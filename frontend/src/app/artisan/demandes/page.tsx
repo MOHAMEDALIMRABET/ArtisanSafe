@@ -279,13 +279,25 @@ export default function ArtisanDemandesPage() {
   }
 
   // Fonctions pour organiser les demandes par sections
+  
+  /**
+   * CONTRATS EN COURS
+   * - Demandes avec devis payé (travaux en cours)
+   * - Exclut les demandes terminées
+   */
   function getDemandesContrats(demandes: Demande[]) {
-    // Demandes avec devis payé et signé (contrats actifs)
-    return demandes.filter(d => demandesAvecDevisPayeIds.has(d.id) && !demandesTermineesIds.has(d.id));
+    return demandes.filter(d => 
+      demandesAvecDevisPayeIds.has(d.id) && !demandesTermineesIds.has(d.id)
+    );
   }
 
+  /**
+   * DEVIS ENVOYÉS
+   * - Demandes pour lesquelles l'artisan a envoyé des devis
+   * - Pas encore payés (donc pas des contrats)
+   * - Exclut refusées et terminées
+   */
   function getDemandesDevisEnvoyes(demandes: Demande[]) {
-    // Demandes pour lesquelles l'artisan a envoyé des devis (pas encore payés)
     return demandes.filter(d => 
       d.devisRecus && d.devisRecus > 0 && 
       !demandesAvecDevisPayeIds.has(d.id) && 
@@ -294,57 +306,45 @@ export default function ArtisanDemandesPage() {
     );
   }
 
+  /**
+   * DEMANDES REFUSÉES
+   * - Demandes que l'artisan a explicitement refusées
+   */
   function getDemandesRefusees(demandes: Demande[]) {
-    // Demandes refusées par l'artisan
     return demandes.filter(d => d.statut === 'annulee');
   }
 
+  /**
+   * DEMANDES TERMINÉES
+   * - Travaux terminés et validés par le client
+   */
   function getDemandesTerminees(demandes: Demande[]) {
-    // Demandes avec travaux terminés et validés
     return demandes.filter(d => demandesTermineesIds.has(d.id));
   }
 
   // Utiliser la bonne liste selon la section active
   const demandesSource = sectionActive === 'mes_demandes' ? demandes : demandesPubliques;
   
-  const filteredDemandes = demandesSource.filter(demande => {
-    // Si un demandeId est spécifié dans l'URL, afficher uniquement cette demande
-    if (highlightedDemandeId) {
-      return demande.id === highlightedDemandeId;
+  // Filtrer les demandes selon l'onglet sélectionné
+  let demandesFiltrees = demandesSource;
+  
+  // Si un demandeId est spécifié dans l'URL, afficher uniquement cette demande
+  if (highlightedDemandeId) {
+    demandesFiltrees = demandesSource.filter(d => d.id === highlightedDemandeId);
+  } else if (sectionActive === 'mes_demandes') {
+    // Filtrage par onglet uniquement pour "Mes demandes"
+    if (filter === 'contrats') {
+      demandesFiltrees = getDemandesContrats(demandesSource);
+    } else if (filter === 'devis_envoyes') {
+      demandesFiltrees = getDemandesDevisEnvoyes(demandesSource);
+    } else if (filter === 'refusees') {
+      demandesFiltrees = getDemandesRefusees(demandesSource);
+    } else if (filter === 'terminees') {
+      demandesFiltrees = getDemandesTerminees(demandesSource);
     }
-    
-    // Filtrage par onglet - Uniquement pour "Mes demandes"
-    if (sectionActive === 'mes_demandes') {
-      if (filter === 'contrats') {
-        return demandesAvecDevisPayeIds.has(demande.id) && !demandesTermineesIds.has(demande.id);
-      }
-      if (filter === 'devis_envoyes') {
-        // Devis envoyés : au moins 1 devis, PAS encore payé
-        return demande.devisRecus && demande.devisRecus > 0 && 
-               !demandesAvecDevisPayeIds.has(demande.id) && 
-               demande.statut !== 'annulee' && 
-               !demandesTermineesIds.has(demande.id);
-      }
-      if (filter === 'refusees') {
-        return demande.statut === 'annulee';
-      }
-      if (filter === 'terminees') {
-        return demandesTermineesIds.has(demande.id);
-      }
-      
-      // 'toutes' : afficher toutes les demandes actives
-      if (filter === 'toutes') {
-        return demande.statut !== 'expiree' && demande.statut !== 'annulee';
-      }
-    }
-    
-    // Pour "Demandes publiques" : afficher toutes
-    if (sectionActive === 'demandes_publiques') {
-      return true;
-    }
-    
-    return true;
-  });
+    // Sinon 'toutes' : afficher toutes les demandes (pas de filtre)
+  }
+  // Pour "Demandes publiques" : toujours afficher toutes
 
   if (isLoading) {
     return (
@@ -372,7 +372,7 @@ export default function ArtisanDemandesPage() {
                   'Détail de la demande'
                 ) : (
                   <>
-                    {filteredDemandes.length} demande{filteredDemandes.length > 1 ? 's' : ''} 
+                    {demandesFiltrees.length} demande{demandesFiltrees.length > 1 ? 's' : ''} 
                     {filter !== 'toutes' && ` (${filter})`}
                   </>
                 )}
@@ -511,7 +511,7 @@ export default function ArtisanDemandesPage() {
         )}
         
         {/* Liste des demandes */}
-        {filteredDemandes.length === 0 ? (
+        {demandesFiltrees.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <svg className="w-24 h-24 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -525,7 +525,7 @@ export default function ArtisanDemandesPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredDemandes.map((demande) => {
+            {demandesFiltrees.map((demande) => {
               return (
               <div 
                 key={demande.id} 
@@ -663,34 +663,48 @@ export default function ArtisanDemandesPage() {
                           
                           return (
                             <div
-                              key={idx} 
-                              className="relative cursor-pointer bg-white rounded-lg h-32 overflow-hidden border-2 border-gray-300 hover:border-[#FF6B00] transition shadow-sm"
-                              onClick={() => window.open(url, '_blank')}
-                              title={displayName}
+                              key={idx}
+                              className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#FF6B00] transition-all shadow-sm"
+                              style={{ backgroundColor: '#ffffff' }}
                             >
-                              <img 
-                                src={url} 
-                                alt={`Photo ${idx + 1}`}
-                                className="w-full h-full object-cover"
-                                style={{ backgroundColor: '#f3f4f6' }}
-                                onError={(e) => {
-                                  const img = e.target as HTMLImageElement;
-                                  img.style.display = 'none';
-                                  const parent = img.parentElement;
-                                  if (parent) {
-                                    parent.innerHTML = `
-                                      <div class="flex flex-col items-center justify-center h-full bg-gradient-to-br from-orange-50 to-orange-100 p-4">
-                                        <svg class="w-12 h-12 text-orange-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={displayName}
+                                className="block w-full h-full"
+                              >
+                                <img
+                                  src={url}
+                                  alt={displayName}
+                                  className="w-full h-full object-contain"
+                                  onLoad={(e) => {
+                                    console.log('✅ Photo chargée:', displayName, url);
+                                  }}
+                                  onError={(e) => {
+                                    console.error('❌ Erreur chargement photo:', displayName, url);
+                                    // Afficher un placeholder si l'image ne charge pas
+                                    const img = e.currentTarget;
+                                    img.style.display = 'none';
+                                    const container = img.parentElement?.parentElement;
+                                    if (container && !container.querySelector('.photo-error')) {
+                                      const errorDiv = document.createElement('div');
+                                      errorDiv.className = 'photo-error absolute inset-0 flex flex-col items-center justify-center bg-gray-100';
+                                      errorDiv.innerHTML = `
+                                        <svg class="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                         </svg>
-                                        <p class="text-xs text-orange-600 font-semibold text-center">Photo ${idx + 1}</p>
-                                        <p class="text-xs text-orange-500 mt-1">Cliquer pour ouvrir</p>
-                                      </div>
-                                    `;
-                                    parent.onclick = () => window.open(url, '_blank');
-                                  }
-                                }}
-                              />
+                                        <span class="text-xs text-gray-500 text-center px-2">${displayName}</span>
+                                      `;
+                                      container.appendChild(errorDiv);
+                                    }
+                                  }}
+                                />
+                              </a>
+                              {/* Tooltip au hover avec le nom du fichier */}
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                                <p className="text-white text-xs truncate">{displayName}</p>
+                              </div>
                             </div>
                           );
                         })}
