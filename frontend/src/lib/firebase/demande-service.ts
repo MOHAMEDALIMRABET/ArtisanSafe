@@ -194,40 +194,6 @@ export async function addArtisansMatches(
 }
 
 /**
- * ⚠️ OBSOLÈTE - NE PLUS UTILISER
- * 
- * Incrémenter le nombre de devis reçus
- * 
- * @deprecated Depuis Phase 2 (limite 10 devis), le compteur est géré automatiquement
- * par la Cloud Function onDevisCreated (functions/src/triggers/devisTriggers.ts)
- * 
- * Raisons de l'obsolescence :
- * - Incrémentation atomique garantie par transaction Firestore (évite race conditions)
- * - Fermeture automatique demande à 10 devis
- * - Notifications automatiques (seuil 8 devis, quota atteint 10 devis)
- * 
- * Si besoin de resynchronisation manuelle, utiliser :
- * - Cloud Function HTTP : syncDevisCounter
- * - Endpoint : POST https://europe-west1-artisansafe.cloudfunctions.net/syncDevisCounter
- * - Payload : { "demandeId": "dem123" }
- * 
- * @see functions/src/triggers/devisTriggers.ts - onDevisCreated
- */
-export async function incrementDevisRecus(demandeId: string): Promise<void> {
-  console.warn('⚠️ incrementDevisRecus() est obsolète. Utiliser Cloud Function onDevisCreated.');
-  
-  // Code conservé pour compatibilité legacy mais ne devrait plus être appelé
-  const demande = await getDemandeById(demandeId);
-  if (!demande) throw new Error('Demande non trouvée');
-
-  const demandeRef = doc(db, COLLECTION_NAME, demandeId);
-  await updateDoc(demandeRef, {
-    devisRecus: (demande.devisRecus || 0) + 1,
-    dateModification: Timestamp.now(),
-  });
-}
-
-/**
  * Publier une demande (passer de brouillon à publiée)
  */
 export async function publierDemande(demandeId: string): Promise<void> {
