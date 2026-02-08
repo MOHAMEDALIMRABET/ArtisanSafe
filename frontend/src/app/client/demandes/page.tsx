@@ -794,26 +794,45 @@ export default function MesDemandesPage() {
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-sm font-semibold text-[#6C757D] mb-3">📸 Photos jointes ({(demande.photosUrls || demande.photos)?.length})</p>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                          {(demande.photosUrls || demande.photos)?.map((photoUrl, idx) => (
-                            <a
-                              key={idx}
-                              href={photoUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#FF6B00] transition-all cursor-pointer"
-                            >
-                              <img
-                                src={photoUrl}
-                                alt={`Photo ${idx + 1}`}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                              />
-                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity flex items-center justify-center">
-                                <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                </svg>
-                              </div>
-                            </a>
-                          ))}
+                          {(demande.photosUrls || demande.photos)?.map((photoUrl, idx) => {
+                            // Extraire le nom du fichier de l'URL
+                            const fileName = photoUrl.split('/').pop()?.split('?')[0] || `Photo ${idx + 1}`;
+                            const decodedFileName = decodeURIComponent(fileName);
+                            
+                            return (
+                              <a
+                                key={idx}
+                                href={photoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={decodedFileName}
+                                className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#FF6B00] transition-all cursor-pointer bg-gray-100"
+                              >
+                                <img
+                                  src={photoUrl}
+                                  alt={`Photo ${idx + 1} - ${demande.titre || demande.categorie}`}
+                                  loading="lazy"
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                  onError={(e) => {
+                                    // Afficher un placeholder si l'image ne charge pas
+                                    e.currentTarget.style.display = 'none';
+                                    const parent = e.currentTarget.parentElement;
+                                    if (parent && !parent.querySelector('.photo-error')) {
+                                      const errorDiv = document.createElement('div');
+                                      errorDiv.className = 'photo-error absolute inset-0 flex items-center justify-center bg-gray-200';
+                                      errorDiv.innerHTML = '<svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>';
+                                      parent.appendChild(errorDiv);
+                                    }
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity flex items-center justify-center">
+                                  <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                  </svg>
+                                </div>
+                              </a>
+                            );
+                          })}
                         </div>
                       </div>
                     ) : null}
