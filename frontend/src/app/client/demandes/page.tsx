@@ -150,27 +150,58 @@ export default function MesDemandesPage() {
     }
   }
 
-  function getStatutBadge(statut: Demande['statut']) {
+  function getStatutBadge(demande: Demande) {
+    // Logique intelligente selon le type de demande
+    const hasArtisan = demande.artisansMatches && demande.artisansMatches.length > 0;
+    const demandeType = demande.type || 'directe';
+    const statut = demande.statut;
+    
+    // ✅ DEMANDE DIRECTE (envoyée à un artisan spécifique)
+    // → Badge "Attribuée" dès la création (artisan déjà assigné)
+    if (demandeType === 'directe' && hasArtisan && (statut === 'publiee' || statut === 'matchee' || statut === 'genere')) {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border-2 border-orange-300">
+          🎯 Attribuée à artisan
+        </span>
+      );
+    }
+    
+    // ✅ DEMANDE PUBLIQUE publiée (pas encore de devis accepté)
+    // → Badge "Publiée"
+    if (demandeType === 'publique' && statut === 'publiee') {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+          📢 Publiée
+        </span>
+      );
+    }
+    
+    // Badges statuts standards
     const badges = {
       brouillon: 'bg-gray-200 text-gray-800',
       publiee: 'bg-blue-100 text-blue-800',
       matchee: 'bg-green-100 text-green-800',
+      attribuee: 'bg-green-100 text-green-800',
       en_cours: 'bg-yellow-100 text-yellow-800',
       terminee: 'bg-green-200 text-green-900',
       annulee: 'bg-red-100 text-red-800',
+      quota_atteint: 'bg-orange-100 text-orange-800',
     };
 
     const labels = {
       brouillon: '📝 Brouillon',
       publiee: '📢 Publiée',
       matchee: '🤝 Artisan trouvé',
+      attribuee: '✅ Attribuée',
       en_cours: '⏳ En cours',
       terminee: '✅ Terminée',
       annulee: '❌ Refusée',
+      quota_atteint: '🔒 Quota atteint',
     };
+    
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[statut]}`}>
-        {labels[statut]}
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[statut as keyof typeof badges] || 'bg-gray-200 text-gray-800'}`}>
+        {labels[statut as keyof typeof labels] || statut}
       </span>
     );
   }
@@ -542,7 +573,7 @@ export default function MesDemandesPage() {
                       </div>
                       
                       {/* {getTypeBadge(demande.type)} */}
-                      {getStatutBadge(demande.statut)}
+                      {getStatutBadge(demande)}
                       
                       {/* Badge devis refusé après le badge Publié */}
                       {(() => {

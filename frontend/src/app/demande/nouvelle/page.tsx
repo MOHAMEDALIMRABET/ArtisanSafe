@@ -180,6 +180,7 @@ function NouvelleDemandeContent() {
 
       // Créer la demande
       const demandeData: any = {
+        type: 'directe' as const, // ✅ Demande directe (envoyée à un artisan spécifique)
         clientId: user.uid,
         categorie: criteria.categorie,
         titre: formData.titre,
