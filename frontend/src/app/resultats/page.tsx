@@ -8,17 +8,18 @@ import type { MatchingResult, MatchingCriteria, User } from '@/types/firestore';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Logo } from '@/components/ui';
-import { authService } from '@/lib/auth-service';
+import { useAuth } from '@/hooks/useAuth';
 import { getUserById } from '@/lib/firebase/user-service';
 
 function ResultatsContent() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user: firebaseUser } = useAuth(); // User Firebase Auth (uid, email)
+  const [userData, setUserData] = useState<User | null>(null); // Données complètes Firestore
   const [results, setResults] = useState<MatchingResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [dashboardUrl, setDashboardUrl] = useState('/');
   const [villeInput, setVilleInput] = useState<string>(searchParams.get('ville') || '');
   const [codePostalInput, setCodePostalInput] = useState<string>(searchParams.get('codePostal') || '');
@@ -38,25 +39,33 @@ function ResultatsContent() {
   const [rayonMaxInput, setRayonMaxInput] = useState<string>(searchParams.get('rayonMax') || '20');
   const [villeSuggestions, setVilleSuggestions] = useState<Array<{nom: string, codePostal: string, departement: string}>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  // États pour le modal de publication de demande
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishDescription, setPublishDescription] = useState('');
+  const [publishPhotos, setPublishPhotos] = useState<File[]>([]);
+  const [publishBudget, setPublishBudget] = useState<string>('');
+  const [isPublishing, setIsPublishing] = useState(false);
 
+  // Charger les données Firestore de l'utilisateur
   useEffect(() => {
-    loadUserData();
-  }, []);
-
-  async function loadUserData() {
-    try {
-      const currentUser = authService.getCurrentUser();
-      if (currentUser) {
-        const userData = await getUserById(currentUser.uid);
-        if (userData) {
-          setUser(userData);
-          setDashboardUrl(userData.role === 'artisan' ? '/artisan/dashboard' : '/dashboard');
+    async function loadUserData() {
+      if (firebaseUser) {
+        try {
+          const data = await getUserById(firebaseUser.uid);
+          if (data) {
+            setUserData(data);
+            setDashboardUrl(data.role === 'artisan' ? '/artisan/dashboard' : '/dashboard');
+          }
+        } catch (error) {
+          console.error('Erreur chargement données utilisateur:', error);
         }
+      } else {
+        setUserData(null);
       }
-    } catch (error) {
-      console.error('Erreur chargement utilisateur:', error);
     }
-  }
+    loadUserData();
+  }, [firebaseUser]);
 
   async function searchVilles(query: string) {
     if (query.length < 2) {
@@ -248,10 +257,10 @@ function ResultatsContent() {
           </div>
           
           {/* Message de bienvenue */}
-          {user && (
+          {userData && (
             <div className="bg-[#1A3A5C] rounded-lg px-4 py-3">
               <p className="text-white">
-                👋 Bienvenue <span className="font-semibold text-[#FF6B00]">{user.prenom} {user.nom}</span>
+                👋 Bienvenue <span className="font-semibold text-[#FF6B00]">{userData.prenom} {userData.nom}</span>
               </p>
             </div>
           )}
@@ -508,11 +517,6 @@ function ResultatsContent() {
 
       {/* Résultats */}
       <main className="container mx-auto px-4 py-8">
-        {(() => {
-          console.log('🎨 Rendu de la page - Nombre de résultats:', results.length);
-          console.log('🎨 Résultats:', results);
-          return null;
-        })()}
         {results.length === 0 ? (
           <div className="space-y-6">
             {/* Carte "Aucun artisan disponible" */}
@@ -569,77 +573,15 @@ function ResultatsContent() {
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    {user ? (
+                    {userData ? (
                       <Button
-                        onClick={async () => {
-                          try {
-                            // Récupérer les critères depuis l'URL
-                            const categorie = searchParams.get('categorie');
-                            const ville = searchParams.get('ville');
-                            const codePostal = searchParams.get('codePostal') ?? '';
-                            const datesStr = searchParams.get('dates');
-                            const flexible = searchParams.get('flexible') === 'true';
-                            const flexibiliteDays = parseInt(searchParams.get('flexibiliteDays') || '0');
-                            const urgence = searchParams.get('urgence') as 'faible' | 'normale' | 'urgent';
-                            const rayonMaxParam = searchParams.get('rayonMax');
-                            const rayonMax = rayonMaxParam ? parseInt(rayonMaxParam) : 10;
-
-                            if (!categorie || !ville || !datesStr) {
-                              alert('Critères de recherche manquants');
-                              return;
-                            }
-
-                            const dates = JSON.parse(datesStr) as string[];
-
-                            // Importer Timestamp et createDemande
-                            const { Timestamp } = await import('firebase/firestore');
-                            const { createDemande, notifyQualifiedArtisans } = await import('@/lib/firebase/demande-service');
-
-                            // Convertir les dates string en Timestamp Firestore
-                            const datesTimestamps = dates.map(dateStr => {
-                              const date = new Date(dateStr);
-                              return Timestamp.fromDate(date);
-                            });
-
-                            // Créer la demande publique
-                            const demandeId = await createDemande({
-                              clientId: user.uid,
-                              type: 'publique',
-                              statut: 'publiee',
-                              categorie: categorie as any,
-                              description: `Recherche ${categorie} à ${ville}`,
-                              localisation: {
-                                ville,
-                                codePostal,
-                                adresse: ville,
-                              },
-                              datesSouhaitees: {
-                                dates: datesTimestamps, // Utiliser les Timestamps au lieu des strings
-                                flexible,
-                                flexibiliteDays: flexible ? flexibiliteDays : undefined,
-                              },
-                              urgence: urgence || 'normale',
-                              critereRecherche: {
-                                metier: categorie,
-                                ville,
-                                rayon: rayonMax,
-                              },
-                              artisansMatches: [], // Demande publique, pas de matches
-                              devisRecus: 0,
-                            });
-
-                            // Notifier les artisans qualifiés (en arrière-plan)
-                            notifyQualifiedArtisans(demandeId).catch(error => {
-                              console.error('⚠️ Erreur notification artisans:', error);
-                              // Ne pas bloquer la redirection si notification échoue
-                            });
-
-                            // Rediriger vers la page des demandes du client avec message de succès
-                            router.push(`/client/demandes?success=demande_publiee&demandeId=${demandeId}`);
-                          } catch (error) {
-                            console.error('Erreur création demande publique:', error);
-                            alert('Impossible de publier la demande. Veuillez réessayer.');
-                          }
+                        onClick={() => {
+                          // Ouvrir le modal au lieu de publier directement
+                          const categorie = searchParams.get('categorie');
+                          const ville = searchParams.get('ville');
+                          const defaultDescription = `Recherche ${categorie} à ${ville}`;
+                          setPublishDescription(defaultDescription);
+                          setShowPublishModal(true);
                         }}
                         className="bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
                       >
@@ -759,7 +701,7 @@ function ResultatsContent() {
                         
                         {/* Bouton Demander un devis à côté du badge */}
                         <div>
-                          {user ? (
+                          {userData ? (
                             <Button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -890,6 +832,251 @@ function ResultatsContent() {
           </div>
         )}
       </main>
+
+      {/* Modal de publication de demande */}
+      {showPublishModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-[#2C3E50]">📢 Publier ma demande</h2>
+              <button
+                onClick={() => {
+                  setShowPublishModal(false);
+                  setPublishDescription('');
+                  setPublishPhotos([]);
+                  setPublishBudget('');
+                }}
+                className="text-[#6C757D] hover:text-[#2C3E50] text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Description */}
+              <div>
+                <label className="block text-[#2C3E50] font-semibold mb-2">
+                  Description de votre besoin *
+                </label>
+                <textarea
+                  value={publishDescription}
+                  onChange={(e) => setPublishDescription(e.target.value)}
+                  placeholder="Décrivez précisément les travaux à réaliser..."
+                  required
+                  rows={6}
+                  maxLength={2000}
+                  className="w-full px-4 py-3 border border-[#E9ECEF] rounded-lg focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00] focus:ring-opacity-20 outline-none resize-none"
+                />
+                <p className="text-sm text-[#6C757D] mt-1">
+                  {publishDescription.length}/2000 caractères
+                </p>
+              </div>
+
+              {/* Photos */}
+              <div>
+                <label className="block text-[#2C3E50] font-semibold mb-2">
+                  Photos du chantier (optionnel)
+                </label>
+                <div className="border-2 border-dashed border-[#E9ECEF] rounded-lg p-6 text-center hover:border-[#FF6B00] transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      
+                      // Validation: max 5 photos, taille < 5MB chacune
+                      if (publishPhotos.length + files.length > 5) {
+                        alert('Maximum 5 photos autorisées');
+                        return;
+                      }
+
+                      for (const file of files) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert(`La photo ${file.name} dépasse 5MB`);
+                          return;
+                        }
+                        if (!file.type.startsWith('image/')) {
+                          alert(`Le fichier ${file.name} n'est pas une image`);
+                          return;
+                        }
+                      }
+
+                      setPublishPhotos([...publishPhotos, ...files]);
+                    }}
+                    className="hidden"
+                    id="modal-photo-upload"
+                  />
+                  <label htmlFor="modal-photo-upload" className="cursor-pointer">
+                    <div className="text-5xl mb-3">📷</div>
+                    <p className="text-[#2C3E50] font-semibold mb-1">
+                      Cliquez pour ajouter des photos
+                    </p>
+                    <p className="text-sm text-[#6C757D]">
+                      Maximum 5 photos • 5MB par photo • JPG, PNG
+                    </p>
+                  </label>
+                </div>
+
+                {/* Prévisualisation photos */}
+                {publishPhotos.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
+                    {publishPhotos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={URL.createObjectURL(photo)}
+                          alt={`Photo ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border border-[#E9ECEF]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setPublishPhotos(publishPhotos.filter((_, i) => i !== index))}
+                          className="absolute top-1 right-1 bg-[#DC3545] text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Budget */}
+              <div>
+                <label className="block text-[#2C3E50] font-semibold mb-2">
+                  Budget estimé (optionnel)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={publishBudget}
+                    onChange={(e) => setPublishBudget(e.target.value)}
+                    placeholder="1000"
+                    min="0"
+                    className="flex-1 px-4 py-3 border border-[#E9ECEF] rounded-lg focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00] focus:ring-opacity-20 outline-none"
+                  />
+                  <span className="text-[#6C757D] font-semibold">€</span>
+                </div>
+                <p className="text-sm text-[#6C757D] mt-2">
+                  Indiquer un budget aide les artisans à adapter leurs devis
+                </p>
+              </div>
+
+              {/* Boutons */}
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPublishModal(false);
+                    setPublishDescription('');
+                    setPublishPhotos([]);
+                    setPublishBudget('');
+                  }}
+                  className="flex-1 px-6 py-3 border-2 border-[#6C757D] text-[#6C757D] hover:bg-[#6C757D] hover:text-white rounded-lg font-semibold transition-colors"
+                  disabled={isPublishing}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      if (!publishDescription.trim()) {
+                        alert('⚠️ Veuillez décrire votre besoin');
+                        return;
+                      }
+
+                      setIsPublishing(true);
+
+                      // Récupérer les critères depuis l'URL
+                      const categorie = searchParams.get('categorie');
+                      const ville = searchParams.get('ville');
+                      const codePostal = searchParams.get('codePostal') ?? '';
+                      const datesStr = searchParams.get('dates');
+                      const flexible = searchParams.get('flexible') === 'true';
+                      const flexibiliteDays = parseInt(searchParams.get('flexibiliteDays') || '0');
+                      const urgence = searchParams.get('urgence') as 'faible' | 'normale' | 'urgent';
+                      const rayonMaxParam = searchParams.get('rayonMax');
+                      const rayonMax = rayonMaxParam ? parseInt(rayonMaxParam) : 10;
+
+                      if (!categorie || !ville || !datesStr) {
+                        alert('Critères de recherche manquants');
+                        setIsPublishing(false);
+                        return;
+                      }
+
+                      const dates = JSON.parse(datesStr) as string[];
+
+                      // Importer les services nécessaires
+                      const { Timestamp } = await import('firebase/firestore');
+                      const { createDemande, notifyQualifiedArtisans } = await import('@/lib/firebase/demande-service');
+                      const { uploadMultiplePhotos } = await import('@/lib/firebase/storage-service');
+
+                      // Convertir les dates string en Timestamp Firestore
+                      const datesTimestamps = dates.map(dateStr => {
+                        const date = new Date(dateStr);
+                        return Timestamp.fromDate(date);
+                      });
+
+                      // Upload des photos si présentes
+                      let photosUrls: string[] = [];
+                      if (publishPhotos.length > 0) {
+                        photosUrls = await uploadMultiplePhotos(publishPhotos, 'demandes', firebaseUser!.uid);
+                      }
+
+                      // Créer la demande publique
+                      const demande = await createDemande({
+                        clientId: firebaseUser!.uid,
+                        type: 'publique',
+                        statut: 'publiee',
+                        categorie: categorie as any,
+                        description: publishDescription.trim(),
+                        localisation: {
+                          ville,
+                          codePostal,
+                          adresse: ville,
+                        },
+                        datesSouhaitees: {
+                          dates: datesTimestamps,
+                          flexible,
+                          ...(flexible && flexibiliteDays > 0 && { flexibiliteDays }),
+                        },
+                        urgence: urgence || 'normale',
+                        critereRecherche: {
+                          metier: categorie,
+                          ville,
+                          rayon: rayonMax,
+                        },
+                        artisansMatches: [],
+                        devisRecus: 0,
+                        ...(photosUrls.length > 0 && { photosUrls }),
+                        ...(publishBudget && { budget: parseInt(publishBudget) }),
+                      });
+
+                      // Notifier les artisans qualifiés (en arrière-plan)
+                      notifyQualifiedArtisans(demande.id).catch(error => {
+                        console.error('⚠️ Erreur notification artisans:', error);
+                      });
+
+                      // Fermer le modal et rediriger
+                      setShowPublishModal(false);
+                      router.push(`/client/demandes?success=demande_publiee&demandeId=${demande.id}`);
+                    } catch (error) {
+                      console.error('❌ Erreur création demande publique:', error);
+                      alert('Impossible de publier la demande. Veuillez réessayer.');
+                      setIsPublishing(false);
+                    }
+                  }}
+                  className="flex-1 px-6 py-3 bg-[#FF6B00] hover:bg-[#E56100] text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isPublishing}
+                >
+                  {isPublishing ? '⏳ Publication...' : '📢 Publier ma demande'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

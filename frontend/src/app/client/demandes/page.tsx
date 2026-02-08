@@ -26,6 +26,7 @@ export default function MesDemandesPage() {
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
   const [filtreSection, setFiltreSection] = useState<'toutes' | 'contrats' | 'devis_recus' | 'en_attente' | 'publiees' | 'refusees' | 'terminees'>('toutes');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [expandedDemandeIds, setExpandedDemandeIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Attendre que l'auth soit chargée
@@ -148,6 +149,18 @@ export default function MesDemandesPage() {
       console.error('Erreur suppression demande:', error);
       alert('❌ Erreur lors de la suppression. Veuillez réessayer.');
     }
+  }
+
+  function toggleExpandDemande(demandeId: string) {
+    setExpandedDemandeIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(demandeId)) {
+        newSet.delete(demandeId);
+      } else {
+        newSet.add(demandeId);
+      }
+      return newSet;
+    });
   }
 
   function getStatutBadge(demande: Demande) {
@@ -603,12 +616,35 @@ export default function MesDemandesPage() {
                 demandesFiltrees = getDemandesTerminees(demandes);
               }
 
-              const renderDemande = (demande: Demande) => (
-              <Card
+              const renderDemande = (demande: Demande) => {
+              const isExpanded = expandedDemandeIds.has(demande.id);
+              
+              return (
+              <div
                 key={demande.id}
-                className="p-6 hover:border-[#FF6B00] transition-all"
+                onClick={() => toggleExpandDemande(demande.id)}
+                className="bg-white rounded-lg shadow-md p-6 hover:border-[#FF6B00] hover:shadow-lg transition-all cursor-pointer relative border-2 border-transparent"
               >
-                <div className="flex items-start justify-between mb-4">
+                {/* Bouton expandre/rétracter en haut à droite */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleExpandDemande(demande.id);
+                  }}
+                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title={isExpanded ? "Masquer les détails" : "Voir le détail"}
+                >
+                  <svg 
+                    className={`w-5 h-5 text-[#6C757D] transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <div className="flex items-start justify-between mb-4 pr-12">
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-3 flex-wrap">
                       <h3 className="text-xl font-bold text-[#2C3E50]">
@@ -650,12 +686,17 @@ export default function MesDemandesPage() {
                       })()}
                     </div>
                     <p className="text-[#6C757D] text-sm mb-2">
-                      {demande.description.substring(0, 150)}
-                      {demande.description.length > 150 && '...'}
+                      {isExpanded ? demande.description : (
+                        <>
+                          {demande.description.substring(0, 150)}
+                          {demande.description.length > 150 && '...'}
+                        </>
+                      )}
                     </p>
                   </div>
                   
                   {/* Boutons d'action pour brouillon et annulée */}
+                  {!isExpanded && (
                   <div className="flex gap-3 ml-4">
                     {/* Bouton Compléter pour brouillon uniquement */}
                     {demande.statut === 'genere' && (
@@ -740,7 +781,105 @@ export default function MesDemandesPage() {
                       </button>
                     )}
                   </div>
+                  )}
                 </div>
+
+                {/* Informations détaillées - visibles uniquement si étendu */}
+                {isExpanded && (
+                  <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
+                    <h4 className="font-bold text-[#2C3E50] text-lg mb-4">📋 Détails complets de la demande</h4>
+                    
+                    {/* Photos */}
+                    {(demande.photosUrls || demande.photos) && (demande.photosUrls?.length || demande.photos?.length) ? (
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-sm font-semibold text-[#6C757D] mb-3">📸 Photos jointes ({(demande.photosUrls || demande.photos)?.length})</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {(demande.photosUrls || demande.photos)?.map((photoUrl, idx) => (
+                            <a
+                              key={idx}
+                              href={photoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#FF6B00] transition-all cursor-pointer"
+                            >
+                              <img
+                                src={photoUrl}
+                                alt={`Photo ${idx + 1}`}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity flex items-center justify-center">
+                                <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                </svg>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    
+                    {/* Description complète */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm font-semibold text-[#6C757D] mb-2">Description :</p>
+                      <p className="text-[#2C3E50]">{demande.description}</p>
+                    </div>
+                    
+                    {/* Localisation détaillée */}
+                    {demande.localisation && (
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <p className="text-sm font-semibold text-blue-900 mb-2">📍 Localisation</p>
+                          <div className="space-y-1 text-sm text-blue-800">
+                            <p><strong>Ville :</strong> {demande.localisation.ville}</p>
+                            <p><strong>Code postal :</strong> {demande.localisation.codePostal}</p>
+                            {demande.localisation.adresse && (
+                              <p><strong>Adresse :</strong> {demande.localisation.adresse}</p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Dates souhaitées */}
+                        {demande.datesSouhaitees && (
+                          <div className="bg-green-50 p-4 rounded-lg">
+                            <p className="text-sm font-semibold text-green-900 mb-2">📅 Dates souhaitées</p>
+                            <div className="space-y-1 text-sm text-green-800">
+                              {demande.datesSouhaitees.dates && demande.datesSouhaitees.dates.length > 0 ? (
+                                <>
+                                  {demande.datesSouhaitees.dates.map((date, idx) => (
+                                    <p key={idx}>
+                                      <strong>Date {idx + 1} :</strong> {date.toDate().toLocaleDateString('fr-FR', { 
+                                        weekday: 'long', 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                      })}
+                                    </p>
+                                  ))}
+                                  {demande.datesSouhaitees.flexible && (
+                                    <p className="text-xs mt-2 text-green-700">
+                                      ✅ Dates flexibles jusqu'à {demande.datesSouhaitees.flexibiliteDays || 7} jours
+                                    </p>
+                                  )}
+                                </>
+                              ) : (
+                                <p>Aucune date spécifiée</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Urgence */}
+                    {demande.urgence && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded">
+                        <p className="text-red-800 font-semibold flex items-center gap-2">
+                          🚨 Demande urgente
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-4">
                   <div>
@@ -989,8 +1128,9 @@ export default function MesDemandesPage() {
                   }
                   return null;
                 })()}
-              </Card>
+              </div>
               );
+              };
 
               return (
                 <>
