@@ -150,7 +150,7 @@ export default function ProfilPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Logo size="sm" variant="icon" />
-              <span className="text-xl font-bold">ArtisanSafe</span>
+              <span className="text-xl font-bold">ArtisanDispo</span>
             </Link>
             <nav className="flex items-center gap-6">
               <Link href="/client/demandes" className="hover:text-[#FF6B00] transition">

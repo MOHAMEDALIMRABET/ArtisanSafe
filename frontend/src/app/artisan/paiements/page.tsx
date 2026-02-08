@@ -323,7 +323,7 @@ export default function ArtisanPaiementsPage() {
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm text-blue-700">
                 💡 <strong>Bon à savoir</strong> : Vous recevez 92% du montant TTC.
-                Les 8% restants correspondent à la commission de la plateforme ArtisanSafe.
+                Les 8% restants correspondent à la commission de la plateforme ArtisanDispo.
               </p>
             </div>
           </div>

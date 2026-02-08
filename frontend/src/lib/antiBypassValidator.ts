@@ -201,7 +201,7 @@ export function validateMessage(content: string): ValidationResult {
     return {
       isValid: false,
       blockedPatterns,
-      message: `⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanSafe pour discuter en toute sécurité.`,
+      message: `⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.`,
     };
   }
 

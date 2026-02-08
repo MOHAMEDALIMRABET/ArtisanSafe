@@ -1,8 +1,8 @@
-# 🛠️ ArtisanSafe
+# 🛠️ ArtisanDispo
 
 ## 📋 Description
 
-**ArtisanSafe** est une plateforme innovante de mise en relation entre clients et artisans qualifiés.  Notre solution facilite la connexion entre les particuliers et professionnels recherchant des services artisanaux et les artisans compétents dans divers domaines (plomberie, électricité, menuiserie, maçonnerie, etc.).
+**ArtisanDispo** est une plateforme innovante de mise en relation entre clients et artisans qualifiés.  Notre solution facilite la connexion entre les particuliers et professionnels recherchant des services artisanaux et les artisans compétents dans divers domaines (plomberie, électricité, menuiserie, maçonnerie, etc.).
 
 ### 🎯 Objectifs
 
@@ -158,4 +158,4 @@ Lien du projet : [https://github.com/MOHAMEDALIMRABET/ArtisanSafe](https://githu
 
 ---
 
-**ArtisanSafe** - *Connecter le savoir-faire à ceux qui en ont besoin* 🔨
+**ArtisanDispo** - *Connecter le savoir-faire à ceux qui en ont besoin* 🔨

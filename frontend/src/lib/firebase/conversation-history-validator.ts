@@ -380,7 +380,7 @@ export async function validateMessageWithHistory(
           
           return {
             isValid: false,
-            message: '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanSafe pour discuter en toute sécurité.',
+            message: '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.',
             reason: 'fragmented_phone',
           };
         }
@@ -415,7 +415,7 @@ export async function validateMessageWithHistory(
       console.warn('❌ NUMÉRO COMPLET DÉTECTÉ dans historique:', digitsAll);
       return {
         isValid: false,
-        message: '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanSafe pour discuter en toute sécurité.',
+        message: '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.',
         reason: 'fragmented_phone',
       };
     }
@@ -432,7 +432,7 @@ export async function validateMessageWithHistory(
   if (isNewMessageDigitOnly && detectFragmentedSequence(fullSequence, finalConfig.maxConsecutiveDigits)) {
     return {
       isValid: false,
-      message: '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanSafe pour discuter en toute sécurité.',
+      message: '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.',
       reason: 'suspicious_sequence',
     };
   }
@@ -443,7 +443,7 @@ export async function validateMessageWithHistory(
   if (detectRapidShortMessages(recentHistory, finalConfig)) {
     return {
       isValid: false,
-      message: '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanSafe pour discuter en toute sécurité.',
+      message: '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.',
       reason: 'rate_limit',
     };
   }
