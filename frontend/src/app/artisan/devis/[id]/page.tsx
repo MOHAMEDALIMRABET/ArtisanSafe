@@ -381,7 +381,7 @@ export default function VoirDevisPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8 print:py-0">
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto print-container">
+        <div className="bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto print:shadow-none print-container">
           {/* En-tête du devis */}
           <div className="border-b-2 border-[#FF6B00] pb-6 mb-6 no-break">
             <div className="flex justify-between items-start">
