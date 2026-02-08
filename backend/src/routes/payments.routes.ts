@@ -14,12 +14,31 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 const router = Router();
 const db = getFirestore();
 
-// Initialiser Stripe avec clé secrète
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
-});
+// Initialiser Stripe avec clé secrète (seulement si configuré)
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+let stripe: Stripe | null = null;
+
+if (STRIPE_SECRET_KEY) {
+  stripe = new Stripe(STRIPE_SECRET_KEY, {
+    apiVersion: '2026-01-28.clover',
+  });
+  console.log('✅ Stripe initialisé avec succès');
+} else {
+  console.warn('⚠️  STRIPE_SECRET_KEY non configurée - Routes de paiement désactivées (Phase 2)');
+}
 
 const COMMISSION_RATE = 0.08; // 8% de commission plateforme
+
+// Middleware pour vérifier que Stripe est configuré
+const requireStripe = (req: Request, res: Response, next: Function) => {
+  if (!stripe) {
+    return res.status(503).json({
+      error: 'Service de paiement non configuré',
+      details: 'Les paiements Stripe ne sont pas encore activés (Phase 2). Veuillez configurer STRIPE_SECRET_KEY dans le fichier .env'
+    });
+  }
+  next();
+};
 
 /**
  * POST /api/v1/payments/create-escrow
@@ -38,7 +57,7 @@ const COMMISSION_RATE = 0.08; // 8% de commission plateforme
  *   - clientSecret: Pour confirmer paiement côté frontend (Stripe Elements)
  *   - paymentIntentId: ID du PaymentIntent créé
  */
-router.post('/create-escrow', async (req: Request, res: Response) => {
+router.post('/create-escrow', requireStripe, async (req: Request, res: Response) => {
   try {
     const { devisId, clientId, artisanId, montantTTC, metadata } = req.body;
 
@@ -75,7 +94,7 @@ router.post('/create-escrow', async (req: Request, res: Response) => {
 
     // Créer PaymentIntent avec capture_method: manual
     // L'argent sera BLOQUÉ mais PAS CAPTURÉ tant qu'on n'appelle pas capture()
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await stripe!.paymentIntents.create({
       amount: Math.round(montantTTC * 100), // Stripe utilise centimes
       currency: 'eur',
       capture_method: 'manual', // ← CLEF: Escrow activé
@@ -128,7 +147,7 @@ router.post('/create-escrow', async (req: Request, res: Response) => {
  *   - montantArtisan: Montant net versé à l'artisan (après commission)
  *   - commission: Commission plateforme prélevée
  */
-router.post('/release-escrow', async (req: Request, res: Response) => {
+router.post('/release-escrow', requireStripe, async (req: Request, res: Response) => {
   try {
     const { contratId, validePar, commentaire } = req.body;
 
@@ -183,7 +202,7 @@ router.post('/release-escrow', async (req: Request, res: Response) => {
 
     // Capturer le paiement (libérer l'argent)
     console.log(`💰 Capture PaymentIntent: ${paymentIntentId}`);
-    const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+    const paymentIntent = await stripe!.paymentIntents.capture(paymentIntentId);
 
     const montantTotal = contrat?.paiement?.montantTotal || 0;
     const commission = Math.round(montantTotal * COMMISSION_RATE * 100) / 100;
@@ -202,7 +221,7 @@ router.post('/release-escrow', async (req: Request, res: Response) => {
     }
 
     // Transférer montantArtisan via Stripe Connect
-    const transfer = await stripe.transfers.create({
+    const transfer = await stripe!.transfers.create({
       amount: Math.round(montantArtisan * 100),
       currency: 'eur',
       destination: artisanStripeAccountId,
@@ -223,7 +242,7 @@ router.post('/release-escrow', async (req: Request, res: Response) => {
       dateLiberationPaiement: Timestamp.now(),
       'paiement.statut': 'libere',
       'paiement.dateLiberation': Timestamp.now(),
-      'paiement.stripe.chargeId': paymentIntent.charges.data[0]?.id || null,
+      'paiement.stripe.chargeId': paymentIntent.latest_charge || null,
       'paiement.stripe.transferId': transfer.id,
       'paiement.dateVirement': Timestamp.now(),
       validationTravaux: {
@@ -248,7 +267,7 @@ router.post('/release-escrow', async (req: Request, res: Response) => {
     if (devisId) {
       await db.collection('devis').doc(devisId).update({
         'paiement.statut': 'libere',
-        'paiement.stripe.chargeId': paymentIntent.charges.data[0]?.id || null,
+        'paiement.stripe.chargeId': paymentIntent.latest_charge || null,
         'paiement.stripe.captureDate': Timestamp.now(),
       });
     }
@@ -265,7 +284,7 @@ router.post('/release-escrow', async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      chargeId: paymentIntent.charges.data[0]?.id,
+      chargeId: paymentIntent.latest_charge,
       montantTotal,
       commission,
       montantArtisan,
@@ -297,7 +316,7 @@ router.post('/release-escrow', async (req: Request, res: Response) => {
  *   - refundId: ID du Refund Stripe
  *   - montantRembourse: Montant remboursé au client
  */
-router.post('/refund-escrow', async (req: Request, res: Response) => {
+router.post('/refund-escrow', requireStripe, async (req: Request, res: Response) => {
   try {
     const { contratId, motif, montantRembourse } = req.body;
 
@@ -343,12 +362,12 @@ router.post('/refund-escrow', async (req: Request, res: Response) => {
     if (contrat?.paiement?.statut === 'bloque') {
       // Annuler PaymentIntent (pas encore capturé)
       console.log(`🔙 Annulation PaymentIntent: ${paymentIntentId}`);
-      await stripe.paymentIntents.cancel(paymentIntentId);
+      await stripe!.paymentIntents.cancel(paymentIntentId);
       refund = { id: 'cancelled', amount: Math.round(montantARemb * 100) };
     } else {
       // Créer Refund (déjà capturé)
       console.log(`🔙 Remboursement PaymentIntent: ${paymentIntentId}`);
-      refund = await stripe.refunds.create({
+      refund = await stripe!.refunds.create({
         payment_intent: paymentIntentId,
         amount: Math.round(montantARemb * 100),
         reason: 'requested_by_customer',
@@ -420,7 +439,7 @@ router.post('/refund-escrow', async (req: Request, res: Response) => {
  *   - accountId: ID du compte Stripe Connect créé
  *   - onboardingUrl: URL vers interface onboarding Stripe
  */
-router.post('/create-connect-account', async (req: Request, res: Response) => {
+router.post('/create-connect-account', requireStripe, async (req: Request, res: Response) => {
   try {
     const { artisanId, email, returnUrl, refreshUrl } = req.body;
 
@@ -444,7 +463,7 @@ router.post('/create-connect-account', async (req: Request, res: Response) => {
       // Compte existant, créer nouveau lien onboarding
       console.log(`♻️ Compte Stripe Connect existant: ${existingAccountId}`);
       
-      const accountLink = await stripe.accountLinks.create({
+      const accountLink = await stripe!.accountLinks.create({
         account: existingAccountId,
         refresh_url: refreshUrl,
         return_url: returnUrl,
@@ -461,7 +480,7 @@ router.post('/create-connect-account', async (req: Request, res: Response) => {
     }
 
     // Créer nouveau compte Stripe Connect (Express)
-    const account = await stripe.accounts.create({
+    const account = await stripe!.accounts.create({
       type: 'express',
       country: 'FR',
       email: email,
@@ -477,7 +496,7 @@ router.post('/create-connect-account', async (req: Request, res: Response) => {
     });
 
     // Créer lien onboarding
-    const accountLink = await stripe.accountLinks.create({
+    const accountLink = await stripe!.accountLinks.create({
       account: account.id,
       refresh_url: refreshUrl,
       return_url: returnUrl,

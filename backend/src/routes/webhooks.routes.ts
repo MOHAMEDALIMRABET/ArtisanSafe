@@ -18,9 +18,15 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 const router = Router();
 const db = getFirestore();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
-});
+// Initialiser Stripe seulement si configuré
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+let stripe: Stripe | null = null;
+
+if (STRIPE_SECRET_KEY) {
+  stripe = new Stripe(STRIPE_SECRET_KEY, {
+    apiVersion: '2026-01-28.clover',
+  });
+}
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
@@ -33,6 +39,15 @@ const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
  * Configuration dans server.ts : express.raw({ type: 'application/json' })
  */
 router.post('/stripe', async (req: Request, res: Response) => {
+  // Vérifier que Stripe est configuré
+  if (!stripe) {
+    console.error('❌ Webhook: Stripe non configuré');
+    return res.status(503).json({
+      error: 'Service de paiement non configuré',
+      details: 'STRIPE_SECRET_KEY manquante'
+    });
+  }
+
   const sig = req.headers['stripe-signature'] as string;
 
   if (!sig) {
