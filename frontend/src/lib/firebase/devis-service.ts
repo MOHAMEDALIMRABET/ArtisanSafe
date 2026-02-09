@@ -25,7 +25,7 @@ import type {
   UpdateDevis,
   DevisStatut,
 } from '@/types/devis';
-import { notifyClientDevisRecu } from './notification-service';
+import { notifyClientDevisRecu, createNotification } from './notification-service';
 import { trackDevisEnvoye, trackDevisAccepte, trackDevisRefuse } from './artisan-stats-service';
 
 const COLLECTION_NAME = 'devis';
