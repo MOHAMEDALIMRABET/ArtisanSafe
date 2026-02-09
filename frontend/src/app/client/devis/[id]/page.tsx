@@ -318,6 +318,16 @@ export default function ClientDevisDetailPage() {
       // 4. ANNULER AUTOMATIQUEMENT toutes les autres variantes (même demande)
       if (devis.demandeId) {
         try {
+          // 🆕 NOUVEAU SYSTÈME : Marquer le devis original comme "remplacé" si une variante est payée
+          const { marquerDevisOriginalCommeRemplace } = await import('@/lib/firebase/devis-service');
+          await marquerDevisOriginalCommeRemplace(
+            devisId, 
+            devis.numeroDevis, 
+            devis.demandeId
+          );
+          console.log('✅ Système de marquage devis original exécuté');
+          
+          // ANCIEN SYSTÈME maintenu pour compatibilité (annule variantes restantes non gérées)
           const autresDevisQuery = query(
             collection(db, 'devis'),
             where('demandeId', '==', devis.demandeId)
@@ -332,7 +342,7 @@ export default function ClientDevisDetailPage() {
             const statut = devisData.statut;
             
             // Ne pas toucher au devis qu'on vient de payer ni aux devis déjà finalisés
-            if (devisDoc.id !== devisId && !['paye', 'annule', 'refuse'].includes(statut)) {
+            if (devisDoc.id !== devisId && !['paye', 'annule', 'refuse', 'remplace'].includes(statut)) {
               batch.update(devisDoc.ref, {
                 statut: 'annule',
                 typeRefus: 'automatique',
@@ -345,9 +355,9 @@ export default function ClientDevisDetailPage() {
           
           await batch.commit();
           const nbAnnules = autresDevisSnapshot.docs.filter(d => 
-            d.id !== devisId && !['paye', 'annule', 'refuse'].includes(d.data().statut)
+            d.id !== devisId && !['paye', 'annule', 'refuse', 'remplace'].includes(d.data().statut)
           ).length;
-          console.log(`✅ ${nbAnnules} variante(s) alternative(s) annulée(s) automatiquement`);
+          console.log(`✅ ${nbAnnules} variante(s) alternative(s) annulée(s) automatiquement (ancien système)`);
         } catch (error) {
           console.error('Erreur annulation automatique autres variantes:', error);
         }

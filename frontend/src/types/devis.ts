@@ -76,6 +76,13 @@ export interface Devis {
   devisRevisionId?: string;      // ID du nouveau devis qui remplace celui-ci
   dateRemplacement?: Timestamp;  // Date à laquelle ce devis a été remplacé
   
+  // 🆕 Champ pour variantes payées (nouveau système)
+  remplacePar?: {
+    devisId: string;             // ID du devis variante qui a été payé
+    numeroDevis: string;         // Numéro du devis variante (ex: DV-2026-00004-A)
+    date: Timestamp;             // Date à laquelle la variante a été payée
+  };
+  
   dateModification: Timestamp;
   dateDerniereNotification?: Timestamp; // Date de la dernière notification importante (acceptation, refus, etc.)
   vuParArtisan?: boolean;        // L'artisan a-t-il consulté ce devis après action client (système lu/non lu)

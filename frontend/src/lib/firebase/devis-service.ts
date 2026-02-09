@@ -929,3 +929,126 @@ export async function validerAutomatiquementTravaux(devisId: string): Promise<vo
     message: `Les travaux ont été validés automatiquement (délai de 7 jours écoulé).`,
   });
 }
+
+/**
+ * 🆕 SYSTÈME AUTOMATIQUE : Marquer les devis originaux comme "remplacés" 
+ * quand une variante est payée
+ * 
+ * WORKFLOW :
+ * 1. Identifier si le devis payé est une variante (-A, -B, -C)
+ * 2. Trouver le devis original (sans lettre) de la même demande
+ * 3. Marquer le devis original avec statut "remplace"
+ * 4. Annuler toutes les autres variantes non payées
+ * 
+ * @param devisPayeId ID du devis qui vient d'être payé
+ * @param numeroDevisPaye Numéro du devis payé (ex: DV-2026-00004-A)
+ * @param demandeId ID de la demande concernée
+ */
+export async function marquerDevisOriginalCommeRemplace(
+  devisPayeId: string,
+  numeroDevisPaye: string,
+  demandeId: string
+): Promise<void> {
+  try {
+    console.log('🔄 Recherche devis original à remplacer pour:', numeroDevisPaye);
+
+    // 1. Vérifier si le devis payé est une variante (contient une lettre -A, -B, etc.)
+    const isVariante = /-(A|B|C|D|E|F|G|H|I|J)$/.test(numeroDevisPaye);
+    
+    if (!isVariante) {
+      console.log('ℹ️ Devis payé est l\'original (pas de lettre de variante), aucune action nécessaire');
+      return;
+    }
+
+    // 2. Extraire le numéro de base (DV-2026-00004-A → DV-2026-00004)
+    const numeroBase = numeroDevisPaye.split('-').slice(0, 3).join('-');
+    console.log('📋 Numéro de base extrait:', numeroBase);
+
+    // 3. Rechercher le devis original (sans lettre) de la même demande
+    const devisQuery = query(
+      collection(db, COLLECTION_NAME),
+      where('demandeId', '==', demandeId)
+    );
+    
+    const devisSnapshot = await getDocs(devisQuery);
+    
+    // Filtrer pour trouver le devis original exact (pas de lettre de variante)
+    let devisOriginalDoc = null;
+    const autresVariantes: any[] = [];
+    
+    devisSnapshot.docs.forEach(devisDoc => {
+      const devisData = devisDoc.data();
+      const numDevis = devisData.numeroDevis;
+      
+      // Le devis qu'on vient de payer → ignorer
+      if (devisDoc.id === devisPayeId) return;
+      
+      // Le devis original = numéro de base exact SANS lettre
+      if (numDevis === numeroBase) {
+        devisOriginalDoc = devisDoc;
+      }
+      // Autres variantes de la même demande
+      else if (numDevis.startsWith(numeroBase + '-')) {
+        autresVariantes.push(devisDoc);
+      }
+    });
+
+    // 4. SI devis original trouvé → le marquer comme "remplacé"
+    if (devisOriginalDoc) {
+      const devisOriginalData = devisOriginalDoc.data();
+      const devisOriginalId = devisOriginalDoc.id;
+      
+      console.log(`✅ Devis original trouvé: ${devisOriginalData.numeroDevis} (${devisOriginalId})`);
+      
+      await updateDoc(doc(db, COLLECTION_NAME, devisOriginalId), {
+        statut: 'remplace',
+        remplacePar: {
+          devisId: devisPayeId,
+          numeroDevis: numeroDevisPaye,
+          date: Timestamp.now(),
+        },
+        dateModification: Timestamp.now(),
+        historiqueStatuts: [
+          ...(devisOriginalData.historiqueStatuts || []),
+          {
+            statut: 'remplace' as DevisStatut,
+            date: Timestamp.now(),
+            commentaire: `Remplacé par la variante ${numeroDevisPaye} qui a été acceptée et payée`,
+          },
+        ],
+      });
+      
+      console.log(`✅ Devis original ${devisOriginalData.numeroDevis} marqué comme REMPLACÉ par ${numeroDevisPaye}`);
+    } else {
+      console.log('ℹ️ Aucun devis original trouvé (peut-être déjà supprimé ou n\'existe pas)');
+    }
+
+    // 5. Annuler toutes les autres variantes non finalisées
+    if (autresVariantes.length > 0) {
+      const batch = writeBatch(db);
+      
+      autresVariantes.forEach(varianteDoc => {
+        const varianteData = varianteDoc.data();
+        const statut = varianteData.statut;
+        
+        // Ne toucher que les devis non finalisés
+        if (!['paye', 'annule', 'refuse', 'remplace'].includes(statut)) {
+          batch.update(varianteDoc.ref, {
+            statut: 'annule',
+            typeRefus: 'automatique',
+            motifRefus: `Variante ${numeroDevisPaye} acceptée et payée`,
+            dateRefus: Timestamp.now(),
+            dateModification: Timestamp.now(),
+          });
+        }
+      });
+      
+      await batch.commit();
+      console.log(`✅ ${autresVariantes.length} autre(s) variante(s) annulée(s) automatiquement`);
+    }
+
+  } catch (error) {
+    console.error('❌ Erreur lors du marquage du devis original comme remplacé:', error);
+    // Ne pas bloquer le paiement si cette opération échoue
+  }
+}

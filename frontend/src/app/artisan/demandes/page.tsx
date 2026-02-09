@@ -33,6 +33,7 @@ export default function ArtisanDemandesPage() {
   const [demandesAvecDevisPayeIds, setDemandesAvecDevisPayeIds] = useState<Set<string>>(new Set());
   const [devisMap, setDevisMap] = useState<Map<string, Devis[]>>(new Map());
   const [clientsInfo, setClientsInfo] = useState<Map<string, { nom: string; prenom: string }>>(new Map());
+  const [expandedDemandeIds, setExpandedDemandeIds] = useState<Set<string>>(new Set());
   const demandeRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
 
   useEffect(() => {
@@ -208,6 +209,18 @@ export default function ArtisanDemandesPage() {
       console.error('Erreur chargement demandes:', error);
       setIsLoading(false);
     }
+  }
+
+  function toggleExpandDemande(demandeId: string) {
+    setExpandedDemandeIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(demandeId)) {
+        newSet.delete(demandeId);
+      } else {
+        newSet.add(demandeId);
+      }
+      return newSet;
+    });
   }
 
   async function handleRefuserDemande(demandeId: string) {
@@ -526,13 +539,30 @@ export default function ArtisanDemandesPage() {
         ) : (
           <div className="space-y-4">
             {demandesFiltrees.map((demande) => {
+              const isExpanded = expandedDemandeIds.has(demande.id);
               return (
               <div 
                 key={demande.id} 
                 ref={(el) => { demandeRefs.current[demande.id] = el; }}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6"
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6 cursor-pointer relative"
+                onClick={(e) => {
+                  // Ne pas toggle si clic sur bouton/lien
+                  if ((e.target as HTMLElement).closest('button, a')) return;
+                  toggleExpandDemande(demande.id);
+                }}
               >
-                <div className="flex items-start justify-between mb-4">
+                {/* Bouton d'expansion */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleExpandDemande(demande.id);
+                  }}
+                  className="absolute top-4 right-4 z-10 bg-[#FF6B00] text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-[#E56100] transition text-sm"
+                >
+                  {isExpanded ? '▲ Réduire' : '▼ Voir le détail'}
+                </button>
+
+                <div className="flex items-start justify-between mb-4 pr-32">
                   <div className="flex-1">
                     {/* Informations du client */}
                     {(() => {
@@ -607,34 +637,57 @@ export default function ArtisanDemandesPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-600 mb-1">
-                      📍 {demande.localisation?.ville || 'Non spécifié'} ({demande.localisation?.codePostal || 'N/A'})
-                    </p>
-                    {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
-                      <div className="mb-2">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="text-gray-600">
-                            📅 Date souhaitée : {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR')}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg inline-flex">
-                          <span className="text-blue-600 font-semibold text-sm">🔄 Flexibilité :</span>
-                          <span className="text-blue-700 font-bold text-sm">
-                            {demande.datesSouhaitees.flexible && demande.datesSouhaitees.flexibiliteDays ? (
-                              `±${demande.datesSouhaitees.flexibiliteDays} jour${demande.datesSouhaitees.flexibiliteDays > 1 ? 's' : ''}`
-                            ) : (
-                              'Aucune (date fixe)'
-                            )}
-                          </span>
+                    
+                    {/* Vue collapsed : description tronquée */}
+                    {!isExpanded && (
+                      <div className="mt-2">
+                        <p className="text-gray-700 line-clamp-2">
+                          {demande.description.length > 150 
+                            ? `${demande.description.substring(0, 150)}...` 
+                            : demande.description}
+                        </p>
+                        <div className="flex items-center gap-4 mt-3 text-sm text-gray-600">
+                          <span>📍 {demande.localisation?.ville || 'Non spécifié'}</span>
+                          {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
+                            <span>📅 {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR')}</span>
+                          )}
                         </div>
                       </div>
                     )}
-                    <div className="mt-3">
-                      <p className="text-sm font-semibold text-gray-700 mb-1">📝 Description du projet :</p>
-                      <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">
-                        {demande.description}
-                      </p>
-                    </div>
+
+                    {/* Vue expanded : détails complets */}
+                    {isExpanded && (
+                      <>
+                        <p className="text-gray-600 mb-1">
+                          📍 {demande.localisation?.ville || 'Non spécifié'} ({demande.localisation?.codePostal || 'N/A'})
+                        </p>
+                        {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
+                          <div className="mb-2">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-gray-600">
+                                📅 Date souhaitée : {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR')}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg inline-flex">
+                              <span className="text-blue-600 font-semibold text-sm">🔄 Flexibilité :</span>
+                              <span className="text-blue-700 font-bold text-sm">
+                                {demande.datesSouhaitees.flexible && demande.datesSouhaitees.flexibiliteDays ? (
+                                  `±${demande.datesSouhaitees.flexibiliteDays} jour${demande.datesSouhaitees.flexibiliteDays > 1 ? 's' : ''}`
+                                ) : (
+                                  'Aucune (date fixe)'
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        <div className="mt-3">
+                          <p className="text-sm font-semibold text-gray-700 mb-1">📝 Description du projet :</p>
+                          <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">
+                            {demande.description}
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="ml-4">
                     <div className="text-sm text-gray-500 text-right">
@@ -643,8 +696,8 @@ export default function ArtisanDemandesPage() {
                   </div>
                 </div>
 
-                {/* Photos */}
-                {(() => {
+                {/* Photos - Seulement en vue expanded */}
+                {isExpanded && (() => {
                   const photosList = demande.photosUrls || demande.photos || [];
                   const validPhotos = photosList.filter((url: string) => url && url.startsWith('http'));
                   
@@ -713,7 +766,8 @@ export default function ArtisanDemandesPage() {
                   );
                 })()}
 
-                {/* Actions */}
+                {/* Actions - Seulement en vue expanded */}
+                {isExpanded && (
                 <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
                   {demande.statut === 'publiee' && (() => {
                     const refusStatut = demandesRefusStatut.get(demande.id);
@@ -887,6 +941,7 @@ export default function ArtisanDemandesPage() {
                     </button>
                   )}
                 </div>
+                )}
               </div>
             );
             })}
