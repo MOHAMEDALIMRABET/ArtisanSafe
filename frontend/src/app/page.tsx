@@ -325,6 +325,175 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Nouvelle section : Vos garanties ArtisanDispo */}
+        <div className="mt-24 mb-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-[#2C3E50] mb-4">
+              Pourquoi choisir ArtisanDispo ?
+            </h2>
+            <p className="text-xl text-[#6C757D] max-w-3xl mx-auto">
+              La seule plateforme qui protège vraiment vos projets de A à Z
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
+            {/* Carte 1 : Paiement sécurisé */}
+            <Link href="/confiance/paiement-securise" className="group">
+              <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
+                <div className="w-16 h-16 bg-[#E8F5E9] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                  <span className="text-4xl">🔒</span>
+                </div>
+                <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
+                  Paiement 100% sécurisé
+                </h3>
+                <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Paiement bloqué jusqu'à validation</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Déblocage automatique après 7 jours</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Aucun risque d'arnaque</span>
+                  </li>
+                </ul>
+                <div className="text-center">
+                  <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
+                    En savoir plus →
+                  </span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Carte 2 : Vérification artisans */}
+            <Link href="/confiance/verification-artisans" className="group">
+              <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
+                <div className="w-16 h-16 bg-[#E3F2FD] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                  <span className="text-4xl">✓</span>
+                </div>
+                <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
+                  Artisans rigoureusement vérifiés
+                </h3>
+                <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>KBIS/SIREN obligatoire</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Identité contrôlée</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Assurances vérifiées</span>
+                  </li>
+                </ul>
+                <div className="text-center">
+                  <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
+                    En savoir plus →
+                  </span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Carte 3 : Planning flexible */}
+            <Link href="/confiance/planning-flexibilite" className="group">
+              <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
+                <div className="w-16 h-16 bg-[#FFF3E0] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                  <span className="text-4xl">📅</span>
+                </div>
+                <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
+                  Planning flexible & transparent
+                </h3>
+                <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Disponibilités temps réel</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Flexibilité ±7 jours</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Confirmation instantanée</span>
+                  </li>
+                </ul>
+                <div className="text-center">
+                  <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
+                    En savoir plus →
+                  </span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Carte 4 : Avis certifiés */}
+            <Link href="/confiance/avis-certifies" className="group">
+              <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
+                <div className="w-16 h-16 bg-[#FFFBF0] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                  <span className="text-4xl">⭐</span>
+                </div>
+                <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
+                  Avis 100% certifiés
+                </h3>
+                <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Uniquement après paiement</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Notation multi-critères</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Score dynamique</span>
+                  </li>
+                </ul>
+                <div className="text-center">
+                  <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
+                    En savoir plus →
+                  </span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Carte 5 : Médiation & support */}
+            <Link href="/confiance/protection-mediation" className="group">
+              <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
+                <div className="w-16 h-16 bg-[#FFEBEE] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                  <span className="text-4xl">🛡️</span>
+                </div>
+                <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
+                  Protection & médiation
+                </h3>
+                <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Centre de litiges dédié</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Historique preuves complet</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#28A745] mt-0.5">✓</span>
+                    <span>Médiation gratuite</span>
+                  </li>
+                </ul>
+                <div className="text-center">
+                  <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
+                    En savoir plus →
+                  </span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+
         {/* Features */}
         <div className="grid md:grid-cols-3 gap-8 mt-20">
           <div className="bg-white p-6 rounded-xl shadow-lg">
