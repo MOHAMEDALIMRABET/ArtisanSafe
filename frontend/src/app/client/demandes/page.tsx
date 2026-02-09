@@ -203,7 +203,7 @@ export default function MesDemandesPage() {
         if (devisPaye.statut === 'paye') {
           return (
             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border-2 border-green-400">
-              ✅ Contrat signé
+              ✅ Devis signé
             </span>
           );
         }
