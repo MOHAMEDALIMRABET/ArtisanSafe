@@ -91,6 +91,8 @@ export type NotificationType =
   | 'devis_recu' 
   | 'devis_accepte'
   | 'devis_refuse'
+  | 'devis_annule'               // ✅ Ajouté - client annule devis accepté
+  | 'devis_supprime'             // ✅ Ajouté - suppression auto après 24h
   | 'devis_revision'             // ✅ Ajouté - demande de révision/nouvelle variante
   | 'contrat_signe'
   | 'paiement' 
@@ -543,6 +545,7 @@ export interface Devis {
   dateCreation: Timestamp;
   dateEnvoi?: Timestamp;
   dateValidation?: Timestamp;
+  dateAnnulation?: Timestamp; // Date d'annulation par le client
   dateDebutPrevue?: Timestamp; // Date de début des travaux prévue
   numeroDevis?: string; // Numéro de devis (ex: "DEV-2026-001")
   version: number; // Historique versions

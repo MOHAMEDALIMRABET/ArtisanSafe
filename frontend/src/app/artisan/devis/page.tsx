@@ -12,7 +12,7 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc, updateDoc, Tim
 import { db } from '@/lib/firebase/config';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
-import { declarerDebutTravaux, declarerFinTravaux } from '@/lib/firebase/devis-service';
+import { declarerDebutTravaux, declarerFinTravaux, supprimerDevisAnulesExpires } from '@/lib/firebase/devis-service';
 
 type TabType = 'devis' | 'factures';
 type DevisFilter = 'tous' | 'genere' | 'envoye' | 'en_attente_paiement' | 'paye' | 'revision' | 'refuse';
@@ -43,8 +43,8 @@ export default function MesDevisPage() {
   // SYSTÈME LU/NON LU inspiré de Gmail, Slack, LinkedIn
   // Le badge apparaît UNIQUEMENT si le CLIENT a répondu ET l'artisan n'a PAS encore consulté
   const aReponseClienteRecente = (devis: Devis): boolean => {
-    // Règle simple : Devis accepté OU refusé + Non vu par l'artisan
-    if ((devis.statut === 'accepte' || devis.statut === 'refuse') && devis.vuParArtisan === false) {
+    // Règle simple : Devis accepté OU refusé OU annulé + Non vu par l'artisan
+    if ((devis.statut === 'accepte' || devis.statut === 'refuse' || devis.statut === 'annule') && devis.vuParArtisan === false) {
       return true;
     }
     return false;
@@ -55,6 +55,7 @@ export default function MesDevisPage() {
     if (devis.statut === 'accepte') return '✅ Accepté';
     if (devis.statut === 'en_revision') return '🔄 Révision';
     if (devis.statut === 'refuse') return '❌ Refusé';
+    if (devis.statut === 'annule') return '🚫 Annulé';
     return 'Nouveau';
   };
 
@@ -68,7 +69,7 @@ export default function MesDevisPage() {
       if (filtre === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
       if (filtre === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
       if (filtre === 'revision') return d.statut === 'en_revision';
-      if (filtre === 'refuse') return d.statut === 'refuse';
+      if (filtre === 'refuse') return d.statut === 'refuse' || d.statut === 'annule';
       return false;
     }).length;
   };
@@ -111,6 +112,14 @@ export default function MesDevisPage() {
 
     try {
       setLoading(true);
+
+      // 🗑️ SUPPRESSION AUTOMATIQUE : Devis annulés de plus de 24h
+      // Notification envoyée à l'artisan avant suppression
+      const devisSupprimés = await supprimerDevisAnulesExpires(user.uid);
+      if (devisSupprimés > 0) {
+        console.log(`🔔 ${devisSupprimés} devis annulé(s) supprimé(s) - Notification envoyée`);
+      }
+
       const q = query(
         collection(db, 'devis'),
         where('artisanId', '==', user.uid)
@@ -127,7 +136,7 @@ export default function MesDevisPage() {
         devisData = devisData.filter(d => d.demandeId === filtreDemandeId);
       }
 
-      // Filtrer les devis refusés de plus de 24h (sauf révisions)
+      // Filtrer les devis refusés/annulés de plus de 24h (sauf révisions)
       const maintenant = Date.now();
       const VINGT_QUATRE_HEURES = 24 * 60 * 60 * 1000;
       
@@ -148,6 +157,21 @@ export default function MesDevisPage() {
             return false;
           }
         }
+
+        // Si le devis est annulé (déjà supprimé automatiquement après 24h)
+        // On garde les devis annulés < 24h pour que l'artisan puisse les voir
+        if (devis.statut === 'annule') {
+          const dateAnnulation = devis.dateAnnulation?.toMillis() || 0;
+          const deltaTemps = maintenant - dateAnnulation;
+          
+          // Si annulé depuis plus de 24h, il a déjà été supprimé
+          // Donc ce filtre ne devrait jamais se déclencher grâce à supprimerDevisAnulesExpires()
+          if (deltaTemps > VINGT_QUATRE_HEURES) {
+            console.warn(`⚠️ Devis annulé ${devis.numeroDevis} encore présent après 24h - Suppression manquée`);
+            return false;
+          }
+        }
+
         return true;
       });
 
@@ -215,6 +239,56 @@ export default function MesDevisPage() {
     } catch (error) {
       console.error('Erreur marquage devis comme vu:', error);
     }
+  };
+
+  // Marquer tous les devis d'une section comme "vus" par l'artisan
+  const marquerSectionCommeVue = async (filtre: DevisFilter) => {
+    try {
+      // Trouver tous les devis visibles dans cette section qui ont vuParArtisan=false
+      const devisAMarquer = devis.filter(d => {
+        // Ignorer les devis déjà vus
+        if (d.vuParArtisan !== false) return false;
+        
+        // Ignorer les devis remplacés si non affichés
+        if (!showRemplace && d.statut === 'remplace') return false;
+        
+        // Vérifier si le devis correspond au filtre sélectionné
+        if (filtre === 'tous') return true;
+        if (filtre === 'genere') return d.statut === 'genere';
+        if (filtre === 'envoye') return d.statut === 'envoye';
+        if (filtre === 'en_attente_paiement') return d.statut === 'en_attente_paiement' || d.statut === 'accepte';
+        if (filtre === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
+        if (filtre === 'revision') return d.statut === 'en_revision';
+        if (filtre === 'refuse') return d.statut === 'refuse' || d.statut === 'annule';
+        
+        return false;
+      });
+
+      // Marquer tous ces devis comme vus
+      if (devisAMarquer.length > 0) {
+        const promises = devisAMarquer.map(d => {
+          const devisRef = doc(db, 'devis', d.id);
+          return updateDoc(devisRef, {
+            vuParArtisan: true,
+            dateVueParArtisan: Timestamp.now(),
+          });
+        });
+        await Promise.all(promises);
+        console.log(`✅ ${devisAMarquer.length} devis marqués comme vus dans la section "${filtre}"`);
+        
+        // Recharger les devis pour mettre à jour les badges
+        await loadDevis();
+      }
+    } catch (error) {
+      console.error('Erreur marquage section comme vue:', error);
+    }
+  };
+
+  // Gérer le changement de filtre avec marquage automatique comme "vu"
+  const handleFilterChange = async (newFilter: DevisFilter) => {
+    setFilter(newFilter);
+    // Marquer automatiquement tous les devis de cette section comme vus
+    await marquerSectionCommeVue(newFilter);
   };
 
   // Gérer le clic sur un devis pour le consulter
@@ -404,7 +478,7 @@ export default function MesDevisPage() {
   const devisEnvoyes = devisActifs.filter(d => d.statut === 'envoye');
   const devisEnAttentePaiement = devisActifs.filter(d => d.statut === 'en_attente_paiement');
   const devisPayes = devisActifs.filter(d => ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut));
-  const devisRefuses = devisActifs.filter(d => d.statut === 'refuse');
+  const devisRefuses = devisActifs.filter(d => d.statut === 'refuse' || d.statut === 'annule');
   const devisRevisionDemandee = devisActifs.filter(d => d.statut === 'en_revision');
   const devisRemplace = devis.filter(d => d.statut === 'remplace');
 
@@ -425,7 +499,7 @@ export default function MesDevisPage() {
       if (filter === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
       if (filter === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
       if (filter === 'revision') return d.statut === 'en_revision';
-      if (filter === 'refuse') return d.statut === 'refuse';
+      if (filter === 'refuse') return d.statut === 'refuse' || d.statut === 'annule';
       return true;
     })
     // TRI PRIORITAIRE : Devis avec notifications récentes EN HAUT
@@ -625,6 +699,9 @@ export default function MesDevisPage() {
                 <span className="block mb-1.5">
                   <strong>Devis refusés :</strong> Supprimés automatiquement après <strong>24 heures</strong>.
                 </span>
+                <span className="block mb-1.5">
+                  <strong>Devis annulés :</strong> Supprimés automatiquement après <strong>24 heures</strong> (client s'est désisté après avoir accepté le devis, avant paiement).
+                </span>
                 <span className="block">
                   <strong>Devis en révision :</strong> Supprimés immédiatement après création de la variante.
                 </span>
@@ -691,7 +768,7 @@ export default function MesDevisPage() {
           <>
           <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-4">
             <button
-              onClick={() => setFilter('tous')}
+              onClick={() => handleFilterChange('tous')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
                 filter === 'tous' ? 'bg-[#FF6B00] text-white ring-4 ring-[#FF6B00] ring-opacity-50' : 'bg-white'
               }`}
@@ -705,7 +782,7 @@ export default function MesDevisPage() {
               )}
             </button>
             <button
-              onClick={() => setFilter('genere')}
+              onClick={() => handleFilterChange('genere')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
                 filter === 'genere' ? 'bg-gray-600 text-white ring-4 ring-gray-600 ring-opacity-50' : 'bg-white'
               }`}
@@ -719,7 +796,7 @@ export default function MesDevisPage() {
               )}
             </button>
             <button
-              onClick={() => setFilter('envoye')}
+              onClick={() => handleFilterChange('envoye')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
                 filter === 'envoye' ? 'bg-blue-600 text-white ring-4 ring-blue-600 ring-opacity-50' : 'bg-white'
               }`}
@@ -733,7 +810,7 @@ export default function MesDevisPage() {
               )}
             </button>
             <button
-              onClick={() => setFilter('en_attente_paiement')}
+              onClick={() => handleFilterChange('en_attente_paiement')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
                 filter === 'en_attente_paiement' ? 'bg-yellow-600 text-white ring-4 ring-yellow-600 ring-opacity-50' : 'bg-white border-2 border-yellow-400'
               }`}
@@ -747,7 +824,7 @@ export default function MesDevisPage() {
               )}
             </button>
             <button
-              onClick={() => setFilter('paye')}
+              onClick={() => handleFilterChange('paye')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
                 filter === 'paye' ? 'bg-green-600 text-white ring-4 ring-green-600 ring-opacity-50' : 'bg-white'
               }`}
@@ -761,7 +838,7 @@ export default function MesDevisPage() {
               )}
             </button>
             <button
-              onClick={() => setFilter('revision')}
+              onClick={() => handleFilterChange('revision')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
                 filter === 'revision' ? 'bg-orange-600 text-white ring-4 ring-orange-600 ring-opacity-50' : 'bg-white border-2 border-orange-400'
               }`}
@@ -775,7 +852,7 @@ export default function MesDevisPage() {
               )}
             </button>
             <button
-              onClick={() => setFilter('refuse')}
+              onClick={() => handleFilterChange('refuse')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
                 filter === 'refuse' ? 'bg-red-600 text-white ring-4 ring-red-600 ring-opacity-50' : 'bg-white'
               }`}
@@ -831,7 +908,7 @@ export default function MesDevisPage() {
                   </button>
                 ) : (
                   <button
-                    onClick={() => setFilter('tous')}
+                    onClick={() => handleFilterChange('tous')}
                     className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg hover:bg-[#E56100]"
                   >
                     Voir tous les devis
@@ -982,6 +1059,11 @@ export default function MesDevisPage() {
                           <div className="flex flex-col gap-1">
                             <span className="text-xs text-gray-500 italic">Refus définitif</span>
                             <span className="text-[10px] text-gray-400">Pas de nouvelle proposition</span>
+                          </div>
+                        ) : d.statut === 'annule' ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-orange-600 italic">Client s'est désisté</span>
+                            <span className="text-[10px] text-gray-400">Suppression auto dans 24h</span>
                           </div>
                         ) : d.statut === 'genere' ? (
                           <div className="flex items-center gap-2">

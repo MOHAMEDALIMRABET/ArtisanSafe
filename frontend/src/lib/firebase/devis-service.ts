@@ -1173,3 +1173,60 @@ export async function annulerDevisParClient(
     throw error;
   }
 }
+
+/**
+ * Supprime automatiquement les devis annulés de plus de 24h
+ * Notifie l'artisan avant la suppression
+ * @param artisanId - ID de l'artisan
+ * @returns Nombre de devis supprimés
+ */
+export async function supprimerDevisAnulesExpires(artisanId: string): Promise<number> {
+  try {
+    const maintenant = Date.now();
+    const VINGT_QUATRE_HEURES = 24 * 60 * 60 * 1000;
+    
+    // Récupérer tous les devis annulés de l'artisan
+    const q = query(
+      collection(db, 'devis'),
+      where('artisanId', '==', artisanId),
+      where('statut', '==', 'annule')
+    );
+
+    const querySnapshot = await getDocs(q);
+    let compteurSuppression = 0;
+
+    for (const docSnapshot of querySnapshot.docs) {
+      const devis = docSnapshot.data() as Devis;
+      const dateAnnulation = devis.dateAnnulation?.toMillis() || 0;
+      const deltaTemps = maintenant - dateAnnulation;
+
+      // Si annulé depuis plus de 24h
+      if (deltaTemps > VINGT_QUATRE_HEURES) {
+        console.log(`🗑️ Suppression devis annulé expiré: ${devis.numeroDevis} (${Math.floor(deltaTemps / (60 * 60 * 1000))}h)`);
+
+        // Notifier l'artisan de la suppression
+        await createNotification({
+          recipientId: artisanId,
+          type: 'devis_supprime',
+          title: '🗑️ Devis annulé supprimé',
+          message: `Le devis ${devis.numeroDevis} (annulé il y a plus de 24h) a été automatiquement supprimé pour optimiser votre espace.`,
+          relatedId: docSnapshot.id,
+          isRead: false,
+        });
+
+        // Supprimer le devis
+        await deleteDoc(doc(db, 'devis', docSnapshot.id));
+        compteurSuppression++;
+      }
+    }
+
+    if (compteurSuppression > 0) {
+      console.log(`✅ ${compteurSuppression} devis annulé(s) supprimé(s) automatiquement`);
+    }
+
+    return compteurSuppression;
+  } catch (error) {
+    console.error('❌ Erreur suppression devis annulés expirés:', error);
+    return 0;
+  }
+}
