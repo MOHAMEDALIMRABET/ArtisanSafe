@@ -938,70 +938,7 @@ export default function MesDemandesPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-4">
-                  <div>
-                    {demande.statut === 'annulee' && demande.artisanRefuseNom ? (
-                      <div className="mt-1">
-                        <p className="font-semibold text-[#2C3E50] flex items-center gap-1">
-                          <span className="text-gray-400">👷</span>
-                          <span className="truncate" title={demande.artisanRefuseNom}>
-                            {demande.artisanRefuseNom}
-                          </span>
-                        </p>
-                        <p className="text-xs text-[#DC3545] mt-1 font-medium">❌ A refusé cette demande</p>
-                        {demande.dateRefus && (
-                          <p className="text-xs text-[#6C757D] mt-0.5">
-                            Le {demande.dateRefus.toDate().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                          </p>
-                        )}
-                      </div>
-                    ) : demande.artisansMatches && demande.artisansMatches.length > 0 ? (
-                      <div className="mt-1">
-                        {demande.artisansMatches.slice(0, 1).map(artisanId => {
-                          const artisan = artisansMap.get(artisanId);
-                          return (
-                            <p key={artisanId} className="font-semibold text-[#2C3E50] flex items-center gap-1">
-                              <span className="text-[#FF6B00]">👷</span>
-                              <span className="truncate" title={artisan?.raisonSociale}>
-                                {artisan?.raisonSociale || `${artisanId.substring(0, 8)}...`}
-                              </span>
-                            </p>
-                          );
-                        })}
-                        {(() => {
-                          // Analyser le statut des devis pour cette demande
-                          const devisForDemande = devisMap.get(demande.id) || [];
-                          const devisAccepte = devisForDemande.find(d => d.statut === 'accepte');
-                          const devisRefuse = devisForDemande.find(d => d.statut === 'refuse');
-                          const devisEnAttente = devisForDemande.find(d => d.statut === 'envoye');
-
-                          if (demande.statut === 'genere') {
-                            return <p className="text-xs text-[#6C757D] mt-1 font-medium">📋 Brouillon non publié</p>;
-                          } else if (devisAccepte) {
-                            return (
-                              <p className="text-xs text-green-600 mt-2 font-semibold bg-green-50 px-2 py-1 rounded">
-                                🎉 Devis accepté le {devisAccepte.dateAcceptation?.toDate().toLocaleDateString('fr-FR')}
-                              </p>
-                            );
-                          } else if (devisRefuse) {
-                            return null;
-                          } else if (devisEnAttente) {
-                            return (
-                              <p className="text-xs text-blue-600 mt-2 font-semibold bg-blue-50 px-2 py-1 rounded">
-                                📩 {devisForDemande.length} devis reçu(s) en attente de votre réponse
-                              </p>
-                            );
-                          } else if (demande.devisRecus && demande.devisRecus > 0) {
-                            return <p className="text-xs text-blue-600 mt-1 font-medium">📩 Devis reçu(s) à consulter</p>;
-                          } else {
-                            return <p className="text-xs text-green-600 mt-1 font-medium">⏳ En attente de réponse de l'artisan</p>;
-                          }
-                        })()}
-                      </div>
-                    ) : (
-                      <p className="font-semibold text-[#6C757D] mt-1">Non assigné</p>
-                    )}
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
                   <div>
                     <span className="text-[#6C757D]">Catégorie :</span>
                     <p className="font-semibold text-[#2C3E50]">{demande.categorie}</p>
