@@ -572,9 +572,9 @@ export default function ArtisanDemandesPage() {
                   if (client) {
                     return (
                       <div className="mb-4 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
-                        <p className="text-sm font-bold text-gray-700 mb-3">Demandeur :</p>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold">
+                          <p className="text-sm font-bold text-gray-700">Demandeur :</p>
+                          <div className="w-8 h-8 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold text-sm">
                             {client.prenom?.[0]?.toUpperCase() || 'C'}{client.nom?.[0]?.toUpperCase() || ''}
                           </div>
                           <p className="font-semibold text-[#2C3E50]">
