@@ -448,25 +448,28 @@ export default function MesDemandesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Titre de la page */}
-      <div className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Titre de la page - Version moderne */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-[#2C3E50]">
-                Mes demandes de devis
+              <h1 className="text-4xl font-extrabold text-[#2C3E50] tracking-tight">
+                Mes demandes
               </h1>
-              <p className="text-sm text-[#6C757D] mt-1">
-                Suivez l'état de vos demandes et gérez vos projets
+              <p className="text-base text-[#6C757D] mt-2 font-medium">
+                Suivez vos projets en temps réel
               </p>
             </div>
             
             <Button
               onClick={() => router.push('/recherche')}
-              className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
+              className="bg-[#FF6B00] hover:bg-[#E56100] text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
             >
-              + Nouvelle demande
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Nouvelle demande
             </Button>
           </div>
         </div>
@@ -499,124 +502,142 @@ export default function MesDemandesPage() {
       )}
 
       {/* Contenu */}
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Onglets de filtrage */}
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mb-6">
+      <main className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Onglets de filtrage - Design moderne */}
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-8">
           <button
             onClick={() => setFiltreSection('toutes')}
-            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-              filtreSection === 'toutes' ? 'bg-[#FF6B00] text-white ring-4 ring-[#FF6B00] ring-opacity-50' : 'bg-white'
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filtreSection === 'toutes' 
+                ? 'bg-gradient-to-br from-[#FF6B00] to-[#E56100] text-white shadow-xl scale-105' 
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
-            <div className={`text-2xl font-bold ${
+            <div className={`text-3xl font-black mb-1 ${
               filtreSection === 'toutes' ? 'text-white' : 'text-[#FF6B00]'
             }`}>{demandes.length}</div>
-            <div className={`text-sm ${
+            <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'toutes' ? 'text-white' : 'text-gray-600'
             }`}>Toutes</div>
           </button>
           
           <button
             onClick={() => setFiltreSection('contrats')}
-            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-              filtreSection === 'contrats' ? 'bg-green-600 text-white ring-4 ring-green-600 ring-opacity-50' : 'bg-white'
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filtreSection === 'contrats' 
+                ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-xl scale-105' 
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
-            <div className={`text-2xl font-bold ${
+            <div className={`text-3xl font-black mb-1 ${
               filtreSection === 'contrats' ? 'text-white' : 'text-green-600'
             }`}>{getDemandesContratsEnCours(demandes).length}</div>
-            <div className={`text-sm ${
+            <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'contrats' ? 'text-white' : 'text-gray-600'
             }`}>✅ Contrats</div>
           </button>
           
           <button
             onClick={() => setFiltreSection('devis_recus')}
-            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-              filtreSection === 'devis_recus' ? 'bg-blue-600 text-white ring-4 ring-blue-600 ring-opacity-50' : 'bg-white'
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filtreSection === 'devis_recus' 
+                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-xl scale-105' 
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
-            <div className={`text-2xl font-bold ${
+            <div className={`text-3xl font-black mb-1 ${
               filtreSection === 'devis_recus' ? 'text-white' : 'text-blue-600'
             }`}>{getDemandesAvecDevis(demandes).length}</div>
-            <div className={`text-sm ${
+            <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'devis_recus' ? 'text-white' : 'text-gray-600'
-            }`}>📬 Devis reçus</div>
+            }`}>📬 Devis</div>
           </button>
           
           <button
             onClick={() => setFiltreSection('en_attente')}
-            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-              filtreSection === 'en_attente' ? 'bg-[#FFC107] text-white ring-4 ring-[#FFC107] ring-opacity-50' : 'bg-white'
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filtreSection === 'en_attente' 
+                ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-xl scale-105' 
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
-            <div className={`text-2xl font-bold ${
-              filtreSection === 'en_attente' ? 'text-white' : 'text-[#FFC107]'
+            <div className={`text-3xl font-black mb-1 ${
+              filtreSection === 'en_attente' ? 'text-white' : 'text-amber-500'
             }`}>{getDemandesEnAttente(demandes).length}</div>
-            <div className={`text-sm ${
+            <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'en_attente' ? 'text-white' : 'text-gray-600'
-            }`}>📤 En attente</div>
+            }`}>📤 Attente</div>
           </button>
           
           <button
             onClick={() => setFiltreSection('publiees')}
-            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-              filtreSection === 'publiees' ? 'bg-purple-600 text-white ring-4 ring-purple-600 ring-opacity-50' : 'bg-white'
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filtreSection === 'publiees' 
+                ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-xl scale-105' 
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
-            <div className={`text-2xl font-bold ${
+            <div className={`text-3xl font-black mb-1 ${
               filtreSection === 'publiees' ? 'text-white' : 'text-purple-600'
             }`}>{getDemandesPubliees(demandes).length}</div>
-            <div className={`text-sm ${
+            <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'publiees' ? 'text-white' : 'text-gray-600'
             }`}>📢 Publiées</div>
           </button>
           
           <button
             onClick={() => setFiltreSection('refusees')}
-            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-              filtreSection === 'refusees' ? 'bg-red-600 text-white ring-4 ring-red-600 ring-opacity-50' : 'bg-white'
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filtreSection === 'refusees' 
+                ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-xl scale-105' 
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
-            <div className={`text-2xl font-bold ${
+            <div className={`text-3xl font-black mb-1 ${
               filtreSection === 'refusees' ? 'text-white' : 'text-red-600'
             }`}>{getDemandesRefusees(demandes).length}</div>
-            <div className={`text-sm ${
+            <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'refusees' ? 'text-white' : 'text-gray-600'
             }`}>❌ Refusées</div>
           </button>
           
           <button
             onClick={() => setFiltreSection('terminees')}
-            className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-              filtreSection === 'terminees' ? 'bg-gray-700 text-white ring-4 ring-gray-700 ring-opacity-50' : 'bg-white'
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filtreSection === 'terminees' 
+                ? 'bg-gradient-to-br from-gray-600 to-gray-700 text-white shadow-xl scale-105' 
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
-            <div className={`text-2xl font-bold ${
+            <div className={`text-3xl font-black mb-1 ${
               filtreSection === 'terminees' ? 'text-white' : 'text-gray-700'
             }`}>{getDemandesTerminees(demandes).length}</div>
-            <div className={`text-sm ${
+            <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'terminees' ? 'text-white' : 'text-gray-600'
             }`}>🏁 Terminées</div>
           </button>
         </div>
 
         {demandes.length === 0 ? (
-          <Card className="p-12 text-center">
-            <div className="text-6xl mb-4">📋</div>
-            <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
+          <div className="bg-white rounded-2xl shadow-lg p-16 text-center border border-gray-100">
+            <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-[#2C3E50] mb-3">
               Aucune demande pour le moment
             </h2>
-            <p className="text-[#6C757D] mb-6">
-              Commencez par rechercher un artisan et demander un devis
+            <p className="text-gray-500 mb-8 text-lg max-w-md mx-auto">
+              Commencez par rechercher un artisan pour recevoir des devis personnalisés
             </p>
             <Button
               onClick={() => router.push('/recherche')}
-              className="bg-[#FF6B00] hover:bg-[#E56100] text-white"
+              className="bg-gradient-to-r from-[#FF6B00] to-[#E56100] hover:from-[#E56100] hover:to-[#D55000] text-white px-8 py-4 rounded-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-0.5"
             >
               Rechercher un artisan
             </Button>
-          </Card>
+          </div>
         ) : (
           <div className="space-y-4">
             {(() => {
@@ -638,36 +659,50 @@ export default function MesDemandesPage() {
               }
 
               const renderDemande = (demande: Demande) => {
-              const isExpanded = expandedDemandeIds.has(demande.id);
-              
-              return (
-              <div
-                key={demande.id}
-                onClick={() => toggleExpandDemande(demande.id)}
-                className="bg-white rounded-lg shadow-md p-6 hover:border-[#FF6B00] hover:shadow-lg transition-all cursor-pointer relative border-2 border-transparent"
-              >
-                {/* Bouton expandre/rétracter en haut à droite */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleExpandDemande(demande.id);
-                  }}
-                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title={isExpanded ? "Masquer les détails" : "Voir le détail"}
-                >
-                  <svg 
-                    className={`w-5 h-5 text-[#6C757D] transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
+                const isExpanded = expandedDemandeIds.has(demande.id);
+                
+                return (
+                  <div
+                    key={demande.id}
+                    onClick={() => toggleExpandDemande(demande.id)}
+                    className={`bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer relative border-2 overflow-hidden group ${
+                      isExpanded ? 'border-[#FF6B00] ring-4 ring-[#FF6B00] ring-opacity-20' : 'border-transparent hover:border-gray-200'
+                    }`}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+                    {/* Barre latérale colorée selon statut */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                      demande.statut === 'terminee' ? 'bg-gradient-to-b from-green-400 to-green-600' :
+                      demande.statut === 'annulee' ? 'bg-gradient-to-b from-red-400 to-red-600' :
+                      demande.statut === 'publiee' ? 'bg-gradient-to-b from-purple-400 to-purple-600' :
+                      'bg-gradient-to-b from-blue-400 to-blue-600'
+                    }`} />
+                    
+                    <div className="p-6 pl-8">
+                  {/* Bouton expandre/rétracter en haut à droite */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpandDemande(demande.id);
+                    }}
+                    className="absolute top-5 right-5 p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
+                    title={isExpanded ? "Masquer les détails" : "Voir le détail"}
+                  >
+                    <svg 
+                      className={`w-5 h-5 text-gray-400 group-hover:text-[#FF6B00] transition-all duration-200 ${
+                        isExpanded ? 'rotate-180' : ''
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                      strokeWidth={2.5}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
 
-                <div className="flex items-start justify-between mb-4 pb-4 border-b border-gray-200 pr-12">
-                  <div className="flex-1">
-                    {/* Nom de l'entreprise (artisan) avec badge style identique demandeur */}
+                  <div className="flex items-start justify-between mb-5 pb-5 border-b border-gray-100 pr-14">
+                    <div className="flex-1">
+                      {/* Nom de l'entreprise (artisan) avec badge style identique demandeur */}
                     {(() => {
                       if (demande.statut === 'annulee' && demande.artisanRefuseNom) {
                         const initiales = demande.artisanRefuseNom
@@ -676,13 +711,13 @@ export default function MesDemandesPage() {
                           .map(word => word[0]?.toUpperCase() || '')
                           .join('');
                         return (
-                          <div className="mb-4 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
+                          <div className="mb-5 bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
                             <div className="flex items-center gap-3">
-                              <p className="text-sm font-bold text-gray-700">Artisan :</p>
-                              <div className="w-8 h-8 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Artisan</span>
+                              <div className="w-10 h-10 bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
                                 {initiales || 'A'}
                               </div>
-                              <p className="font-semibold text-[#2C3E50]">
+                              <p className="font-bold text-[#2C3E50] text-lg">
                                 {demande.artisanRefuseNom}
                               </p>
                             </div>
@@ -698,13 +733,13 @@ export default function MesDemandesPage() {
                           .map(word => word[0]?.toUpperCase() || '')
                           .join('');
                         return (
-                          <div className="mb-4 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
+                          <div className="mb-5 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
                             <div className="flex items-center gap-3">
-                              <p className="text-sm font-bold text-gray-700">Artisan :</p>
-                              <div className="w-8 h-8 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                              <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">Artisan</span>
+                              <div className="w-10 h-10 bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
                                 {initiales || 'A'}
                               </div>
-                              <p className="font-semibold text-[#2C3E50]">
+                              <p className="font-bold text-[#2C3E50] text-lg">
                                 {raisonSociale}
                               </p>
                             </div>
@@ -712,14 +747,14 @@ export default function MesDemandesPage() {
                         );
                       } else {
                         return (
-                          <div className="mb-4 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
+                          <div className="mb-5 bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
                             <div className="flex items-center gap-3">
-                              <p className="text-sm font-bold text-gray-700">Artisan :</p>
-                              <div className="w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Artisan</span>
+                              <div className="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
                                 ?
                               </div>
-                              <p className="font-semibold text-[#6C757D]">
-                                Non assigné
+                              <p className="font-semibold text-gray-500 text-lg">
+                                Artisan non assigné
                               </p>
                             </div>
                           </div>
@@ -728,23 +763,24 @@ export default function MesDemandesPage() {
                     })()}
                     
                     {/* Titre principal + Dates + Badge statut */}
-                    <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
+                    <h2 className="text-2xl font-extrabold text-[#2C3E50] mb-3 tracking-tight">
                       {demande.titre}
                     </h2>
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <span className="text-blue-500">🏷️</span>
-                        <span className="font-semibold">Catégorie :</span>
-                        <span>{demande.categorie}</span>
+                    <div className="flex flex-wrap items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg">
+                        <span className="text-blue-600">🏷️</span>
+                        <span className="font-semibold text-blue-900">{demande.categorie}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-red-500">📅</span>
-                        <span>Créée le {demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}</span>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="font-medium">Créée le {demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}</span>
                       </div>
                       {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-red-500">📅</span>
-                          <span>Début souhaité le {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        <div className="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-lg">
+                          <span className="text-amber-600">📅</span>
+                          <span className="font-semibold text-amber-900">Début: {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}</span>
                         </div>
                       )}
                       {(() => {
@@ -1069,60 +1105,61 @@ export default function MesDemandesPage() {
                   }
                   return null;
                 })()}
+                </div>
               </div>
-              );
-              };
+            );
+          };
 
-              return (
-                <>
-                  {/* Titre de la section active */}
-                  {filtreSection !== 'toutes' && demandesFiltrees.length > 0 && (
-                    <div className="mb-4">
-                      <h2 className="text-2xl font-bold text-[#2C3E50]">
-                        {filtreSection === 'contrats' && '✅ Contrats en cours'}
-                        {filtreSection === 'devis_recus' && '📬 Devis reçus'}
-                        {filtreSection === 'en_attente' && '📤 En attente de réponse'}
-                        {filtreSection === 'publiees' && '📢 Publiées'}
-                        {filtreSection === 'refusees' && '❌ Refusées'}
-                        {filtreSection === 'terminees' && '🏁 Terminées'}
-                      </h2>
-                      <p className="text-sm text-[#6C757D] mt-1">
-                        {filtreSection === 'contrats' && 'Demandes avec devis accepté et payé - Travaux en cours ou terminés'}
-                        {filtreSection === 'devis_recus' && 'Demandes pour lesquelles vous avez reçu des propositions de devis'}
-                        {filtreSection === 'en_attente' && 'Demandes envoyées à un artisan spécifique en attente de sa réponse'}
-                        {filtreSection === 'publiees' && 'Demandes publiées publiquement, pas encore envoyées à un artisan spécifique'}
-                        {filtreSection === 'refusees' && 'Demandes refusées par l\'artisan contacté'}
-                        {filtreSection === 'terminees' && 'Demandes avec travaux terminés et validés'}
-                      </p>
-                    </div>
-                  )}
+          return (
+            <>
+              {/* Titre de la section active */}
+              {filtreSection !== 'toutes' && demandesFiltrees.length > 0 && (
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-[#2C3E50]">
+                    {filtreSection === 'contrats' && '✅ Contrats en cours'}
+                    {filtreSection === 'devis_recus' && '📬 Devis reçus'}
+                    {filtreSection === 'en_attente' && '📤 En attente de réponse'}
+                    {filtreSection === 'publiees' && '📢 Publiées'}
+                    {filtreSection === 'refusees' && '❌ Refusées'}
+                    {filtreSection === 'terminees' && '🏁 Terminées'}
+                  </h2>
+                  <p className="text-sm text-[#6C757D] mt-1">
+                    {filtreSection === 'contrats' && 'Demandes avec devis accepté et payé - Travaux en cours ou terminés'}
+                    {filtreSection === 'devis_recus' && 'Demandes pour lesquelles vous avez reçu des propositions de devis'}
+                    {filtreSection === 'en_attente' && 'Demandes envoyées à un artisan spécifique en attente de sa réponse'}
+                    {filtreSection === 'publiees' && 'Demandes publiées publiquement, pas encore envoyées à un artisan spécifique'}
+                    {filtreSection === 'refusees' && 'Demandes refusées par l\'artisan contacté'}
+                    {filtreSection === 'terminees' && 'Demandes avec travaux terminés et validés'}
+                  </p>
+                </div>
+              )}
 
-                  {/* Liste des demandes filtrées */}
-                  {demandesFiltrees.length > 0 ? (
-                    <div className="space-y-4">
-                      {demandesFiltrees.map(renderDemande)}
-                    </div>
-                  ) : (
-                    <Card className="p-12 text-center">
-                      <div className="text-6xl mb-4">🔍</div>
-                      <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
-                        Aucune demande dans cette catégorie
-                      </h2>
-                      <p className="text-[#6C757D] mb-6">
-                        {filtreSection === 'toutes' ? 'Vous n\'avez pas encore créé de demande' : 'Essayez une autre catégorie'}
-                      </p>
-                      {filtreSection !== 'toutes' && (
-                        <button
-                          onClick={() => setFiltreSection('toutes')}
-                          className="text-[#FF6B00] hover:underline font-medium"
-                        >
-                          ← Voir toutes les demandes
-                        </button>
-                      )}
-                    </Card>
+              {/* Liste des demandes filtrées */}
+              {demandesFiltrees.length > 0 ? (
+                <div className="space-y-4">
+                  {demandesFiltrees.map(renderDemande)}
+                </div>
+              ) : (
+                <Card className="p-12 text-center">
+                  <div className="text-6xl mb-4">🔍</div>
+                  <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
+                    Aucune demande dans cette catégorie
+                  </h2>
+                  <p className="text-[#6C757D] mb-6">
+                    {filtreSection === 'toutes' ? 'Vous n\'avez pas encore créé de demande' : 'Essayez une autre catégorie'}
+                  </p>
+                  {filtreSection !== 'toutes' && (
+                    <button
+                      onClick={() => setFiltreSection('toutes')}
+                      className="text-[#FF6B00] hover:underline font-medium"
+                    >
+                      ← Voir toutes les demandes
+                    </button>
                   )}
-                </>
-              );
+                </Card>
+              )}
+            </>
+          );
             })()}
           </div>
         )}
