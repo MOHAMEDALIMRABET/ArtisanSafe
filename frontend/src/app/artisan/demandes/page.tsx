@@ -591,9 +591,14 @@ export default function ArtisanDemandesPage() {
                 <div className="flex items-start justify-between mb-4 pb-4 border-b border-gray-200 pr-12">
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
-                      {demande.categorie}
+                      {demande.titre}
                     </h2>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <span className="text-blue-500">🏷️</span>
+                        <span className="font-semibold">Catégorie :</span>
+                        <span>{demande.categorie}</span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <span className="text-red-500">📅</span>
                         <span>Créée le {demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}</span>
