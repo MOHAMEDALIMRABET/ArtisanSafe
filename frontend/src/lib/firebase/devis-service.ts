@@ -1088,3 +1088,88 @@ export async function marquerDevisOriginalCommeRemplace(
     // Ne pas bloquer le paiement si cette opération échoue
   }
 }
+
+/**
+ * Annuler un devis en attente de paiement
+ * Permet au client de se désister avant le paiement
+ * IMPORTANT : Ferme définitivement la demande associée (logique BTP)
+ */
+export async function annulerDevisParClient(
+  devisId: string,
+  clientId: string,
+  motifAnnulation?: string
+): Promise<void> {
+  try {
+    const devisRef = doc(db, COLLECTION_NAME, devisId);
+    const devisDoc = await getDoc(devisRef);
+
+    if (!devisDoc.exists()) {
+      throw new Error('Devis introuvable');
+    }
+
+    const devis = { id: devisDoc.id, ...devisDoc.data() } as Devis;
+
+    // Vérifier que c'est bien le client du devis
+    if (devis.clientId !== clientId) {
+      throw new Error('Non autorisé : ce devis ne vous appartient pas');
+    }
+
+    // Vérifier que le devis est en attente de paiement ou accepté
+    if (devis.statut !== 'en_attente_paiement' && devis.statut !== 'accepte') {
+      throw new Error(`Impossible d'annuler un devis avec le statut : ${devis.statut}`);
+    }
+
+    // Mettre à jour le devis
+    await updateDoc(devisRef, {
+      statut: 'annule',
+      dateModification: Timestamp.now(),
+      dateDerniereNotification: Timestamp.now(),
+      motifAnnulation: motifAnnulation || 'Client désisté avant paiement',
+      dateAnnulation: Timestamp.now(),
+      historiqueStatuts: [
+        ...(devis.historiqueStatuts || []),
+        {
+          statut: 'annule',
+          date: Timestamp.now(),
+          commentaire: motifAnnulation || 'Devis annulé par le client avant paiement',
+        }
+      ],
+    });
+
+    // 🆕 Fermer la demande associée (OPTION 1 : DEMANDE CLOSE)
+    if (devis.demandeId) {
+      try {
+        const demandeRef = doc(db, 'demandes', devis.demandeId);
+        const demandeDoc = await getDoc(demandeRef);
+        
+        if (demandeDoc.exists()) {
+          await updateDoc(demandeRef, {
+            statut: 'annulee',
+            dateModification: Timestamp.now(),
+            motifAnnulation: `Client s'est désisté après acceptation du devis ${devis.numeroDevis}`,
+            dateAnnulation: Timestamp.now(),
+          });
+          console.log(`📋 Demande ${devis.demandeId} fermée suite à annulation devis`);
+        }
+      } catch (error) {
+        console.error('⚠️ Erreur fermeture demande:', error);
+        // Ne pas bloquer l'annulation du devis si la demande ne peut être fermée
+      }
+    }
+
+    // Notifier l'artisan avec message détaillé
+    await createNotification({
+      recipientId: devis.artisanId,
+      type: 'devis_annule',
+      title: '❌ Devis annulé par le client',
+      message: `Le client s'est désisté avant paiement pour le devis ${devis.numeroDevis} (${devis.totaux?.totalTTC || 0}€ TTC). La demande est close définitivement.`,
+      relatedId: devisId,
+      isRead: false,
+    });
+
+    console.log(`✅ Devis ${devis.numeroDevis} annulé par le client - Demande fermée`);
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'annulation du devis:', error);
+    throw error;
+  }
+}

@@ -942,7 +942,7 @@ export default function VoirDevisPage() {
             {/* Bouton Contacter le client (devis refusé) */}
             {devis.statut === 'refuse' && (
               <button
-                onClick={() => router.push(`/messages?userId=${devis.clientId}`)}
+                onClick={() => router.push(`/messages?userId=${devis.clientId}&devisId=${devis.id}&demandeId=${devis.demandeId || ''}`)}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

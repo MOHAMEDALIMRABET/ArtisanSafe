@@ -165,6 +165,18 @@ export default function NouveauDevisPage() {
           router.push('/artisan/demandes');
           return;
         }
+
+        // Vérifier que la demande n'est pas annulée
+        if (demandeData.statut === 'annulee') {
+          alert(
+            '❌ Demande annulée\n\n' +
+            'Cette demande a été annulée par le client.\n' +
+            'Vous ne pouvez plus créer de devis pour cette demande.'
+          );
+          router.push('/artisan/demandes');
+          return;
+        }
+
         setDemande(demandeData);
 
         // Vérifier s'il y a un ancien devis en révision pour cette demande

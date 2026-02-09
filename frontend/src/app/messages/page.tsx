@@ -24,7 +24,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { validateMessage } from '@/lib/antiBypassValidator';
-import { validateMessageWithHistory } from '@/lib/firebase/conversation-history-validator';
 
 interface Message {
   id: string;
@@ -43,6 +42,8 @@ interface Conversation {
   lastMessage: string;
   lastMessageDate: Timestamp;
   unreadCount?: number;
+  devisId?: string; // Lien vers le devis associé (si conversation créée depuis un devis)
+  demandeId?: string; // Lien vers la demande associée
 }
 
 interface UserInfo {
@@ -116,6 +117,8 @@ export default function MessagesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetUserId = searchParams?.get('userId');
+  const devisIdParam = searchParams?.get('devisId'); // Paramètre optionnel depuis les pages devis
+  const demandeIdParam = searchParams?.get('demandeId'); // Paramètre optionnel depuis les pages demandes
   const { user, loading: authLoading } = useAuth();
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -126,6 +129,11 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [validationWarning, setValidationWarning] = useState<string | null>(null);
+  
+  // États pour gérer le statut du devis associé
+  const [devisStatus, setDevisStatus] = useState<string | null>(null);
+  const [devisInfo, setDevisInfo] = useState<{ numeroDevis?: string; montantTTC?: number } | null>(null);
+  const [isConversationInactive, setIsConversationInactive] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -245,6 +253,61 @@ export default function MessagesPage() {
     loadUserInfo(otherUserId);
   }, [selectedConversation, user, conversations]);
 
+  // Charger le devis associé pour vérifier son statut
+  useEffect(() => {
+    if (!selectedConversation || !conversations.length) return;
+
+    const loadDevisStatus = async () => {
+      const conv = conversations.find(c => c.id === selectedConversation);
+      if (!conv || !conv.devisId) {
+        // Pas de devis associé → conversation normale, toujours active
+        setDevisStatus(null);
+        setDevisInfo(null);
+        setIsConversationInactive(false);
+        return;
+      }
+
+      try {
+        // Charger le devis
+        const devisDoc = await getDoc(doc(db, 'devis', conv.devisId));
+        
+        if (!devisDoc.exists()) {
+          console.warn('Devis introuvable:', conv.devisId);
+          setDevisStatus(null);
+          setDevisInfo(null);
+          setIsConversationInactive(false);
+          return;
+        }
+
+        const devisData = devisDoc.data();
+        const statut = devisData.statut;
+        
+        setDevisStatus(statut);
+        setDevisInfo({
+          numeroDevis: devisData.numeroDevis,
+          montantTTC: devisData.totaux?.montantTTC || devisData.montantTTC,
+        });
+
+        // Vérifier si le devis est dans un état terminal (conversation inactive)
+        const statutsInactifs = ['refuse', 'annule', 'expire'];
+        const isInactive = statutsInactifs.includes(statut);
+        
+        setIsConversationInactive(isInactive);
+
+        if (isInactive) {
+          console.log(`🚫 Conversation ${selectedConversation} inactive (devis ${statut})`);
+        }
+      } catch (error) {
+        console.error('Erreur chargement statut devis:', error);
+        setDevisStatus(null);
+        setDevisInfo(null);
+        setIsConversationInactive(false);
+      }
+    };
+
+    loadDevisStatus();
+  }, [selectedConversation, conversations]);
+
   // Auto-scroll vers le bas
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -274,7 +337,8 @@ export default function MessagesPage() {
       const currentUserName = `${currentUserData?.prenom || ''} ${currentUserData?.nom || ''}`.trim() || currentUserData?.email || 'Utilisateur';
       const otherUserName = `${otherUserData?.prenom || ''} ${otherUserData?.nom || ''}`.trim() || otherUserData?.email || 'Utilisateur';
 
-      const conversationRef = await addDoc(collection(db, 'conversations'), {
+      // Préparer les données de la conversation
+      const conversationData: any = {
         participants: [user.uid, otherUserId],
         participantNames: {
           [user.uid]: currentUserName,
@@ -283,7 +347,19 @@ export default function MessagesPage() {
         lastMessage: '',
         lastMessageDate: serverTimestamp(),
         createdAt: serverTimestamp(),
-      });
+      };
+
+      // Ajouter devisId et demandeId si présents (provenant des paramètres URL)
+      if (devisIdParam) {
+        conversationData.devisId = devisIdParam;
+        console.log('📎 Conversation liée au devis:', devisIdParam);
+      }
+      if (demandeIdParam) {
+        conversationData.demandeId = demandeIdParam;
+        console.log('📎 Conversation liée à la demande:', demandeIdParam);
+      }
+
+      const conversationRef = await addDoc(collection(db, 'conversations'), conversationData);
 
       setSelectedConversation(conversationRef.id);
     } catch (error) {
@@ -347,17 +423,21 @@ export default function MessagesPage() {
     
     if (!user || !selectedConversation || !messageContent.trim()) return;
 
+    // ========================================
+    // VÉRIFICATION : Conversation inactive ?
+    // ========================================
+    if (isConversationInactive) {
+      alert('❌ Impossible d\'envoyer un message.\n\nCette conversation est close car le devis a été annulé, refusé ou a expiré.');
+      return;
+    }
+
     setSending(true);
 
     try {
       // ========================================
-      // VALIDATION MULTI-COUCHES (historique)
+      // VALIDATION MULTI-COUCHES
       // ========================================
-      const validation = await validateMessageWithHistory(
-        messageContent.trim(),
-        selectedConversation,
-        user.uid
-      );
+      const validation = validateMessage(messageContent.trim());
 
       if (!validation.isValid) {
         alert(validation.message);
@@ -478,12 +558,38 @@ export default function MessagesPage() {
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {/* Bandeau conversation inactive */}
+                  {isConversationInactive && (
+                    <div className="mb-4 p-4 bg-gray-100 border-l-4 border-gray-500 rounded">
+                      <div className="flex items-start">
+                        <span className="text-2xl mr-3">🚫</span>
+                        <div>
+                          <h3 className="font-semibold text-gray-700 mb-1">
+                            Conversation close
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {devisStatus === 'annule' && 'Le devis a été annulé. Vous ne pouvez plus envoyer de messages.'}
+                            {devisStatus === 'refuse' && 'Le devis a été refusé. Vous ne pouvez plus envoyer de messages.'}
+                            {devisStatus === 'expire' && 'Le devis a expiré. Vous ne pouvez plus envoyer de messages.'}
+                          </p>
+                          {devisInfo?.numeroDevis && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Devis #{devisInfo.numeroDevis}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {messages.map((msg) => {
                     const isOwn = msg.senderId === user.uid;
                     return (
                       <div
                         key={msg.id}
-                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${
+                          isConversationInactive ? 'opacity-50' : ''
+                        }`}
                       >
                         <div
                           className={`max-w-[70%] rounded-lg px-4 py-2 ${
@@ -514,19 +620,39 @@ export default function MessagesPage() {
                 )}
 
                 {/* Formulaire */}
-                <form onSubmit={handleSendMessage} className="p-4 border-t bg-gray-50">
+                <form 
+                  onSubmit={handleSendMessage} 
+                  className={`p-4 border-t ${
+                    isConversationInactive ? 'bg-gray-200' : 'bg-gray-50'
+                  }`}
+                >
+                  {isConversationInactive && (
+                    <div className="mb-2 text-center">
+                      <p className="text-sm text-gray-500 italic">
+                        ❌ Conversation close - Envoi de messages désactivé
+                      </p>
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={messageContent}
                       onChange={(e) => handleMessageChange(e.target.value)}
-                      placeholder="Écrivez votre message..."
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                      disabled={sending}
+                      placeholder={
+                        isConversationInactive 
+                          ? "Conversation close" 
+                          : "Écrivez votre message..."
+                      }
+                      className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent ${
+                        isConversationInactive 
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300' 
+                          : 'bg-white border-gray-300'
+                      }`}
+                      disabled={sending || isConversationInactive}
                     />
                     <button
                       type="submit"
-                      disabled={sending || !messageContent.trim() || !!validationWarning}
+                      disabled={sending || !messageContent.trim() || !!validationWarning || isConversationInactive}
                       className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {sending ? '⏳' : '📤'} Envoyer

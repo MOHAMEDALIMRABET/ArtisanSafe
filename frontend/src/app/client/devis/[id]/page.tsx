@@ -1343,7 +1343,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
             {devis.statut === 'accepte' && (
               <button
-                onClick={() => alert('Fonctionnalité messagerie à venir')}
+                onClick={() => router.push(`/messages?userId=${devis.artisanId}&devisId=${devis.id}&demandeId=${devis.demandeId || ''}`)}
                 className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg hover:bg-[#E56100] transition"
               >
                 💬 Contacter l'artisan

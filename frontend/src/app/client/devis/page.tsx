@@ -13,6 +13,7 @@ import { db } from '@/lib/firebase/config';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
 import Link from 'next/link';
+import { annulerDevisParClient } from '@/lib/firebase/devis-service';
 
 // Helper: Devis considérés comme "acceptés" (en attente de paiement)
 const isDevisAccepte = (statut: string) => 
@@ -105,6 +106,42 @@ export default function ClientDevisPage() {
     }
   };
 
+  const handleAnnulerDevis = async (devisId: string, numeroDevis: string, montantTTC: number, nomArtisan: string) => {
+    if (!user) return;
+
+    // Message d'avertissement CLAIR et professionnel
+    const confirmAnnulation = window.confirm(
+      `⚠️ ATTENTION : Annulation d'un devis déjà accepté\n\n` +
+      `Devis : ${numeroDevis}\n` +
+      `Artisan : ${nomArtisan}\n` +
+      `Montant : ${montantTTC.toFixed(2)}€ TTC\n\n` +
+      `En annulant ce devis, votre demande sera CLOSE définitivement.\n\n` +
+      `CONSÉQUENCES :\n` +
+      `• L'artisan a déjà planifié votre chantier dans son agenda\n` +
+      `• Vous ne pourrez plus recevoir de devis pour cette demande\n` +
+      `• Les autres devis reçus resteront annulés\n` +
+      `• Pour relancer ce projet : créer une NOUVELLE demande\n\n` +
+      `Cette action est IRRÉVERSIBLE.\n\n` +
+      `Êtes-vous CERTAIN de vouloir annuler ce devis ?`
+    );
+
+    if (!confirmAnnulation) return;
+
+    try {
+      await annulerDevisParClient(devisId, user.uid, 'Client désisté avant paiement');
+      alert(
+        '✅ Devis annulé avec succès\n\n' +
+        `Votre demande a été close définitivement.\n` +
+        `L'artisan ${nomArtisan} a été notifié de votre désistement.\n\n` +
+        `Pour relancer ce projet, créez une nouvelle demande depuis votre tableau de bord.`
+      );
+      await loadDevis(); // Recharger la liste
+    } catch (error: any) {
+      console.error('Erreur annulation devis:', error);
+      alert(`❌ Erreur lors de l'annulation : ${error.message || 'Erreur inconnue'}`);
+    }
+  };
+
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
       genere: 'bg-gray-100 text-gray-800',
@@ -131,7 +168,7 @@ export default function ClientDevisPage() {
       accepte: '✅ Accepté',
       en_attente_paiement: '💳 Attente paiement',
       paye: '💰 Payé',
-      en_cours: '🚧 En cours',
+      en_cours: '🚧 Travaux en cours',
       travaux_termines: '✅ Travaux terminés',
       termine_valide: '✔️ Validé',
       termine_auto_valide: '✔️ Auto-validé',
@@ -361,7 +398,7 @@ export default function ClientDevisPage() {
                       </>
                     )}
 
-                    {/* Devis accepté/en attente paiement : Procéder au paiement + Voir le détail */}
+                    {/* Devis accepté/en attente paiement : Procéder au paiement + Annuler + Voir le détail */}
                     {(d.statut === 'accepte' || d.statut === 'en_attente_paiement') && (
                       <>
                         <button 
@@ -372,6 +409,16 @@ export default function ClientDevisPage() {
                           className="flex-1 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition font-medium"
                         >
                           💳 Procéder au paiement
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const nomArtisan = d.artisan.raisonSociale || `${d.artisan.prenom} ${d.artisan.nom}`;
+                            handleAnnulerDevis(d.id, d.numeroDevis, d.totaux.totalTTC, nomArtisan);
+                          }}
+                          className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition font-medium"
+                        >
+                          🚫 Annuler
                         </button>
                         <div
                           onClick={(e) => {
