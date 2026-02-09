@@ -749,29 +749,6 @@ export default function ArtisanDemandesPage() {
                   </div>
                 )}
 
-                  {/* Devis reçus */}
-                  {demande.devisRecus && demande.devisRecus > 0 && (
-                  <div className="mb-6 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-bold text-yellow-900 mb-1">📋 Devis soumis</p>
-                        <p className="text-yellow-800">
-                          <span className="font-bold text-lg">{demande.devisRecus}</span> devis reçu{demande.devisRecus > 1 ? 's' : ''} pour cette demande
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/artisan/devis?demandeId=${demande.id}`);
-                        }}
-                        className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
-                      >
-                        Voir les devis →
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                   {/* Boutons d'action en bas (si devis payé) */}
                   {(() => {
                     const hasDevisPaye = demandesAvecDevisPayeIds.has(demande.id);
