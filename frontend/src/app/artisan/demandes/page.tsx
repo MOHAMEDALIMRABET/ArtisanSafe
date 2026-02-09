@@ -547,8 +547,59 @@ export default function ArtisanDemandesPage() {
                 onClick={() => toggleExpandDemande(demande.id)}
                 className="bg-white rounded-lg shadow-md hover:border-[#FF6B00] hover:shadow-lg transition-all cursor-pointer relative border-2 border-transparent p-6"
               >
+                {/* Bouton expand/collapse en haut à droite */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleExpandDemande(demande.id);
+                  }}
+                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 transition-colors z-10"
+                  title={isExpanded ? "Masquer les détails" : "Voir le détail"}
+                >
+                  <svg 
+                    className={`w-5 h-5 text-[#6C757D] transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Informations demandeur (toujours visible en haut) */}
+                {(() => {
+                  const client = clientsInfo.get(demande.clientId);
+                  if (client) {
+                    return (
+                      <div className="mb-4 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
+                        <p className="text-sm font-bold text-gray-700 mb-3">Demandeur :</p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold">
+                            {client.prenom?.[0]?.toUpperCase() || 'C'}{client.nom?.[0]?.toUpperCase() || ''}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-[#2C3E50]">
+                              {client.prenom} {client.nom}
+                            </p>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/messages?userId=${demande.clientId}`);
+                              }}
+                              className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                            >
+                              💬 Contacter le client
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
                 {/* Titre principal + Dates + Badge statut */}
-                <div className="flex items-start justify-between mb-4 pb-4 border-b border-gray-200">
+                <div className="flex items-start justify-between mb-4 pb-4 border-b border-gray-200 pr-12">
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
                       {demande.categorie}
@@ -659,8 +710,7 @@ export default function ArtisanDemandesPage() {
                 })()}
 
                   {/* Localisation */}
-                <div className="mb-6">
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
                       <span>📍</span>
                       Localisation
@@ -674,7 +724,6 @@ export default function ArtisanDemandesPage() {
                       </p>
                     </div>
                   </div>
-                </div>
 
                 {/* Dates souhaitées */}
                 {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
@@ -711,37 +760,8 @@ export default function ArtisanDemandesPage() {
                   </div>
                 )}
 
-                {/* Informations demandeur */}
-                {(() => {
-                  const client = clientsInfo.get(demande.clientId);
-                  if (client) {
-                    return (
-                      <div className="mb-6 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
-                        <p className="text-sm font-bold text-gray-700 mb-3">Demandeur :</p>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold">
-                            {client.prenom?.[0]?.toUpperCase() || 'C'}{client.nom?.[0]?.toUpperCase() || ''}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-[#2C3E50]">
-                              {client.prenom} {client.nom}
-                            </p>
-                            <button
-                              onClick={() => router.push(`/messages?userId=${demande.clientId}`)}
-                              className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
-                            >
-                              💬 Contacter le client
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-
-                {/* Devis reçus */}
-                {demande.devisRecus && demande.devisRecus > 0 && (
+                  {/* Devis reçus */}
+                  {demande.devisRecus && demande.devisRecus > 0 && (
                   <div className="mb-6 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                     <div className="flex items-center justify-between">
                       <div>
@@ -751,7 +771,10 @@ export default function ArtisanDemandesPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => router.push(`/artisan/devis?demandeId=${demande.id}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/artisan/devis?demandeId=${demande.id}`);
+                        }}
                         className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
                       >
                         Voir les devis →
