@@ -609,6 +609,21 @@ export default function ArtisanDemandesPage() {
                           <span>Début souhaité le {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                         </div>
                       )}
+                      {(() => {
+                        const devisForDemande = devisMap.get(demande.id) || [];
+                        const statutsPaye = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
+                        const devisPaye = devisForDemande.find(d => statutsPaye.includes(d.statut));
+                        if (devisPaye?.delaiRealisation) {
+                          return (
+                            <div className="flex items-center gap-1">
+                              <span className="text-green-600">⏱️</span>
+                              <span className="font-semibold">Délai :</span>
+                              <span>{devisPaye.delaiRealisation} jour(s)</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                   
