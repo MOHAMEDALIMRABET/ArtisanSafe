@@ -718,46 +718,47 @@ export default function ArtisanDemandesPage() {
                   );
                 })()}
 
-                  {/* Localisation */}
-                  <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                      <span>📍</span>
-                      Localisation
-                    </p>
-                    <div className="space-y-1">
-                      <p className="text-blue-800">
-                        <span className="font-semibold">Ville :</span> {demande.localisation?.ville || 'Non spécifié'}
+                  {/* Localisation et Dates souhaitées côte à côte */}
+                  <div className="mb-6 grid md:grid-cols-2 gap-4">
+                    {/* Localisation */}
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                        <span>📍</span>
+                        Localisation
                       </p>
-                      <p className="text-blue-800">
-                        <span className="font-semibold">Code postal :</span> {demande.localisation?.codePostal || 'N/A'}
-                      </p>
+                      <div className="space-y-1">
+                        <p className="text-blue-800">
+                          <span className="font-semibold">Ville :</span> {demande.localisation?.ville || 'Non spécifié'}
+                        </p>
+                        <p className="text-blue-800">
+                          <span className="font-semibold">Code postal :</span> {demande.localisation?.codePostal || 'N/A'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                {/* Dates souhaitées */}
-                {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
-                  <div className="mb-6">
-                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                      <p className="text-sm font-bold text-green-900 mb-3 flex items-center gap-2">
-                        <span>📅</span>
-                        Date souhaitée
-                      </p>
-                      <p className="text-green-800">
-                        {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </p>
-                      {demande.datesSouhaitees.flexible && (
-                        <span className="inline-block mt-2 bg-green-200 text-green-800 px-2 py-1 rounded text-xs font-semibold">
-                          Flexible
-                        </span>
-                      )}
-                    </div>
+                    {/* Dates souhaitées */}
+                    {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <p className="text-sm font-bold text-green-900 mb-3 flex items-center gap-2">
+                          <span>📅</span>
+                          Date souhaitée
+                        </p>
+                        <p className="text-green-800">
+                          {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </p>
+                        {demande.datesSouhaitees.flexible && (
+                          <span className="inline-block mt-2 bg-green-200 text-green-800 px-2 py-1 rounded text-xs font-semibold">
+                            Flexible
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
 
                 {/* Badge Demande urgente */}
                 {demande.urgence && (
