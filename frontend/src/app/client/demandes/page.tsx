@@ -732,15 +732,16 @@ export default function MesDemandesPage() {
                         return null;
                       })()}
                     </div>
-                    <p className="text-[#6C757D] text-sm mb-2">
-                      {isExpanded ? demande.description : (
-                        <>
-                          {demande.description.substring(0, 150)}
-                          {demande.description.length > 150 && '...'}
-                        </>
-                      )}
-                    </p>
                   </div>
+                </div>
+
+                {/* Description (toujours visible, tronquée si collapsed) */}
+                <div className="mb-4">
+                  <p className="text-sm font-bold text-gray-700 mb-2">Description :</p>
+                  <p className={`text-gray-700 leading-relaxed ${!isExpanded ? 'line-clamp-2' : ''}`}>
+                    {demande.description}
+                  </p>
+                </div>
                   
                   {/* Boutons d'action pour brouillon et annulée */}
                   {!isExpanded && (
@@ -828,79 +829,57 @@ export default function MesDemandesPage() {
                       </button>
                     )}
                   </div>
-                  )}
-                </div>
+                )}
 
                 {/* Informations détaillées - visibles uniquement si étendu */}
                 {isExpanded && (
                   <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
                     <h4 className="font-bold text-[#2C3E50] text-lg mb-4">📋 Détails complets de la demande</h4>
                     
-                    {/* Photos */}
-                    {(demande.photosUrls || demande.photos) && (demande.photosUrls?.length || demande.photos?.length) ? (
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-sm font-semibold text-[#6C757D] mb-3">📸 Photos jointes ({(demande.photosUrls || demande.photos)?.length})</p>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                          {(demande.photosUrls || demande.photos)?.map((photoUrl, idx) => {
-                            // Récupérer le nom original depuis les métadonnées ou utiliser un nom par défaut
-                            const originalName = photoMetadata.get(photoUrl);
-                            const displayName = originalName || `Photo ${idx + 1}`;
-                            
-                            return (
-                              <div
-                                key={idx}
-                                className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#FF6B00] transition-all shadow-sm"
-                                style={{ backgroundColor: '#ffffff' }}
-                              >
-                                <a
-                                  href={photoUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  title={displayName}
-                                  className="block w-full h-full"
+                    {/* Photos du projet */}
+                    {(() => {
+                      const photosList = demande.photosUrls || demande.photos || [];
+                      const validPhotos = photosList.filter((url: string) => url && url.startsWith('http'));
+                      
+                      if (validPhotos.length === 0) return null;
+                      
+                      return (
+                        <div className="mb-4">
+                          <p className="text-sm font-semibold text-gray-700 mb-2">
+                            📸 Photos du projet ({validPhotos.length})
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {validPhotos.map((photoUrl: string, idx: number) => {
+                              const displayName = photoMetadata.get(photoUrl) || `Photo ${idx + 1}`;
+                              return (
+                                <div
+                                  key={idx}
+                                  className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#FF6B00] transition-all shadow-sm"
+                                  style={{ backgroundColor: '#ffffff' }}
                                 >
-                                  <img
-                                    src={photoUrl}
-                                    alt={displayName}
-                                    className="w-full h-full object-contain"
-                                    onLoad={(e) => {
-                                      console.log('✅ Photo chargée:', displayName, photoUrl);
-                                    }}
-                                    onError={(e) => {
-                                      console.error('❌ Erreur chargement photo:', displayName, photoUrl);
-                                      // Afficher un placeholder si l'image ne charge pas
-                                      e.currentTarget.style.display = 'none';
-                                      const container = e.currentTarget.parentElement?.parentElement;
-                                      if (container && !container.querySelector('.photo-error')) {
-                                        const errorDiv = document.createElement('div');
-                                        errorDiv.className = 'photo-error absolute inset-0 flex flex-col items-center justify-center bg-gray-100';
-                                        errorDiv.innerHTML = `
-                                          <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                          </svg>
-                                          <span class="text-xs text-gray-500 text-center px-2">${displayName}</span>
-                                        `;
-                                        container.appendChild(errorDiv);
-                                      }
-                                    }}
-                                  />
-                                </a>
-                                {/* Tooltip au hover avec le nom du fichier */}
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-                                  <p className="text-white text-xs truncate">{displayName}</p>
+                                  <a
+                                    href={photoUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={displayName}
+                                    className="block w-full h-full"
+                                  >
+                                    <img
+                                      src={photoUrl}
+                                      alt={displayName}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  </a>
+                                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                                    <p className="text-white text-xs truncate">{displayName}</p>
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ) : null}
-                    
-                    {/* Description complète */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-[#6C757D] mb-2">Description :</p>
-                      <p className="text-[#2C3E50]">{demande.description}</p>
-                    </div>
+                      );
+                    })()}
                     
                     {/* Localisation détaillée */}
                     {demande.localisation && (
