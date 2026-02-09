@@ -250,11 +250,11 @@ export default function MesDemandesPage() {
     }
     
     // ✅ DEMANDE DIRECTE (envoyée à un artisan spécifique)
-    // → Badge "Attribuée" dès la création (artisan déjà assigné)
+    // → Badge "Envoyé à artisan" dès la création (artisan déjà assigné)
     if (demandeType === 'directe' && hasArtisan && (statut === 'publiee' || statut === 'matchee' || statut === 'genere')) {
       return (
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border-2 border-orange-300">
-          🎯 Attribuée à artisan
+          🎯 Envoyé à artisan
         </span>
       );
     }
@@ -665,7 +665,7 @@ export default function MesDemandesPage() {
                   </svg>
                 </button>
 
-                <div className="flex items-start justify-between mb-4 pr-12">
+                <div className="flex items-start justify-between mb-4 pb-4 border-b border-gray-200 pr-12">
                   <div className="flex-1">
                     {/* Nom de l'entreprise (artisan) avec badge style identique demandeur */}
                     {(() => {
@@ -727,44 +727,47 @@ export default function MesDemandesPage() {
                       }
                     })()}
                     
-                    {/* Nom du projet en dessous */}
-                    <p className="text-sm text-[#6C757D] mb-3">{demande.titre}</p>
-                    
-                    <div className="flex items-center gap-4 mb-3 flex-wrap">
-                      {/* Dates */}
-                      <div className="flex items-center gap-3 text-xs text-[#6C757D]">
-                        <div className="flex items-center gap-1">
-                          <span>📅</span>
-                          <span className="font-medium">Créée le</span>
-                          <span>{demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}</span>
-                        </div>
-                        {demande.datesSouhaitees?.dates?.[0] && (
-                          <div className="flex items-center gap-1">
-                            <span>🗓️</span>
-                            <span className="font-medium">Début souhaité le</span>
-                            <span>{demande.datesSouhaitees.dates[0].toDate().toLocaleDateString('fr-FR')}</span>
-                          </div>
-                        )}
+                    {/* Titre principal + Dates + Badge statut */}
+                    <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
+                      {demande.titre}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <span className="text-blue-500">🏷️</span>
+                        <span className="font-semibold">Catégorie :</span>
+                        <span>{demande.categorie}</span>
                       </div>
-                      
-                      {/* {getTypeBadge(demande.type)} */}
-                      {getStatutBadge(demande)}
-                      
-                      {/* Badge devis refusé après le badge Publié */}
+                      <div className="flex items-center gap-1">
+                        <span className="text-red-500">📅</span>
+                        <span>Créée le {demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}</span>
+                      </div>
+                      {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-red-500">📅</span>
+                          <span>Début souhaité le {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        </div>
+                      )}
                       {(() => {
                         const devisForDemande = devisMap.get(demande.id) || [];
-                        const devisRefuse = devisForDemande.find(d => d.statut === 'refuse');
-                        
-                        if (devisRefuse) {
+                        const statutsPaye = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
+                        const devisPaye = devisForDemande.find(d => statutsPaye.includes(d.statut));
+                        if (devisPaye?.delaiRealisation) {
                           return (
-                            <p className="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded">
-                              ❌ Devis refusé le {devisRefuse.dateRefus?.toDate().toLocaleDateString('fr-FR')}
-                            </p>
+                            <div className="flex items-center gap-1">
+                              <span className="text-green-600">⏱️</span>
+                              <span className="font-semibold">Délai :</span>
+                              <span>{devisPaye.delaiRealisation} jour(s)</span>
+                            </div>
                           );
                         }
                         return null;
                       })()}
                     </div>
+                  </div>
+                  
+                  {/* Badge statut principal */}
+                  <div className="flex flex-col items-end gap-2">
+                    {getStatutBadge(demande)}
                   </div>
                 </div>
 
@@ -776,8 +779,8 @@ export default function MesDemandesPage() {
                   </p>
                 </div>
                   
-                  {/* Boutons d'action pour brouillon et annulée */}
-                  {!isExpanded && (
+                {/* Boutons d'action pour brouillon et annulée */}
+                {!isExpanded && (
                   <div className="flex gap-3 ml-4">
                     {/* Bouton Compléter pour brouillon uniquement */}
                     {demande.statut === 'genere' && (
@@ -971,38 +974,6 @@ export default function MesDemandesPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
-                  <div>
-                    <span className="text-[#6C757D]">Catégorie :</span>
-                    <p className="font-semibold text-[#2C3E50]">{demande.categorie}</p>
-                  </div>
-                  <div>
-                    <span className="text-[#6C757D]">Localisation :</span>
-                    <p className="font-semibold text-[#2C3E50]">{demande.localisation.ville}</p>
-                  </div>
-                  <div>
-                    {(() => {
-                      const devisForDemande = devisMap.get(demande.id) || [];
-                      const statutsPaye = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
-                      const devisPaye = devisForDemande.find(d => statutsPaye.includes(d.statut));
-                      
-                      if (devisPaye?.delaiRealisation) {
-                        return (
-                          <>
-                            <span className="text-[#6C757D]">Délai :</span>
-                            <p className="font-semibold text-[#2C3E50] flex items-center gap-1">
-                              <span>⏱️</span>
-                              <span>{devisPaye.delaiRealisation} jour(s)</span>
-                            </p>
-                          </>
-                        );
-                      }
-                      
-                      return null;
-                    })()}
-                  </div>
-                </div>
-
                 {/* Message vert pour les demandes avec devis payé (contrats) */}
                 {demandesAvecDevisPayeIds.has(demande.id) && (() => {
                   const devisForDemande = devisMap.get(demande.id) || [];
@@ -1018,58 +989,9 @@ export default function MesDemandesPage() {
                           </svg>
                           <div className="flex-1">
                             <p className="font-bold text-green-700 mb-1">✅ Devis accepté et payé - Contrat en cours</p>
-                            <p className="text-sm text-green-600 mb-3">
+                            <p className="text-sm text-green-600">
                               Vous avez signé et payé le devis de l'artisan.
                             </p>
-                            
-                            {/* Affichage du devis payé */}
-                            {devisPaye && (
-                              <div className="bg-white border border-green-200 rounded-lg p-4 mt-3">
-                                <div className="flex items-start justify-between mb-3">
-                                  <div>
-                                    <p className="text-sm font-semibold text-gray-700">Devis N° {devisPaye.numeroDevis}</p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Date: {devisPaye.dateCreation?.toDate().toLocaleDateString('fr-FR')}
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-xl font-bold text-green-600">
-                                      {devisPaye.totaux?.totalTTC?.toFixed(2) || '0.00'} €
-                                    </div>
-                                    <div className="text-xs text-gray-500">TTC</div>
-                                  </div>
-                                </div>
-                                
-                                {devisPaye.prestations && devisPaye.prestations.length > 0 && (
-                                  <div className="border-t border-gray-200 pt-3">
-                                    <p className="text-xs font-semibold text-gray-600 mb-2">Prestations :</p>
-                                    <div className="space-y-2">
-                                      {devisPaye.prestations.slice(0, 3).map((p, idx) => (
-                                        <div key={idx} className="flex justify-between items-start text-xs">
-                                          <span className="text-gray-700 flex-1">{p.designation}</span>
-                                          <span className="text-gray-600 ml-2">
-                                            {p.quantite} × {p.prixUnitaireHT?.toFixed(2) || '0.00'} €
-                                          </span>
-                                        </div>
-                                      ))}
-                                      {devisPaye.prestations.length > 3 && (
-                                        <p className="text-xs text-gray-500 italic">
-                                          +{devisPaye.prestations.length - 3} autre(s) prestation(s)
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {devisPaye.delaiRealisation && (
-                                  <div className="mt-3 pt-3 border-t border-gray-200">
-                                    <p className="text-xs text-gray-600">
-                                      <span className="font-semibold">Délai :</span> {devisPaye.delaiRealisation}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
                           </div>
                         </div>
                         <div className="flex gap-3 mt-3">
