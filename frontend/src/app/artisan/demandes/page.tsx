@@ -577,20 +577,9 @@ export default function ArtisanDemandesPage() {
                           <div className="w-10 h-10 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold">
                             {client.prenom?.[0]?.toUpperCase() || 'C'}{client.nom?.[0]?.toUpperCase() || ''}
                           </div>
-                          <div>
-                            <p className="font-semibold text-[#2C3E50]">
-                              {client.prenom} {client.nom}
-                            </p>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/messages?userId=${demande.clientId}`);
-                              }}
-                              className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
-                            >
-                              💬 Contacter le client
-                            </button>
-                          </div>
+                          <p className="font-semibold text-[#2C3E50]">
+                            {client.prenom} {client.nom}
+                          </p>
                         </div>
                       </div>
                     );
@@ -782,24 +771,16 @@ export default function ArtisanDemandesPage() {
                     </div>
                   </div>
                 )}
-                </>
-                )}
 
-                {/* Actions (seulement si expanded) */}
-                {isExpanded && (
-                <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
-                  {demande.statut === 'publiee' && (() => {
-                    const refusStatut = demandesRefusStatut.get(demande.id);
+                  {/* Boutons d'action en bas (si devis payé) */}
+                  {(() => {
                     const hasDevisPaye = demandesAvecDevisPayeIds.has(demande.id);
-                    
-                    // Si devis payé : afficher message + bouton devis payé
                     if (hasDevisPaye) {
                       const devisForDemande = devisMap.get(demande.id) || [];
                       const statutsPaye = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
                       const devisPaye = devisForDemande.find(d => statutsPaye.includes(d.statut));
-                      
                       return (
-                        <div className="flex-1 space-y-3">
+                        <div className="mt-6 space-y-3">
                           <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
                             <div className="flex items-start gap-3">
                               <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -815,7 +796,8 @@ export default function ArtisanDemandesPage() {
                           </div>
                           <div className="flex gap-3">
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 if (devisPaye?.id) {
                                   router.push(`/artisan/devis/${devisPaye.id}`);
                                 } else {
@@ -827,7 +809,10 @@ export default function ArtisanDemandesPage() {
                               📋 Voir devis payé
                             </button>
                             <button
-                              onClick={() => router.push(`/messages?userId=${demande.clientId}`)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/messages?userId=${demande.clientId}`);
+                              }}
                               className="px-6 py-3 border-2 border-[#2C3E50] text-[#2C3E50] rounded-lg font-semibold hover:bg-[#2C3E50] hover:text-white transition"
                             >
                               💬 Contacter client
@@ -835,6 +820,22 @@ export default function ArtisanDemandesPage() {
                           </div>
                         </div>
                       );
+                    }
+                    return null;
+                  })()}
+                </>
+                )}
+
+                {/* Actions (seulement si expanded) */}
+                {isExpanded && (
+                <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
+                  {demande.statut === 'publiee' && (() => {
+                    const refusStatut = demandesRefusStatut.get(demande.id);
+                    const hasDevisPaye = demandesAvecDevisPayeIds.has(demande.id);
+                    
+                    // Si devis payé : ne rien afficher ici (déjà géré au-dessus)
+                    if (hasDevisPaye) {
+                      return null;
                     }
                     
                     // Si refus définitif : bloquer complètement
