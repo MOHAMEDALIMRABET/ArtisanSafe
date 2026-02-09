@@ -667,11 +667,37 @@ export default function MesDemandesPage() {
 
                 <div className="flex items-start justify-between mb-4 pr-12">
                   <div className="flex-1">
+                    {/* Nom de l'entreprise (artisan) */}
+                    {(() => {
+                      if (demande.statut === 'annulee' && demande.artisanRefuseNom) {
+                        return (
+                          <h3 className="text-xl font-bold text-[#2C3E50] flex items-center gap-2 mb-1">
+                            <span>👷</span>
+                            <span>{demande.artisanRefuseNom}</span>
+                          </h3>
+                        );
+                      } else if (demande.artisansMatches && demande.artisansMatches.length > 0) {
+                        const artisanId = demande.artisansMatches[0];
+                        const artisan = artisansMap.get(artisanId);
+                        return (
+                          <h3 className="text-xl font-bold text-[#2C3E50] flex items-center gap-2 mb-1">
+                            <span>👷</span>
+                            <span>{artisan?.raisonSociale || 'Non assigné'}</span>
+                          </h3>
+                        );
+                      } else {
+                        return (
+                          <h3 className="text-xl font-bold text-[#6C757D] mb-1">
+                            Non assigné
+                          </h3>
+                        );
+                      }
+                    })()}
+                    
+                    {/* Nom du projet en dessous */}
+                    <p className="text-sm text-[#6C757D] mb-3">{demande.titre}</p>
+                    
                     <div className="flex items-center gap-4 mb-3 flex-wrap">
-                      <h3 className="text-xl font-bold text-[#2C3E50]">
-                        {demande.titre}
-                      </h3>
-                      
                       {/* Dates */}
                       <div className="flex items-center gap-3 text-xs text-[#6C757D]">
                         <div className="flex items-center gap-1">
