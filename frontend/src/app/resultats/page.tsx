@@ -196,10 +196,10 @@ function ResultatsContent() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF6B00] border-t-transparent mx-auto mb-4"></div>
           <p className="text-[#2C3E50] text-lg font-semibold">
-            Recherche des meilleurs artisans disponibles...
+            Recherche des artisans disponibles...
           </p>
           <p className="text-[#6C757D] text-sm mt-2">
-            Analyse des disponibilités et calcul des scores
+            Analyse des disponibilités
           </p>
         </div>
       </div>
@@ -646,8 +646,7 @@ function ResultatsContent() {
             {/* Bandeau info */}
             <div className="bg-[#FFF3E0] border-l-4 border-[#FF6B00] p-4 rounded">
               <p className="text-[#2C3E50]">
-                <strong>💡 Astuce :</strong> Les artisans sont classés par pertinence (disponibilité, proximité, réputation).
-                Contactez plusieurs artisans pour comparer les devis.
+                <strong>💡 Astuce :</strong> Contactez plusieurs artisans pour comparer les devis et choisir la meilleure offre.
               </p>
             </div>
 
@@ -668,11 +667,6 @@ function ResultatsContent() {
                           '👷'
                         )}
                       </div>
-                      {index === 0 && (
-                        <div className="bg-[#FFC107] text-white text-xs font-bold px-2 py-1 rounded text-center mt-2">
-                          TOP MATCH
-                        </div>
-                      )}
                     </div>
 
                     {/* Informations */}
@@ -759,56 +753,6 @@ function ResultatsContent() {
                           {result.artisan.presentation}
                         </p>
                       )}
-
-                      {/* Scores de matching */}
-                      <div className="flex flex-wrap gap-3 mb-4">
-                        <div className="bg-[#E8F5E9] text-[#28A745] px-3 py-1 rounded text-sm font-semibold">
-                          📍 Proximité {result.details.distanceScore}/50
-                        </div>
-                        <div className="bg-[#E3F2FD] text-[#17A2B8] px-3 py-1 rounded text-sm font-semibold">
-                          📅 Disponibilité {result.details.disponibiliteScore}/50
-                        </div>
-                        {result.details.notationScore > 0 && (
-                          <div className="bg-[#FFF3E0] text-[#FF6B00] px-3 py-1 rounded text-sm font-semibold">
-                            ⭐ Réputation {result.details.notationScore}/50
-                          </div>
-                        )}
-                        {result.details.urgenceMatch > 10 && (
-                          <div className="bg-[#FFEBEE] text-[#DC3545] px-3 py-1 rounded text-sm font-semibold">
-                            ⚡ Dispo immédiate
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Score total */}
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-[#2C3E50] text-sm">Score de compatibilité :</span>
-                        <div className="flex items-center gap-0.5">
-                          {(() => {
-                            const stars = Math.round((result.score / 270) * 5 * 2) / 2; // Arrondi au 0.5
-                            const fullStars = Math.floor(stars);
-                            const hasHalfStar = stars % 1 !== 0;
-                            const emptyStars = 5 - Math.ceil(stars);
-                            return (
-                              <>
-                              {[...Array(fullStars)].map((_, i) => (
-                                <span key={`full-${i}`} className="text-[#FFC107] text-xl">★</span>
-                              ))}
-                              {hasHalfStar && (
-                                <span className="relative inline-block text-xl">
-                                  <span className="text-gray-300">★</span>
-                                  <span className="absolute top-0 left-0 text-[#FFC107] overflow-hidden w-1/2">★</span>
-                                </span>
-                              )}
-                              {[...Array(emptyStars)].map((_, i) => (
-                                <span key={`empty-${i}`} className="text-gray-300 text-xl">★</span>
-                              ))}
-                              <span className="text-[#6C757D] text-sm ml-1">({stars.toFixed(1)}/5)</span>
-                            </>
-                          );
-                        })()}
-                      </div>
-                      </div>
                     </div>
                   </div>
                 </Card>
