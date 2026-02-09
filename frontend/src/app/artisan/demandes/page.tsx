@@ -544,160 +544,52 @@ export default function ArtisanDemandesPage() {
               <div 
                 key={demande.id} 
                 ref={(el) => { demandeRefs.current[demande.id] = el; }}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6 cursor-pointer relative"
-                onClick={(e) => {
-                  // Ne pas toggle si clic sur bouton/lien
-                  if ((e.target as HTMLElement).closest('button, a')) return;
-                  toggleExpandDemande(demande.id);
-                }}
+                onClick={() => toggleExpandDemande(demande.id)}
+                className="bg-white rounded-lg shadow-md hover:border-[#FF6B00] hover:shadow-lg transition-all cursor-pointer relative border-2 border-transparent p-6"
               >
-                {/* Bouton d'expansion */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleExpandDemande(demande.id);
-                  }}
-                  className="absolute top-4 right-4 z-10 bg-[#FF6B00] text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-[#E56100] transition text-sm"
-                >
-                  {isExpanded ? '▲ Réduire' : '▼ Voir le détail'}
-                </button>
-
-                <div className="flex items-start justify-between mb-4 pr-32">
+                {/* Titre principal + Dates + Badge statut */}
+                <div className="flex items-start justify-between mb-4 pb-4 border-b border-gray-200">
                   <div className="flex-1">
-                    {/* Informations du client */}
-                    {(() => {
-                      const client = clientsInfo.get(demande.clientId);
-                      if (client) {
-                        return (
-                          <div className="mb-3 flex items-center gap-2 bg-[#F8F9FA] p-3 rounded-lg">
-                            <div className="w-10 h-10 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold text-lg">
-                              {client.prenom?.[0]?.toUpperCase() || 'C'}{client.nom?.[0]?.toUpperCase() || ''}
-                            </div>
-                            <div>
-                              <p className="text-sm text-[#6C757D] font-medium">Demandeur</p>
-                              <p className="font-semibold text-[#2C3E50]">
-                                {client.prenom} {client.nom}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
-                    
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      <h3 className="text-xl font-bold text-gray-800">
-                        {demande.categorie}
-                      </h3>
-                      
-                      {/* Badge Type de demande - MASQUÉ */}
-                      {/* {(() => {
-                        const demandeType = demande.type || 'directe';
-                        if (demandeType === 'publique') {
-                          return (
-                            <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                              📢 Demande publique
-                            </span>
-                          );
-                        } else {
-                          return (
-                            <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                              🎯 Demande directe
-                            </span>
-                          );
-                        }
-                      })()} */}
-                      
-                      {/* Badge devis envoyés - Masqué si devis payé */}
-                      {demande.devisRecus && demande.devisRecus > 0 && !demandesAvecDevisPayeIds.has(demande.id) && (
-                        <button
-                          onClick={() => router.push(`/artisan/devis?demandeId=${demande.id}`)}
-                          className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold border-2 border-blue-300 hover:bg-blue-200 hover:border-blue-400 transition-all cursor-pointer"
-                          title="Cliquez pour voir les devis de cette demande"
-                        >
-                          ✅ {demande.devisRecus} devis envoyé{demande.devisRecus > 1 ? 's' : ''}
-                        </button>
-                      )}
-                      
-                      {/* Badge Quota atteint - Demande fermée à 10 devis */}
-                      {demande.statut === 'quota_atteint' && (
-                        <span className="bg-orange-100 text-orange-800 px-3 py-1.5 rounded-full text-sm font-bold border-2 border-orange-300 flex items-center gap-1.5">
-                          🔒 Quota atteint (10 devis max)
-                        </span>
-                      )}
-                      
-                      {(!demande.devisRecus || demande.devisRecus === 0) && demande.statut === 'publiee' && (
-                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                          🆕 Nouvelle demande
-                        </span>
-                      )}
-                      {demande.urgence && (
-                        <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                          🚨 Urgent
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Vue collapsed : description tronquée */}
-                    {!isExpanded && (
-                      <div className="mt-2">
-                        <p className="text-gray-700 line-clamp-2">
-                          {demande.description.length > 150 
-                            ? `${demande.description.substring(0, 150)}...` 
-                            : demande.description}
-                        </p>
-                        <div className="flex items-center gap-4 mt-3 text-sm text-gray-600">
-                          <span>📍 {demande.localisation?.ville || 'Non spécifié'}</span>
-                          {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
-                            <span>📅 {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR')}</span>
-                          )}
-                        </div>
+                    <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
+                      {demande.categorie}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <span className="text-red-500">📅</span>
+                        <span>Créée le {demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}</span>
                       </div>
-                    )}
-
-                    {/* Vue expanded : détails complets */}
-                    {isExpanded && (
-                      <>
-                        <p className="text-gray-600 mb-1">
-                          📍 {demande.localisation?.ville || 'Non spécifié'} ({demande.localisation?.codePostal || 'N/A'})
-                        </p>
-                        {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
-                          <div className="mb-2">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="text-gray-600">
-                                📅 Date souhaitée : {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR')}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg inline-flex">
-                              <span className="text-blue-600 font-semibold text-sm">🔄 Flexibilité :</span>
-                              <span className="text-blue-700 font-bold text-sm">
-                                {demande.datesSouhaitees.flexible && demande.datesSouhaitees.flexibiliteDays ? (
-                                  `±${demande.datesSouhaitees.flexibiliteDays} jour${demande.datesSouhaitees.flexibiliteDays > 1 ? 's' : ''}`
-                                ) : (
-                                  'Aucune (date fixe)'
-                                )}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                        <div className="mt-3">
-                          <p className="text-sm font-semibold text-gray-700 mb-1">📝 Description du projet :</p>
-                          <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">
-                            {demande.description}
-                          </p>
+                      {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-red-500">📅</span>
+                          <span>Début souhaité le {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                         </div>
-                      </>
-                    )}
-                  </div>
-                  <div className="ml-4">
-                    <div className="text-sm text-gray-500 text-right">
-                      {demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}
+                      )}
                     </div>
+                  </div>
+                  
+                  {/* Badge statut principal */}
+                  <div className="flex flex-col items-end gap-2">
+                    {demandesAvecDevisPayeIds.has(demande.id) && (
+                      <span className="bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-bold border-2 border-green-300">
+                        ✅ Contrat signé
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Photos - Seulement en vue expanded */}
-                {isExpanded && (() => {
+                {/* Description (toujours visible, tronquée si collapsed) */}
+                <div className="mb-4">
+                  <p className="text-sm font-bold text-gray-700 mb-2">Description :</p>
+                  <p className={`text-gray-700 leading-relaxed ${!isExpanded ? 'line-clamp-2' : ''}`}>
+                    {demande.description}
+                  </p>
+                </div>
+
+                {/* Détails complets (seulement si expanded) */}
+                {isExpanded && (
+                <>
+                  {/* Photos jointes */}
+                  {(() => {
                   const photosList = demande.photosUrls || demande.photos || [];
                   const validPhotos = photosList.filter((url: string) => url && url.startsWith('http'));
                   
@@ -766,7 +658,111 @@ export default function ArtisanDemandesPage() {
                   );
                 })()}
 
-                {/* Actions - Seulement en vue expanded */}
+                  {/* Localisation */}
+                <div className="mb-6">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                      <span>📍</span>
+                      Localisation
+                    </p>
+                    <div className="space-y-1">
+                      <p className="text-blue-800">
+                        <span className="font-semibold">Ville :</span> {demande.localisation?.ville || 'Non spécifié'}
+                      </p>
+                      <p className="text-blue-800">
+                        <span className="font-semibold">Code postal :</span> {demande.localisation?.codePostal || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dates souhaitées */}
+                {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
+                  <div className="mb-6">
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <p className="text-sm font-bold text-green-900 mb-3 flex items-center gap-2">
+                        <span>📅</span>
+                        Date souhaitée
+                      </p>
+                      <p className="text-green-800">
+                        {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                      {demande.datesSouhaitees.flexible && (
+                        <span className="inline-block mt-2 bg-green-200 text-green-800 px-2 py-1 rounded text-xs font-semibold">
+                          Flexible
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Badge Demande urgente */}
+                {demande.urgence && (
+                  <div className="mb-6 bg-red-50 p-4 rounded-lg border-2 border-red-300">
+                    <p className="text-red-700 font-bold flex items-center gap-2">
+                      <span>🚨</span>
+                      Demande urgente
+                    </p>
+                  </div>
+                )}
+
+                {/* Informations demandeur */}
+                {(() => {
+                  const client = clientsInfo.get(demande.clientId);
+                  if (client) {
+                    return (
+                      <div className="mb-6 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
+                        <p className="text-sm font-bold text-gray-700 mb-3">Demandeur :</p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold">
+                            {client.prenom?.[0]?.toUpperCase() || 'C'}{client.nom?.[0]?.toUpperCase() || ''}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-[#2C3E50]">
+                              {client.prenom} {client.nom}
+                            </p>
+                            <button
+                              onClick={() => router.push(`/messages?userId=${demande.clientId}`)}
+                              className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                            >
+                              💬 Contacter le client
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Devis reçus */}
+                {demande.devisRecus && demande.devisRecus > 0 && (
+                  <div className="mb-6 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-yellow-900 mb-1">📋 Devis soumis</p>
+                        <p className="text-yellow-800">
+                          <span className="font-bold text-lg">{demande.devisRecus}</span> devis reçu{demande.devisRecus > 1 ? 's' : ''} pour cette demande
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => router.push(`/artisan/devis?demandeId=${demande.id}`)}
+                        className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+                      >
+                        Voir les devis →
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </>
+                )}
+
+                {/* Actions (seulement si expanded) */}
                 {isExpanded && (
                 <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
                   {demande.statut === 'publiee' && (() => {
