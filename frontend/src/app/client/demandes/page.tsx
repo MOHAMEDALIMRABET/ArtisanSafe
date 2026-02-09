@@ -1052,7 +1052,7 @@ export default function MesDemandesPage() {
                           <div className="flex-1">
                             <p className="font-bold text-green-700 mb-1">✅ Devis accepté et payé - Contrat en cours</p>
                             <p className="text-sm text-green-600 mb-3">
-                              Cette demande vous a été attribuée. Vous avez signé et payé le devis de l'artisan.
+                              Vous avez signé et payé le devis de l'artisan.
                             </p>
                             
                             {/* Affichage du devis payé */}

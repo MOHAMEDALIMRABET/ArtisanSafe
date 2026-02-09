@@ -788,7 +788,7 @@ export default function ArtisanDemandesPage() {
                           <div className="flex-1">
                             <p className="font-bold text-green-700 mb-1">✅ Devis accepté et payé - Contrat en cours</p>
                             <p className="text-sm text-green-600">
-                              Cette demande vous a été attribuée. Le client a signé et payé votre devis.
+                              Cette demande vous a été attribuée.
                             </p>
                           </div>
                         </div>
