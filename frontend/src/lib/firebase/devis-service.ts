@@ -16,6 +16,7 @@ import {
   where,
   Timestamp,
   increment,
+  arrayUnion,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { 
@@ -337,6 +338,20 @@ export async function updateDevis(
         console.error('⚠️ Erreur tracking devis accepté:', error);
       }
       
+      // 🆕 ATTRIBUTION ARTISAN : Ajouter l'artisan à artisansMatches si pas déjà présent
+      if (devisActuel.demandeId) {
+        try {
+          const demandeRef = doc(db, 'demandes', devisActuel.demandeId);
+          await updateDoc(demandeRef, {
+            artisansMatches: arrayUnion(devisActuel.artisanId),
+            dateModification: Timestamp.now(),
+          });
+          console.log('✅ Artisan ajouté à artisansMatches:', devisActuel.artisanId);
+        } catch (error) {
+          console.error('⚠️ Erreur mise à jour artisansMatches:', error);
+        }
+      }
+      
       // Si c'est un devis avec variantes, annuler automatiquement les autres variantes
       if (devisActuel.varianteGroupe || devisActuel.demandeId) {
         await annulerAutresVariantes(
@@ -349,6 +364,20 @@ export async function updateDevis(
       // 🆕 PAIEMENT : Annuler les autres variantes quand une est payée
       updateData.datePaiement = Timestamp.now();
       updateData.dateDerniereNotification = Timestamp.now();
+      
+      // 🆕 ATTRIBUTION ARTISAN : Ajouter l'artisan à artisansMatches si pas déjà présent
+      if (devisActuel.demandeId) {
+        try {
+          const demandeRef = doc(db, 'demandes', devisActuel.demandeId);
+          await updateDoc(demandeRef, {
+            artisansMatches: arrayUnion(devisActuel.artisanId),
+            dateModification: Timestamp.now(),
+          });
+          console.log('✅ Artisan ajouté à artisansMatches (paiement):', devisActuel.artisanId);
+        } catch (error) {
+          console.error('⚠️ Erreur mise à jour artisansMatches (paiement):', error);
+        }
+      }
       
       if (devisActuel.varianteGroupe || devisActuel.demandeId) {
         await annulerAutresVariantes(
