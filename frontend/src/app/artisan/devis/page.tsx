@@ -266,18 +266,34 @@ export default function MesDevisPage() {
 
       // Marquer tous ces devis comme vus
       if (devisAMarquer.length > 0) {
-        const promises = devisAMarquer.map(d => {
-          const devisRef = doc(db, 'devis', d.id);
-          return updateDoc(devisRef, {
-            vuParArtisan: true,
-            dateVueParArtisan: Timestamp.now(),
-          });
-        });
-        await Promise.all(promises);
-        console.log(`✅ ${devisAMarquer.length} devis marqués comme vus dans la section "${filtre}"`);
+        console.log(`📝 Marquage de ${devisAMarquer.length} devis dans section "${filtre}"`);
         
-        // Recharger les devis pour mettre à jour les badges
-        await loadDevis();
+        const updatedIds: string[] = [];
+        
+        for (const d of devisAMarquer) {
+          try {
+            const devisRef = doc(db, 'devis', d.id);
+            await updateDoc(devisRef, {
+              vuParArtisan: true,
+              dateVueParArtisan: Timestamp.now(),
+            });
+            updatedIds.push(d.id);
+          } catch (error: any) {
+            // Ignorer les erreurs de permission (devis supprimé ou non accessible)
+            console.warn(`⚠️ Impossible de marquer devis ${d.id}:`, error.code || error.message);
+          }
+        }
+        
+        if (updatedIds.length > 0) {
+          console.log(`✅ ${updatedIds.length} devis marqués comme vus`);
+          
+          // Mettre à jour l'état local au lieu de recharger depuis Firestore
+          setDevis(prev => prev.map(dv => 
+            updatedIds.includes(dv.id) 
+              ? { ...dv, vuParArtisan: true, dateVueParArtisan: Timestamp.now() }
+              : dv
+          ));
+        }
       }
     } catch (error) {
       console.error('Erreur marquage section comme vue:', error);
@@ -286,9 +302,16 @@ export default function MesDevisPage() {
 
   // Gérer le changement de filtre avec marquage automatique comme "vu"
   const handleFilterChange = async (newFilter: DevisFilter) => {
+    // D'abord changer le filtre (synchrone)
     setFilter(newFilter);
-    // Marquer automatiquement tous les devis de cette section comme vus
-    await marquerSectionCommeVue(newFilter);
+    
+    // Puis marquer les devis de cette section comme vus (asynchrone)
+    // Note : on utilise setTimeout pour laisser React finir le re-render
+    setTimeout(() => {
+      marquerSectionCommeVue(newFilter).catch(err => {
+        console.error('Erreur lors du marquage automatique:', err);
+      });
+    }, 100);
   };
 
   // Gérer le clic sur un devis pour le consulter
