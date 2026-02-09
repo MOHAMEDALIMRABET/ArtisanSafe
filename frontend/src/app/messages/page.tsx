@@ -132,7 +132,7 @@ export default function MessagesPage() {
   
   // États pour gérer le statut du devis associé
   const [devisStatus, setDevisStatus] = useState<string | null>(null);
-  const [devisInfo, setDevisInfo] = useState<{ numeroDevis?: string; montantTTC?: number } | null>(null);
+  const [devisInfo, setDevisInfo] = useState<{ numeroDevis?: string; montantTTC?: number; typeRefus?: 'definitif' | 'revision' } | null>(null);
   const [isConversationInactive, setIsConversationInactive] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -281,21 +281,34 @@ export default function MessagesPage() {
 
         const devisData = devisDoc.data();
         const statut = devisData.statut;
+        const typeRefus = devisData.typeRefus;
         
         setDevisStatus(statut);
         setDevisInfo({
           numeroDevis: devisData.numeroDevis,
           montantTTC: devisData.totaux?.montantTTC || devisData.montantTTC,
+          typeRefus: typeRefus,
         });
 
         // Vérifier si le devis est dans un état terminal (conversation inactive)
-        const statutsInactifs = ['refuse', 'annule', 'expire'];
-        const isInactive = statutsInactifs.includes(statut);
+        // ⚠️ IMPORTANT : Refus définitif = conversation close, Refus révision = conversation active
+        let isInactive = false;
+        
+        if (statut === 'refuse') {
+          // Refus définitif → conversation close
+          // Refus révision → conversation reste active (artisan peut proposer variante)
+          isInactive = typeRefus === 'definitif';
+        } else if (statut === 'annule' || statut === 'expire') {
+          // Annulation ou expiration → toujours inactive
+          isInactive = true;
+        }
         
         setIsConversationInactive(isInactive);
 
         if (isInactive) {
-          console.log(`🚫 Conversation ${selectedConversation} inactive (devis ${statut})`);
+          console.log(`🚫 Conversation ${selectedConversation} inactive (devis ${statut}${statut === 'refuse' ? `, typeRefus: ${typeRefus}` : ''})`);
+        } else if (statut === 'refuse' && typeRefus === 'revision') {
+          console.log(`✅ Conversation ${selectedConversation} active (refus révision - artisan peut proposer variante)`);
         }
       } catch (error) {
         console.error('Erreur chargement statut devis:', error);
@@ -569,7 +582,7 @@ export default function MessagesPage() {
                           </h3>
                           <p className="text-sm text-gray-600">
                             {devisStatus === 'annule' && 'Le devis a été annulé. Vous ne pouvez plus envoyer de messages.'}
-                            {devisStatus === 'refuse' && 'Le devis a été refusé. Vous ne pouvez plus envoyer de messages.'}
+                            {devisStatus === 'refuse' && 'Le client a refusé définitivement de travailler avec cet artisan. Vous ne pouvez plus envoyer de messages.'}
                             {devisStatus === 'expire' && 'Le devis a expiré. Vous ne pouvez plus envoyer de messages.'}
                           </p>
                           {devisInfo?.numeroDevis && (
