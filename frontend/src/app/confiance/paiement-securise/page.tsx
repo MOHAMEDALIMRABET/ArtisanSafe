@@ -187,7 +187,7 @@ export default function PaiementSecurisePage() {
                   Puis-je récupérer mon argent si les travaux ne sont pas conformes ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
                 </summary>
-                <p className="text-[#6C757D] mt-4 pl-4 border-l-4 border-[#FF6B00]">
+                <div className="text-[#6C757D] mt-4 pl-4 border-l-4 border-[#FF6B00]">
                   Oui ! Si vous signalez un problème pendant les 7 jours, le paiement reste bloqué et notre 
                   <strong> équipe de médiation</strong> intervient. Selon la situation, nous pouvons :
                   <ul className="list-disc ml-6 mt-2 space-y-1">
@@ -195,7 +195,7 @@ export default function PaiementSecurisePage() {
                     <li>Effectuer un remboursement partiel</li>
                     <li>Effectuer un remboursement total si les travaux sont gravement non conformes</li>
                   </ul>
-                </p>
+                </div>
               </details>
 
               <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
@@ -203,14 +203,14 @@ export default function PaiementSecurisePage() {
                   Quels moyens de paiement sont acceptés ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
                 </summary>
-                <p className="text-[#6C757D] mt-4 pl-4 border-l-4 border-[#FF6B00]">
+                <div className="text-[#6C757D] mt-4 pl-4 border-l-4 border-[#FF6B00]">
                   Nous acceptons tous les moyens de paiement sécurisés via <strong>Stripe</strong> :
                   <ul className="list-disc ml-6 mt-2 space-y-1">
                     <li>Carte bancaire (Visa, Mastercard, American Express)</li>
                     <li>Virement bancaire SEPA</li>
                     <li>Paiement en 3 ou 4 fois sans frais (selon montant)</li>
                   </ul>
-                </p>
+                </div>
               </details>
 
               <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
@@ -249,7 +249,7 @@ export default function PaiementSecurisePage() {
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link href="/">
-              <Button className="bg-white text-[#FF6B00] hover:bg-gray-100 px-8 py-3 text-lg font-semibold">
+              <Button className="!bg-white !text-[#FF6B00] hover:!bg-gray-100 px-8 py-3 text-lg font-semibold">
                 Trouver un artisan
               </Button>
             </Link>

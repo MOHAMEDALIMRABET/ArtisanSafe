@@ -340,7 +340,7 @@ export default function PlanningFlexibilitePage() {
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link href="/">
-              <Button className="bg-white text-[#FF6B00] hover:bg-gray-100 px-8 py-3 text-lg font-semibold">
+              <Button className="!bg-white !text-[#FF6B00] hover:!bg-gray-100 px-8 py-3 text-lg font-semibold">
                 Lancer une recherche
               </Button>
             </Link>

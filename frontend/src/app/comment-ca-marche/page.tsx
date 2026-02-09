@@ -293,13 +293,13 @@ export default function CommentCaMarchePage() {
             <div className="flex gap-4 justify-center">
               <Button
                 onClick={() => router.push('/inscription?role=client')}
-                className="bg-white text-[#FF6B00] hover:bg-gray-100 text-lg px-8 py-4"
+                className="!bg-white !text-[#FF6B00] hover:!bg-gray-100 text-lg px-8 py-4"
               >
                 Je suis particulier
               </Button>
               <Button
                 onClick={() => router.push('/inscription?role=artisan')}
-                className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#FF6B00] text-lg px-8 py-4"
+                className="!border-2 !border-white !bg-transparent !text-white hover:!bg-white hover:!text-[#FF6B00] text-lg px-8 py-4"
               >
                 Je suis artisan
               </Button>

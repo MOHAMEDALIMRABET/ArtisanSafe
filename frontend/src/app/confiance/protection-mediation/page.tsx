@@ -381,14 +381,14 @@ export default function ProtectionMediationPage() {
                   Que se passe-t-il si la médiation échoue ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
                 </summary>
-                <p className="text-[#6C757D] mt-4 pl-4 border-l-4 border-[#FF6B00]">
+                <div className="text-[#6C757D] mt-4 pl-4 border-l-4 border-[#FF6B00]">
                   Si aucun accord n'est trouvé après <strong>3 tentatives de résolution</strong>, nous vous orientons vers :
                   <ul className="list-disc ml-6 mt-2 space-y-1">
                     <li>Une <strong>médiation externe</strong> (médiateur de la consommation agréé)</li>
                     <li>Ou une <strong>procédure judiciaire</strong> (tribunal de proximité)</li>
                   </ul>
                   Dans tous les cas, l'argent reste bloqué jusqu'à décision finale.
-                </p>
+                </div>
               </details>
 
               <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
@@ -428,7 +428,7 @@ export default function ProtectionMediationPage() {
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link href="/">
-              <Button className="bg-white text-[#FF6B00] hover:bg-gray-100 px-8 py-3 text-lg font-semibold">
+              <Button className="!bg-white !text-[#FF6B00] hover:!bg-gray-100 px-8 py-3 text-lg font-semibold">
                 Trouver un artisan
               </Button>
             </Link>
