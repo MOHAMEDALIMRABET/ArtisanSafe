@@ -667,29 +667,62 @@ export default function MesDemandesPage() {
 
                 <div className="flex items-start justify-between mb-4 pr-12">
                   <div className="flex-1">
-                    {/* Nom de l'entreprise (artisan) */}
+                    {/* Nom de l'entreprise (artisan) avec badge style identique demandeur */}
                     {(() => {
                       if (demande.statut === 'annulee' && demande.artisanRefuseNom) {
+                        const initiales = demande.artisanRefuseNom
+                          .split(' ')
+                          .slice(0, 2)
+                          .map(word => word[0]?.toUpperCase() || '')
+                          .join('');
                         return (
-                          <h3 className="text-xl font-bold text-[#2C3E50] flex items-center gap-2 mb-1">
-                            <span>👷</span>
-                            <span>{demande.artisanRefuseNom}</span>
-                          </h3>
+                          <div className="mb-4 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
+                            <div className="flex items-center gap-3">
+                              <p className="text-sm font-bold text-gray-700">Artisan :</p>
+                              <div className="w-8 h-8 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                {initiales || 'A'}
+                              </div>
+                              <p className="font-semibold text-[#2C3E50]">
+                                {demande.artisanRefuseNom}
+                              </p>
+                            </div>
+                          </div>
                         );
                       } else if (demande.artisansMatches && demande.artisansMatches.length > 0) {
                         const artisanId = demande.artisansMatches[0];
                         const artisan = artisansMap.get(artisanId);
+                        const raisonSociale = artisan?.raisonSociale || 'Non assigné';
+                        const initiales = raisonSociale
+                          .split(' ')
+                          .slice(0, 2)
+                          .map(word => word[0]?.toUpperCase() || '')
+                          .join('');
                         return (
-                          <h3 className="text-xl font-bold text-[#2C3E50] flex items-center gap-2 mb-1">
-                            <span>👷</span>
-                            <span>{artisan?.raisonSociale || 'Non assigné'}</span>
-                          </h3>
+                          <div className="mb-4 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
+                            <div className="flex items-center gap-3">
+                              <p className="text-sm font-bold text-gray-700">Artisan :</p>
+                              <div className="w-8 h-8 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                {initiales || 'A'}
+                              </div>
+                              <p className="font-semibold text-[#2C3E50]">
+                                {raisonSociale}
+                              </p>
+                            </div>
+                          </div>
                         );
                       } else {
                         return (
-                          <h3 className="text-xl font-bold text-[#6C757D] mb-1">
-                            Non assigné
-                          </h3>
+                          <div className="mb-4 bg-[#F8F9FA] p-4 rounded-lg border border-gray-200">
+                            <div className="flex items-center gap-3">
+                              <p className="text-sm font-bold text-gray-700">Artisan :</p>
+                              <div className="w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                ?
+                              </div>
+                              <p className="font-semibold text-[#6C757D]">
+                                Non assigné
+                              </p>
+                            </div>
+                          </div>
                         );
                       }
                     })()}
