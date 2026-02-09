@@ -455,14 +455,21 @@ async function annulerAutresVariantes(
     
     const maintenant = Timestamp.now();
     
-    // Annuler tous les devis sauf celui qui est accepté/payé
+    // Annuler TOUS les autres devis du même groupe (peu importe leur statut)
     const updatePromises = querySnapshot.docs
       .filter(doc => {
         const statut = doc.data().statut;
-        return doc.id !== devisAccepteId && !['accepte', 'paye', 'annule'].includes(statut);
+        // Annuler uniquement si :
+        // 1. Ce n'est PAS le devis qui vient d'être payé
+        // 2. Le devis n'est PAS déjà annulé (éviter update inutile)
+        // 3. Le devis n'est PAS déjà payé (ne jamais annuler un devis payé !)
+        return doc.id !== devisAccepteId && statut !== 'annule' && statut !== 'paye';
       })
-      .map(doc => 
-        updateDoc(doc.ref, {
+      .map(doc => {
+        const statutActuel = doc.data().statut;
+        console.log(`🗑️ Annulation variante ${doc.data().numeroDevis} (statut: ${statutActuel})`);
+        
+        return updateDoc(doc.ref, {
           statut: 'annule' as DevisStatut,
           dateModification: maintenant,
           historiqueStatuts: [
@@ -470,11 +477,11 @@ async function annulerAutresVariantes(
             {
               statut: 'annule' as DevisStatut,
               date: maintenant,
-              commentaire: 'Annulé automatiquement (autre variante acceptée/payée)',
+              commentaire: `Annulé automatiquement (variante ${querySnapshot.docs.find(d => d.id === devisAccepteId)?.data().numeroDevis} payée)`,
             }
           ]
-        })
-      );
+        });
+      });
     
     await Promise.all(updatePromises);
     console.log(`✅ ${updatePromises.length} variante(s) alternative(s) annulée(s) automatiquement`);
