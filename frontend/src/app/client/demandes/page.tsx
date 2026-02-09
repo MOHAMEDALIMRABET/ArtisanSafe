@@ -940,7 +940,6 @@ export default function MesDemandesPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-4">
                   <div>
-                    <span className="text-[#6C757D]">Artisan :</span>
                     {demande.statut === 'annulee' && demande.artisanRefuseNom ? (
                       <div className="mt-1">
                         <p className="font-semibold text-[#2C3E50] flex items-center gap-1">
