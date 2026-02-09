@@ -753,197 +753,177 @@ export default function ArtisanDemandesPage() {
                     </p>
                   </div>
                 )}
-
-                  {/* Boutons d'action en bas (si devis payé) */}
-                  {(() => {
-                    const hasDevisPaye = demandesAvecDevisPayeIds.has(demande.id);
-                    if (hasDevisPaye) {
-                      const devisForDemande = devisMap.get(demande.id) || [];
-                      const statutsPaye = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
-                      const devisPaye = devisForDemande.find(d => statutsPaye.includes(d.statut));
-                      return (
-                        <div className="mt-6 space-y-3">
-                          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <div className="flex-1">
-                                <p className="font-bold text-green-700 mb-1">✅ Devis accepté et payé - Contrat en cours</p>
-                                <p className="text-sm text-green-600">
-                                  Cette demande vous a été attribuée. Le client a signé et payé votre devis.
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-3">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (devisPaye?.id) {
-                                  router.push(`/artisan/devis/${devisPaye.id}`);
-                                } else {
-                                  router.push(`/artisan/contrats?demandeId=${demande.id}`);
-                                }
-                              }}
-                              className="flex-1 bg-[#FF6B00] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
-                            >
-                              📋 Voir devis payé
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/messages?userId=${demande.clientId}`);
-                              }}
-                              className="px-6 py-3 border-2 border-[#2C3E50] text-[#2C3E50] rounded-lg font-semibold hover:bg-[#2C3E50] hover:text-white transition"
-                            >
-                              💬 Contacter client
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
                 </>
                 )}
 
-                {/* Actions (seulement si expanded) */}
-                {isExpanded && (
-                <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
-                  {demande.statut === 'publiee' && (() => {
-                    const refusStatut = demandesRefusStatut.get(demande.id);
-                    const hasDevisPaye = demandesAvecDevisPayeIds.has(demande.id);
-                    
-                    // Si devis payé : ne rien afficher ici (déjà géré au-dessus)
-                    if (hasDevisPaye) {
-                      return null;
-                    }
-                    
-                    // Si refus définitif : bloquer complètement
-                    if (refusStatut?.definitif) {
-                      return (
-                        <div className="flex-1 space-y-3">
-                          <div className="bg-gray-100 border-2 border-gray-300 p-4 rounded-lg">
-                            <div className="flex items-start gap-3">
-                              <svg className="w-6 h-6 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                              </svg>
-                              <div className="flex-1">
-                                <p className="font-bold text-gray-700 mb-1">⛔ Demande fermée - Refus définitif</p>
-                                <p className="text-sm text-gray-600">
-                                  Le client a refusé définitivement votre devis. Vous ne pouvez plus envoyer de proposition pour cette demande.
-                                </p>
-                              </div>
-                            </div>
+                {/* Message vert + Boutons pour devis payé (TOUJOURS VISIBLES) */}
+                {demandesAvecDevisPayeIds.has(demande.id) && (() => {
+                  const devisForDemande = devisMap.get(demande.id) || [];
+                  const statutsPaye = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
+                  const devisPaye = devisForDemande.find(d => statutsPaye.includes(d.statut));
+                  
+                  return (
+                    <div className="mt-4">
+                      <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="flex-1">
+                            <p className="font-bold text-green-700 mb-1">✅ Devis accepté et payé - Contrat en cours</p>
+                            <p className="text-sm text-green-600">
+                              Cette demande vous a été attribuée. Le client a signé et payé votre devis.
+                            </p>
                           </div>
-                          {demande.devisRecus && demande.devisRecus > 0 && (
-                            <button
-                              onClick={() => router.push(`/artisan/devis?demandeId=${demande.id}`)}
-                              className="w-full bg-blue-50 text-blue-700 px-4 py-3 rounded-lg font-semibold border-2 border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition"
-                            >
-                              📋 Voir l'historique des devis ({demande.devisRecus})
-                            </button>
-                          )}
                         </div>
-                      );
-                    }
-                    
-                    // Si refus avec révision : permettre de créer une variante
-                    if (refusStatut?.revision) {
-                      return (
-                        <>
-                          <button
-                            onClick={async () => {
-                              // Tracker consultation pour demandes publiques
-                              if (demande.type === 'publique' && authUser) {
-                                const { markDemandeAsViewed } = await import('@/lib/firebase/demande-service');
-                                markDemandeAsViewed(demande.id, authUser.uid).catch(error => {
-                                  console.error('⚠️ Erreur tracking consultation:', error);
-                                });
-                              }
-                              router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`);
-                            }}
-                            className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-600 transition"
-                          >
-                            🔄 Créer un devis révisé
-                          </button>
-                          <button
-                            onClick={() => router.push(`/messages?userId=${demande.clientId}`)}
-                            className="px-6 py-3 border-2 border-[#2C3E50] text-[#2C3E50] rounded-lg font-semibold hover:bg-[#2C3E50] hover:text-white transition"
-                          >
-                            💬 Contacter client
-                          </button>
-                          <div className="w-4"></div>
-                          <button
-                            onClick={() => handleRefuserDemande(demande.id)}
-                            disabled={refusingDemandeId === demande.id}
-                            className="px-6 py-3 border-2 border-red-300 text-red-700 rounded-lg font-semibold hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {refusingDemandeId === demande.id ? '⏳ Refus...' : '❌ Refuser'}
-                          </button>
-                        </>
-                      );
-                    }
-                    
-                    // Sinon : affichage normal
-                    return (
-                      <>
-                        {/* Masquer le bouton si demande déjà attribuée ou quota atteint */}
-                        {demande.statut !== 'attribuee' && demande.statut !== 'quota_atteint' && (
-                          <button
-                            onClick={async () => {
-                              // Tracker consultation pour demandes publiques
-                              if (demande.type === 'publique' && authUser) {
-                                const { markDemandeAsViewed } = await import('@/lib/firebase/demande-service');
-                                markDemandeAsViewed(demande.id, authUser.uid).catch(error => {
-                                  console.error('⚠️ Erreur tracking consultation:', error);
-                                });
-                              }
-                              router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`);
-                            }}
-                            className="flex-1 bg-[#FF6B00] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
-                          >
-                            📝 Envoyer un devis
-                          </button>
-                        )}
-                        {demande.statut === 'attribuee' && (
-                          <div className="flex-1 bg-gray-100 text-gray-600 px-4 py-3 rounded-lg font-semibold border-2 border-gray-300 text-center">
-                            ✅ Demande déjà attribuée
-                          </div>
-                        )}
-                        {demande.statut === 'quota_atteint' && (
-                          <div className="flex-1 bg-orange-50 text-orange-700 px-4 py-3 rounded-lg font-semibold border-2 border-orange-300 text-center">
-                            🔒 Quota atteint - Demande fermée
-                          </div>
-                        )}
+                      </div>
+                      <div className="flex gap-3 mt-3">
                         <button
-                          onClick={() => router.push(`/messages?userId=${demande.clientId}`)}
-                          className="px-6 py-3 border-2 border-[#2C3E50] text-[#2C3E50] rounded-lg font-semibold hover:bg-[#2C3E50] hover:text-white transition"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (devisPaye?.id) {
+                              router.push(`/artisan/devis/${devisPaye.id}`);
+                            } else {
+                              router.push(`/artisan/contrats?demandeId=${demande.id}`);
+                            }
+                          }}
+                          className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                        >
+                          📋 Voir devis payé
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/messages?userId=${demande.clientId}`);
+                          }}
+                          className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
                         >
                           💬 Contacter client
                         </button>
-                        <div className="w-4"></div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Boutons d'action normaux (TOUJOURS VISIBLES) */}
+                {!demandesAvecDevisPayeIds.has(demande.id) && demande.statut === 'publiee' && (() => {
+                  const refusStatut = demandesRefusStatut.get(demande.id);
+                  
+                  // Si refus définitif : bloquer complètement
+                  if (refusStatut?.definitif) {
+                    return (
+                      <div className="mt-4 space-y-3">
+                        <div className="bg-gray-100 border-2 border-gray-300 p-4 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <svg className="w-6 h-6 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
+                            <div className="flex-1">
+                              <p className="font-bold text-gray-700 mb-1">⛔ Demande fermée - Refus définitif</p>
+                              <p className="text-sm text-gray-600">
+                                Le client a refusé définitivement votre devis. Vous ne pouvez plus envoyer de proposition pour cette demande.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Si refus avec révision : permettre de créer une variante
+                  if (refusStatut?.revision) {
+                    return (
+                      <div className="flex gap-3 mt-4">
                         <button
-                          onClick={() => handleRefuserDemande(demande.id)}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (demande.type === 'publique' && authUser) {
+                              const { markDemandeAsViewed } = await import('@/lib/firebase/demande-service');
+                              markDemandeAsViewed(demande.id, authUser.uid).catch(error => {
+                                console.error('⚠️ Erreur tracking consultation:', error);
+                              });
+                            }
+                            router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`);
+                          }}
+                          className="flex-1 bg-orange-500 text-white hover:bg-orange-600 rounded-lg px-4 py-2.5 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                        >
+                          🔄 Créer un devis révisé
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/messages?userId=${demande.clientId}`);
+                          }}
+                          className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200"
+                        >
+                          💬 Contacter client
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRefuserDemande(demande.id);
+                          }}
                           disabled={refusingDemandeId === demande.id}
-                          className="px-6 py-3 border-2 border-red-300 text-red-700 rounded-lg font-semibold hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-4 py-2.5 border-2 border-red-300 text-red-700 hover:bg-red-50 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {refusingDemandeId === demande.id ? '⏳ Refus...' : '❌ Refuser'}
                         </button>
-                      </>
+                      </div>
                     );
-                  })()}
-                  {demande.statut !== 'publiee' && (
-                    <button
-                      onClick={() => router.push(`/demande/${demande.id}`)}
-                      className="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
-                    >
-                      👁️ Voir les détails
-                    </button>
-                  )}
-                </div>
-                )}
+                  }
+                  
+                  // Affichage normal
+                  return (
+                    <div className="flex gap-3 mt-4">
+                      {demande.statut !== 'attribuee' && demande.statut !== 'quota_atteint' && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (demande.type === 'publique' && authUser) {
+                              const { markDemandeAsViewed } = await import('@/lib/firebase/demande-service');
+                              markDemandeAsViewed(demande.id, authUser.uid).catch(error => {
+                                console.error('⚠️ Erreur tracking consultation:', error);
+                              });
+                            }
+                            router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`);
+                          }}
+                          className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                        >
+                          📝 Envoyer un devis
+                        </button>
+                      )}
+                      {demande.statut === 'attribuee' && (
+                        <div className="flex-1 bg-gray-100 text-gray-600 px-4 py-2.5 rounded-lg font-medium border-2 border-gray-300 text-center">
+                          ✅ Demande déjà attribuée
+                        </div>
+                      )}
+                      {demande.statut === 'quota_atteint' && (
+                        <div className="flex-1 bg-orange-50 text-orange-700 px-4 py-2.5 rounded-lg font-medium border-2 border-orange-300 text-center">
+                          🔒 Quota atteint - Demande fermée
+                        </div>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/messages?userId=${demande.clientId}`);
+                        }}
+                        className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200"
+                      >
+                        💬 Contacter client
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRefuserDemande(demande.id);
+                        }}
+                        disabled={refusingDemandeId === demande.id}
+                        className="px-4 py-2.5 border-2 border-red-300 text-red-700 hover:bg-red-50 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {refusingDemandeId === demande.id ? '⏳ Refus...' : '❌ Refuser'}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             );
             })}
