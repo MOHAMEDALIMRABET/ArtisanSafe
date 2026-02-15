@@ -82,10 +82,10 @@ export async function getArtisanStats(artisanId: string): Promise<ArtisanStats> 
     console.log(`⚠️ Stats inexistantes pour ${artisanId}, initialisation...`);
     await initializeArtisanStats(artisanId);
     const newSnap = await getDoc(statsRef);
-    return { id: newSnap.id, ...newSnap.data() } as ArtisanStats;
+    return { id: newSnap.id, ...newSnap.data() } as unknown as ArtisanStats;
   }
 
-  return { id: statsSnap.id, ...statsSnap.data() } as ArtisanStats;
+  return { id: statsSnap.id, ...statsSnap.data() } as unknown as ArtisanStats;
 }
 
 // ============================================

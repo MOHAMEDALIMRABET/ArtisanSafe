@@ -10,6 +10,8 @@
     "migrate:metiers": "ts-node --project scripts/tsconfig.json scripts/migrate-metiers.ts"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^5.6.0",
+    "@stripe/stripe-js": "^8.7.0",
     "date-fns": "^4.1.0",
     "firebase": "^12.7.0",
     "jsqr": "^1.4.0",

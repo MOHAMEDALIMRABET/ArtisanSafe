@@ -109,9 +109,16 @@ export default function InscriptionPage() {
 
     // Vérifier l'unicité du SIRET pour les artisans
     if (role === 'artisan' && siret.trim()) {
+      // 0. ⚠️ VALIDATION STRICTE : SIRET doit avoir EXACTEMENT 14 chiffres
+      const cleanSiret = siret.replace(/\s/g, '');
+      if (!/^\d{14}$/.test(cleanSiret)) {
+        setError('Vérifiez que votre SIRET est correct et que votre entreprise est active.');
+        return;
+      }
+
       // 1. Vérifier que le SIRET n'existe pas déjà dans notre base
       try {
-        const siretExists = await checkSiretExists(siret.trim());
+        const siretExists = await checkSiretExists(cleanSiret);
         if (siretExists) {
           setError('Ce numéro SIRET est déjà utilisé par un autre artisan. Veuillez vérifier votre saisie.');
           return;
@@ -122,6 +129,20 @@ export default function InscriptionPage() {
         return;
       }
 
+      // ✅ VALIDATION MANUELLE PAR ADMIN
+      // La raison sociale, le SIRET et l'adresse sont acceptés tels quels
+      // L'admin vérifiera lors de la validation des documents (KBIS, etc.)
+      console.log('✅ Inscription artisan - Données acceptées pour vérification manuelle admin');
+      console.log(`📝 SIRET: ${siret.trim()}`);
+      console.log(`🏢 Raison sociale: ${entreprise.trim()}`);
+      console.log(`📍 Adresse: ${address}, ${postalCode} ${city}`);
+      console.log('ℹ️  Admin vérifiera lors validation documents KBIS');
+
+      /* ========================================
+       * 🔒 VÉRIFICATION API SIRENE DÉSACTIVÉE
+       * ========================================
+       * Code commenté - Réactiver si besoin futur
+       * 
       // 2. Vérifier l'adéquation SIRET + Raison Sociale via API SIRENE publique
       // ⚠️ Vérification optionnelle - L'artisan pourra compléter la vérification plus tard
       try {
@@ -153,6 +174,7 @@ export default function InscriptionPage() {
         // Ne pas bloquer l'inscription en cas d'erreur réseau
         console.log('ℹ️ Vérification SIRET ignorée - L\'artisan pourra vérifier plus tard');
       }
+      */
     }
 
     // Formater le téléphone au format international
@@ -398,11 +420,20 @@ export default function InscriptionPage() {
 
               <Input
                 label="SIRET"
+                type="text"
                 value={siret}
-                onChange={(e) => setSiret(e.target.value)}
+                onChange={(e) => {
+                  // Accepter uniquement les chiffres
+                  const value = e.target.value.replace(/\D/g, '');
+                  // Limiter à 14 chiffres maximum
+                  setSiret(value.slice(0, 14));
+                }}
                 required
-                placeholder="14 chiffres"
-                helperText="Votre numéro SIRET sera vérifié"
+                placeholder="14 chiffres (ex: 12345678901234)"
+                helperText="Format français : exactement 14 chiffres"
+                pattern="\d{14}"
+                minLength={14}
+                maxLength={14}
               />
 
               <AddressAutocomplete

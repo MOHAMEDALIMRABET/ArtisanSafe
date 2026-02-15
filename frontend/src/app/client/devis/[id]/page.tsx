@@ -869,7 +869,10 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                 {devis.artisan.raisonSociale && <p className="font-semibold">{devis.artisan.raisonSociale}</p>}
                 {devis.artisan.adresse && (
                   <p className="text-sm text-gray-600 mt-1">
-                    📍 {masquerAdresse(devis.artisan.adresse, devis.statut !== 'paye')}
+                    📍 {masquerAdresse(
+                      `${devis.artisan.adresse.rue}, ${devis.artisan.adresse.codePostal} ${devis.artisan.adresse.ville}`,
+                      devis.statut !== 'paye'
+                    )}
                   </p>
                 )}
                 {devis.artisan.telephone && (
@@ -1105,8 +1108,10 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                 <div className="text-center mb-4">
                   <p className="text-sm font-semibold text-green-800">✅ Devis signé et payé</p>
                   <p className="text-xs text-green-700">
-                    Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')} - 
-                    Référence : <strong>{devis.paiement?.referenceTransaction}</strong>
+                    Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')}
+                    {devis.paiement?.stripe?.paymentIntentId && (
+                      <> - Réf : {devis.paiement.stripe.paymentIntentId.substring(0, 20)}...</>
+                    )}
                   </p>
                 </div>
                 <div className="flex justify-between items-end">

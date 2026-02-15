@@ -154,7 +154,7 @@ export default function ProfilArtisanPage() {
 
     // Validations
     if (!validateSiret(siret)) {
-      setError('Le SIRET doit contenir exactement 14 chiffres');
+      setError('Vérifiez que votre SIRET est correct et que votre entreprise est active.');
       return;
     }
 
@@ -288,11 +288,16 @@ export default function ProfilArtisanPage() {
                 label="SIRET"
                 type="text"
                 value={siret}
-                onChange={(e) => setSiret(e.target.value)}
-                placeholder="123 456 789 01234"
+                onChange={(e) => {
+                  // Accepter uniquement les chiffres
+                  const value = e.target.value.replace(/\D/g, '');
+                  // Limiter à 14 chiffres maximum
+                  setSiret(value.slice(0, 14));
+                }}
+                placeholder="12345678901234"
                 required
                 helper="14 chiffres obligatoires"
-                maxLength={17}
+                maxLength={14}
               />
               
               <Input

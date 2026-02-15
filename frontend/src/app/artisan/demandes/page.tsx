@@ -83,10 +83,18 @@ export default function ArtisanDemandesPage() {
       
       // Charger les demandes publiques qui matchent le profil de l'artisan
       const artisanData = await getArtisanById(authUser.uid);
-      if (artisanData) {
+      if (artisanData && artisanData.zonesIntervention && artisanData.zonesIntervention.length > 0) {
         const demandesPubliquesData = await getDemandesPubliquesForArtisan({
           metiers: artisanData.metiers,
-          location: artisanData.location
+          location: { 
+            city: artisanData.zonesIntervention[0].ville,
+            coordinates: artisanData.zonesIntervention[0].latitude && artisanData.zonesIntervention[0].longitude
+              ? { 
+                  latitude: artisanData.zonesIntervention[0].latitude, 
+                  longitude: artisanData.zonesIntervention[0].longitude 
+                }
+              : undefined
+          }
         });
         console.log('📢 Demandes publiques récupérées:', demandesPubliquesData.length);
         setDemandesPubliques(demandesPubliquesData);
@@ -891,7 +899,7 @@ export default function ArtisanDemandesPage() {
                   // Affichage normal
                   return (
                     <div className="flex gap-3 mt-4">
-                      {demande.statut !== 'attribuee' && demande.statut !== 'quota_atteint' && (
+                      {(demande.statut as string) !== 'attribuee' && (demande.statut as string) !== 'quota_atteint' && (
                         <button
                           onClick={async (e) => {
                             e.stopPropagation();
@@ -908,12 +916,12 @@ export default function ArtisanDemandesPage() {
                           📝 Envoyer un devis
                         </button>
                       )}
-                      {demande.statut === 'attribuee' && (
+                      {(demande.statut as string) === 'attribuee' && (
                         <div className="flex-1 bg-gray-100 text-gray-600 px-4 py-2.5 rounded-lg font-medium border-2 border-gray-300 text-center">
                           ✅ Demande déjà attribuée
                         </div>
                       )}
-                      {demande.statut === 'quota_atteint' && (
+                      {(demande.statut as string) === 'quota_atteint' && (
                         <div className="flex-1 bg-orange-50 text-orange-700 px-4 py-2.5 rounded-lg font-medium border-2 border-orange-300 text-center">
                           🔒 Quota atteint - Demande fermée
                         </div>

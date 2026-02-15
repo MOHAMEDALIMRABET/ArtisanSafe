@@ -65,7 +65,7 @@ export interface Devis {
   dateAcceptation?: Timestamp;   // Date d'acceptation par le client
   dateRefus?: Timestamp;         // Date de refus par le client
   motifRefus?: string;           // Motif de refus saisi par le client
-  typeRefus?: 'definitif';       // Type de refus (revision retiré, maintenant statut dédié)
+  typeRefus?: 'definitif' | 'revision';  // Type de refus
   
   // Champs dédiés aux révisions (nouveau)
   motifRevision?: string;        // Motif de la demande de révision
@@ -159,7 +159,6 @@ export interface Devis {
   varianteLettreReference?: string; // Ex: "A", "B", "C" - Lettre attribuée automatiquement
   
   // Révisions (si le devis a été remplacé par une révision)
-  devisRevisionId?: string;      // ID du devis qui remplace celui-ci
   devisOriginalId?: string;      // ID du devis original (si c'est une révision)
   
   // Informations client (snapshot pour le PDF)

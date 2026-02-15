@@ -412,7 +412,7 @@ export default function VoirDevisPage() {
               {devis.artisan.siret && <p className="text-sm text-gray-600">SIRET: {devis.artisan.siret}</p>}
               {devis.artisan.adresse && (
                 <p className="text-sm text-gray-600 mt-1">
-                  📍 {devis.artisan.adresse}
+                  📍 {devis.artisan.adresse.rue}, {devis.artisan.adresse.codePostal} {devis.artisan.adresse.ville}
                 </p>
               )}
               {devis.artisan.telephone && (
@@ -642,8 +642,10 @@ export default function VoirDevisPage() {
               <div className="text-center mb-4">
                 <p className="text-sm font-semibold text-green-800">✅ Devis signé et payé</p>
                 <p className="text-xs text-green-700">
-                  Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')} - 
-                  Référence : <strong>{devis.paiement?.referenceTransaction}</strong>
+                  Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')}
+                  {devis.paiement?.stripe?.paymentIntentId && (
+                    <> - Réf : {devis.paiement.stripe.paymentIntentId.substring(0, 20)}...</>
+                  )}
                 </p>
               </div>
               <div className="flex justify-between items-end">

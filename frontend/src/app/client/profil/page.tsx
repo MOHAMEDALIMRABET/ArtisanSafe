@@ -31,11 +31,6 @@ export default function ProfilClientPage() {
       return;
     }
 
-    if (authUser.role !== 'client') {
-      router.push('/');
-      return;
-    }
-
     loadUserProfile();
   }, [authUser, authLoading, router]);
 
@@ -49,6 +44,11 @@ export default function ProfilClientPage() {
       const user = await getUserById(authUser.uid);
       if (!user) {
         setError('Profil introuvable');
+        return;
+      }
+
+      if (user.role !== 'client') {
+        router.push('/');
         return;
       }
 
@@ -94,6 +94,7 @@ export default function ProfilClientPage() {
       setSuccess('');
 
       await updateUser(authUser.uid, {
+        id: authUser.uid,
         nom: nom.trim(),
         prenom: prenom.trim(),
         telephone: telephone.trim(),

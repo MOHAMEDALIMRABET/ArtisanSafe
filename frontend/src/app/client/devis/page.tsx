@@ -308,7 +308,7 @@ export default function ClientDevisPage() {
         ) : (
           <div className="space-y-4">
             {filteredDevis.map((d) => {
-              const demande = demandes.get(d.demandeId);
+              const demande = d.demandeId ? demandes.get(d.demandeId) : undefined;
               return (
                 <div key={d.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6">
                   <div className="flex items-start justify-between mb-4">

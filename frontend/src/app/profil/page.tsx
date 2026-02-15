@@ -36,22 +36,8 @@ export default function ProfilPage() {
       return;
     }
 
-    // Artisan : redirection vers leur page de profil
-    if (authUser.role === 'artisan') {
-      router.replace('/artisan/profil');
-      return;
-    }
-
-    // Admin : redirection vers admin
-    if (authUser.role === 'admin') {
-      router.replace('/admin');
-      return;
-    }
-
-    // Client : charger le profil
-    if (authUser.role === 'client') {
-      loadUserProfile();
-    }
+    // Charger le profil utilisateur
+    loadUserProfile();
   }, [authUser, authLoading, router]);
 
   async function loadUserProfile() {
@@ -68,6 +54,20 @@ export default function ProfilPage() {
       }
 
       setUserData(user);
+
+      // Artisan : redirection vers leur page de profil
+      if (user.role === 'artisan') {
+        router.replace('/artisan/profil');
+        return;
+      }
+
+      // Admin : redirection vers admin
+      if (user.role === 'admin') {
+        router.replace('/admin');
+        return;
+      }
+
+      // Client : charger les données du formulaire
       setNom(user.nom || '');
       setPrenom(user.prenom || '');
       setEmail(user.email || '');
@@ -109,6 +109,7 @@ export default function ProfilPage() {
       setSuccess('');
 
       await updateUser(authUser.uid, {
+        id: authUser.uid,
         nom: nom.trim(),
         prenom: prenom.trim(),
         telephone: telephone.trim(),

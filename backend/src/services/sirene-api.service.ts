@@ -24,9 +24,20 @@ interface SireneResponse {
 /**
  * Vérifier un SIRET et récupérer les informations de l'entreprise
  * @param siret SIRET à vérifier (14 chiffres)
- * @param raisonSocialeInput Raison sociale fournie par l'utilisateur (utilisée en mode bypass)
+ * @param raisonSocialeInput Raison sociale fournie par l'utilisateur
+ * @param adresseInput Adresse complète fournie par l'utilisateur
+ * 
+ * ⚠️ VALIDATION MANUELLE PAR ADMIN
+ * - SIRET : Vérification format 14 chiffres uniquement
+ * - Raison sociale : Acceptée telle quelle (admin vérifie via documents KBIS)
+ * - Adresse : Acceptée telle quelle (admin vérifie via documents)
+ * - API SIRENE : Désactivée (code commenté, réactivable si besoin)
  */
-export async function verifySiret(siret: string, raisonSocialeInput?: string): Promise<SireneResponse> {
+export async function verifySiret(
+  siret: string, 
+  raisonSocialeInput?: string,
+  adresseInput?: string
+): Promise<SireneResponse> {
   try {
     // Nettoyer le SIRET (enlever espaces)
     const cleanSiret = siret.replace(/\s/g, '');
@@ -39,6 +50,34 @@ export async function verifySiret(siret: string, raisonSocialeInput?: string): P
       };
     }
 
+    // ✅ VALIDATION MANUELLE - Accepter données artisan, admin vérifie documents
+    console.log(`✅ SIRET format valide: ${cleanSiret}`);
+    console.log(`📝 Raison sociale fournie: ${raisonSocialeInput || 'Non renseignée'}`);
+    console.log(`📍 Adresse fournie: ${adresseInput || 'Non renseignée'}`);
+    console.log(`ℹ️  Vérification manuelle par admin lors validation documents`);
+
+    // Retourner les données fournies par l'artisan (admin vérifiera)
+    return {
+      valid: true,
+      raisonSociale: raisonSocialeInput || 'À compléter',
+      adresse: adresseInput || 'À compléter',
+      activite: 'Vérifié par admin',
+      data: {
+        siret: cleanSiret,
+        raisonSociale: raisonSocialeInput || 'À compléter',
+        adresse: adresseInput || 'À compléter',
+        codePostal: 'Vérifié par admin',
+        ville: 'Vérifié par admin',
+        activite: 'Vérifié par admin',
+        dateCreation: new Date().toISOString().split('T')[0]
+      }
+    };
+
+    /* ========================================
+     * 🔒 CODE API SIRENE DÉSACTIVÉ
+     * ========================================
+     * Réactiver si besoin futur (décommenter ci-dessous)
+     * 
     // LOG DEBUG : Vérifier la valeur de la variable d'environnement
     console.log(`🔧 DEBUG - SIRENE_BYPASS_VERIFICATION = "${process.env.SIRENE_BYPASS_VERIFICATION}"`);
 
@@ -63,7 +102,12 @@ export async function verifySiret(siret: string, raisonSocialeInput?: string): P
         }
       };
     }
+    */
 
+    /* ========================================
+     * 🔒 APPEL API SIRENE DÉSACTIVÉ
+     * ========================================
+     * 
     // Appel à l'API SIRENE publique GRATUITE (entreprise.data.gouv.fr)
     console.log(`📡 Appel API SIRENE publique: ${cleanSiret}`);
     
@@ -146,6 +190,7 @@ export async function verifySiret(siret: string, raisonSocialeInput?: string): P
       adresse,
       activite
     };
+    */
 
   } catch (error: any) {
     console.error('Erreur vérification SIRET:', error);

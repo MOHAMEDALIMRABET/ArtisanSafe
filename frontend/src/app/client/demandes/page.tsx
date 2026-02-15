@@ -10,7 +10,8 @@ import { createNotification } from '@/lib/firebase/notification-service';
 import { getFileMetadata } from '@/lib/firebase/storage-service';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import type { Demande, Artisan, Devis } from '@/types/firestore';
+import type { Demande, Artisan } from '@/types/firestore';
+import type { Devis } from '@/types/devis';
 
 export default function MesDemandesPage() {
   const router = useRouter();
@@ -140,7 +141,7 @@ export default function MesDemandesPage() {
     if (!message) return;
 
     try {
-      const clientNom = user ? `${user.prenom} ${user.nom}` : 'Un client';
+      const clientNom = user?.displayName || user?.email || 'Un client';
       
       await createNotification(artisanId, {
         type: 'nouvelle_demande',
@@ -1079,7 +1080,7 @@ export default function MesDemandesPage() {
                               ville: demande.localisation.ville,
                               codePostal: demande.localisation.codePostal,
                               description: demande.description || '',
-                              urgence: demande.urgence || 'normale',
+                              urgence: String(demande.urgence || 'normale'),
                             });
                             
                             // Ajouter les dates si elles existent

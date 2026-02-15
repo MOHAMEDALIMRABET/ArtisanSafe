@@ -1110,7 +1110,7 @@ export default function NouveauDevisPage() {
           console.log('🔄 Marquage devis original comme remplacé:', revisionDevisId);
           await updateDevis(revisionDevisId, {
             statut: 'remplace',
-            devisRevisionId: nouveauDevisId,
+            devisRevisionId: nouveauDevisId.id,
             dateRemplacement: Timestamp.now()
           });
         }
@@ -1175,34 +1175,34 @@ export default function NouveauDevisPage() {
           </div>
 
           {/* Avertissement limite de devis (demandes publiques) */}
-          {demande && demande.type === 'publique' && demande.devisRecus >= 8 && (
+          {demande && demande.type === 'publique' && (demande.devisRecus ?? 0) >= 8 && (
             <div className={`mb-6 border-l-4 p-4 rounded-lg ${
-              demande.devisRecus >= 10 
+              (demande.devisRecus ?? 0) >= 10 
                 ? 'bg-red-50 border-red-500' 
                 : 'bg-yellow-50 border-yellow-500'
             }`}>
               <div className="flex items-start">
                 <span className="text-2xl mr-3">
-                  {demande.devisRecus >= 10 ? '🚫' : '⚠️'}
+                  {(demande.devisRecus ?? 0) >= 10 ? '🚫' : '⚠️'}
                 </span>
                 <div>
                   <h3 className={`font-semibold mb-1 ${
-                    demande.devisRecus >= 10 ? 'text-red-800' : 'text-yellow-800'
+                    (demande.devisRecus ?? 0) >= 10 ? 'text-red-800' : 'text-yellow-800'
                   }`}>
-                    {demande.devisRecus >= 10 
+                    {(demande.devisRecus ?? 0) >= 10 
                       ? 'Limite de devis atteinte' 
                       : 'Demande très sollicitée'
                     }
                   </h3>
                   <p className={`text-sm ${
-                    demande.devisRecus >= 10 ? 'text-red-700' : 'text-yellow-700'
+                    (demande.devisRecus ?? 0) >= 10 ? 'text-red-700' : 'text-yellow-700'
                   }`}>
-                    {demande.devisRecus >= 10 
+                    {(demande.devisRecus ?? 0) >= 10 
                       ? `Cette demande a déjà reçu ${demande.devisRecus} devis (limite maximale). Le client ne pourra pas traiter plus de devis.`
                       : `Cette demande a déjà reçu ${demande.devisRecus} devis. Le client risque d'être submergé et pourrait ne pas consulter tous les devis.`
                     }
                   </p>
-                  {demande.devisRecus < 10 && (
+                  {(demande.devisRecus ?? 0) < 10 && (
                     <p className="text-yellow-600 text-xs mt-2">
                       💡 <strong>Conseil</strong> : Démarquez-vous avec une offre claire et compétitive.
                     </p>
@@ -1810,7 +1810,11 @@ export default function NouveauDevisPage() {
                 <div className="text-sm">
                   <p className="font-semibold">{artisanInfo?.raisonSociale}</p>
                   <p className="text-[#6C757D]">SIRET : {artisanInfo?.siret}</p>
-                  {artisanInfo?.adresse && <p className="text-[#6C757D]">{artisanInfo.adresse}</p>}
+                  {artisanInfo?.adresse && (
+                    <p className="text-[#6C757D]">
+                      {artisanInfo.adresse.rue}, {artisanInfo.adresse.codePostal} {artisanInfo.adresse.ville}
+                    </p>
+                  )}
                   <p className="text-[#6C757D]">{artisanInfo?.telephone}</p>
                 </div>
               </div>

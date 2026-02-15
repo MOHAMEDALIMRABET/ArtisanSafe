@@ -33,6 +33,16 @@ router.post('/verify', async (req, res) => {
       });
     }
 
+    // ⚠️ VALIDATION STRICTE : SIRET doit avoir EXACTEMENT 14 chiffres
+    const cleanSiret = siret.replace(/\s/g, '');
+    if (!/^\d{14}$/.test(cleanSiret)) {
+      console.error('❌ SIRET invalide - Longueur:', cleanSiret.length, '- Valeur:', cleanSiret);
+      return res.status(400).json({
+        success: false,
+        error: 'Le numéro SIRET doit contenir exactement 14 chiffres (ni plus, ni moins)'
+      });
+    }
+
     console.log(`🔍 Vérification SIRET: ${siret} - Raison sociale: ${raisonSociale}`);
 
     // Vérification via API SIRENE publique (entreprise.data.gouv.fr)

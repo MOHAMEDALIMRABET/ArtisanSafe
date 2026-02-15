@@ -7,7 +7,8 @@ import { getUserById } from '@/lib/firebase/user-service';
 import { getDevisById } from '@/lib/firebase/devis-service';
 import { getArtisanById } from '@/lib/firebase/artisan-service';
 import { createAvis } from '@/lib/firebase/avis-service';
-import type { User, Artisan, Devis } from '@/types/firestore';
+import type { User, Artisan } from '@/types/firestore';
+import type { Devis } from '@/types/devis';
 import Link from 'next/link';
 
 const POINTS_FORTS_OPTIONS = [

@@ -161,7 +161,7 @@ export default function MesDevisPage() {
         // Si le devis est annulé (déjà supprimé automatiquement après 24h)
         // On garde les devis annulés < 24h pour que l'artisan puisse les voir
         if (devis.statut === 'annule') {
-          const dateAnnulation = devis.dateAnnulation?.toMillis() || 0;
+          const dateAnnulation = (devis as any).dateAnnulation?.toMillis() || 0;
           const deltaTemps = maintenant - dateAnnulation;
           
           // Si annulé depuis plus de 24h, il a déjà été supprimé

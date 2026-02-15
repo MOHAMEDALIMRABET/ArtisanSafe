@@ -272,7 +272,10 @@ export default function VerificationPage() {
                     type="text"
                     value={artisan.siret}
                     onChange={async (e) => {
-                      const newSiret = e.target.value;
+                      // Accepter uniquement les chiffres
+                      const value = e.target.value.replace(/\D/g, '');
+                      // Limiter à 14 chiffres maximum
+                      const newSiret = value.slice(0, 14);
                       setArtisan({ ...artisan, siret: newSiret });
                       setSiretStatus('pending');
                       setSiretError('');
@@ -283,8 +286,8 @@ export default function VerificationPage() {
                   />
                   <button
                     onClick={async () => {
-                      if (!artisan.siret || artisan.siret.length !== 14) {
-                        setSiretError('Le SIRET doit comporter 14 chiffres.');
+                      if (!artisan.siret || artisan.siret.length !== 14 || !/^\d{14}$/.test(artisan.siret)) {
+                        setSiretError('Vérifiez que votre SIRET est correct et que votre entreprise est active.');
                         return;
                       }
                       setSiretStatus('verifying');
@@ -320,9 +323,6 @@ export default function VerificationPage() {
                 {siretError && (
                   <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
                     <p className="text-sm text-red-700 font-semibold">❌ {siretError}</p>
-                    <p className="text-xs text-red-600 mt-1">
-                      Vérifiez que votre SIRET est correct et que votre entreprise est active.
-                    </p>
                   </div>
                 )}
 

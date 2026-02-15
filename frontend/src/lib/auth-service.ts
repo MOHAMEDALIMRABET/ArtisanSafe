@@ -1,4 +1,4 @@
-import { auth } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -12,7 +12,7 @@ import { createUser } from './firebase/user-service';
 import { createArtisan } from './firebase/artisan-service';
 import { syncEmailVerificationStatus } from './firebase/email-verification-sync';
 import type { User as UserType, Artisan } from '@/types/firestore';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, doc, updateDoc } from 'firebase/firestore';
 
 /**
  * Traduire les erreurs Firebase Auth en français

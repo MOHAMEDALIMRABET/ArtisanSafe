@@ -22,8 +22,11 @@ interface SiretValidationResult {
 }
 
 /**
- * Vérifie la validité d'un SIRET via l'API Backend (qui utilise l'API SIRENE)
- * Vérifie aussi l'adéquation entre le SIRET et la raison sociale de l'artisan
+ * Vérifie la validité d'un SIRET (format uniquement)
+ * ✅ VALIDATION MANUELLE PAR ADMIN
+ * - Vérification format 14 chiffres uniquement
+ * - Raison sociale acceptée telle quelle (admin vérifie via KBIS)
+ * - Pas d'appel API SIRENE (validation manuelle par admin)
  */
 export async function verifySiret(
   siret: string, 
@@ -35,7 +38,7 @@ export async function verifySiret(
     
     // Vérification du format (14 chiffres)
     if (!/^\d{14}$/.test(cleanSiret)) {
-      return { valid: false, error: 'Format SIRET invalide (14 chiffres requis)' };
+      return { valid: false, error: 'Vérifiez que votre SIRET est correct et que votre entreprise est active.' };
     }
     
     // Vérification de la raison sociale
@@ -43,6 +46,24 @@ export async function verifySiret(
       return { valid: false, error: 'Raison sociale manquante ou invalide' };
     }
     
+    // ✅ Format valide - Accepter pour vérification manuelle admin
+    console.log('✅ [Frontend] SIRET format valide:', cleanSiret);
+    console.log('📝 [Frontend] Raison sociale:', raisonSociale.trim());
+    console.log('ℹ️ [Frontend] Vérification manuelle par admin lors validation documents KBIS');
+    
+    return {
+      valid: true,
+      companyName: raisonSociale.trim(),
+      legalForm: 'À vérifier par admin',
+      adresse: '',
+      active: true
+    };
+
+    /* ========================================
+     * 🔒 APPEL API BACKEND DÉSACTIVÉ
+     * ========================================
+     * Code commenté - Réactiver si besoin futur
+     * 
     // Appel au backend pour vérification complète (SIRET + Raison sociale)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
     console.log('🔍 [Frontend] Appel API vérification SIRET:', {
@@ -95,6 +116,7 @@ export async function verifySiret(
       adresse: data.data?.adresse || '',
       active: true
     };
+    */
     
   } catch (error) {
     console.error('Erreur vérification SIRET:', error);

@@ -23,6 +23,8 @@
 
 import {
   doc,
+  getDoc,
+  deleteDoc,
   updateDoc,
   Timestamp,
   query,
@@ -80,7 +82,7 @@ export async function softDelete(
 ): Promise<void> {
   const docRef = doc(db, collectionName, documentId);
   
-  const metadata: SoftDeleteMetadata & { deletionReason?: string } = {
+  const metadata: any = {
     deleted: true,
     deletedAt: Timestamp.now(),
     deletedBy: deletedBy,
@@ -135,7 +137,7 @@ export async function permanentDelete(
   const docRef = doc(db, collectionName, documentId);
   
   // Vérifier que le document est bien marqué deleted
-  const docSnap = await docRef.get();
+  const docSnap = await getDoc(docRef);
   if (!docSnap.exists()) {
     throw new Error(`Document ${collectionName}/${documentId} n'existe pas`);
   }
@@ -148,7 +150,7 @@ export async function permanentDelete(
     );
   }
   
-  await docRef.delete();
+  await deleteDoc(docRef);
   
   console.warn(`⚠️ Suppression définitive: ${collectionName}/${documentId}`);
 }
@@ -238,7 +240,7 @@ export async function batchSoftDelete(
 ): Promise<void> {
   const batch = writeBatch(db);
   
-  const metadata: SoftDeleteMetadata & { deletionReason?: string } = {
+  const metadata: any = {
     deleted: true,
     deletedAt: Timestamp.now(),
     deletedBy: deletedBy,
