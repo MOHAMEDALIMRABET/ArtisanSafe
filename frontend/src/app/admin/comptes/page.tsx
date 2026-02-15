@@ -693,30 +693,111 @@ export default function AdminComptesPage() {
             <div className="mb-6">
               <h4 className="font-semibold text-gray-700 mb-3">Informations générales</h4>
               <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-                {accountType === 'artisans' && (
-                  <>
-                    <div>
-                      <p className="text-xs text-gray-500">SIRET</p>
-                      <p className="font-medium">{(selectedAccount as Artisan).siret || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Téléphone</p>
-                      <p className="font-medium">{(selectedAccount as Artisan).telephone || '-'}</p>
-                    </div>
-                  </>
-                )}
+                <div>
+                  <p className="text-xs text-gray-500">Nom complet</p>
+                  <p className="font-medium">{selectedAccount.nom} {selectedAccount.prenom}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Email</p>
+                  <p className="font-medium text-sm break-all">{selectedAccount.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Rôle</p>
+                  <p className="font-medium capitalize">{selectedAccount.role || 'Non défini'}</p>
+                </div>
                 <div>
                   <p className="text-xs text-gray-500">Date d'inscription</p>
                   <p className="font-medium">
                     {selectedAccount.dateInscription
-                      ? new Date(selectedAccount.dateInscription.toDate()).toLocaleString('fr-FR')
+                      ? new Date(selectedAccount.dateInscription.toDate()).toLocaleDateString('fr-FR')
                       : '-'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Rôle</p>
-                  <p className="font-medium capitalize">{selectedAccount.role}</p>
+                  <p className="text-xs text-gray-500">Email vérifié</p>
+                  <p className="font-medium">
+                    {selectedAccount.emailVerified ? (
+                      <span className="text-green-600">✓ Oui</span>
+                    ) : (
+                      <span className="text-red-600">✗ Non</span>
+                    )}
+                  </p>
                 </div>
+                <div>
+                  <p className="text-xs text-gray-500">Téléphone</p>
+                  <p className="font-medium">{selectedAccount.telephone || '-'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500">Adresse</p>
+                  <p className="font-medium">{selectedAccount.adresse || '-'}</p>
+                </div>
+                {accountType === 'artisans' && (
+                  <>
+                    <div className="col-span-2 border-t border-gray-200 pt-4 mt-2">
+                      <p className="text-xs text-gray-500 font-semibold mb-3">📋 Informations entreprise</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">SIRET</p>
+                      <p className="font-medium font-mono">{(selectedAccount as Artisan).siret || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Raison sociale</p>
+                      <p className="font-medium">{(selectedAccount as Artisan).raisonSociale || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Nom commercial</p>
+                      <p className="font-medium">{(selectedAccount as Artisan).businessName || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Forme juridique</p>
+                      <p className="font-medium">{(selectedAccount as Artisan).formeJuridique || '-'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">Métiers</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {(selectedAccount as Artisan).metiers && (selectedAccount as Artisan).metiers.length > 0 ? (
+                          (selectedAccount as Artisan).metiers.map((metier, idx) => (
+                            <span key={idx} className="px-2 py-1 bg-[#FF6B00] text-white rounded-full text-xs">
+                              {metier}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">Localisation</p>
+                      <p className="font-medium">
+                        {(selectedAccount as Artisan).location 
+                          ? `${(selectedAccount as Artisan).location.city}, ${(selectedAccount as Artisan).location.postalCode}` 
+                          : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Statut vérification</p>
+                      <p className="font-medium">
+                        {(selectedAccount as Artisan).verificationStatus === 'approved' ? (
+                          <span className="text-green-600">✓ Approuvé</span>
+                        ) : (selectedAccount as Artisan).verificationStatus === 'rejected' ? (
+                          <span className="text-red-600">✗ Rejeté</span>
+                        ) : (
+                          <span className="text-orange-600">⏳ En attente</span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">SIRET vérifié</p>
+                      <p className="font-medium">
+                        {(selectedAccount as Artisan).siretVerified ? (
+                          <span className="text-green-600">✓ Oui</span>
+                        ) : (
+                          <span className="text-gray-600">- Non</span>
+                        )}
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

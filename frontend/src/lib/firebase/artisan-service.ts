@@ -323,10 +323,16 @@ export async function getAllArtisansForAdmin(): Promise<Artisan[]> {
             nom: userData.nom,
             prenom: userData.prenom,
             email: userData.email,
+            role: userData.role,
             telephone: userData.telephone,
             telephoneVerified: userData.telephoneVerified,
             adresse: userData.adresse,
             dateInscription: userData.dateInscription,
+            emailVerified: userData.emailVerified,
+            suspended: userData.suspended,
+            suspensionReason: userData.suspensionReason,
+            accountActions: userData.accountActions,
+            adminNotes: userData.adminNotes,
           } as Artisan;
         }
       } catch (error) {
