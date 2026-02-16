@@ -31,7 +31,7 @@ export type Categorie =
 
 export type Urgence = 'normal' | 'rapide' | 'urgent';
 
-export type DemandeType = 'directe' | 'publique';
+export type DemandeType = 'directe' | 'publique' | 'petit_travail';
 
 export type DemandeStatut = 
   | 'genere' 
@@ -450,6 +450,11 @@ export interface Artisan {
   compteBancaire?: CompteBancaire;
   presentation?: string; // Description/bio
   photoProfil?: string; // URL Firebase Storage
+  
+  // Tarification pour petits travaux
+  tarifHoraire?: number; // Tarif horaire en € (pour interventions rapides < 150€)
+  disponiblePetitsTravaux?: boolean; // Accepte les petits travaux sans devis
+  delaiInterventionRapide?: number; // Délai en heures pour intervention rapide (ex: 2h, 4h, 24h)
 }
 
 // ============================================
