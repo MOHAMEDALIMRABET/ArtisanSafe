@@ -345,16 +345,9 @@ export default function Home() {
               </div>
 
               {/* Titre */}
-              <h2 className="text-3xl md:text-4xl font-bold text-[#2C3E50] mb-3">
+              <h2 className="text-3xl md:text-4xl font-bold text-[#2C3E50] mb-8">
                 Besoin d'une intervention rapide ?
               </h2>
-
-              {/* Description */}
-              <p className="text-base md:text-lg text-[#6C757D] mb-8">
-                <span className="font-bold text-[#FF6B00]">Sans devis</span> si moins de 150€ • 
-                <span className="font-bold text-[#28A745]"> Intervention sous 2h</span> possible • 
-                <span className="font-bold text-[#2C3E50]"> Tarif transparent</span>
-              </p>
 
               {/* CTA avec animations complètes */}
               <div className="flex justify-center">
