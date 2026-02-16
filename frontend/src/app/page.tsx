@@ -516,7 +516,38 @@ export default function Home() {
                   </div>
                 </Link>
 
-                {/* Carte 6 : Protection & médiation */}
+                {/* Carte 6 : Petits travaux */}
+                <Link href="/petits-travaux" className="group flex-shrink-0 w-[calc(20%-1.2rem)]">
+                  <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
+                    <div className="w-16 h-16 bg-[#FFF9E6] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                      <span className="text-4xl">🔧</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
+                      Petits travaux rapides
+                    </h3>
+                    <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#28A745] mt-0.5">✓</span>
+                        <span>Intervention sous 2h possible</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#28A745] mt-0.5">✓</span>
+                        <span>Sans devis si &lt; 150€</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#28A745] mt-0.5">✓</span>
+                        <span>Tarif horaire transparent</span>
+                      </li>
+                    </ul>
+                    <div className="text-center">
+                      <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
+                        En savoir plus →
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+
+                {/* Carte 7 : Protection & médiation */}
                 <Link href="/confiance/protection-mediation" className="group flex-shrink-0 w-[calc(20%-1.2rem)]">
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#FFEBEE] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
@@ -551,10 +582,10 @@ export default function Home() {
 
             {/* Bouton flèche droite */}
             <button
-              onClick={() => setCurrentCardIndex(Math.min(1, currentCardIndex + 1))}
-              disabled={currentCardIndex === 1}
+              onClick={() => setCurrentCardIndex(Math.min(2, currentCardIndex + 1))}
+              disabled={currentCardIndex === 2}
               className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-xl rounded-full p-3 hover:bg-[#FF6B00] hover:text-white transition-all duration-300 ${
-                currentCardIndex === 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:scale-110'
+                currentCardIndex === 2 ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:scale-110'
               }`}
               aria-label="Carte suivante"
             >
@@ -577,7 +608,14 @@ export default function Home() {
                 className={`h-2 rounded-full transition-all duration-300 ${
                   currentCardIndex === 1 ? 'w-8 bg-[#FF6B00]' : 'w-2 bg-gray-300 hover:bg-gray-400'
                 }`}
-                aria-label="Voir carte 6"
+                aria-label="Voir cartes 2-6"
+              />
+              <button
+                onClick={() => setCurrentCardIndex(2)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentCardIndex === 2 ? 'w-8 bg-[#FF6B00]' : 'w-2 bg-gray-300 hover:bg-gray-400'
+                }`}
+                aria-label="Voir cartes 3-7"
               />
             </div>
           </div>
