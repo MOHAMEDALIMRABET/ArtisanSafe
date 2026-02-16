@@ -332,7 +332,7 @@ export default function Home() {
               Pourquoi choisir ArtisanDispo ?
             </h2>
             <p className="text-2xl md:text-3xl font-semibold text-[#28A745] max-w-4xl mx-auto leading-relaxed">
-              La seule plateforme qui protège vraiment vos projets de A à Z
+              Vos projets méritent des artisans fiables, disponibles et de confiance. Avec ArtisanDispo, tout commence sereinement
             </p>
           </div>
 
