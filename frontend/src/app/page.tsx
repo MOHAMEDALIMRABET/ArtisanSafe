@@ -328,15 +328,15 @@ export default function Home() {
 
         {/* Section Petits Travaux - Compacte avec Texte Complet */}
         <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-          {/* Background animé avec gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#FFF9E6] via-[#FFE4B5] to-[#FFF9E6] opacity-40"></div>
+          {/* Background bleu professionnel */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#E8F4F8] via-[#D1E7F0] to-[#E8F4F8] opacity-60"></div>
           
           <div className="relative z-10 py-12 px-6 md:px-12">
             <div className="text-center">
               
-              {/* Badge NOUVEAU */}
+              {/* Badge NOUVEAU - Bleu foncé */}
               <div className="flex justify-center mb-4">
-                <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF6B00] to-[#E56100] text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg animate-pulse">
+                <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[#2C3E50] to-[#1A3A5C] text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg animate-pulse">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
                   </svg>
@@ -349,7 +349,7 @@ export default function Home() {
                 Besoin d'une intervention rapide ?
               </h2>
 
-              {/* CTA avec animations complètes */}
+              {/* CTA avec animations complètes - Orange pour visibilité */}
               <div className="flex justify-center">
                 <Link href="/petits-travaux">
                   <button className="group relative bg-gradient-to-r from-[#FF6B00] to-[#E56100] hover:from-[#E56100] hover:to-[#D55000] text-white px-10 py-5 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 animate-pulse-slow">
