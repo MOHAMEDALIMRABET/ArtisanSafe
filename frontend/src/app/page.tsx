@@ -327,15 +327,14 @@ export default function Home() {
         </div>
 
         {/* Section Petits Travaux - Compacte avec Texte Complet */}
-        <div className="container mx-auto px-4">
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-            {/* Background animé avec gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#FFF9E6] via-[#FFE4B5] to-[#FFF9E6] opacity-40"></div>
-            
-            <div className="relative z-10 py-12 px-6 md:px-12">
-              <div className="text-center">
-                
-                {/* Badge NOUVEAU */}
+        <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+          {/* Background animé avec gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#FFF9E6] via-[#FFE4B5] to-[#FFF9E6] opacity-40"></div>
+          
+          <div className="relative z-10 py-12 px-6 md:px-12">
+            <div className="text-center">
+              
+              {/* Badge NOUVEAU */}
               <div className="flex justify-center mb-4">
                 <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF6B00] to-[#E56100] text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg animate-pulse">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -378,7 +377,6 @@ export default function Home() {
                 </Link>
               </div>
 
-              </div>
             </div>
           </div>
         </div>
