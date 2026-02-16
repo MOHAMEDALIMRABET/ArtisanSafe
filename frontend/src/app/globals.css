@@ -250,6 +250,106 @@ body {
 }
 
 /* ========================
+   ANIMATIONS FLOATING BADGE + GLOW
+   ======================== */
+
+/* Animation de flottement */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Animation de lueur pulsante */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(44, 62, 80, 0.4),
+                0 0 40px rgba(44, 62, 80, 0.2),
+                0 0 60px rgba(44, 62, 80, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(44, 62, 80, 0.6),
+                0 0 60px rgba(44, 62, 80, 0.4),
+                0 0 90px rgba(44, 62, 80, 0.2);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Animation de vague sur le texte */
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-wave {
+  display: inline-block;
+  animation: wave 2s ease-in-out infinite;
+}
+
+/* Animation de néon pulsant pour bouton */
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 107, 0, 0.5),
+                0 0 40px rgba(255, 107, 0, 0.3),
+                0 0 60px rgba(255, 107, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 107, 0, 0.8),
+                0 0 60px rgba(255, 107, 0, 0.5),
+                0 0 90px rgba(255, 107, 0, 0.3);
+  }
+}
+
+.animate-neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* Animation de background ondulant */
+@keyframes wave-background {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-wave-bg {
+  background-size: 200% 200%;
+  animation: wave-background 8s ease infinite;
+}
+
+/* Animation moderne 2026 : Fade-in + Slide depuis le bas */
+@keyframes fade-slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fade-slide-up 0.8s ease-out forwards;
+}
+
+/* ========================
    STYLES D'IMPRESSION
    ======================== */
 

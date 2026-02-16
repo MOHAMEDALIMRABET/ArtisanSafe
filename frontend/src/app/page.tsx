@@ -326,18 +326,18 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Section Petits Travaux - Compacte avec Texte Complet */}
+        {/* Section Petits Travaux - Compacte */}
         <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-          {/* Background bleu professionnel */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#E8F4F8] via-[#D1E7F0] to-[#E8F4F8] opacity-60"></div>
+          {/* Background bleu animé avec effet de vague */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#E8F4F8] via-[#D1E7F0] to-[#B8DCE8] opacity-60 animate-wave-bg"></div>
           
-          <div className="relative z-10 py-12 px-6 md:px-12">
+          <div className="relative z-10 py-8 px-6 md:px-10">
             <div className="text-center">
               
-              {/* Badge NOUVEAU - Bleu foncé */}
-              <div className="flex justify-center mb-4">
-                <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[#2C3E50] to-[#1A3A5C] text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg animate-pulse">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              {/* Badge */}
+              <div className="flex justify-center mb-3">
+                <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[#2C3E50] to-[#1A3A5C] text-white px-5 py-1.5 rounded-full font-semibold text-xs">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
                   </svg>
                   Petits travaux express
@@ -345,21 +345,21 @@ export default function Home() {
               </div>
 
               {/* Titre */}
-              <h2 className="text-3xl md:text-4xl font-bold text-[#2C3E50] mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#2C3E50] mb-6">
                 Besoin d'une intervention rapide ?
               </h2>
 
-              {/* CTA avec animations complètes - Orange pour visibilité */}
+              {/* CTA avec Néon Pulsant */}
               <div className="flex justify-center">
                 <Link href="/petits-travaux">
-                  <button className="group relative bg-gradient-to-r from-[#FF6B00] to-[#E56100] hover:from-[#E56100] hover:to-[#D55000] text-white px-10 py-5 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 animate-pulse-slow">
-                    <span className="relative z-10 flex items-center gap-3">
-                      <svg className="w-7 h-7 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button className="group relative bg-gradient-to-r from-[#FF6B00] to-[#E56100] hover:from-[#E56100] hover:to-[#D55000] text-white px-6 py-3 rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 animate-neon-pulse">
+                    <span className="relative z-10 flex items-center gap-2">
+                      <svg className="w-5 h-5 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      Trouver un artisan dispo maintenant
-                      <svg className="w-6 h-6 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      Trouver un artisan dispo
+                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                       </svg>
                     </span>
