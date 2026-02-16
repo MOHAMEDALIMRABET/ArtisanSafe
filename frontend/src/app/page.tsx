@@ -326,69 +326,56 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Section Petits Travaux - Version Compacte et Élégante */}
+        {/* Section Petits Travaux - Compacte avec Texte Complet */}
         <div className="mt-12 mb-12 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-[#FFF9E6] via-[#FFE4B5] to-[#FFF9E6] opacity-40"></div>
           
           <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-5xl mx-auto bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-[#FFE4B5] p-6 md:p-8">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                
-                {/* Partie gauche : Titre + Description */}
-                <div className="flex-1 text-center md:text-left">
-                  <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                    <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#FF6B00] to-[#E56100] text-white px-3 py-1 rounded-full text-xs font-bold">
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                      </svg>
-                      NOUVEAU
-                    </span>
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-[#2C3E50] mb-2">
-                    Intervention rapide ?
-                  </h2>
-                  <p className="text-sm md:text-base text-[#6C757D]">
-                    <span className="font-semibold text-[#FF6B00]">Sans devis si &lt; 150€</span> • 
-                    <span className="font-semibold text-[#28A745]"> Dispo sous 2h</span> • 
-                    <span className="font-semibold text-[#2C3E50]"> Tarif clair</span>
-                  </p>
-                </div>
-
-                {/* Partie milieu : Icônes catégories */}
-                <div className="flex gap-3 md:gap-4">
-                  {[
-                    { icon: '🚰', color: 'hover:bg-blue-50' },
-                    { icon: '⚡', color: 'hover:bg-yellow-50' },
-                    { icon: '🔧', color: 'hover:bg-amber-50' },
-                    { icon: '🎨', color: 'hover:bg-purple-50' }
-                  ].map((cat, idx) => (
-                    <div
-                      key={idx}
-                      className={`group bg-white rounded-lg p-2.5 md:p-3 shadow-sm ${cat.color} transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-1`}
-                    >
-                      <div className="text-2xl md:text-3xl transform group-hover:scale-110 transition-transform">
-                        {cat.icon}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Partie droite : CTA */}
-                <div className="flex-shrink-0">
-                  <Link href="/petits-travaux">
-                    <button className="group bg-gradient-to-r from-[#FF6B00] to-[#E56100] hover:from-[#E56100] hover:to-[#D55000] text-white px-6 py-3 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Trouver un artisan
-                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </Link>
-                </div>
-
+            <div className="max-w-4xl mx-auto bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-[#FFE4B5] p-8 md:p-10 text-center">
+              
+              {/* Badge NOUVEAU */}
+              <div className="flex justify-center mb-4">
+                <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF6B00] to-[#E56100] text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg animate-pulse">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                  </svg>
+                  NOUVEAU : Petits travaux express
+                </span>
               </div>
+
+              {/* Titre */}
+              <h2 className="text-3xl md:text-4xl font-bold text-[#2C3E50] mb-3">
+                Besoin d'une intervention rapide ?
+              </h2>
+
+              {/* Description */}
+              <p className="text-base md:text-lg text-[#6C757D] mb-8">
+                <span className="font-bold text-[#FF6B00]">Sans devis</span> si moins de 150€ • 
+                <span className="font-bold text-[#28A745]"> Intervention sous 2h</span> possible • 
+                <span className="font-bold text-[#2C3E50]"> Tarif transparent</span>
+              </p>
+
+              {/* CTA avec animations complètes */}
+              <div className="flex justify-center">
+                <Link href="/petits-travaux">
+                  <button className="group relative bg-gradient-to-r from-[#FF6B00] to-[#E56100] hover:from-[#E56100] hover:to-[#D55000] text-white px-10 py-5 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 animate-pulse-slow">
+                    <span className="relative z-10 flex items-center gap-3">
+                      <svg className="w-7 h-7 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Trouver un artisan dispo maintenant
+                      <svg className="w-6 h-6 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </span>
+                    
+                    {/* Effet de brillance qui passe */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  </button>
+                </Link>
+              </div>
+
             </div>
           </div>
         </div>
