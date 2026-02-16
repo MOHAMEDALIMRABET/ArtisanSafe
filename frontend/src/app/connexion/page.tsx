@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { Button, Input, Card, Logo } from '@/components/ui';
 
 export default function ConnexionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -53,8 +55,10 @@ export default function ConnexionPage() {
         return;
       }
       
-      // Rediriger vers le bon dashboard selon le rôle
-      if (userData?.role === 'artisan') {
+      // Rediriger vers l'URL d'origine ou vers le dashboard selon le rôle
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else if (userData?.role === 'artisan') {
         router.push('/artisan/dashboard');
       } else {
         router.push('/dashboard'); // Client par défaut

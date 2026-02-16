@@ -16,7 +16,7 @@ import { Timestamp } from 'firebase/firestore';
 function NouvelleDemandeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
@@ -25,6 +25,13 @@ function NouvelleDemandeContent() {
 
   const artisanPreselect = searchParams.get('artisan');
   const brouillonId = searchParams.get('brouillonId');
+
+  // Protection immédiate : Rediriger si non connecté
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/connexion?redirect=/demande/nouvelle');
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     // Charger les critères de recherche
@@ -125,11 +132,8 @@ function NouvelleDemandeContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) {
-      alert('Vous devez être connecté pour créer une demande');
-      router.push('/connexion');
-      return;
-    }
+    // La vérification d'authentification est maintenant faite en amont via useEffect
+    // L'utilisateur est automatiquement redirigé vers /connexion s'il n'est pas connecté
 
     if (!formData.titre || !formData.description) {
       alert('⚠️ Veuillez remplir tous les champs obligatoires (titre et description)');
