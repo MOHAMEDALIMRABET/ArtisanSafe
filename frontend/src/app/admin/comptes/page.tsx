@@ -76,7 +76,7 @@ export default function AdminComptesPage() {
     try {
       const user = authService.getCurrentUser();
       if (!user) {
-        router.push('/admin/login');
+        router.push('/access-x7k9m2p4w8n3');
         return;
       }
 
@@ -459,8 +459,8 @@ export default function AdminComptesPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {account.dateInscription
-                      ? new Date(account.dateInscription.toDate()).toLocaleDateString('fr-FR')
+                    {(account as any).dateCreation
+                      ? new Date((account as any).dateCreation.toDate()).toLocaleDateString('fr-FR')
                       : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -708,8 +708,17 @@ export default function AdminComptesPage() {
                 <div>
                   <p className="text-xs text-gray-500">Date d'inscription</p>
                   <p className="font-medium">
-                    {selectedAccount.dateInscription
-                      ? new Date(selectedAccount.dateInscription.toDate()).toLocaleDateString('fr-FR')
+                    {(selectedAccount as any).dateCreation
+                      ? (() => {
+                          try {
+                            const date = typeof (selectedAccount as any).dateCreation.toDate === 'function'
+                              ? (selectedAccount as any).dateCreation.toDate()
+                              : new Date((selectedAccount as any).dateCreation);
+                            return new Date(date).toLocaleDateString('fr-FR');
+                          } catch (e) {
+                            return '-';
+                          }
+                        })()
                       : '-'}
                   </p>
                 </div>
@@ -727,10 +736,6 @@ export default function AdminComptesPage() {
                   <p className="text-xs text-gray-500">Téléphone</p>
                   <p className="font-medium">{selectedAccount.telephone || '-'}</p>
                 </div>
-                <div className="col-span-2">
-                  <p className="text-xs text-gray-500">Adresse</p>
-                  <p className="font-medium">{selectedAccount.adresse || '-'}</p>
-                </div>
                 {accountType === 'artisans' && (
                   <>
                     <div className="col-span-2 border-t border-gray-200 pt-4 mt-2">
@@ -746,11 +751,7 @@ export default function AdminComptesPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Nom commercial</p>
-                      <p className="font-medium">{(selectedAccount as Artisan).businessName || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Forme juridique</p>
-                      <p className="font-medium">{(selectedAccount as Artisan).formeJuridique || '-'}</p>
+                      <p className="font-medium">{(selectedAccount as Artisan).raisonSociale || '-'}</p>
                     </div>
                     <div className="col-span-2">
                       <p className="text-xs text-gray-500">Métiers</p>
@@ -767,10 +768,17 @@ export default function AdminComptesPage() {
                       </div>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs text-gray-500">Localisation</p>
+                      <p className="text-xs text-gray-500">Adresse entreprise 🏢</p>
                       <p className="font-medium">
-                        {(selectedAccount as Artisan).location 
-                          ? `${(selectedAccount as Artisan).location.city}, ${(selectedAccount as Artisan).location.postalCode}` 
+                        {(selectedAccount as Artisan).zonesIntervention && (selectedAccount as Artisan).zonesIntervention.length > 0
+                          ? (() => {
+                              const zone = (selectedAccount as Artisan).zonesIntervention[0];
+                              const parts = [];
+                              if (zone.adresse) parts.push(zone.adresse);
+                              if (zone.codePostal) parts.push(zone.codePostal);
+                              if (zone.ville) parts.push(zone.ville);
+                              return parts.length > 0 ? parts.join(', ') : '-';
+                            })()
                           : '-'}
                       </p>
                     </div>

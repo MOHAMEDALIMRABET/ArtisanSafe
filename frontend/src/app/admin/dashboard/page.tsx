@@ -38,7 +38,7 @@ export default function AdminDashboardPage() {
     try {
       const user = authService.getCurrentUser();
       if (!user) {
-        router.push('/admin/login');
+        router.push('/access-x7k9m2p4w8n3');
         return;
       }
 
@@ -49,10 +49,10 @@ export default function AdminDashboardPage() {
 
       // Artisans en attente de vérification
       const artisansEnAttente = artisans.filter(a => {
-        const kbisEnCours = a.verificationDocuments?.kbis?.uploaded && 
+        const kbisEnCours = a.verificationDocuments?.kbis?.url && 
                            !a.verificationDocuments?.kbis?.verified && 
                            !a.verificationDocuments?.kbis?.rejected;
-        const idEnCours = a.verificationDocuments?.idCard?.uploaded && 
+        const idEnCours = a.verificationDocuments?.idCard?.url && 
                          !a.verificationDocuments?.idCard?.verified && 
                          !a.verificationDocuments?.idCard?.rejected;
         return kbisEnCours || idEnCours;
@@ -60,12 +60,12 @@ export default function AdminDashboardPage() {
 
       setStats({
         artisansTotal: artisans.length,
-        artisansActifs: artisans.filter(a => !a.suspended).length,
-        artisansSuspendus: artisans.filter(a => a.suspended).length,
+        artisansActifs: artisans.filter(a => !(a as any).suspended).length,
+        artisansSuspendus: artisans.filter(a => (a as any).suspended).length,
         artisansEnAttente,
         clientsTotal: clients.length,
-        clientsActifs: clients.filter(c => !c.suspended).length,
-        clientsSuspendus: clients.filter(c => c.suspended).length,
+        clientsActifs: clients.filter(c => !(c as any).suspended).length,
+        clientsSuspendus: clients.filter(c => (c as any).suspended).length,
       });
     } catch (error) {
       console.error('Erreur chargement stats:', error);
@@ -145,6 +145,13 @@ export default function AdminDashboardPage() {
       icon: '👤',
       link: '/admin/comptes',
       color: 'bg-[#2C3E50]'
+    },
+    {
+      title: 'Demandes de rappel',
+      description: 'Gérer les demandes "Être rappelé"',
+      icon: '📞',
+      link: '/admin/rappels',
+      color: 'bg-blue-600'
     }
   ];
 

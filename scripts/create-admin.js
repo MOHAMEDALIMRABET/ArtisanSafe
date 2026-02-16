@@ -95,7 +95,8 @@ async function createAdminUser() {
     console.log(`   UID: ${userRecord.uid}`);
     console.log(`   Rôle: admin`);
     console.log('\n🔐 Vous pouvez maintenant vous connecter sur:');
-    console.log('   http://localhost:3000/admin/login\n');
+    console.log('   🔒 http://localhost:3000/access-x7k9m2p4w8n3');
+    console.log('\n⚠️  IMPORTANT: Cette URL est confidentielle - Ne la partagez jamais publiquement !\n');
 
   } catch (error) {
     console.error('❌ Erreur lors de la création du compte admin:', error);

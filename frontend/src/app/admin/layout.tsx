@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
+import { isAdmin } from '@/lib/firebase/admin-service';
 import Link from 'next/link';
 
 export default function AdminLayout({
@@ -27,13 +28,23 @@ export default function AdminLayout({
     try {
       const user = authService.getCurrentUser();
       if (!user) {
-        router.push('/admin/login');
+        router.push('/access-x7k9m2p4w8n3');
         return;
       }
+
+      // 🔒 SÉCURITÉ : Vérifier que l'utilisateur est bien admin
+      const adminStatus = await isAdmin(user.uid);
+      if (!adminStatus) {
+        // Déconnecter et rediriger vers page utilisateur
+        await authService.signOut();
+        router.push('/connexion');
+        return;
+      }
+
       setAdminName(user.displayName || 'Admin');
     } catch (error) {
       console.error('Erreur auth:', error);
-      router.push('/admin/login');
+      router.push('/access-x7k9m2p4w8n3');
     } finally {
       setLoading(false);
     }
@@ -52,8 +63,8 @@ export default function AdminLayout({
     );
   }
 
-  // Ne pas afficher la navigation sur la page de login
-  if (pathname === '/admin/login') {
+  // Ne pas afficher la navigation sur la page de login sécurisée
+  if (pathname === '/access-x7k9m2p4w8n3') {
     return <>{children}</>;
   }
 
@@ -75,6 +86,12 @@ export default function AdminLayout({
       path: '/admin/comptes',
       icon: '👥',
       description: 'Artisans & Clients'
+    },
+    {
+      name: 'Logs d\'accès',
+      path: '/admin/logs',
+      icon: '📋',
+      description: 'Sécurité & Logs'
     }
   ];
 

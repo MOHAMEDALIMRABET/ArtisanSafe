@@ -327,7 +327,7 @@ export async function getAllArtisansForAdmin(): Promise<Artisan[]> {
             telephone: userData.telephone,
             telephoneVerified: userData.telephoneVerified,
             adresse: userData.adresse,
-            dateInscription: userData.dateInscription,
+            dateCreation: userData.dateCreation,
             emailVerified: userData.emailVerified,
             suspended: userData.suspended,
             suspensionReason: userData.suspensionReason,

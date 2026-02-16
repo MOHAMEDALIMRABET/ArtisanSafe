@@ -220,6 +220,7 @@ export interface User {
 // ============================================
 
 export interface ZoneIntervention {
+  adresse?: string; // Adresse complète de l'entreprise (ex: "123 rue de la République")
   ville: string;
   codePostal?: string; // Ajout code postal
   rayon?: number; // km (deprecated - utiliser rayonKm)

@@ -39,11 +39,23 @@ export default function ConnexionPage() {
       const { getUserById } = await import('@/lib/firebase/user-service');
       const userData = await getUserById(firebaseUser.uid);
       
+      // 🔒 SÉCURITÉ : Bloquer les admins sur cette interface
+      if (userData?.role === 'admin') {
+        // Déconnecter immédiatement
+        await authService.signOut();
+        setError('Les administrateurs doivent se connecter via l\'interface dédiée.');
+        setIsLoading(false);
+        
+        // Rediriger vers la page de login admin sécurisée après 2 secondes
+        setTimeout(() => {
+          router.push('/access-x7k9m2p4w8n3');
+        }, 2000);
+        return;
+      }
+      
       // Rediriger vers le bon dashboard selon le rôle
       if (userData?.role === 'artisan') {
         router.push('/artisan/dashboard');
-      } else if (userData?.role === 'admin') {
-        router.push('/admin/dashboard');
       } else {
         router.push('/dashboard'); // Client par défaut
       }
@@ -178,6 +190,16 @@ export default function ConnexionPage() {
               Facebook
             </button>
           </div>
+        </div>
+
+        {/* Lien discret pour les administrateurs */}
+        <div className="mt-6 text-center">
+          <Link 
+            href="/access-x7k9m2p4w8n3" 
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Accès administrateur
+          </Link>
         </div>
       </Card>
     </div>

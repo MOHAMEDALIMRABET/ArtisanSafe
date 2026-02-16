@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserById, updateUser } from '@/lib/firebase/user-service';
-import { Logo } from '@/components/ui';
 import type { User } from '@/types/firestore';
 
 /**
@@ -145,32 +144,6 @@ export default function ProfilPage() {
   // Cette partie ne s'affiche que pour les clients
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-[#2C3E50] text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              <Logo size="sm" variant="icon" />
-              <span className="text-xl font-bold">ArtisanDispo</span>
-            </Link>
-            <nav className="flex items-center gap-6">
-              <Link href="/client/demandes" className="hover:text-[#FF6B00] transition">
-                Mes demandes
-              </Link>
-              <Link href="/client/devis" className="hover:text-[#FF6B00] transition">
-                Mes devis
-              </Link>
-              <Link href="/client/avis" className="hover:text-[#FF6B00] transition">
-                Mes avis
-              </Link>
-              <Link href="/profil" className="text-[#FF6B00] font-semibold">
-                Mon profil
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
       {/* Contenu principal */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Titre */}

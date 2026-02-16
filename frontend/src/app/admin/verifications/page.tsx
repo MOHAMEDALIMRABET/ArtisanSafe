@@ -41,7 +41,7 @@ export default function AdminVerificationsPage() {
     try {
       const user = authService.getCurrentUser();
       if (!user) {
-        router.push('/admin/login');
+        router.push('/access-x7k9m2p4w8n3');
         return;
       }
 
@@ -539,6 +539,71 @@ export default function AdminVerificationsPage() {
                           }
                         </p>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Zone d'Intervention */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      📍 Zone d'Intervention
+                    </h3>
+                    <div className="space-y-3">
+                      {selectedArtisan.zonesIntervention && selectedArtisan.zonesIntervention.length > 0 ? (
+                        selectedArtisan.zonesIntervention.map((zone, idx) => (
+                          <div key={idx} className={idx > 0 ? 'pt-3 border-t border-gray-200' : ''}>
+                            {selectedArtisan.zonesIntervention.length > 1 && (
+                              <p className="text-xs font-semibold text-[#FF6B00] mb-2">Zone {idx + 1}</p>
+                            )}
+                            <div className="space-y-2">
+                              {zone.adresse && (
+                                <div>
+                                  <label className="text-xs text-gray-500 uppercase">Adresse de l'entreprise</label>
+                                  <p className="text-gray-900">{zone.adresse}</p>
+                                </div>
+                              )}
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase">Ville principale</label>
+                                <p className="text-gray-900 font-medium">{zone.ville || '-'}</p>
+                                {zone.codePostal && (
+                                  <p className="text-gray-600 text-sm">Code postal: {zone.codePostal}</p>
+                                )}
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase">Rayon d'intervention</label>
+                                <p className="text-gray-900 font-medium">
+                                  {zone.rayonKm || zone.rayon ? (
+                                    <span className="inline-flex items-center gap-2">
+                                      <span className="text-lg">{zone.rayonKm || zone.rayon} km</span>
+                                      <span className="text-xs bg-[#FF6B00] text-white px-2 py-1 rounded-full">
+                                        Rayon d'action
+                                      </span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-500">Non spécifié</span>
+                                  )}
+                                </p>
+                              </div>
+                              {zone.departements && zone.departements.length > 0 && (
+                                <div>
+                                  <label className="text-xs text-gray-500 uppercase">Départements couverts</label>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {zone.departements.map((dept, deptIdx) => (
+                                      <span 
+                                        key={deptIdx}
+                                        className="bg-[#2C3E50] text-white px-2 py-1 rounded text-xs"
+                                      >
+                                        {dept}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">Aucune zone d'intervention renseignée</p>
+                      )}
                     </div>
                   </div>
                 </div>

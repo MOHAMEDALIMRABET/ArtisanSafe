@@ -1,0 +1,42 @@
+# robots.txt - ArtisanSafe
+# Empêcher l'indexation des pages admin et sensibles
+
+User-agent: *
+
+# ❌ BLOQUER toutes les pages admin
+Disallow: /admin/
+Disallow: /admin/*
+
+# ❌ BLOQUER les pages de connexion
+Disallow: /connexion
+Disallow: /inscription
+
+# ❌ BLOQUER les dashboards utilisateurs
+Disallow: /artisan/dashboard
+Disallow: /client/dashboard
+Disallow: /dashboard
+
+# ❌ BLOQUER les pages de profil
+Disallow: /artisan/profil
+Disallow: /client/profil
+Disallow: /profil
+
+# ❌ BLOQUER les pages de messagerie
+Disallow: /artisan/messages
+Disallow: /client/messages
+
+# ❌ BLOQUER les pages de devis
+Disallow: /artisan/devis
+Disallow: /client/devis
+
+# ❌ BLOQUER les API
+Disallow: /api/
+
+# ✅ AUTORISER les pages publiques
+Allow: /
+Allow: /recherche-artisan
+Allow: /comment-ca-marche
+Allow: /contact
+
+# Sitemap (à créer plus tard)
+# Sitemap: https://www.artisandispo.fr/sitemap.xml

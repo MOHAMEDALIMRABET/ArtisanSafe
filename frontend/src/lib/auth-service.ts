@@ -182,6 +182,7 @@ export const authService = {
         formeJuridique: 'SARL' as const, // Valeur par défaut, à modifier dans le profil
         metiers: (data.metiers || []) as any[], // Les métiers sont déjà normalisés depuis le formulaire
         zonesIntervention: data.location?.city ? [{
+          adresse: data.location.address || '', // Adresse complète de l'entreprise
           ville: data.location.city,
           codePostal: data.location.postalCode || '',
           departements: [],

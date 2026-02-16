@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
-import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import { getArtisanByUserId, updateArtisan } from '@/lib/firebase/artisan-service';
 import { verifySiret, updateSiretVerification } from '@/lib/firebase/verification-service';
 import { artisanDoitDecennale } from '@/lib/decennale-helper';
 import type { Artisan } from '@/types/firestore';
@@ -294,7 +294,7 @@ export default function VerificationPage() {
                       setSiretError('');
                       try {
                         // Mettre à jour le SIRET dans Firestore
-                        await updateSiretVerification(artisan.userId, artisan.siret);
+                        await updateArtisan(artisan.userId, { siret: artisan.siret });
                         setSiretStatus('pending');
                         setSiretError('SIRET mis à jour. Cliquez sur "Vérifier le SIRET" pour valider.');
                       } catch (err: any) {

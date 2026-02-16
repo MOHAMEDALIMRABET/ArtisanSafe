@@ -137,10 +137,10 @@ export default function Home() {
           <div className="relative z-10 py-12 px-6 md:px-12 h-full flex flex-col justify-center">
             {/* Slogan accrocheur */}
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 text-center drop-shadow-lg">
-              Vous avez vos projets, nous avons vos artisans
+              Le moyen fiable d'engager un artisan
             </h1>
             <p className="text-center text-white text-lg mb-8 drop-shadow-md">
-              Trouvez le bon artisan pour vos travaux, en toute confiance
+              Publiez votre projet gratuitement et recevez des devis d'artisans vérifiés
             </p>
 
             {/* Formulaire de recherche */}
@@ -331,7 +331,7 @@ export default function Home() {
             <h2 className="text-5xl md:text-6xl font-extrabold text-[#2C3E50] mb-6 leading-tight">
               Pourquoi choisir ArtisanDispo ?
             </h2>
-            <p className="text-2xl md:text-3xl font-semibold text-[#FF6B00] max-w-4xl mx-auto leading-relaxed">
+            <p className="text-2xl md:text-3xl font-semibold text-[#28A745] max-w-4xl mx-auto leading-relaxed">
               La seule plateforme qui protège vraiment vos projets de A à Z
             </p>
           </div>

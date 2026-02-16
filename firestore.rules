@@ -360,5 +360,28 @@ service cloud.firestore {
       allow update: if false; // Pas de modification après création
       allow delete: if isAdmin();
     }
+    
+    // ============================================
+    // 18. COLLECTION: rappels
+    // ============================================
+    // Demandes de rappel depuis le formulaire "Être rappelé"
+    // Lecture uniquement par admin
+    // Création publique (visiteurs non authentifiés)
+    
+    match /rappels/{rappelId} {
+      allow read: if isAdmin();
+      allow create: if true && // Public - formulaire accessible à tous
+                      // Validation des champs obligatoires
+                      request.resource.data.keys().hasAll(['nom', 'prenom', 'telephone', 'horairePrefere', 'statut', 'createdAt']) &&
+                      // Validation des types
+                      request.resource.data.nom is string &&
+                      request.resource.data.prenom is string &&
+                      request.resource.data.telephone is string &&
+                      // Validation format téléphone français (10 chiffres commençant par 0)
+                      request.resource.data.telephone.matches('^0[1-9][0-9\\s\\.\\-]{8,}$') &&
+                      request.resource.data.statut == 'en_attente';
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }
