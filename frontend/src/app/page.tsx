@@ -330,8 +330,8 @@ export default function Home() {
         <div className="mt-12 mb-12 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-[#FFF9E6] via-[#FFE4B5] to-[#FFF9E6] opacity-40"></div>
           
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-[#FFE4B5] p-8 md:p-10 text-center">
+          <div className="relative z-10 px-6 md:px-12">
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl shadow-lg border border-[#FFE4B5] p-8 md:p-10 text-center">
               
               {/* Badge NOUVEAU */}
               <div className="flex justify-center mb-4">
