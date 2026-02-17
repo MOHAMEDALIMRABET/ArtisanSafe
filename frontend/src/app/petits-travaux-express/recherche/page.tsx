@@ -41,6 +41,14 @@ const SOUS_CATEGORIES: Record<string, Array<{ value: string; label: string }>> =
     { value: 'portes-blindees', label: 'Portes blindées' },
     { value: 'depannage', label: 'Dépannage d\'urgence' },
   ],
+  'exterieur-jardin': [
+    { value: 'cloture-portail', label: 'Clôture et portail' },
+    { value: 'terrasse-dallage', label: 'Terrasse et dallage' },
+    { value: 'elagage-abattage', label: 'Élagage et abattage' },
+    { value: 'entretien-jardin', label: 'Entretien jardin' },
+    { value: 'arrosage-automatique', label: 'Arrosage automatique' },
+    { value: 'amenagement-paysager', label: 'Aménagement paysager' },
+  ],
 };
 
 interface VilleSuggestion {

@@ -172,6 +172,7 @@ export default function Home() {
                       <option value="toiture">Toiture</option>
                       <option value="isolation">Isolation</option>
                       <option value="serrurerie">Serrurerie</option>
+                      <option value="exterieur-jardin">Extérieur et jardin</option>
                       <option value="renovation">Rénovation</option>
                       <option value="autre">Autre</option>
                     </select>

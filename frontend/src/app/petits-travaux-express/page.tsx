@@ -37,6 +37,13 @@ const CATEGORIES_TRAVAUX = [
     couleur: '#455A64',
     href: '/resultats?categorie=serrurerie',
     description: 'Changement serrures, portes blindées'
+  },
+  {
+    titre: 'Extérieur et jardin',
+    icon: '🌳',
+    couleur: '#4CAF50',
+    href: '/petits-travaux-express/exterieur-jardin',
+    description: 'Clôture, terrasse, élagage, entretien'
   }
 ];
 
