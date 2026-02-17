@@ -26,15 +26,14 @@ const CATEGORIES: { value: Categorie; label: string }[] = [
   { value: 'peinture', label: 'Peinture' },
   { value: 'menuiserie', label: 'Menuiserie' },
   { value: 'maconnerie', label: 'Maçonnerie' },
-  { value: 'charpente', label: 'Charpente' },
   { value: 'carrelage', label: 'Carrelage' },
   { value: 'chauffage', label: 'Chauffage' },
   { value: 'climatisation', label: 'Climatisation' },
   { value: 'toiture', label: 'Toiture' },
   { value: 'isolation', label: 'Isolation' },
   { value: 'serrurerie', label: 'Serrurerie' },
+  { value: 'exterieur-jardin', label: 'Extérieur & Jardin' },
   { value: 'renovation', label: 'Rénovation générale' },
-  { value: 'autre', label: 'Autre' },
 ];
 
 const RAYONS = [

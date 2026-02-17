@@ -432,7 +432,7 @@ export default function ClientDevisPage() {
                       </>
                     )}
 
-                    {/* Devis payé : Seulement Voir le détail */}
+                    {/* Devis payé / en cours / terminés : Badge statut + Voir le détail uniquement */}
                     {(isDevisPaye(d.statut)) && (
                       <div
                         onClick={(e) => {

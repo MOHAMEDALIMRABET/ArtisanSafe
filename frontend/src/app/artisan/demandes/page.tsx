@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanById } from '@/lib/firebase/artisan-service';
 import { getDemandesForArtisan, getDemandesPubliquesForArtisan, removeArtisanFromDemande } from '@/lib/firebase/demande-service';
-import { getDevisByDemande } from '@/lib/firebase/devis-service';
+import { getDevisByDemande, declarerDebutTravaux, declarerFinTravaux } from '@/lib/firebase/devis-service';
 import { createNotification } from '@/lib/firebase/notification-service';
 import { getFileMetadata } from '@/lib/firebase/storage-service';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -24,7 +24,7 @@ export default function ArtisanDemandesPage() {
   const [demandesPubliques, setDemandesPubliques] = useState<Demande[]>([]);
   const [sectionActive, setSectionActive] = useState<'mes_demandes' | 'demandes_publiques'>('mes_demandes');
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'toutes' | 'contrats' | 'devis_envoyes' | 'refusees' | 'terminees'>('toutes');
+  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'en_traitement' | 'contrats' | 'traitees'>('toutes');
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
   const [refusingDemandeId, setRefusingDemandeId] = useState<string | null>(null);
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
@@ -299,6 +299,50 @@ export default function ArtisanDemandesPage() {
     }
   }
 
+  async function handleCommencerTravaux(devisId: string, numeroDevis: string) {
+    if (!user) return;
+
+    const confirmation = confirm(
+      `🚧 Démarrage des travaux\n\n` +
+      `Devis : ${numeroDevis}\n\n` +
+      `Confirmez-vous que vous avez commencé les travaux ?\n\n` +
+      `Cette action changera le statut du devis en "Travaux en cours".`
+    );
+
+    if (!confirmation) return;
+
+    try {
+      await declarerDebutTravaux(devisId, user.uid);
+      alert('✅ Travaux démarrés avec succès !');
+      await loadData(); // Recharger les données
+    } catch (error: any) {
+      console.error('❌ Erreur démarrage travaux:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible de démarrer les travaux'}`);
+    }
+  }
+
+  async function handleFinTravaux(devisId: string, numeroDevis: string) {
+    if (!user) return;
+
+    const confirmation = confirm(
+      `🏁 Fin des travaux\n\n` +
+      `Devis : ${numeroDevis}\n\n` +
+      `Confirmez-vous que vous avez terminé les travaux ?\n\n` +
+      `Le client recevra une notification et aura 7 jours pour valider.`
+    );
+
+    if (!confirmation) return;
+
+    try {
+      await declarerFinTravaux(devisId, user.uid);
+      alert('✅ Fin des travaux déclarée avec succès ! Le client a été notifié.');
+      await loadData(); // Recharger les données
+    } catch (error: any) {
+      console.error('❌ Erreur fin travaux:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible de déclarer la fin des travaux'}`);
+    }
+  }
+
   // Fonctions pour organiser les demandes par sections
   
   /**
@@ -306,19 +350,26 @@ export default function ArtisanDemandesPage() {
    * - Demandes avec devis payé (travaux en cours)
    * - Exclut les demandes terminées
    */
-  function getDemandesContrats(demandes: Demande[]) {
+  /**
+   * 📬 NOUVELLES DEMANDES
+   * - Demandes où l'artisan n'a PAS encore envoyé de devis
+   * - Exclut refusées et terminées
+   */
+  function getDemandesNouvelles(demandes: Demande[]) {
     return demandes.filter(d => 
-      demandesAvecDevisPayeIds.has(d.id) && !demandesTermineesIds.has(d.id)
+      (!d.devisRecus || d.devisRecus === 0) && 
+      d.statut !== 'annulee' && 
+      !demandesTermineesIds.has(d.id)
     );
   }
 
   /**
-   * DEVIS ENVOYÉS
+   * ⏳ EN TRAITEMENT
    * - Demandes pour lesquelles l'artisan a envoyé des devis
    * - Pas encore payés (donc pas des contrats)
    * - Exclut refusées et terminées
    */
-  function getDemandesDevisEnvoyes(demandes: Demande[]) {
+  function getDemandesEnTraitement(demandes: Demande[]) {
     return demandes.filter(d => 
       d.devisRecus && d.devisRecus > 0 && 
       !demandesAvecDevisPayeIds.has(d.id) && 
@@ -328,20 +379,72 @@ export default function ArtisanDemandesPage() {
   }
 
   /**
-   * DEMANDES REFUSÉES
-   * - Demandes que l'artisan a explicitement refusées
+   * ✅ CONTRATS
+   * - Devis payés et signés
+   * - Travaux en cours ou terminés non validés
+   * - Exclut les terminées validées
    */
-  function getDemandesRefusees(demandes: Demande[]) {
-    return demandes.filter(d => d.statut === 'annulee');
+  function getDemandesContrats(demandes: Demande[]) {
+    return demandes.filter(d => 
+      demandesAvecDevisPayeIds.has(d.id) && !demandesTermineesIds.has(d.id)
+    );
   }
 
   /**
-   * DEMANDES TERMINÉES
+   * ✅ TRAITÉES
+   * - Demandes refusées par l'artisan
    * - Travaux terminés et validés par le client
    */
-  function getDemandesTerminees(demandes: Demande[]) {
-    return demandes.filter(d => demandesTermineesIds.has(d.id));
+  function getDemandesTraitees(demandes: Demande[]) {
+    return demandes.filter(d => 
+      d.statut === 'annulee' || demandesTermineesIds.has(d.id)
+    );
   }
+
+  /**
+   * Fonction pour déterminer la couleur de la bordure gauche
+   */
+  const getBorderColor = (demande: Demande): string => {
+    const devisForDemande = devisMap.get(demande.id) || [];
+    const devisPaye = devisForDemande.find(d => 
+      ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(d.statut)
+    );
+    
+    // Section "📬 Nouvelles demandes" → Orange
+    if (filter === 'nouvelles') {
+      return 'bg-gradient-to-b from-[#FF6B00] to-[#E56100]';
+    }
+    
+    // Section "⏳ En traitement" → Bleu
+    if (filter === 'en_traitement') {
+      return 'bg-gradient-to-b from-blue-400 to-blue-600';
+    }
+    
+    // Section "✅ Contrats" → Vert ou Jaune selon statut
+    if (filter === 'contrats') {
+      // Travaux en cours → Jaune
+      if (devisPaye?.statut === 'en_cours') {
+        return 'bg-gradient-to-b from-yellow-400 to-yellow-600';
+      }
+      // Devis signé → Vert
+      return 'bg-gradient-to-b from-green-400 to-green-600';
+    }
+    
+    // Section "✅ Traitées" → Rouge (refusées) ou Noir (terminées)
+    if (filter === 'traitees') {
+      // Refusées → Rouge
+      if (demande.statut === 'annulee') {
+        return 'bg-gradient-to-b from-red-400 to-red-600';
+      }
+      // Terminées → Noir
+      if (demandesTermineesIds.has(demande.id)) {
+        return 'bg-gradient-to-b from-gray-700 to-gray-900';
+      }
+    }
+    
+    // Fallback (section "Toutes") - Orange par défaut
+    return 'bg-gradient-to-b from-[#FF6B00] to-[#E56100]';
+  };
 
   // Utiliser la bonne liste selon la section active
   const demandesSource = sectionActive === 'mes_demandes' ? demandes : demandesPubliques;
@@ -354,14 +457,14 @@ export default function ArtisanDemandesPage() {
     demandesFiltrees = demandesSource.filter(d => d.id === highlightedDemandeId);
   } else if (sectionActive === 'mes_demandes') {
     // Filtrage par onglet uniquement pour "Mes demandes"
-    if (filter === 'contrats') {
+    if (filter === 'nouvelles') {
+      demandesFiltrees = getDemandesNouvelles(demandesSource);
+    } else if (filter === 'en_traitement') {
+      demandesFiltrees = getDemandesEnTraitement(demandesSource);
+    } else if (filter === 'contrats') {
       demandesFiltrees = getDemandesContrats(demandesSource);
-    } else if (filter === 'devis_envoyes') {
-      demandesFiltrees = getDemandesDevisEnvoyes(demandesSource);
-    } else if (filter === 'refusees') {
-      demandesFiltrees = getDemandesRefusees(demandesSource);
-    } else if (filter === 'terminees') {
-      demandesFiltrees = getDemandesTerminees(demandesSource);
+    } else if (filter === 'traitees') {
+      demandesFiltrees = getDemandesTraitees(demandesSource);
     }
     // Sinon 'toutes' : afficher toutes les demandes (pas de filtre)
   }
@@ -474,6 +577,34 @@ export default function ArtisanDemandesPage() {
             </button>
             
             <button
+              onClick={() => setFilter('nouvelles')}
+              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
+                filter === 'nouvelles' ? 'bg-[#FF6B00] text-white ring-4 ring-[#FF6B00] ring-opacity-50' : 'bg-white'
+              }`}
+            >
+              <div className={`text-2xl font-bold ${
+                filter === 'nouvelles' ? 'text-white' : 'text-[#FF6B00]'
+              }`}>{getDemandesNouvelles(demandes).length}</div>
+              <div className={`text-sm ${
+                filter === 'nouvelles' ? 'text-white' : 'text-gray-600'
+              }`}>📬 Nouvelles demandes</div>
+            </button>
+            
+            <button
+              onClick={() => setFilter('en_traitement')}
+              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
+                filter === 'en_traitement' ? 'bg-blue-600 text-white ring-4 ring-blue-600 ring-opacity-50' : 'bg-white'
+              }`}
+            >
+              <div className={`text-2xl font-bold ${
+                filter === 'en_traitement' ? 'text-white' : 'text-blue-600'
+              }`}>{getDemandesEnTraitement(demandes).length}</div>
+              <div className={`text-sm ${
+                filter === 'en_traitement' ? 'text-white' : 'text-gray-600'
+              }`}>⏳ En traitement</div>
+            </button>
+            
+            <button
               onClick={() => setFilter('contrats')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
                 filter === 'contrats' ? 'bg-green-600 text-white ring-4 ring-green-600 ring-opacity-50' : 'bg-white'
@@ -488,45 +619,17 @@ export default function ArtisanDemandesPage() {
             </button>
             
             <button
-              onClick={() => setFilter('devis_envoyes')}
+              onClick={() => setFilter('traitees')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-                filter === 'devis_envoyes' ? 'bg-blue-600 text-white ring-4 ring-blue-600 ring-opacity-50' : 'bg-white'
+                filter === 'traitees' ? 'bg-gray-700 text-white ring-4 ring-gray-700 ring-opacity-50' : 'bg-white'
               }`}
             >
               <div className={`text-2xl font-bold ${
-                filter === 'devis_envoyes' ? 'text-white' : 'text-blue-600'
-              }`}>{getDemandesDevisEnvoyes(demandes).length}</div>
+                filter === 'traitees' ? 'text-white' : 'text-gray-700'
+              }`}>{getDemandesTraitees(demandes).length}</div>
               <div className={`text-sm ${
-                filter === 'devis_envoyes' ? 'text-white' : 'text-gray-600'
-              }`}>📬 Devis envoyés</div>
-            </button>
-            
-            <button
-              onClick={() => setFilter('refusees')}
-              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-                filter === 'refusees' ? 'bg-red-600 text-white ring-4 ring-red-600 ring-opacity-50' : 'bg-white'
-              }`}
-            >
-              <div className={`text-2xl font-bold ${
-                filter === 'refusees' ? 'text-white' : 'text-red-600'
-              }`}>{getDemandesRefusees(demandes).length}</div>
-              <div className={`text-sm ${
-                filter === 'refusees' ? 'text-white' : 'text-gray-600'
-              }`}>❌ Refusées</div>
-            </button>
-            
-            <button
-              onClick={() => setFilter('terminees')}
-              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-                filter === 'terminees' ? 'bg-gray-700 text-white ring-4 ring-gray-700 ring-opacity-50' : 'bg-white'
-              }`}
-            >
-              <div className={`text-2xl font-bold ${
-                filter === 'terminees' ? 'text-white' : 'text-gray-700'
-              }`}>{getDemandesTerminees(demandes).length}</div>
-              <div className={`text-sm ${
-                filter === 'terminees' ? 'text-white' : 'text-gray-600'
-              }`}>🏁 Terminées</div>
+                filter === 'traitees' ? 'text-white' : 'text-gray-600'
+              }`}>✅ Traitées</div>
             </button>
           </div>
         )}
@@ -553,24 +656,32 @@ export default function ArtisanDemandesPage() {
                 key={demande.id} 
                 ref={(el) => { demandeRefs.current[demande.id] = el; }}
                 onClick={() => toggleExpandDemande(demande.id)}
-                className="bg-white rounded-lg shadow-md hover:border-[#FF6B00] hover:shadow-lg transition-all cursor-pointer relative border-2 border-transparent p-6"
+                className={`bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer relative border-2 overflow-hidden group ${
+                  isExpanded ? 'border-[#FF6B00] ring-4 ring-[#FF6B00] ring-opacity-20' : 'border-transparent hover:border-gray-200'
+                }`}
               >
-                {/* Bouton expand/collapse en haut à droite */}
+                {/* Barre latérale colorée selon section et statut */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${getBorderColor(demande)}`} />
+                
+                <div className="p-6 pl-8">{/* Bouton expand/collapse en haut à droite */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleExpandDemande(demande.id);
                   }}
-                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 transition-colors z-10"
+                  className="absolute top-5 right-5 p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
                   title={isExpanded ? "Masquer les détails" : "Voir le détail"}
                 >
                   <svg 
-                    className={`w-5 h-5 text-[#6C757D] transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                    className={`w-5 h-5 text-gray-400 group-hover:text-[#FF6B00] transition-all duration-200 ${
+                      isExpanded ? 'rotate-180' : ''
+                    }`} 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
+                    strokeWidth={2.5}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
@@ -802,6 +913,36 @@ export default function ArtisanDemandesPage() {
                         </div>
                       </div>
                       <div className="flex gap-3 mt-3">
+                        {/* Bouton "Commencer travaux" si statut = 'paye' */}
+                        {devisPaye?.statut === 'paye' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (devisPaye?.id && devisPaye?.numeroDevis) {
+                                handleCommencerTravaux(devisPaye.id, devisPaye.numeroDevis);
+                              }
+                            }}
+                            className="flex-1 bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                          >
+                            🚧 Commencer travaux
+                          </button>
+                        )}
+
+                        {/* Bouton "Fin des travaux" si statut = 'en_cours' */}
+                        {devisPaye?.statut === 'en_cours' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (devisPaye?.id && devisPaye?.numeroDevis) {
+                                handleFinTravaux(devisPaye.id, devisPaye.numeroDevis);
+                              }
+                            }}
+                            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                          >
+                            🏁 Fin des travaux
+                          </button>
+                        )}
+
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -949,6 +1090,7 @@ export default function ArtisanDemandesPage() {
                   );
                 })()}
               </div>
+            </div>
             );
             })}
           </div>

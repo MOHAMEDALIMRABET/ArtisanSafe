@@ -1,4 +1,6 @@
-import { db } from '../config/firebase-admin';
+import admin from '../config/firebase-admin';
+
+const db = admin.firestore();
 import { Timestamp } from 'firebase-admin/firestore';
 
 /**

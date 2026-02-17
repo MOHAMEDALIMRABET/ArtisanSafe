@@ -26,7 +26,7 @@ export default function MesDemandesPage() {
   const [filtreStatut, setFiltreStatut] = useState<'toutes' | 'publiee' | 'annulee' | 'genere'>('toutes');
   const [filtreDateTravaux, setFiltreDateTravaux] = useState<string>('');
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
-  const [filtreSection, setFiltreSection] = useState<'toutes' | 'contrats' | 'devis_recus' | 'en_attente' | 'publiees' | 'refusees' | 'terminees'>('toutes');
+  const [filtreSection, setFiltreSection] = useState<'toutes' | 'envoyes' | 'publiees' | 'en_traitement' | 'traitees'>('toutes');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDemandeIds, setExpandedDemandeIds] = useState<Set<string>>(new Set());
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
@@ -186,14 +186,14 @@ export default function MesDemandesPage() {
   }
 
   function getStatutBadge(demande: Demande) {
-    // Logique intelligente selon le type de demande
+    // Logique intelligente selon le type de demande et son avancement
     const hasArtisan = demande.artisansMatches && demande.artisansMatches.length > 0;
     const demandeType = demande.type || 'directe';
     const statut = demande.statut;
     const devisForDemande = devisMap.get(demande.id) || [];
     
     // 🔥 PRIORITÉ 1 : CONTRAT EN COURS (devis payé/signé)
-    // → Badge "Contrat" ou badge spécifique selon statut du devis
+    // → Badge avec BORDURE selon statut du devis
     if (demandesAvecDevisPayeIds.has(demande.id)) {
       const devisPaye = devisForDemande.find(d => 
         ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut)
@@ -250,29 +250,49 @@ export default function MesDemandesPage() {
       );
     }
     
-    // ✅ DEMANDE DIRECTE (envoyée à un artisan spécifique)
-    // → Badge "Envoyé à artisan" dès la création (artisan déjà assigné)
-    if (demandeType === 'directe' && hasArtisan && (statut === 'publiee' || statut === 'matchee' || statut === 'genere')) {
+    // 📬 PRIORITÉ 3 : DEVIS REÇU (au moins 1 devis envoyé)
+    // → Badge "X devis reçu(s)"
+    const devisEnvoyes = devisForDemande.filter(d => d.statut === 'envoye');
+    if (devisEnvoyes.length > 0) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border-2 border-orange-300">
-          🎯 Envoyé à artisan
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+          📬 {devisEnvoyes.length} devis reçu{devisEnvoyes.length > 1 ? 's' : ''}
         </span>
       );
     }
     
-    // ✅ DEMANDE PUBLIQUE publiée (pas encore de devis accepté)
+    // ✅ PRIORITÉ 4 : DEMANDE DIRECTE (envoyée à un artisan spécifique)
+    // → Badge "Envoyé à artisan" dès la création (artisan déjà assigné)
+    // ✅ FALLBACK : Badge orange aussi pour demandes directes orphelines (sans artisan)
+    if (demandeType === 'directe' && (statut === 'publiee' || statut === 'matchee' || statut === 'genere')) {
+      // Si artisan assigné → badge avec bordure
+      if (hasArtisan) {
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border-2 border-orange-300">
+            🎯 Envoyé à artisan
+          </span>
+        );
+      }
+      // Si PAS d'artisan assigné → badge orphelin (sans bordure)
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700">
+          ⚠️ Demande directe (artisan non assigné)
+        </span>
+      );
+    }
+    
+    // ✅ PRIORITÉ 5 : DEMANDE PUBLIQUE publiée (pas encore de devis)
     // → Badge "Publiée"
     if (demandeType === 'publique' && statut === 'publiee') {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
           📢 Publiée
         </span>
       );
     }
     
-    // Badges statuts standards
+    // Badges statuts standards (fallback)
     const badges = {
-      brouillon: 'bg-gray-200 text-gray-800',
       publiee: 'bg-blue-100 text-blue-800',
       matchee: 'bg-green-100 text-green-800',
       attribuee: 'bg-green-100 text-green-800',
@@ -283,7 +303,6 @@ export default function MesDemandesPage() {
     };
 
     const labels = {
-      brouillon: '📝 Brouillon',
       publiee: '📢 Publiée',
       matchee: '🤝 Artisan trouvé',
       attribuee: '✅ Attribuée',
@@ -318,126 +337,98 @@ export default function MesDemandesPage() {
     }
   }
 
-  // Fonctions pour organiser les demandes par sections
+  // Fonctions pour organiser les demandes par sections (NOUVEAU WORKFLOW)
   
   /**
-   * DEMANDES PUBLIÉES
-   * - Définition : Demandes créées par le client et publiées PUBLIQUEMENT
+   * 🎯 ENVOYÉS À L'ARTISAN
+   * - Définition : Demandes DIRECTES envoyées à un artisan spécifique
    * - Caractéristiques :
-   *   • Pas d'artisan spécifique assigné (artisansMatches vide ou absent)
-   *   • Visibles par TOUS les artisans (dans leur espace "Demandes publiées")
-   *   • Les artisans voient ces demandes SI elles matchent leurs critères (métier, localisation)
-   *   • Pas encore de devis reçus
-   * - Workflow : Client publie → Artisans découvrent → Artisan s'assigne → Devient "En attente"
+   *   • Type: 'directe' (client a choisi UN artisan)
+   *   • Artisan assigné (artisansMatches contient 1+ artisan)
+   *   • Statut: 'publiee'
+   *   • AUCUN devis reçu encore
+   * - Workflow : Client choisit artisan → Envoie demande → Attend réponse
+   * - FALLBACK : Inclut aussi les demandes directes SANS artisan assigné (orphelines)
+   */
+  function getDemandesEnvoyees(demandes: Demande[]) {
+    return demandes.filter(d => {
+      const hasArtisan = d.artisansMatches && d.artisansMatches.length > 0;
+      const hasDevis = devisMap.get(d.id) && (devisMap.get(d.id)?.length || 0) > 0;
+      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
+      const demandeType = d.type || 'directe';
+      
+      // ✅ NOUVEAU : Inclut les demandes directes orphelines (sans artisan assigné)
+      // Envoyée = type directe + (artisan assigné OU statut publiee) + AUCUN devis
+      if (demandeType === 'directe' && d.statut === 'publiee' && !hasDevis && !hasDevisPaye) {
+        return true; // Inclut TOUTES les demandes directes publiées sans devis
+      }
+      
+      return false;
+    });
+  }
+
+  /**
+   * 📢 PUBLIÉES
+   * - Définition : Demandes PUBLIQUES visibles par tous les artisans
+   * - Caractéristiques :
+   *   • Type: 'publique'
+   *   • Visibles par TOUS les artisans qualifiés
+   *   • AUCUN devis reçu encore
+   *   • Statut: 'publiee'
+   * - Workflow : Client publie → Artisans découvrent → Attend devis
    */
   function getDemandesPubliees(demandes: Demande[]) {
     return demandes.filter(d => {
-      const hasArtisan = d.artisansMatches && d.artisansMatches.length > 0;
       const hasDevis = devisMap.get(d.id) && (devisMap.get(d.id)?.length || 0) > 0;
       const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
+      const demandeType = d.type || 'directe';
       
-      // Demande publiquée = AUCUN artisan assigné, AUCUN devis, statut normal
-      return !hasArtisan && !hasDevis && !hasDevisPaye && 
-             d.statut !== 'annulee' && d.statut !== 'terminee' && d.statut !== 'attribuee';
+      // Publiée = type publique + AUCUN devis + statut publiee
+      return demandeType === 'publique' && !hasDevis && !hasDevisPaye && 
+             d.statut === 'publiee';
     });
   }
 
   /**
-   * DEMANDES EN ATTENTE
-   * - Définition : Demandes envoyées à un artisan SPÉCIFIQUE (demande directe)
+   * ⏳ EN COURS DE TRAITEMENT
+   * - Définition : Demandes avec au moins 1 devis reçu (pas encore finalisées)
    * - Caractéristiques :
-   *   • Artisan spécifique assigné (artisansMatches contient 1 artisan)
-   *   • Artisan n'a pas encore répondu (pas de devis)
-   *   • Client attend la réponse de cet artisan
-   * - Workflow : Client choisit artisan → Envoie demande directe → Attend devis
+   *   • Au moins 1 devis reçu
+   *   • Devis avec statut 'envoye' ou 'accepte'
+   *   • PAS ENCORE payé, refusé, travaux commencés/terminés
+   * - Workflow : Artisan envoie devis → Client compare → Client accepte → Devient "Traitées"
    */
-
-  function getDemandesEnAttente(demandes: Demande[]) {
-    return demandes.filter(d => {
-      const hasArtisan = d.artisansMatches && d.artisansMatches.length > 0;
-      const hasDevis = devisMap.get(d.id) && (devisMap.get(d.id)?.length || 0) > 0;
-      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
-      
-      // En attente = artisan assigné + AUCUN devis encore + AUCUN contrat
-      return hasArtisan && !hasDevis && !hasDevisPaye && 
-             d.statut !== 'annulee' && d.statut !== 'terminee';
-    });
-  }
-
-  /**
-   * DEMANDES AVEC DEVIS REÇUS
-   * - Définition : Demandes ayant reçu au moins 1 proposition de devis
-   * - Caractéristiques :
-   *   • Au moins 1 devis reçu (devisMap contient des devis)
-   *   • Devis pas encore accepté/payé
-   *   • Client doit décider : accepter ou refuser
-   * - Workflow : Artisan envoie devis → Client reçoit → Client accepte → Devient "Contrat"
-   */
-
-  function getDemandesAvecDevis(demandes: Demande[]) {
+  function getDemandesEnTraitement(demandes: Demande[]) {
     return demandes.filter(d => {
       const devis = devisMap.get(d.id) || [];
       const hasDevis = devis.length > 0;
       const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
       
-      // Devis reçus = devis présents + AUCUN payé + statut normal
+      // En traitement = devis reçus + AUCUN payé + statut normal (pas annulé/terminé)
       return hasDevis && !hasDevisPaye && 
-             d.statut !== 'annulee' && d.statut !== 'terminee' && d.statut !== 'attribuee';
+             d.statut !== 'annulee' && d.statut !== 'terminee';
     });
   }
 
   /**
-   * DEMANDES ATTRIBUÉES
-   * - Définition : Demandes avec devis accepté MAIS pas encore payé
+   * ✅ TRAITÉES (Finalisées)
+   * - Définition : Demandes finalisées (payées, refusées, travaux en cours/terminés)
    * - Caractéristiques :
-   *   • Client a accepté un devis (statut 'attribuee')
-   *   • Artisan officiellement assigné au projet
-   *   • En attente du paiement
-   * - Workflow : Client accepte devis → Attribuée → Client paie → Devient "Contrat"
+   *   • Devis payé/signé (statuts: paye, en_cours, travaux_termines, etc.)
+   *   • OU Demande refusée (statut 'annulee')
+   *   • OU Travaux terminés (statut 'terminee')
+   *   • OU Litige
+   * - Workflow : Phase finale du projet
    */
-
-  function getDemandesAttribuees(demandes: Demande[]) {
-    return demandes.filter(d => d.statut === 'attribuee');
-  }
-
-  /**
-   * CONTRATS EN COURS
-   * - Définition : Demandes avec devis payés (phase travaux)
-   * - Caractéristiques :
-   *   • Devis accepté ET payé (détecté via statutsPaye)
-   *   • Travaux en cours ou terminés
-   *   • Contrat actif entre client et artisan
-   * - Workflow : Client paie → Travaux commencent → Travaux terminés → Devient "Terminée"
-   */
-  function getDemandesContratsEnCours(demandes: Demande[]) {
-    return demandes.filter(d => 
-      demandesAvecDevisPayeIds.has(d.id) && d.statut !== 'terminee'
-    );
-  }
-
-  /**
-   * DEMANDES REFUSÉES
-   * - Définition : Demandes refusées par l'artisan contacté
-   * - Caractéristiques :
-   *   • Statut 'annulee'
-   *   • Artisan a refusé la demande
-   *   • Client peut relancer une nouvelle recherche
-   */
-
-  function getDemandesRefusees(demandes: Demande[]) {
-    return demandes.filter(d => d.statut === 'annulee');
-  }
-
-  /**
-   * DEMANDES TERMINÉES
-   * - Définition : Demandes avec travaux terminés et validés
-   * - Caractéristiques :
-   *   • Statut 'terminee'
-   *   • Travaux complétés et acceptés par le client
-   *   • Projet clos
-   */
-  function getDemandesTerminees(demandes: Demande[]) {
-    return demandes.filter(d => d.statut === 'terminee');
+  function getDemandesTraitees(demandes: Demande[]) {
+    return demandes.filter(d => {
+      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
+      const isRefusee = d.statut === 'annulee';
+      const isTerminee = d.statut === 'terminee';
+      
+      // Traitée = devis payé OU refusée OU terminée
+      return hasDevisPaye || isRefusee || isTerminee;
+    });
   }
 
   if (loading || authLoading) {
@@ -504,8 +495,8 @@ export default function MesDemandesPage() {
 
       {/* Contenu */}
       <main className="container mx-auto px-4 py-6 max-w-7xl">
-        {/* Onglets de filtrage - Design moderne */}
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-8">
+        {/* Onglets de filtrage - Design moderne (NOUVEAU : 4 sections) */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <button
             onClick={() => setFiltreSection('toutes')}
             className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
@@ -523,51 +514,19 @@ export default function MesDemandesPage() {
           </button>
           
           <button
-            onClick={() => setFiltreSection('contrats')}
+            onClick={() => setFiltreSection('envoyes')}
             className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
-              filtreSection === 'contrats' 
-                ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-xl scale-105' 
+              filtreSection === 'envoyes' 
+                ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-xl scale-105' 
                 : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
             <div className={`text-3xl font-black mb-1 ${
-              filtreSection === 'contrats' ? 'text-white' : 'text-green-600'
-            }`}>{getDemandesContratsEnCours(demandes).length}</div>
+              filtreSection === 'envoyes' ? 'text-white' : 'text-orange-600'
+            }`}>{getDemandesEnvoyees(demandes).length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide ${
-              filtreSection === 'contrats' ? 'text-white' : 'text-gray-600'
-            }`}>✅ Contrats</div>
-          </button>
-          
-          <button
-            onClick={() => setFiltreSection('devis_recus')}
-            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
-              filtreSection === 'devis_recus' 
-                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-xl scale-105' 
-                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
-            }`}
-          >
-            <div className={`text-3xl font-black mb-1 ${
-              filtreSection === 'devis_recus' ? 'text-white' : 'text-blue-600'
-            }`}>{getDemandesAvecDevis(demandes).length}</div>
-            <div className={`text-xs font-semibold uppercase tracking-wide ${
-              filtreSection === 'devis_recus' ? 'text-white' : 'text-gray-600'
-            }`}>📬 Devis</div>
-          </button>
-          
-          <button
-            onClick={() => setFiltreSection('en_attente')}
-            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
-              filtreSection === 'en_attente' 
-                ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-xl scale-105' 
-                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
-            }`}
-          >
-            <div className={`text-3xl font-black mb-1 ${
-              filtreSection === 'en_attente' ? 'text-white' : 'text-amber-500'
-            }`}>{getDemandesEnAttente(demandes).length}</div>
-            <div className={`text-xs font-semibold uppercase tracking-wide ${
-              filtreSection === 'en_attente' ? 'text-white' : 'text-gray-600'
-            }`}>📤 Attente</div>
+              filtreSection === 'envoyes' ? 'text-white' : 'text-gray-600'
+            }`}>🎯 Envoyés</div>
           </button>
           
           <button
@@ -587,35 +546,35 @@ export default function MesDemandesPage() {
           </button>
           
           <button
-            onClick={() => setFiltreSection('refusees')}
+            onClick={() => setFiltreSection('en_traitement')}
             className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
-              filtreSection === 'refusees' 
-                ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-xl scale-105' 
+              filtreSection === 'en_traitement' 
+                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-xl scale-105' 
                 : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
             <div className={`text-3xl font-black mb-1 ${
-              filtreSection === 'refusees' ? 'text-white' : 'text-red-600'
-            }`}>{getDemandesRefusees(demandes).length}</div>
+              filtreSection === 'en_traitement' ? 'text-white' : 'text-blue-600'
+            }`}>{getDemandesEnTraitement(demandes).length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide ${
-              filtreSection === 'refusees' ? 'text-white' : 'text-gray-600'
-            }`}>❌ Refusées</div>
+              filtreSection === 'en_traitement' ? 'text-white' : 'text-gray-600'
+            }`}>⏳ En traitement</div>
           </button>
           
           <button
-            onClick={() => setFiltreSection('terminees')}
+            onClick={() => setFiltreSection('traitees')}
             className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
-              filtreSection === 'terminees' 
-                ? 'bg-gradient-to-br from-gray-600 to-gray-700 text-white shadow-xl scale-105' 
+              filtreSection === 'traitees' 
+                ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-xl scale-105' 
                 : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
             }`}
           >
             <div className={`text-3xl font-black mb-1 ${
-              filtreSection === 'terminees' ? 'text-white' : 'text-gray-700'
-            }`}>{getDemandesTerminees(demandes).length}</div>
+              filtreSection === 'traitees' ? 'text-white' : 'text-green-600'
+            }`}>{getDemandesTraitees(demandes).length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide ${
-              filtreSection === 'terminees' ? 'text-white' : 'text-gray-600'
-            }`}>🏁 Terminées</div>
+              filtreSection === 'traitees' ? 'text-white' : 'text-gray-600'
+            }`}>✅ Traitées</div>
           </button>
         </div>
 
@@ -642,22 +601,70 @@ export default function MesDemandesPage() {
         ) : (
           <div className="space-y-4">
             {(() => {
-              // Filtrer les demandes selon l'onglet sélectionné
+              // Filtrer les demandes selon l'onglet sélectionné (NOUVEAU : 4 sections)
               let demandesFiltrees = demandes;
               
-              if (filtreSection === 'contrats') {
-                demandesFiltrees = getDemandesContratsEnCours(demandes);
-              } else if (filtreSection === 'devis_recus') {
-                demandesFiltrees = getDemandesAvecDevis(demandes);
-              } else if (filtreSection === 'en_attente') {
-                demandesFiltrees = getDemandesEnAttente(demandes);
+              if (filtreSection === 'envoyes') {
+                demandesFiltrees = getDemandesEnvoyees(demandes);
               } else if (filtreSection === 'publiees') {
                 demandesFiltrees = getDemandesPubliees(demandes);
-              } else if (filtreSection === 'refusees') {
-                demandesFiltrees = getDemandesRefusees(demandes);
-              } else if (filtreSection === 'terminees') {
-                demandesFiltrees = getDemandesTerminees(demandes);
+              } else if (filtreSection === 'en_traitement') {
+                demandesFiltrees = getDemandesEnTraitement(demandes);
+              } else if (filtreSection === 'traitees') {
+                demandesFiltrees = getDemandesTraitees(demandes);
               }
+
+              // Fonction pour déterminer la couleur de la bordure gauche
+              const getBorderColor = (demande: Demande): string => {
+                const devisForDemande = devisMap.get(demande.id) || [];
+                const devisPaye = devisForDemande.find(d => 
+                  ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(d.statut)
+                );
+                
+                // Section "🎯 Envoyés" → Orange
+                if (filtreSection === 'envoyes') {
+                  return 'bg-gradient-to-b from-[#FF6B00] to-[#E56100]';
+                }
+                
+                // Section "📢 Publiées" → Violet
+                if (filtreSection === 'publiees') {
+                  return 'bg-gradient-to-b from-purple-400 to-purple-600';
+                }
+                
+                // Section "⏳ En traitement" → Bleu
+                if (filtreSection === 'en_traitement') {
+                  return 'bg-gradient-to-b from-blue-400 to-blue-600';
+                }
+                
+                // Section "✅ Traitées" → Couleur selon badge spécifique
+                if (filtreSection === 'traitees') {
+                  // Badge "❌ Refusée" → Rouge
+                  if (demande.statut === 'annulee') {
+                    return 'bg-gradient-to-b from-red-400 to-red-600';
+                  }
+                  
+                  // Badge "🚧 Travaux en cours" → Jaune
+                  if (devisPaye?.statut === 'en_cours') {
+                    return 'bg-gradient-to-b from-yellow-400 to-yellow-600';
+                  }
+                  
+                  // Badge "✅ Devis signé" → Vert
+                  if (devisPaye?.statut === 'paye') {
+                    return 'bg-gradient-to-b from-green-400 to-green-600';
+                  }
+                  
+                  // Badge "✅ Travaux terminés" → Noir
+                  if (devisPaye && ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devisPaye.statut)) {
+                    return 'bg-gradient-to-b from-gray-700 to-gray-900';
+                  }
+                }
+                
+                // Fallback (section "Toutes") - ancienne logique
+                if (demande.statut === 'terminee') return 'bg-gradient-to-b from-green-400 to-green-600';
+                if (demande.statut === 'annulee') return 'bg-gradient-to-b from-red-400 to-red-600';
+                if (demande.statut === 'publiee') return 'bg-gradient-to-b from-purple-400 to-purple-600';
+                return 'bg-gradient-to-b from-blue-400 to-blue-600';
+              };
 
               const renderDemande = (demande: Demande) => {
                 const isExpanded = expandedDemandeIds.has(demande.id);
@@ -670,13 +677,8 @@ export default function MesDemandesPage() {
                       isExpanded ? 'border-[#FF6B00] ring-4 ring-[#FF6B00] ring-opacity-20' : 'border-transparent hover:border-gray-200'
                     }`}
                   >
-                    {/* Barre latérale colorée selon statut */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
-                      demande.statut === 'terminee' ? 'bg-gradient-to-b from-green-400 to-green-600' :
-                      demande.statut === 'annulee' ? 'bg-gradient-to-b from-red-400 to-red-600' :
-                      demande.statut === 'publiee' ? 'bg-gradient-to-b from-purple-400 to-purple-600' :
-                      'bg-gradient-to-b from-blue-400 to-blue-600'
-                    }`} />
+                    {/* Barre latérale colorée selon section et statut */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${getBorderColor(demande)}`} />
                     
                     <div className="p-6 pl-8">
                   {/* Bouton expandre/rétracter en haut à droite */}
@@ -1117,20 +1119,16 @@ export default function MesDemandesPage() {
               {filtreSection !== 'toutes' && demandesFiltrees.length > 0 && (
                 <div className="mb-4">
                   <h2 className="text-2xl font-bold text-[#2C3E50]">
-                    {filtreSection === 'contrats' && '✅ Contrats en cours'}
-                    {filtreSection === 'devis_recus' && '📬 Devis reçus'}
-                    {filtreSection === 'en_attente' && '📤 En attente de réponse'}
+                    {filtreSection === 'envoyes' && '🎯 Envoyés à l\'artisan'}
                     {filtreSection === 'publiees' && '📢 Publiées'}
-                    {filtreSection === 'refusees' && '❌ Refusées'}
-                    {filtreSection === 'terminees' && '🏁 Terminées'}
+                    {filtreSection === 'en_traitement' && '⏳ En cours de traitement'}
+                    {filtreSection === 'traitees' && '✅ Traitées'}
                   </h2>
                   <p className="text-sm text-[#6C757D] mt-1">
-                    {filtreSection === 'contrats' && 'Demandes avec devis accepté et payé - Travaux en cours ou terminés'}
-                    {filtreSection === 'devis_recus' && 'Demandes pour lesquelles vous avez reçu des propositions de devis'}
-                    {filtreSection === 'en_attente' && 'Demandes envoyées à un artisan spécifique en attente de sa réponse'}
-                    {filtreSection === 'publiees' && 'Demandes publiées publiquement, pas encore envoyées à un artisan spécifique'}
-                    {filtreSection === 'refusees' && 'Demandes refusées par l\'artisan contacté'}
-                    {filtreSection === 'terminees' && 'Demandes avec travaux terminés et validés'}
+                    {filtreSection === 'envoyes' && 'Demandes directes envoyées à un artisan spécifique, en attente de devis'}
+                    {filtreSection === 'publiees' && 'Demandes publiques visibles par tous les artisans, en attente de propositions'}
+                    {filtreSection === 'en_traitement' && 'Demandes avec au moins un devis reçu, en attente de votre décision'}
+                    {filtreSection === 'traitees' && 'Demandes finalisées : payées, refusées, travaux en cours ou terminés'}
                   </p>
                 </div>
               )}

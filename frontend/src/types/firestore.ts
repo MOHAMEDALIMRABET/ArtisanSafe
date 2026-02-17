@@ -85,8 +85,11 @@ export type LitigeMotif =
 export type NotificationType = 
   | 'nouvelle_demande'
   | 'nouvelle_demande_publique'  // ✅ Notification artisan pour demande publique
+  | 'nouvelle_demande_express'   // ✅ Petits travaux express
   | 'demande_expiree'            // ✅ Notification client demande expirée
   | 'demande_refusee'            // ✅ Ajouté - utilisé dans artisan/demandes
+  | 'demande_annulee'            // ✅ Demande annulée
+  | 'demande_avis_express'       // ✅ Demande avis travaux express
   | 'nouveau_devis'              // ✅ Ajouté - utilisé dans notification-service
   | 'devis_recu' 
   | 'devis_accepte'
@@ -94,9 +97,13 @@ export type NotificationType =
   | 'devis_annule'               // ✅ Ajouté - client annule devis accepté
   | 'devis_supprime'             // ✅ Ajouté - suppression auto après 24h
   | 'devis_revision'             // ✅ Ajouté - demande de révision/nouvelle variante
+  | 'proposition_express_recue'  // ✅ Proposition express reçue
+  | 'proposition_acceptee'       // ✅ Proposition acceptée
+  | 'proposition_refusee'        // ✅ Proposition refusée
   | 'contrat_signe'
   | 'paiement' 
   | 'paiement_libere'
+  | 'paiement_recu_express'      // ✅ Paiement reçu pour travaux express
   | 'nouveau_message'            // ✅ Ajouté - utilisé dans NotificationBell
   | 'message'                    // Gardé pour compatibilité
   | 'avis'

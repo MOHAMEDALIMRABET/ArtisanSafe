@@ -49,10 +49,9 @@ export async function createDemandeExpress(
 
   // Notifier artisan si demande directe
   if (data.artisanId) {
-    await createNotification({
-      recipientId: data.artisanId,
+    await createNotification(data.artisanId, {
       type: 'nouvelle_demande_express',
-      title: 'Nouvelle demande express',
+      titre: 'Nouvelle demande express',
       message: `${data.description.slice(0, 80)}... - ${data.ville}`,
       relatedId: docRef.id,
     });
@@ -147,10 +146,9 @@ export async function createPropositionExpress(
   });
 
   // Notifier le client
-  await createNotification({
-    recipientId: data.clientId,
+  await createNotification(data.clientId, {
     type: 'proposition_express_recue',
-    title: 'Nouvelle proposition reçue',
+    titre: 'Nouvelle proposition reçue',
     message: `L'artisan vous propose ${data.montantPropose}€ TTC`,
     relatedId: docRef.id,
   });
@@ -217,10 +215,9 @@ export async function acceptPropositionExpress(propositionId: string): Promise<v
   });
 
   // Notifier l'artisan
-  await createNotification({
-    recipientId: proposition.artisanId,
+  await createNotification(proposition.artisanId, {
     type: 'proposition_acceptee',
-    title: 'Proposition acceptée !',
+    titre: 'Proposition acceptée !',
     message: 'Le client a accepté votre proposition. En attente du paiement.',
     relatedId: propositionId,
   });
@@ -256,10 +253,9 @@ export async function refusePropositionExpress(
   });
 
   // Notifier l'artisan
-  await createNotification({
-    recipientId: proposition.artisanId,
+  await createNotification(proposition.artisanId, {
     type: 'proposition_refusee',
-    title: 'Proposition refusée',
+    titre: 'Proposition refusée',
     message: motifRefus || 'Le client a refusé votre proposition',
     relatedId: propositionId,
   });
@@ -281,10 +277,9 @@ export async function markDemandePaid(demandeId: string): Promise<void> {
 
   // Notifier l'artisan que le paiement est reçu
   if (demande.artisanId) {
-    await createNotification({
-      recipientId: demande.artisanId,
+    await createNotification(demande.artisanId, {
       type: 'paiement_recu_express',
-      title: 'Intervention confirmée',
+      titre: 'Intervention confirmée',
       message: 'Le client a payé. Vous pouvez intervenir.',
       relatedId: demandeId,
     });
@@ -316,10 +311,9 @@ export async function markInterventionTerminee(demandeId: string): Promise<void>
   });
 
   // Notifier le client pour qu'il laisse un avis
-  await createNotification({
-    recipientId: demande.clientId,
+  await createNotification(demande.clientId, {
     type: 'demande_avis_express',
-    title: 'Travaux terminés',
+    titre: 'Travaux terminés',
     message: 'Donnez votre avis sur cette intervention',
     relatedId: demandeId,
   });
@@ -352,10 +346,9 @@ export async function cancelDemandeExpress(demandeId: string, userId: string): P
   // Notifier l'autre partie
   const recipientId = demande.clientId === userId ? demande.artisanId : demande.clientId;
   if (recipientId) {
-    await createNotification({
-      recipientId,
+    await createNotification(recipientId, {
       type: 'demande_annulee',
-      title: 'Demande annulée',
+      titre: 'Demande annulée',
       message: 'La demande express a été annulée',
       relatedId: demandeId,
     });

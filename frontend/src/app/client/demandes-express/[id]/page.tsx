@@ -10,7 +10,8 @@ import {
   refusePropositionExpress,
   cancelDemandeExpress
 } from '@/lib/firebase/demande-express-service';
-import { getUserById, getArtisanByUserId } from '@/lib/firebase/user-service';
+import { getUserById } from '@/lib/firebase/user-service';
+import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { useAuth } from '@/hooks/useAuth';
 import type { DemandeExpress, PropositionExpress, User, Artisan } from '@/types/firestore';
 import { Button } from '@/components/ui/Button';
@@ -269,7 +270,7 @@ export default function DemandeExpressDetailClientPage() {
                   <label className="block text-sm font-semibold text-[#2C3E50] mb-1">
                     👤 Artisan
                   </label>
-                  <p className="text-[#6C757D]">{artisanData.businessName}</p>
+                  <p className="text-[#6C757D]">{artisanData.raisonSociale}</p>
                 </div>
               )}
 

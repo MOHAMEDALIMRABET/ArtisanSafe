@@ -129,14 +129,6 @@ export default function ProfilClientPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Contenu principal */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      {/* Contenu principal */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Titre */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Mon profil</h1>

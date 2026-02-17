@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { getPropositionExpressById, getDemandeExpressById } from '@/lib/firebase/demande-express-service';
-import { getArtisanByUserId } from '@/lib/firebase/user-service';
+import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { useAuth } from '@/hooks/useAuth';
 import type { PropositionExpress, DemandeExpress, Artisan } from '@/types/firestore';
 import { Button } from '@/components/ui/Button';
@@ -157,10 +157,12 @@ export default function PaiementExpressPage() {
                 <div className="flex justify-between items-start pb-4 border-b border-[#E9ECEF]">
                   <div>
                     <p className="text-sm text-[#6C757D]">Artisan</p>
-                    <p className="font-semibold text-[#2C3E50]">{artisan.businessName}</p>
-                    <p className="text-sm text-[#6C757D]">
-                      {artisan.location.ville} ({artisan.location.codePostal})
-                    </p>
+                    <p className="font-semibold text-[#2C3E50]">{artisan.raisonSociale}</p>
+                    {artisan.adresse && (
+                      <p className="text-sm text-[#6C757D]">
+                        {artisan.adresse}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
