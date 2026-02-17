@@ -221,8 +221,8 @@ export default function RechercheExpressPage() {
       return;
     }
 
-    // Créer une demande directe
-    router.push(`/demande/nouvelle?artisanId=${artisanId}&categorie=${categorie}&sousCategorie=${sousCategorie}&typeProjet=${typeProjet}`);
+    // Créer une demande express directe
+    router.push(`/demande/express/nouvelle?artisanId=${artisanId}&categorie=${categorie}&sousCategorie=${sousCategorie}&ville=${ville}&codePostal=${codePostal}`);
   }
 
   async function handlePublierDemande() {
@@ -518,7 +518,7 @@ export default function RechercheExpressPage() {
                               onClick={() => handleDemanderDevis(result.artisanId)}
                               className="bg-[#FF6B00] hover:bg-[#E56100] text-white px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap"
                             >
-                              📝 Demander un devis
+                              ⚡ Demander une intervention
                             </Button>
                           </div>
                         </div>

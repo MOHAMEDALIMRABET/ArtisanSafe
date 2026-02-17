@@ -890,3 +890,137 @@ export interface AdminNotification {
   resolvedBy?: string; // Admin ID
   resolutionNote?: string;
 }
+
+// ============================================
+// COLLECTIONS TRAVAUX EXPRESS
+// ============================================
+
+/**
+ * Statut d'une demande express
+ */
+export type DemandeExpressStatut =
+  | 'en_attente_proposition'  // Créée, attend proposition artisan
+  | 'proposition_recue'       // Artisan a proposé
+  | 'acceptee'                // Client a accepté
+  | 'payee'                   // Paiement effectué
+  | 'en_cours'                // Artisan sur place
+  | 'terminee'                // Intervention terminée
+  | 'annulee'                 // Annulée par client/artisan
+  | 'expiree';                // Pas de réponse sous 48h
+
+/**
+ * Demande de travaux express (< 150€)
+ */
+export interface DemandeExpress {
+  id: string;
+  typeProjet: 'express';
+  
+  // Participants
+  clientId: string;
+  artisanId?: string; // Si demande directe, sinon null = publique
+  
+  // Détails travaux
+  categorie: Categorie;
+  sousCategorie?: string;
+  description: string;
+  photos?: string[]; // URLs Firebase Storage
+  budgetPropose?: number; // Optionnel, max 150€
+  
+  // Localisation
+  ville: string;
+  codePostal: string;
+  adresse?: string; // Révélé après acceptation
+  coordonneesGPS?: {
+    latitude: number;
+    longitude: number;
+  };
+  
+  // Planning
+  date: string; // ISO date
+  urgence: 'normal' | 'rapide' | 'urgent';
+  
+  // Statut
+  statut: DemandeExpressStatut;
+  
+  // Métadonnées
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  expiresAt?: Timestamp; // Auto-expire si pas de réponse
+}
+
+/**
+ * Statut d'une proposition express
+ */
+export type PropositionExpressStatut =
+  | 'en_attente_acceptation'  // Envoyée, attend réponse client
+  | 'acceptee'                 // Client a accepté
+  | 'refusee'                  // Client a refusé
+  | 'expiree';                 // Pas de réponse sous 24h
+
+/**
+ * Proposition de prix pour travaux express
+ */
+export interface PropositionExpress {
+  id: string;
+  
+  // Relations
+  demandeId: string;
+  artisanId: string;
+  clientId: string;
+  
+  // Proposition
+  montantPropose: number; // Max 150€
+  description: string; // Ce qui est inclus
+  delaiIntervention?: string; // "Demain 14h", "Sous 24h"
+  dateInterventionProposee?: Timestamp;
+  
+  // Statut
+  statut: PropositionExpressStatut;
+  
+  // Métadonnées
+  createdAt: Timestamp;
+  acceptedAt?: Timestamp;
+  refusedAt?: Timestamp;
+  motifRefus?: string;
+}
+
+/**
+ * Statut d'un paiement express
+ */
+export type PaiementExpressStatut =
+  | 'en_attente'   // Créé, pas encore payé
+  | 'paye'         // Paiement réussi, en séquestre
+  | 'libere'       // Transféré à l'artisan (après intervention)
+  | 'rembourse'    // Remboursé au client (litige)
+  | 'echoue';      // Paiement échoué
+
+/**
+ * Paiement pour travaux express
+ */
+export interface PaiementExpress {
+  id: string;
+  
+  // Relations
+  demandeId: string;
+  propositionId: string;
+  clientId: string;
+  artisanId: string;
+  
+  // Stripe
+  stripePaymentIntentId: string;
+  stripeChargeId?: string;
+  
+  // Montants
+  montant: number; // Montant total TTC
+  commission: number; // 10% du montant
+  montantArtisan: number; // montant - commission
+  
+  // Statut
+  statut: PaiementExpressStatut;
+  
+  // Dates
+  createdAt: Timestamp;
+  paidAt?: Timestamp;
+  releasedAt?: Timestamp; // Libéré à l'artisan
+  refundedAt?: Timestamp; // Remboursé au client
+}
