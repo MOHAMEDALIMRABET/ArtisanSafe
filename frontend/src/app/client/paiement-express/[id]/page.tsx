@@ -3,11 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 import { getPropositionExpressById, getDemandeExpressById } from '@/lib/firebase/demande-express-service';
 import { getArtisanByUserId } from '@/lib/firebase/user-service';
 import { useAuth } from '@/hooks/useAuth';
 import type { PropositionExpress, DemandeExpress, Artisan } from '@/types/firestore';
 import { Button } from '@/components/ui/Button';
+import CheckoutForm from './CheckoutForm';
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 export default function PaiementExpressPage() {
   const router = useRouter();
@@ -19,7 +24,8 @@ export default function PaiementExpressPage() {
   const [demande, setDemande] = useState<DemandeExpress | null>(null);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!firebaseUser) {
@@ -53,6 +59,9 @@ export default function PaiementExpressPage() {
 
       const artisanData = await getArtisanByUserId(propositionData.artisanId);
       setArtisan(artisanData);
+
+      // Créer PaymentIntent Stripe
+      await createPaymentIntent(propositionData.id);
     } catch (error) {
       console.error('Erreur chargement:', error);
       alert('Erreur lors du chargement');
@@ -61,37 +70,25 @@ export default function PaiementExpressPage() {
     }
   }
 
-  async function handlePaiement() {
-    if (!proposition) return;
-
-    setProcessing(true);
+  async function createPaymentIntent(propositionId: string) {
     try {
-      // TODO: Appeler backend pour créer PaymentIntent Stripe
-      // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/stripe-express/create-payment-intent`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ propositionId: proposition.id })
-      // });
-      // const { clientSecret } = await response.json();
-      
-      // TODO: Rediriger vers Stripe Checkout ou Elements
-      // window.location.href = checkoutUrl;
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/stripe-express/create-payment-intent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propositionId }),
+      });
 
-      // TEMPORAIRE: Afficher message
-      alert('🚧 Intégration Stripe en cours de développement.\n\n' +
-            'Cette fonctionnalité sera disponible dans la prochaine version.\n\n' +
-            'Le paiement sécurisé par carte bancaire sera géré via Stripe avec séquestre (escrow).');
-      
-      // Simuler succès pour tests
-      if (confirm('🧪 MODE TEST: Voulez-vous simuler un paiement réussi ?')) {
-        // TODO: Appeler markDemandePaid() via webhook Stripe
-        router.push(`/client/demandes-express/${proposition.demandeId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur création paiement');
       }
-    } catch (error) {
-      console.error('Erreur paiement:', error);
-      alert('Erreur lors du paiement');
-    } finally {
-      setProcessing(false);
+
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+      console.log('✅ PaymentIntent créé:', data.paymentIntentId);
+    } catch (error: any) {
+      console.error('Erreur création PaymentIntent:', error);
+      setError(error.message || 'Erreur lors de la préparation du paiement');
     }
   }
 
@@ -208,33 +205,26 @@ export default function PaiementExpressPage() {
               💳 Mode de paiement
             </h2>
 
-            {/* TODO: Intégrer Stripe Elements ici */}
-            <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6 mb-6">
-              <p className="text-yellow-800 font-semibold mb-2">
-                🚧 Intégration Stripe en cours
-              </p>
-              <p className="text-sm text-yellow-700">
-                Le paiement par carte bancaire sera bientôt disponible via Stripe.
-                Les données bancaires seront chiffrées et sécurisées selon la norme PCI-DSS.
-              </p>
-            </div>
+            {error && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-800 font-semibold mb-1">❌ Erreur</p>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
 
-            <div className="flex flex-col gap-4">
-              <Button
-                variant="secondary"
-                onClick={() => router.push(`/client/demandes-express/${demande.id}`)}
-                disabled={processing}
-              >
-                ← Retour
-              </Button>
-              <Button
-                onClick={handlePaiement}
-                disabled={processing}
-                className="w-full"
-              >
-                {processing ? '⏳ Traitement...' : `💳 Payer ${proposition.montantPropose}€`}
-              </Button>
-            </div>
+            {clientSecret ? (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <CheckoutForm 
+                  montant={proposition.montantPropose}
+                  demandeId={demande.id}
+                />
+              </Elements>
+            ) : (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
+                <p className="text-[#6C757D]">Préparation du paiement sécurisé...</p>
+              </div>
+            )}
 
             <p className="text-xs text-center text-[#6C757D] mt-4">
               En cliquant sur "Payer", vous acceptez nos{' '}

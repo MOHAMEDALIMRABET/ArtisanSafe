@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.routes';
 import sireneRoutes from './routes/sirene.routes';
 import paymentsRoutes from './routes/payments.routes';
 import webhooksRoutes from './routes/webhooks.routes';
+import stripeExpressRoutes from './routes/stripe-express';
 import { startEmailWatcher } from './services/email-service';
 
 const app: Express = express();
@@ -23,6 +24,9 @@ app.use(cors());
 // ⚠️ IMPORTANT : Webhooks Stripe AVANT express.json()
 // Stripe nécessite le raw body pour vérifier la signature
 app.use('/api/v1/webhooks', express.raw({ type: 'application/json' }), webhooksRoutes);
+
+// Routes Stripe Express (inclut son propre webhook avec raw body)
+app.use('/api/v1/stripe-express', stripeExpressRoutes);
 
 // Middleware JSON (pour toutes les autres routes)
 app.use(express.json());

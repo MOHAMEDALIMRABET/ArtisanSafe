@@ -213,3 +213,160 @@ Les services sont prêts - pas besoin de MongoDB. Firebase remplace :
 - **MongoDB** → **Firestore** (base de données)
 - **JWT custom** → **Firebase Auth** (authentification)
 - **AWS S3** → **Firebase Storage** (fichiers)
+
+---
+
+## 📊 Collections supplémentaires - Système Express (< 150€)
+
+### 6. **demandes_express** (Petits travaux rapides)
+
+Workflow simplifié pour interventions urgentes à prix fixe (budget maximum 150€).
+
+```typescript
+{
+  id: string,
+  typeProjet: 'express',
+  clientId: string,
+  artisanId?: string, // Si demande directe
+  categorie: Categorie,
+  sousCategorie?: string,
+  description: string,
+  photos?: string[],
+  budgetPropose?: number, // Max 150€
+  ville: string,
+  codePostal: string,
+  adresse?: string,
+  coordonneesGPS?: { latitude: number; longitude: number },
+  date: string,
+  urgence: 'normal' | 'rapide' | 'urgent',
+  statut: DemandeExpressStatut,
+  createdAt: Timestamp,
+  updatedAt: Timestamp,
+  expiresAt: Timestamp // 48h par défaut
+}
+
+// Statuts
+type DemandeExpressStatut = 
+  | 'en_attente_proposition'
+  | 'proposition_recue'
+  | 'acceptee'
+  | 'payee'
+  | 'en_cours'
+  | 'terminee'
+  | 'annulee'
+  | 'expiree';
+```
+
+**Règles Firestore** :
+```javascript
+match /demandes_express/{demandeId} {
+  allow read: if isOwner(resource.data.clientId) || 
+                 (isArtisan() && isVerified()) ||
+                 isAdmin();
+  allow create: if isClient() && 
+                   request.auth.uid == request.resource.data.clientId;
+  allow update: if isOwner(resource.data.clientId) || isAdmin();
+}
+```
+
+### 7. **propositions_express** (Réponses artisans Express)
+
+```typescript
+{
+  id: string,
+  demandeId: string,
+  artisanId: string,
+  clientId: string,
+  montantPropose: number, // Max 150€
+  description: string,
+  delaiIntervention?: string,
+  dateInterventionProposee?: Timestamp,
+  statut: PropositionExpressStatut,
+  createdAt: Timestamp,
+  acceptedAt?: Timestamp,
+  refusedAt?: Timestamp,
+  motifRefus?: string
+}
+
+type PropositionExpressStatut = 
+  | 'en_attente_acceptation'
+  | 'acceptee'
+  | 'refusee'
+  | 'expiree';
+```
+
+**Règles Firestore** :
+```javascript
+match /propositions_express/{propositionId} {
+  allow read: if isOwner(resource.data.clientId) || 
+                 isOwner(resource.data.artisanId) ||
+                 isAdmin();
+  allow create: if isArtisan() && 
+                   request.resource.data.montantPropose <= 150;
+}
+```
+
+### 8. **paiements_express** (Escrow Stripe)
+
+⚠️ **Collection critique** contenant les données financières.
+
+```typescript
+{
+  id: string,
+  demandeId: string,
+  propositionId: string,
+  clientId: string,
+  artisanId: string,
+  stripePaymentIntentId: string,
+  stripeChargeId?: string,
+  montant: number,
+  commission: number, // 10%
+  montantArtisan: number, // 90%
+  statut: PaiementExpressStatut,
+  createdAt: Timestamp,
+  paidAt?: Timestamp,
+  releasedAt?: Timestamp,
+  refundedAt?: Timestamp
+}
+
+type PaiementExpressStatut = 
+  | 'en_attente'
+  | 'paye'      // Fonds en séquestre
+  | 'libere'    // Transféré à artisan
+  | 'rembourse'
+  | 'echoue';
+```
+
+**Règles Firestore (SÉCURITÉ MAXIMALE)** :
+```javascript
+match /paiements_express/{paiementId} {
+  allow read: if isOwner(resource.data.clientId) || 
+                 isOwner(resource.data.artisanId) ||
+                 isAdmin();
+  allow create: if false; // Uniquement backend via webhook
+  allow update: if false; // Uniquement backend
+  allow delete: if false; // Jamais supprimer données financières
+}
+```
+
+**Workflow paiement** :
+1. Client accepte proposition → Frontend appelle `POST /stripe-express/create-payment-intent`
+2. Backend crée PaymentIntent Stripe (`capture_method: 'manual'`)
+3. Client paie avec carte → Webhook `payment_intent.succeeded` → Création document `paiements_express`
+4. Artisan termine intervention → Backend `POST /stripe-express/capture-payment` (90%)
+5. Statut → `'libere'`, artisan reçoit paiement
+
+---
+
+## 🔐 Résumé règles de sécurité
+
+| Collection | Lecture | Écriture | Suppression |
+|-----------|---------|----------|-------------|
+| `users` | Propriétaire + Admin | Propriétaire + Admin | Admin |
+| `artisans` | Public | Propriétaire + Admin | Admin |
+| `demandes` | Propriétaire + Matchés + Admin | Propriétaire + Admin | Propriétaire + Admin |
+| `devis` | Client + Artisan + Admin | Client + Artisan + Admin | Artisan + Admin |
+| `demandes_express` | Propriétaire + Artisans vérifiés | Propriétaire + Admin | Propriétaire + Admin |
+| `propositions_express` | Client + Artisan + Admin | Artisan (create), Client (update) | Artisan + Admin |
+| `paiements_express` | Client + Artisan + Admin | ❌ Backend uniquement | ❌ Jamais |
+
