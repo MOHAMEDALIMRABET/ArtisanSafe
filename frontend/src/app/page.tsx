@@ -174,7 +174,6 @@ export default function Home() {
                       <option value="serrurerie">Serrurerie</option>
                       <option value="exterieur-jardin">Extérieur et jardin</option>
                       <option value="renovation">Rénovation</option>
-                      <option value="autre">Autre</option>
                     </select>
                   </div>
                 </div>

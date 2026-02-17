@@ -296,7 +296,6 @@ function ResultatsContent() {
                     <option value="isolation">Isolation</option>
                     <option value="serrurerie">Serrurerie</option>
                     <option value="renovation">Rénovation</option>
-                    <option value="autre">Autre</option>
                   </select>
                 </div>
               </div>
