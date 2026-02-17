@@ -169,7 +169,7 @@ export default function DemandeExpressDetailClientPage() {
           </nav>
 
           <h1 className="text-2xl md:text-3xl font-bold text-[#2C3E50]">
-            ⚡ Ma demande express
+            🚀 Ma demande express
           </h1>
         </div>
       </div>

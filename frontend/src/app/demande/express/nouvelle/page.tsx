@@ -189,7 +189,7 @@ export default function NouvelleDemandeExpressPage() {
           </nav>
 
           <h1 className="text-2xl md:text-3xl font-bold text-[#2C3E50]">
-            ⚡ Nouvelle demande express
+            🚀 Nouvelle demande express
           </h1>
           <p className="text-[#6C757D] mt-2">
             Intervention rapide • Budget max 150€ • Sans devis formel

@@ -8,7 +8,7 @@ import { matchArtisans } from '@/lib/firebase/matching-service';
 import { createDemande } from '@/lib/firebase/demande-service';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserById } from '@/lib/firebase/user-service';
-import type { MatchingResult, User, Categorie, TypeProjet } from '@/types/firestore';
+import type { MatchingResult, User, Categorie } from '@/types/firestore';
 
 // Mapping des sous-catégories par catégorie
 const SOUS_CATEGORIES: Record<string, Array<{ value: string; label: string }>> = {
@@ -68,7 +68,7 @@ export default function RechercheExpressPage() {
   const sousCategorieParam = searchParams.get('sousCategorie') || '';
 
   // États du formulaire
-  const [typeProjet, setTypeProjet] = useState<TypeProjet>('express');
+  const typeProjet = 'express'; // Toujours express sur cette page
   const [categorie, setCategorie] = useState<Categorie | ''>(categorieParam);
   const [sousCategorie, setSousCategorie] = useState(sousCategorieParam);
   const [ville, setVille] = useState('');
@@ -211,7 +211,7 @@ export default function RechercheExpressPage() {
       const context = {
         categorie,
         sousCategorie,
-        typeProjet,
+        typeProjet: 'express',
         ville,
         codePostal,
         artisanId,
@@ -222,7 +222,16 @@ export default function RechercheExpressPage() {
     }
 
     // Créer une demande express directe
-    router.push(`/demande/express/nouvelle?artisanId=${artisanId}&categorie=${categorie}&sousCategorie=${sousCategorie}&ville=${ville}&codePostal=${codePostal}`);
+    const params = new URLSearchParams({
+      artisanId,
+      categorie,
+      ville,
+      codePostal,
+    });
+    if (sousCategorie) {
+      params.append('sousCategorie', sousCategorie);
+    }
+    router.push(`/demande/express/nouvelle?${params.toString()}`);
   }
 
   async function handlePublierDemande() {
@@ -231,7 +240,7 @@ export default function RechercheExpressPage() {
       const context = {
         categorie,
         sousCategorie,
-        typeProjet,
+        typeProjet: 'express',
         ville,
         codePostal,
       };
@@ -241,7 +250,16 @@ export default function RechercheExpressPage() {
     }
 
     // Rediriger vers création demande publique
-    router.push(`/demande/publique/nouvelle?categorie=${categorie}&sousCategorie=${sousCategorie}&typeProjet=${typeProjet}&ville=${ville}&codePostal=${codePostal}`);
+    const params = new URLSearchParams({
+      categorie,
+      typeProjet: 'express',
+      ville,
+      codePostal,
+    });
+    if (sousCategorie) {
+      params.append('sousCategorie', sousCategorie);
+    }
+    router.push(`/demande/publique/nouvelle?${params.toString()}`);
   }
 
   return (
@@ -265,11 +283,19 @@ export default function RechercheExpressPage() {
           </nav>
 
           <h1 className="text-2xl md:text-3xl font-bold text-[#2C3E50]">
-            ⚡ Trouvez un artisan pour vos travaux express
+            🚀 Trouvez un artisan pour vos travaux express
           </h1>
           <p className="text-[#6C757D] mt-2">
             Intervention rapide • Moins de 150€ • Sans devis formel
           </p>
+          
+          {/* Badge info travaux express */}
+          <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Recherche spécialisée petits travaux express uniquement</span>
+          </div>
         </div>
       </div>
 
@@ -277,21 +303,6 @@ export default function RechercheExpressPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <form onSubmit={handleSearch} className="bg-white rounded-xl shadow-lg p-6 md:p-8 space-y-6">
-            {/* Type de projet */}
-            <div>
-              <label className="block text-sm font-semibold text-[#2C3E50] mb-2">
-                Type de projet
-              </label>
-              <select
-                value={typeProjet}
-                onChange={(e) => setTypeProjet(e.target.value as TypeProjet)}
-                className="w-full px-4 py-3 border-2 border-[#E9ECEF] rounded-lg focus:border-[#FF6B00] focus:outline-none transition-colors"
-              >
-                <option value="express">⚡ Travaux express (intervention rapide, &lt; 150€)</option>
-                <option value="standard">📋 Travaux standards (avec devis formel)</option>
-              </select>
-            </div>
-
             {/* Type de travaux */}
             <div>
               <label className="block text-sm font-semibold text-[#2C3E50] mb-2">
@@ -312,6 +323,7 @@ export default function RechercheExpressPage() {
                 <option value="menuiserie">🪵 Menuiserie</option>
                 <option value="peinture">🎨 Peinture &amp; Décoration</option>
                 <option value="serrurerie">🔐 Serrurerie</option>
+                <option value="exterieur-jardin">🌳 Extérieur &amp; Jardin</option>
               </select>
             </div>
 
@@ -518,7 +530,7 @@ export default function RechercheExpressPage() {
                               onClick={() => handleDemanderDevis(result.artisanId)}
                               className="bg-[#FF6B00] hover:bg-[#E56100] text-white px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap"
                             >
-                              ⚡ Demander une intervention
+                              🚀 Demander une intervention
                             </Button>
                           </div>
                         </div>

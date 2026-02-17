@@ -6,7 +6,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Logo } from '@/components/ui';
 import UserMenu from '@/components/UserMenu';
@@ -18,10 +18,24 @@ import type { User, Artisan } from '@/types/firestore';
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Helper : Déterminer l'URL des travaux express selon le rôle
+  const getExpressWorksUrl = () => {
+    if (!user) return '/petits-travaux-express'; // Visiteur → page d'explication
+    if (user.role === 'client') return '/petits-travaux-express/recherche'; // Client → recherche directe
+    if (user.role === 'artisan') return '/artisan/demandes-express'; // Artisan → voir demandes
+    return '/petits-travaux-express'; // Défaut
+  };
+
+  // Helper : Navigation logo - Toujours vers page d'accueil
+  const handleLogoClick = () => {
+    router.push('/');
+  };
 
   // Pages où le header ne doit PAS s'afficher
   const hiddenRoutes = ['/admin', '/connexion'];
@@ -85,28 +99,34 @@ export default function Header() {
           {/* Logo */}
           <Logo 
             size="sm" 
-            href={user ? (user.role === 'artisan' ? '/artisan/dashboard' : '/dashboard') : '/'}
+            onClick={handleLogoClick}
           />
 
-          {/* Bouton Être rappelé - juste à droite du logo */}
-          {!isLoading && !user && (
+          {/* CTAs - Affichage intelligent */}
+          {!isLoading && (
             <div className="flex items-center gap-3 ml-4">
-              <Link href="/etre-rappele">
-                <button className="hidden xl:flex items-center gap-2 bg-white border-2 border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md text-sm group">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  <span className="whitespace-nowrap">Être rappelé</span>
-                </button>
-              </Link>
+              {/* CTA "Être rappelé" - UNIQUEMENT pour visiteurs non connectés */}
+              {!user && (
+                <Link href="/etre-rappele">
+                  <button className="hidden xl:flex items-center gap-2 bg-white border-2 border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md text-sm group">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span className="whitespace-nowrap">Être rappelé</span>
+                  </button>
+                </Link>
+              )}
               
-              <Link href="/petits-travaux-express">
-                <button className="hidden xl:flex items-center gap-2 bg-white border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md text-sm group">
+              {/* CTA "Petits travaux express" - TOUJOURS visible, routing adapté */}
+              <Link href={getExpressWorksUrl()}>
+                <button className="shine-border hidden xl:flex items-center gap-2 bg-white border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md text-sm group relative overflow-hidden">
                   <svg className="w-4 h-4 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="whitespace-nowrap">Petits travaux express</span>
+                  <span className="whitespace-nowrap">
+                    {user?.role === 'artisan' ? 'Demandes express' : 'Petits travaux express'}
+                  </span>
                 </button>
               </Link>
             </div>
@@ -176,9 +196,19 @@ export default function Header() {
                 <>
                   {user ? (
                     <>
+                      {/* Bouton "Petits travaux express" pour mobile (connectés) */}
+                      <Link href={getExpressWorksUrl()} className="xl:hidden">
+                        <button className="shine-border flex items-center justify-center w-10 h-10 rounded-lg bg-[#2C3E50] hover:bg-[#1A3A5C] text-white transition-colors relative overflow-hidden" title="Petits travaux express">
+                          <svg className="w-5 h-5 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
+                      </Link>
+                      
                       {/* Badge Profil Vérifié pour artisans */}
                       {user.role === 'artisan' && artisan?.verified && (
-                        <span className="flex items-center gap-1 text-green-600 font-medium text-sm">
+                        <span className="hidden md:flex items-center gap-1 text-green-600 font-medium text-sm">
                           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
@@ -206,7 +236,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Menu Mobile (< xl) */}
+      {/* Menu Mobile (< xl) - Visiteurs non connectés */}
       {!isLoading && !user && isMobileMenuOpen && (
         <>
           {/* Overlay sombre */}
@@ -218,7 +248,7 @@ export default function Header() {
           {/* Panneau menu */}
           <div className="fixed top-16 left-0 right-0 bg-white shadow-2xl z-50 xl:hidden animate-slideDown">
             <nav className="container mx-auto px-4 py-6">
-              {/* Bouton Être rappelé */}
+              {/* CTA "Être rappelé" - Visiteurs uniquement */}
               <Link 
                 href="/etre-rappele"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -230,11 +260,11 @@ export default function Header() {
                 Être rappelé
               </Link>
 
-              {/* Bouton Petits travaux express */}
+              {/* CTA "Petits travaux express" */}
               <Link 
-                href="/petits-travaux-express"
+                href={getExpressWorksUrl()}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 w-full bg-[#2C3E50] hover:bg-[#1A3A5C] text-white px-6 py-4 rounded-lg font-medium transition-colors mb-4 shadow-md"
+                className="shine-border flex items-center gap-3 w-full bg-[#2C3E50] hover:bg-[#1A3A5C] text-white px-6 py-4 rounded-lg font-medium transition-colors mb-4 shadow-md relative overflow-hidden"
               >
                 <svg className="w-5 h-5 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -296,6 +326,71 @@ export default function Header() {
           </div>
         </>
       )}
+
+      {/* Animation brillance pour bouton Express */}
+      <style jsx>{`
+        @keyframes shine-sweep {
+          0% {
+            left: -150%;
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+          }
+          50% {
+            left: 150%;
+            opacity: 1;
+          }
+          60% {
+            opacity: 0;
+          }
+          100% {
+            left: 150%;
+            opacity: 0;
+          }
+        }
+
+        :global(.shine-border) {
+          position: relative;
+          overflow: hidden;
+          isolation: isolate;
+        }
+
+        :global(.shine-border::before) {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -150%;
+          width: 80px;
+          height: 200%;
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 107, 0, 0.1) 20%,
+            rgba(255, 187, 0, 0.4) 40%,
+            rgba(255, 215, 0, 0.8) 50%,
+            rgba(255, 187, 0, 0.4) 60%,
+            rgba(255, 107, 0, 0.1) 80%,
+            transparent 100%
+          );
+          transform: skewX(-20deg);
+          animation: shine-sweep 4s ease-in-out infinite;
+          pointer-events: none;
+          z-index: 10;
+          transition: opacity 0.3s ease;
+        }
+
+        /* Disparaît au survol */
+        :global(.shine-border:hover::before) {
+          opacity: 0 !important;
+        }
+
+        /* Assurer que le contenu reste visible AU-DESSUS */
+        :global(.shine-border > *) {
+          position: relative;
+          z-index: 20;
+        }
+      `}</style>
     </nav>
   );
 }

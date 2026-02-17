@@ -98,7 +98,7 @@ export default function DemandesExpressArtisanPage() {
           </nav>
 
           <h1 className="text-2xl md:text-3xl font-bold text-[#2C3E50]">
-            ⚡ Mes demandes express
+            🚀 Mes demandes express
           </h1>
           <p className="text-[#6C757D] mt-2">
             {demandes.length} demande{demandes.length > 1 ? 's' : ''} reçue{demandes.length > 1 ? 's' : ''}

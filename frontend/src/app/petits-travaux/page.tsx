@@ -65,7 +65,7 @@ export default function PetitsTravauxPage() {
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-sm">
               <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                ⚡ Intervention sous 2h possible
+                🚀 Intervention sous 2h possible
               </div>
               <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                 💰 Tarif horaire affiché à l'avance
@@ -212,7 +212,7 @@ export default function PetitsTravauxPage() {
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
-                ⚡
+                🚀
               </div>
               <h3 className="font-bold text-[#2C3E50] mb-2">Intervention rapide</h3>
               <p className="text-sm text-gray-600">

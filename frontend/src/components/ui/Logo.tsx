@@ -5,9 +5,10 @@ interface LogoProps {
   variant?: 'full' | 'icon';
   size?: 'sm' | 'md' | 'lg';
   href?: string;
+  onClick?: () => void;
 }
 
-export function Logo({ variant = 'full', size = 'md', href = '/' }: LogoProps) {
+export function Logo({ variant = 'full', size = 'md', href = '/', onClick }: LogoProps) {
   const sizes = {
     sm: { width: 200, height: 50 },
     md: { width: 300, height: 75 },
@@ -29,6 +30,15 @@ export function Logo({ variant = 'full', size = 'md', href = '/' }: LogoProps) {
       </div>
     );
   };
+
+  // Si onClick personnalisé fourni, l'utiliser
+  if (onClick) {
+    return (
+      <button onClick={onClick} className="inline-block hover:opacity-90 transition-opacity">
+        <LogoContent />
+      </button>
+    );
+  }
 
   if (href) {
     return (

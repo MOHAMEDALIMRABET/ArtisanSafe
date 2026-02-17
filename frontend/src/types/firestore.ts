@@ -18,15 +18,14 @@ export type Categorie =
   | 'peinture' 
   | 'menuiserie' 
   | 'maconnerie'
-  | 'charpente'
   | 'carrelage'
   | 'chauffage'
   | 'climatisation'
   | 'toiture'
   | 'isolation'
   | 'serrurerie'
-  | 'renovation'
-  | 'autre';
+  | 'exterieur-jardin'
+  | 'renovation';
 
 export type Urgence = 'normal' | 'rapide' | 'urgent';
 

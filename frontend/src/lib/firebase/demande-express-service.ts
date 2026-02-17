@@ -3,7 +3,7 @@
  * ArtisanDispo - Workflow simplifié sans devis formel
  */
 
-import { db } from './firebase';
+import { db } from './config';
 import {
   collection,
   addDoc,

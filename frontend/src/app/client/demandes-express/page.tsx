@@ -80,7 +80,7 @@ export default function MesDemandesExpressPage() {
   const getUrgenceBadge = (urgence: 'normal' | 'rapide' | 'urgent') => {
     const badges = {
       normal: { label: '🕒 Normal', className: 'bg-gray-100 text-gray-700' },
-      rapide: { label: '⚡ Rapide', className: 'bg-orange-100 text-orange-700' },
+      rapide: { label: '🚀 Rapide', className: 'bg-orange-100 text-orange-700' },
       urgent: { label: '🚨 Urgent', className: 'bg-red-100 text-red-700' },
     };
     const badge = badges[urgence];
@@ -118,7 +118,7 @@ export default function MesDemandesExpressPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">
-                ⚡ Mes demandes Express
+                🚀 Mes demandes Express
               </h1>
               <p className="text-[#6C757D]">
                 Petits travaux rapides (≤ 150€) - Intervention sous 48h
