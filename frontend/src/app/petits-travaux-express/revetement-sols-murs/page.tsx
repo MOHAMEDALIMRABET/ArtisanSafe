@@ -7,22 +7,22 @@ const SOUS_CATEGORIES_REVETEMENT = [
   {
     titre: 'Peinture intérieure',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=peinture&type=peinture-interieure',
+    href: '/petits-travaux-express/recherche?categorie=peinture&sousCategorie=peinture-interieure',
   },
   {
     titre: 'Peinture extérieure',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=peinture&type=peinture-exterieure',
+    href: '/petits-travaux-express/recherche?categorie=peinture&sousCategorie=peinture-exterieure',
   },
   {
     titre: 'Papier peint',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=peinture&type=papier-peint',
+    href: '/petits-travaux-express/recherche?categorie=peinture&sousCategorie=papier-peint',
   },
   {
     titre: 'Enduit décoratif',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=peinture&type=enduit',
+    href: '/petits-travaux-express/recherche?categorie=peinture&sousCategorie=enduit',
   },
 ];
 

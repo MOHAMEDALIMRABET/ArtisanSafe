@@ -8,6 +8,7 @@ import { checkSiretExists } from '@/lib/firebase/artisan-service';
 import { Button, Input, Card } from '@/components/ui';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { METIERS_MAP, METIERS_DISPONIBLES } from '@/lib/constants/metiers';
+import { saveSearchContext, createContextFromParams, getSearchContext } from '@/lib/utils/search-context';
 import type { Categorie } from '@/types/firestore';
 
 type UserRole = 'client' | 'artisan';
@@ -24,6 +25,15 @@ export default function InscriptionPage() {
     const roleParam = searchParams.get('role');
     if (roleParam === 'client' || roleParam === 'artisan') {
       setRole(roleParam);
+      
+      // Sauvegarder le contexte de recherche si présent
+      if (roleParam === 'client') {
+        const context = createContextFromParams(searchParams);
+        if (context) {
+          saveSearchContext(context);
+          console.log('✅ Contexte de recherche sauvegardé:', context);
+        }
+      }
     }
   }, [searchParams]);
 
@@ -192,7 +202,14 @@ export default function InscriptionPage() {
           phone: formattedPhone,
           role: 'client'
         });
-        router.push('/dashboard');
+        
+        // Rediriger vers le formulaire de demande si contexte de recherche existe
+        const context = getSearchContext();
+        if (context) {
+          router.push('/demande/publique/nouvelle');
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         await authService.signUpArtisan({
           email,
@@ -470,6 +487,28 @@ export default function InscriptionPage() {
               </div>
             </>
           )}
+
+          {/* Consentement */}
+          <div className="pt-4 border-t border-gray-200">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input 
+                type="checkbox" 
+                required
+                className="mt-1 w-4 h-4 rounded border-gray-300 text-[#FF6B00] focus:ring-[#FF6B00] cursor-pointer"
+              />
+              <span className="text-sm text-gray-700 leading-relaxed">
+                J'accepte les{' '}
+                <Link 
+                  href="/confiance/conditions-generales" 
+                  className="text-[#FF6B00] hover:underline font-medium"
+                  target="_blank"
+                >
+                  conditions générales d'utilisation
+                </Link>
+                {' '}et consens à l'exploitation de mes données personnelles
+              </span>
+            </label>
+          </div>
 
           <Button
             type="submit"

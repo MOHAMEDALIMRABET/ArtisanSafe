@@ -30,8 +30,6 @@ const METIERS_MIGRATION: Record<string, Categorie> = {
   'chauffage': 'chauffage',
   'Climatisation': 'climatisation',
   'climatisation': 'climatisation',
-  'Placo': 'placo',
-  'placo': 'placo',
   'Isolation': 'isolation',
   'isolation': 'isolation',
   'Serrurerie': 'serrurerie',

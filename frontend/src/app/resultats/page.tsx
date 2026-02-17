@@ -289,7 +289,6 @@ function ResultatsContent() {
                     <option value="peinture">Peinture</option>
                     <option value="menuiserie">Menuiserie</option>
                     <option value="maconnerie">Maçonnerie</option>
-                    <option value="placo">Placo</option>
                     <option value="carrelage">Carrelage</option>
                     <option value="chauffage">Chauffage</option>
                     <option value="climatisation">Climatisation</option>

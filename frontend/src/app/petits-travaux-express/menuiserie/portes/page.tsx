@@ -7,27 +7,27 @@ const TYPES_PORTES = [
   {
     titre: "Porte d'entrée",
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=portes&materiau=entree',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=portes-entree',
   },
   {
     titre: 'Porte intérieure',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=portes&materiau=interieure',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=portes-interieure',
   },
   {
     titre: 'Porte de garage',
     couleur: '#2C3E50',
-    href:'/inscription?role=client&categorie=menuiserie&type=portes&materiau=garage',
+    href:'/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=portes-garage',
   },
   {
     titre: 'Porte blindée',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=portes&materiau=blindee',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=portes-blindee',
   },
   {
     titre: 'Porte coulissante',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=portes&materiau=coulissante',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=portes-coulissante',
   },
 ];
 

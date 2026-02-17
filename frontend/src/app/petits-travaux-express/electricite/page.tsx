@@ -7,22 +7,22 @@ const SOUS_CATEGORIES_ELECTRICITE = [
   {
     titre: 'Domotique',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=electricite&type=domotique',
+    href: '/petits-travaux-express/recherche?categorie=electricite&sousCategorie=domotique',
   },
   {
     titre: 'Petits dépannages électriques',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=electricite&type=petits-travaux',
+    href: '/petits-travaux-express/recherche?categorie=electricite&sousCategorie=petits-travaux',
   },
   {
     titre: 'Installation prises / interrupteurs',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=electricite&type=prises-interrupteurs',
+    href: '/petits-travaux-express/recherche?categorie=electricite&sousCategorie=prises-interrupteurs',
   },
   {
     titre: 'Éclairage',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=electricite&type=eclairage',
+    href: '/petits-travaux-express/recherche?categorie=electricite&sousCategorie=eclairage',
   },
 ];
 

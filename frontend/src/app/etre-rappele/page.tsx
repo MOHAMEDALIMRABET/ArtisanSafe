@@ -1,6 +1,6 @@
 /**
  * Page "Être rappelé"
- * Formulaire permettant aux visiteurs de demander à être rappelés par l'équipe ArtisanSafe
+ * Formulaire permettant aux visiteurs de demander à être rappelés par l'équipe ArtisanDispo
  */
 
 'use client';

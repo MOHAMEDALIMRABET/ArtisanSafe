@@ -7,22 +7,22 @@ const TYPES_FENETRES = [
   {
     titre: 'Fenêtre en PVC',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=fenetres&materiau=pvc',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=fenetres-pvc',
   },
   {
     titre: 'Fenêtre en bois',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=fenetres&materiau=bois',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=fenetres-bois',
   },
   {
     titre: 'Fenêtre en aluminium',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=fenetres&materiau=aluminium',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=fenetres-aluminium',
   },
   {
     titre: 'Fenêtre de toit (Vélux)',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=fenetres&materiau=velux',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=fenetres-velux',
   },
 ];
 

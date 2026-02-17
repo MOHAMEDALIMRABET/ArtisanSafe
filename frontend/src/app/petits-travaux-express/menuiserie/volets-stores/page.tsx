@@ -7,22 +7,22 @@ const TYPES_VOLETS_STORES = [
   {
     titre: 'Volet en PVC',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=volets&materiau=pvc',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=volets-pvc',
   },
   {
     titre: 'Volet en aluminium',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=volets&materiau=aluminium',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=volets-aluminium',
   },
   {
     titre: 'Volet en bois',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=volets&materiau=bois',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=volets-bois',
   },
   {
     titre: 'Stores',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=stores',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=stores',
   },
 ];
 

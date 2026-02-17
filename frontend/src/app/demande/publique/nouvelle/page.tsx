@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { Timestamp } from 'firebase/firestore';
+import { getSearchContext, clearSearchContext, generateDemandeTitle, generateDemandeDescription } from '@/lib/utils/search-context';
 import type { Categorie } from '@/types/firestore';
 
 interface VilleSuggestion {
@@ -26,7 +27,6 @@ const CATEGORIES: { value: Categorie; label: string }[] = [
   { value: 'menuiserie', label: 'Menuiserie' },
   { value: 'maconnerie', label: 'Maçonnerie' },
   { value: 'charpente', label: 'Charpente' },
-  { value: 'placo', label: 'Placo / Plâtrerie' },
   { value: 'carrelage', label: 'Carrelage' },
   { value: 'chauffage', label: 'Chauffage' },
   { value: 'climatisation', label: 'Climatisation' },
@@ -71,6 +71,25 @@ export default function NouvelleDemandePubliquePage() {
     flexible: true,
     flexibiliteDays: 7,
   });
+
+  // Pré-remplir le formulaire depuis le contexte de recherche
+  useEffect(() => {
+    const searchContext = getSearchContext();
+    if (searchContext) {
+      console.log('✅ Contexte de recherche trouvé:', searchContext);
+      
+      // Pré-remplir le formulaire
+      setFormData(prev => ({
+        ...prev,
+        metier: searchContext.categorie,
+        titre: generateDemandeTitle(searchContext),
+        description: generateDemandeDescription(searchContext),
+      }));
+      
+      // Nettoyer le contexte après utilisation
+      clearSearchContext();
+    }
+  }, []);
 
   // Redirection si pas connecté
   if (!authLoading && !user) {

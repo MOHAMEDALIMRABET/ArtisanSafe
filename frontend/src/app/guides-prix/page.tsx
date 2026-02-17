@@ -478,65 +478,6 @@ const guidesParCategorie = {
       }
     ]
   },
-  placo: {
-    titre: 'Placo & Isolation',
-    icone: '🧱',
-    couleur: '#95a5a6',
-    guides: [
-      {
-        titre: 'Cloison placo',
-        prixMin: 40,
-        prixMax: 70,
-        duree: '1-2 jours',
-        description: 'Création cloison en plaques de plâtre (prix au m²)',
-        details: [
-          'Montage ossature métallique',
-          'Pose plaques de plâtre',
-          'Bandes et enduit',
-          'Finitions prêt à peindre'
-        ]
-      },
-      {
-        titre: 'Faux plafond',
-        prixMin: 35,
-        prixMax: 60,
-        duree: '1-3 jours',
-        description: 'Installation faux plafond suspendu (prix au m²)',
-        details: [
-          'Ossature métallique suspendue',
-          'Pose plaques de plâtre',
-          'Intégration spots/ventilation',
-          'Finitions et peinture'
-        ]
-      },
-      {
-        titre: 'Isolation combles perdus',
-        prixMin: 25,
-        prixMax: 50,
-        duree: '1-2 jours',
-        description: 'Isolation combles par soufflage (prix au m²)',
-        details: [
-          'Préparation combles',
-          'Soufflage laine minérale',
-          'Épaisseur 300mm (R=7)',
-          'Pare-vapeur si nécessaire'
-        ]
-      },
-      {
-        titre: 'Isolation murs intérieurs',
-        prixMin: 50,
-        prixMax: 90,
-        duree: '2-4 jours',
-        description: 'Isolation thermique murs par l\'intérieur (prix au m²)',
-        details: [
-          'Pose ossature et isolant',
-          'Pare-vapeur',
-          'Doublage placo',
-          'Finitions'
-        ]
-      }
-    ]
-  },
   carrelage: {
     titre: 'Carrelage',
     icone: '🏺',
@@ -649,7 +590,7 @@ const guidesParCategorie = {
         details: [
           'Renforcement charpente',
           'Création plancher',
-          'Isolation et placo',
+          'Isolation et cloisonnement',
           'Fenêtres de toit'
         ]
       }

@@ -19,7 +19,6 @@ export type Categorie =
   | 'menuiserie' 
   | 'maconnerie'
   | 'charpente'
-  | 'placo'
   | 'carrelage'
   | 'chauffage'
   | 'climatisation'
@@ -32,6 +31,8 @@ export type Categorie =
 export type Urgence = 'normal' | 'rapide' | 'urgent';
 
 export type DemandeType = 'directe' | 'publique' | 'petit_travail';
+
+export type TypeProjet = 'express' | 'standard';
 
 export type DemandeStatut = 
   | 'genere' 
@@ -504,6 +505,10 @@ export interface Demande {
   
   // ⭐ NOUVEAU : Type de demande
   type?: DemandeType; // 'directe' | 'publique' (défaut = 'directe' pour rétrocompatibilité)
+  
+  // ⭐ NOUVEAU : Type de projet (express vs standard)
+  typeProjet?: TypeProjet; // 'express' | 'standard' (défaut = 'standard' pour rétrocompatibilité)
+  sousCategorie?: string; // Ex: 'eclairage', 'robinetterie', 'fenetres-pvc'
   
   // Pour toutes les demandes
   artisansMatches?: string[]; // IDs artisans matchés

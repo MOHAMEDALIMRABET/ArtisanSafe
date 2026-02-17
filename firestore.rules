@@ -102,6 +102,10 @@ service cloud.firestore {
       
       // Validation statut (Phase 3 : ajout 'quota_atteint', 'expiree')
       allow write: if request.resource.data.statut in ['genere', 'publiee', 'matchee', 'en_cours', 'terminee', 'annulee', 'quota_atteint', 'expiree', 'attribuee'];
+      
+      // Validation typeProjet (optionnel - 'express' | 'standard')
+      allow write: if !request.resource.data.keys().hasAny(['typeProjet']) || 
+                      request.resource.data.typeProjet in ['express', 'standard'];
     }
     
     // ============================================
@@ -264,6 +268,7 @@ service cloud.firestore {
     
     match /notifications/{notificationId} {
       allow read: if isOwner(resource.data.userId);
+      allow list: if isAuthenticated() && request.auth.uid != null; // ✅ Permettre queries avec where('userId', '==', userId)
       allow create: if isAuthenticated(); // Via Cloud Functions
       allow update: if isOwner(resource.data.userId); // Marquer comme lu
       allow delete: if isOwner(resource.data.userId) || isAdmin();

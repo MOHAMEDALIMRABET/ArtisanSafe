@@ -7,17 +7,17 @@ const TYPES_PORTAILS = [
   {
     titre: 'Portail en aluminium',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=portails&materiau=aluminium',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=portails-aluminium',
   },
   {
     titre: 'Portail PVC',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=portails&materiau=pvc',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=portails-pvc',
   },
   {
     titre: 'Portail Bois',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=menuiserie&type=portails&materiau=bois',
+    href: '/petits-travaux-express/recherche?categorie=menuiserie&sousCategorie=portails-bois',
   },
 ];
 

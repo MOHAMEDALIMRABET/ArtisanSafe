@@ -7,22 +7,22 @@ const SOUS_CATEGORIES_PLOMBERIE = [
   {
     titre: 'Petits dépannages',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=plomberie&type=depannage',
+    href: '/petits-travaux-express/recherche?categorie=plomberie&sousCategorie=depannage',
   },
   {
     titre: 'Robinetterie',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=plomberie&type=robinetterie',
+    href: '/petits-travaux-express/recherche?categorie=plomberie&sousCategorie=robinetterie',
   },
   {
     titre: 'Fuite d\'eau',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=plomberie&type=fuite',
+    href: '/petits-travaux-express/recherche?categorie=plomberie&sousCategorie=fuite',
   },
   {
     titre: 'WC / Lavabo',
     couleur: '#2C3E50',
-    href: '/inscription?role=client&categorie=plomberie&type=wc-lavabo',
+    href: '/petits-travaux-express/recherche?categorie=plomberie&sousCategorie=wc-lavabo',
   },
 ];
 

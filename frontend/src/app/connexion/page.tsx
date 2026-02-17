@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { Button, Input, Card, Logo } from '@/components/ui';
+import { getSearchContext } from '@/lib/utils/search-context';
 
 export default function ConnexionPage() {
   const router = useRouter();
@@ -61,7 +62,13 @@ export default function ConnexionPage() {
       } else if (userData?.role === 'artisan') {
         router.push('/artisan/dashboard');
       } else {
-        router.push('/dashboard'); // Client par défaut
+        // Client : vérifier si un contexte de recherche existe
+        const searchContext = getSearchContext();
+        if (searchContext) {
+          router.push('/demande/publique/nouvelle');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (err: any) {
       // Affiche toujours le message utilisateur (jamais le message technique Firebase)

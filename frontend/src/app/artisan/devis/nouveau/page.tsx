@@ -341,7 +341,7 @@ export default function NouveauDevisPage() {
 
   /**
    * Charger les devis existants pour cette demande
-   * MODÈLE ARTISANSAFE : 1 demande = 1 artisan spécifique
+   * MODÈLE ARTISANDISPO : 1 demande = 1 artisan spécifique
    * Si un devis existe déjà, forcer le mode variante
    */
   const chargerVariantesExistantes = async (demandeId: string, artisanId: string) => {

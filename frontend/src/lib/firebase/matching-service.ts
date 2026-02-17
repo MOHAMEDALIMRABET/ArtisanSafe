@@ -471,14 +471,22 @@ export async function matchArtisans(criteria: MatchingCriteria): Promise<Matchin
         score: scoreTotal,
         breakdown: details,
         details, // Alias pour compatibilité avec l'interface existante
+        distance: getMinDistanceToClient(artisan, tempDemande as Demande) || undefined,
       });
     }
 
-    // 4. Trier par score décroissant et retourner top 10
-    results.sort((a, b) => b.score - a.score);
-    console.log(`🎯 ${results.length} artisan(s) matchés (après filtres)`);
+    // 4. ✅ TRIER PAR DISTANCE (décroissante = plus proche en premier)
+    // Les artisans sont déjà filtrés par type de travaux (categorie)
+    results.sort((a, b) => {
+      const distA = a.distance || 999999; // Si pas de distance, mettre loin
+      const distB = b.distance || 999999;
+      return distA - distB; // Ordre croissant = plus proche en premier
+    });
     
-    return results.slice(0, 10);
+    console.log(`🎯 ${results.length} artisan(s) matchés - Triés par distance`);
+    
+    // ✅ RETOURNER TOUS LES RÉSULTATS (pas de limite à 10)
+    return results;
 
   } catch (error) {
     console.error('❌ Erreur matching artisans:', error);
