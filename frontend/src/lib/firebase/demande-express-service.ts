@@ -53,7 +53,7 @@ export async function createDemandeExpress(
       type: 'nouvelle_demande_express',
       titre: 'Nouvelle demande express',
       message: `${data.description.slice(0, 80)}... - ${data.ville}`,
-      relatedId: docRef.id,
+      lien: `/artisan/demandes-express/${docRef.id}`,
     });
   }
 
@@ -150,7 +150,7 @@ export async function createPropositionExpress(
     type: 'proposition_express_recue',
     titre: 'Nouvelle proposition reçue',
     message: `L'artisan vous propose ${data.montantPropose}€ TTC`,
-    relatedId: docRef.id,
+    lien: `/client/demandes-express/${data.demandeId}`,
   });
 
   return docRef.id;
@@ -219,7 +219,7 @@ export async function acceptPropositionExpress(propositionId: string): Promise<v
     type: 'proposition_acceptee',
     titre: 'Proposition acceptée !',
     message: 'Le client a accepté votre proposition. En attente du paiement.',
-    relatedId: propositionId,
+    lien: `/artisan/demandes-express/${proposition.demandeId}`,
   });
 }
 
@@ -257,7 +257,7 @@ export async function refusePropositionExpress(
     type: 'proposition_refusee',
     titre: 'Proposition refusée',
     message: motifRefus || 'Le client a refusé votre proposition',
-    relatedId: propositionId,
+    lien: `/artisan/demandes-express/${proposition.demandeId}`,
   });
 }
 
@@ -281,7 +281,7 @@ export async function markDemandePaid(demandeId: string): Promise<void> {
       type: 'paiement_recu_express',
       titre: 'Intervention confirmée',
       message: 'Le client a payé. Vous pouvez intervenir.',
-      relatedId: demandeId,
+      lien: `/artisan/demandes-express/${demandeId}`,
     });
   }
 }
@@ -315,7 +315,7 @@ export async function markInterventionTerminee(demandeId: string): Promise<void>
     type: 'demande_avis_express',
     titre: 'Travaux terminés',
     message: 'Donnez votre avis sur cette intervention',
-    relatedId: demandeId,
+    lien: `/client/demandes-express/${demandeId}`,
   });
 }
 
@@ -350,7 +350,7 @@ export async function cancelDemandeExpress(demandeId: string, userId: string): P
       type: 'demande_annulee',
       titre: 'Demande annulée',
       message: 'La demande express a été annulée',
-      relatedId: demandeId,
+      lien: demande.clientId === userId ? `/artisan/demandes-express/${demandeId}` : `/client/demandes-express/${demandeId}`,
     });
   }
 }

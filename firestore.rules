@@ -155,7 +155,11 @@ service cloud.firestore {
                        isClient() &&
                        request.auth.uid == request.resource.data.clientId &&
                        request.resource.data.typeProjet == 'express';
-      allow update: if isOwner(resource.data.clientId) || isAdmin();
+      // Client peut modifier (annulation, acceptation proposition)
+      // Artisan assigné peut modifier le statut (propositions, intervention)
+      allow update: if isOwner(resource.data.clientId) || 
+                       (isAuthenticated() && request.auth.uid == resource.data.artisanId) ||
+                       isAdmin();
       allow delete: if isOwner(resource.data.clientId) || isAdmin();
     }
     
