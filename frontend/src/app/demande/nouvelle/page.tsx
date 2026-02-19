@@ -290,6 +290,38 @@ function NouvelleDemandeContent() {
 
       {/* Formulaire */}
       <main className="container mx-auto px-4 py-8">
+        {/* 🕒 Encart info expiration automatique */}
+        <Card className="mb-6 border-l-4 border-blue-500 bg-blue-50">
+          <div className="p-4">
+            <h3 className="font-bold text-[#2C3E50] mb-2 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              </svg>
+              ⏰ Expiration automatique de votre demande
+            </h3>
+            <div className="text-sm text-gray-700 space-y-2">
+              <p className="font-medium">Votre demande sera automatiquement fermée selon ces règles :</p>
+              <ul className="ml-4 space-y-1">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span><strong>Travaux urgents</strong> (dans moins de 7 jours) : minimum 5 jours pour recevoir des devis</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span><strong>Travaux normaux</strong> (7-30 jours) : fermeture 5 jours avant la date de début</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span><strong>Travaux lointains</strong> (plus de 30 jours) : fermeture après 30 jours maximum</span>
+                </li>
+              </ul>
+              <p className="text-xs text-gray-600 mt-2 italic">
+                💡 Ces délais garantissent que les artisans aient le temps de visiter votre chantier et vous envoyer des devis de qualité.
+              </p>
+            </div>
+          </div>
+        </Card>
+
         {/* Bandeau artisan sélectionné */}
         {artisan && (
           <Card className="p-6 mb-6 bg-[#FFF3E0] border-l-4 border-[#FF6B00]">

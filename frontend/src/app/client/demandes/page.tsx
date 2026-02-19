@@ -8,6 +8,7 @@ import { getArtisansByIds } from '@/lib/firebase/artisan-service';
 import { getDevisByDemande } from '@/lib/firebase/devis-service';
 import { createNotification } from '@/lib/firebase/notification-service';
 import { getFileMetadata } from '@/lib/firebase/storage-service';
+import { isDemandeExpired } from '@/lib/dateExpirationUtils';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { Demande, Artisan } from '@/types/firestore';
@@ -27,9 +28,11 @@ export default function MesDemandesPage() {
   const [filtreDateTravaux, setFiltreDateTravaux] = useState<string>('');
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
   const [filtreSection, setFiltreSection] = useState<'toutes' | 'envoyes' | 'publiees' | 'en_traitement' | 'traitees'>('toutes');
+  const [sousFiltreTraitees, setSousFiltreTraitees] = useState<'tout' | 'devis_signes' | 'travaux_en_cours' | 'termines' | 'refusees' | 'expirees'>('tout');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDemandeIds, setExpandedDemandeIds] = useState<Set<string>>(new Set());
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
+  const [showExpirationHelp, setShowExpirationHelp] = useState(false);
 
   useEffect(() => {
     // Attendre que l'auth soit chargée
@@ -63,6 +66,13 @@ export default function MesDemandesPage() {
     
     loadDemandes();
   }, [user, authLoading, router, searchParams]);
+
+  // Réinitialiser le sous-filtre quand on quitte la section "Traitées"
+  useEffect(() => {
+    if (filtreSection !== 'traitees') {
+      setSousFiltreTraitees('tout');
+    }
+  }, [filtreSection]);
 
   async function loadDemandes() {
     if (!user) return;
@@ -299,6 +309,7 @@ export default function MesDemandesPage() {
       en_cours: 'bg-yellow-100 text-yellow-800',
       terminee: 'bg-green-200 text-green-900',
       annulee: 'bg-red-100 text-red-800',
+      expiree: 'bg-red-50 text-red-700',
       quota_atteint: 'bg-orange-100 text-orange-800',
     };
 
@@ -309,11 +320,15 @@ export default function MesDemandesPage() {
       en_cours: '⏳ En cours',
       terminee: '✅ Terminée',
       annulee: '❌ Refusée',
+      expiree: '⏰ Expirée',
       quota_atteint: '🔒 Quota atteint',
     };
     
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[statut as keyof typeof badges] || 'bg-gray-200 text-gray-800'}`}>
+      <span 
+        className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[statut as keyof typeof badges] || 'bg-gray-200 text-gray-800'}`}
+        title={statut === 'expiree' ? 'Demande fermée automatiquement. Cliquez sur "Aide : Expiration" pour en savoir plus' : undefined}
+      >
         {labels[statut as keyof typeof labels] || statut}
       </span>
     );
@@ -411,7 +426,23 @@ export default function MesDemandesPage() {
   }
 
   /**
-   * ✅ TRAITÉES (Finalisées)
+   * Fonction helper : Récupérer TOUTES les demandes traitées (sans sous-filtre)
+   * Utilisé pour le compteur du bouton "✅ Traitées"
+   */
+  function getToutesDemandesTraitees(demandes: Demande[]) {
+    return demandes.filter(d => {
+      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
+      const isRefusee = d.statut === 'annulee';
+      const isTerminee = d.statut === 'terminee';
+      const isExpiree = d.dateExpiration ? isDemandeExpired(d.dateExpiration) : false;
+      
+      // Traitée = devis payé OU refusée OU terminée OU expirée
+      return hasDevisPaye || isRefusee || isTerminee || isExpiree;
+    });
+  }
+
+  /**
+   * ✅ TRAITÉES (Finalisées) - avec sous-filtrage
    * - Définition : Demandes finalisées (payées, refusées, travaux en cours/terminés)
    * - Caractéristiques :
    *   • Devis payé/signé (statuts: paye, en_cours, travaux_termines, etc.)
@@ -421,14 +452,37 @@ export default function MesDemandesPage() {
    * - Workflow : Phase finale du projet
    */
   function getDemandesTraitees(demandes: Demande[]) {
-    return demandes.filter(d => {
-      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
-      const isRefusee = d.statut === 'annulee';
-      const isTerminee = d.statut === 'terminee';
-      
-      // Traitée = devis payé OU refusée OU terminée
-      return hasDevisPaye || isRefusee || isTerminee;
-    });
+    const demandesTraitees = getToutesDemandesTraitees(demandes);
+
+    // Appliquer le sous-filtre si on est dans la section "traitees"
+    if (filtreSection === 'traitees' && sousFiltreTraitees !== 'tout') {
+      return demandesTraitees.filter(d => {
+        const devisForDemande = devisMap.get(d.id) || [];
+        const devisPaye = devisForDemande.find(dv => 
+          ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(dv.statut)
+        );
+
+        // ⚠️ RÈGLE CRITIQUE : Un devis payé a TOUJOURS la priorité sur le statut de la demande
+        switch (sousFiltreTraitees) {
+          case 'devis_signes':
+            return devisPaye?.statut === 'paye';
+          case 'travaux_en_cours':
+            return devisPaye?.statut === 'en_cours';
+          case 'termines':
+            return devisPaye && ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devisPaye.statut);
+          case 'refusees':
+            // CORRECTION : Seulement les demandes annulées SANS devis payé
+            return d.statut === 'annulee' && !devisPaye;
+          case 'expirees':
+            // CORRECTION : Seulement les demandes expirées SANS devis payé (vérification dateExpiration réelle)
+            return d.dateExpiration && isDemandeExpired(d.dateExpiration) && !devisPaye;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return demandesTraitees;
   }
 
   if (loading || authLoading) {
@@ -463,6 +517,16 @@ export default function MesDemandesPage() {
               </svg>
               Nouvelle demande
             </Button>
+            <button
+              onClick={() => setShowExpirationHelp(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
+              title="Comprendre l'expiration des demandes"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+              </svg>
+              <span className="hidden sm:inline">Aide : Expiration</span>
+            </button>
           </div>
         </div>
       </div>
@@ -571,7 +635,7 @@ export default function MesDemandesPage() {
           >
             <div className={`text-3xl font-black mb-1 ${
               filtreSection === 'traitees' ? 'text-white' : 'text-green-600'
-            }`}>{getDemandesTraitees(demandes).length}</div>
+            }`}>{getToutesDemandesTraitees(demandes).length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'traitees' ? 'text-white' : 'text-gray-600'
             }`}>✅ Traitées</div>
@@ -638,30 +702,45 @@ export default function MesDemandesPage() {
                 
                 // Section "✅ Traitées" → Couleur selon badge spécifique
                 if (filtreSection === 'traitees') {
-                  // Badge "❌ Refusée" → Rouge
+                  // PRIORITÉ 1 : Vérifier d'abord le statut du devis payé (contrat)
+                  if (devisPaye) {
+                    // Badge "✅ Travaux terminés" → Noir
+                    if (['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devisPaye.statut)) {
+                      return 'bg-gradient-to-b from-gray-700 to-gray-900';
+                    }
+                    
+                    // Badge "🚧 Travaux en cours" → Jaune
+                    if (devisPaye.statut === 'en_cours') {
+                      return 'bg-gradient-to-b from-yellow-400 to-yellow-600';
+                    }
+                    
+                    // Badge "✅ Devis signé" (payé) → Vert
+                    if (devisPaye.statut === 'paye') {
+                      return 'bg-gradient-to-b from-green-400 to-green-600';
+                    }
+                  }
+                  
+                  // PRIORITÉ 2 : Statuts de demande (sans devis payé)
+                  // Badge "❌ Refusée" → Rouge uni
                   if (demande.statut === 'annulee') {
                     return 'bg-gradient-to-b from-red-400 to-red-600';
                   }
                   
-                  // Badge "🚧 Travaux en cours" → Jaune
-                  if (devisPaye?.statut === 'en_cours') {
-                    return 'bg-gradient-to-b from-yellow-400 to-yellow-600';
+                  // Badge "⏰ Expirée" → Rouge rayé diagonal (vérification dateExpiration réelle)
+                  if (demande.dateExpiration && isDemandeExpired(demande.dateExpiration)) {
+                    return 'bg-[repeating-linear-gradient(45deg,#f87171,#f87171_10px,#dc2626_10px,#dc2626_20px)]';
                   }
                   
-                  // Badge "✅ Devis signé" → Vert
-                  if (devisPaye?.statut === 'paye') {
+                  // Badge "✅ Terminée" (sans contrat) → Vert standard
+                  if (demande.statut === 'terminee') {
                     return 'bg-gradient-to-b from-green-400 to-green-600';
-                  }
-                  
-                  // Badge "✅ Travaux terminés" → Noir
-                  if (devisPaye && ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devisPaye.statut)) {
-                    return 'bg-gradient-to-b from-gray-700 to-gray-900';
                   }
                 }
                 
                 // Fallback (section "Toutes") - ancienne logique
                 if (demande.statut === 'terminee') return 'bg-gradient-to-b from-green-400 to-green-600';
                 if (demande.statut === 'annulee') return 'bg-gradient-to-b from-red-400 to-red-600';
+                if (demande.dateExpiration && isDemandeExpired(demande.dateExpiration)) return 'bg-[repeating-linear-gradient(45deg,#f87171,#f87171_10px,#dc2626_10px,#dc2626_20px)]';
                 if (demande.statut === 'publiee') return 'bg-gradient-to-b from-purple-400 to-purple-600';
                 return 'bg-gradient-to-b from-blue-400 to-blue-600';
               };
@@ -1117,7 +1196,7 @@ export default function MesDemandesPage() {
             <>
               {/* Titre de la section active */}
               {filtreSection !== 'toutes' && demandesFiltrees.length > 0 && (
-                <div className="mb-4">
+                <div className="mb-6">
                   <h2 className="text-2xl font-bold text-[#2C3E50]">
                     {filtreSection === 'envoyes' && '🎯 Envoyés à l\'artisan'}
                     {filtreSection === 'publiees' && '📢 Publiées'}
@@ -1128,8 +1207,141 @@ export default function MesDemandesPage() {
                     {filtreSection === 'envoyes' && 'Demandes directes envoyées à un artisan spécifique, en attente de devis'}
                     {filtreSection === 'publiees' && 'Demandes publiques visibles par tous les artisans, en attente de propositions'}
                     {filtreSection === 'en_traitement' && 'Demandes avec au moins un devis reçu, en attente de votre décision'}
-                    {filtreSection === 'traitees' && 'Demandes finalisées : payées, refusées, travaux en cours ou terminés'}
+                    {filtreSection === 'traitees' && 'Demandes finalisées : payées, refusées, expirées, travaux en cours ou terminés'}
                   </p>
+
+                  {/* Pills de sous-filtrage pour "✅ Traitées" */}
+                  {filtreSection === 'traitees' && (() => {
+                    // Calculer les compteurs pour chaque type
+                    const toutesTraitees = demandes.filter(d => {
+                      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
+                      const isRefusee = d.statut === 'annulee';
+                      const isTerminee = d.statut === 'terminee';
+                      const isExpiree = d.dateExpiration ? isDemandeExpired(d.dateExpiration) : false;
+                      return hasDevisPaye || isRefusee || isTerminee || isExpiree;
+                    });
+
+                    const countDevisSignes = toutesTraitees.filter(d => {
+                      const devisForDemande = devisMap.get(d.id) || [];
+                      return devisForDemande.some(dv => dv.statut === 'paye');
+                    }).length;
+
+                    const countTravauxEnCours = toutesTraitees.filter(d => {
+                      const devisForDemande = devisMap.get(d.id) || [];
+                      return devisForDemande.some(dv => dv.statut === 'en_cours');
+                    }).length;
+
+                    const countTermines = toutesTraitees.filter(d => {
+                      const devisForDemande = devisMap.get(d.id) || [];
+                      return devisForDemande.some(dv => ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(dv.statut));
+                    }).length;
+
+                    // CORRECTION : Seulement les demandes annulées SANS devis payé
+                    const countRefusees = toutesTraitees.filter(d => {
+                      if (d.statut !== 'annulee') return false;
+                      const devisForDemande = devisMap.get(d.id) || [];
+                      const hasDevisPaye = devisForDemande.some(dv => 
+                        ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(dv.statut)
+                      );
+                      return !hasDevisPaye; // Seulement si PAS de devis payé
+                    }).length;
+
+                    // CORRECTION : Seulement les demandes expirées SANS devis payé (vérification dateExpiration réelle)
+                    const countExpirees = toutesTraitees.filter(d => {
+                      if (!d.dateExpiration || !isDemandeExpired(d.dateExpiration)) return false;
+                      const devisForDemande = devisMap.get(d.id) || [];
+                      const hasDevisPaye = devisForDemande.some(dv => 
+                        ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(dv.statut)
+                      );
+                      return !hasDevisPaye; // Seulement si PAS de devis payé
+                    }).length;
+
+                    return (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {/* Pill "Tout" */}
+                        <button
+                          onClick={() => setSousFiltreTraitees('tout')}
+                          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                            sousFiltreTraitees === 'tout'
+                              ? 'bg-[#2C3E50] text-white shadow-lg transform scale-105'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          Tout ({toutesTraitees.length})
+                        </button>
+
+                        {/* Pill "✅ Devis signés" */}
+                        {countDevisSignes > 0 && (
+                          <button
+                            onClick={() => setSousFiltreTraitees('devis_signes')}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                              sousFiltreTraitees === 'devis_signes'
+                                ? 'bg-gradient-to-r from-green-400 to-green-600 text-white shadow-lg transform scale-105'
+                                : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                            }`}
+                          >
+                            ✅ Devis signés ({countDevisSignes})
+                          </button>
+                        )}
+
+                        {/* Pill "🚧 Travaux en cours" */}
+                        {countTravauxEnCours > 0 && (
+                          <button
+                            onClick={() => setSousFiltreTraitees('travaux_en_cours')}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                              sousFiltreTraitees === 'travaux_en_cours'
+                                ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-lg transform scale-105'
+                                : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200'
+                            }`}
+                          >
+                            🚧 Travaux en cours ({countTravauxEnCours})
+                          </button>
+                        )}
+
+                        {/* Pill "✅ Terminés" */}
+                        {countTermines > 0 && (
+                          <button
+                            onClick={() => setSousFiltreTraitees('termines')}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                              sousFiltreTraitees === 'termines'
+                                ? 'bg-gradient-to-r from-gray-700 to-gray-900 text-white shadow-lg transform scale-105'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                            }`}
+                          >
+                            ✅ Terminés ({countTermines})
+                          </button>
+                        )}
+
+                        {/* Pill "❌ Refusées" */}
+                        {countRefusees > 0 && (
+                          <button
+                            onClick={() => setSousFiltreTraitees('refusees')}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                              sousFiltreTraitees === 'refusees'
+                                ? 'bg-gradient-to-r from-red-400 to-red-600 text-white shadow-lg transform scale-105'
+                                : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                            }`}
+                          >
+                            ❌ Refusées ({countRefusees})
+                          </button>
+                        )}
+
+                        {/* Pill "⏰ Expirées" */}
+                        {countExpirees > 0 && (
+                          <button
+                            onClick={() => setSousFiltreTraitees('expirees')}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                              sousFiltreTraitees === 'expirees'
+                                ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg transform scale-105'
+                                : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-300'
+                            }`}
+                          >
+                            ⏰ Expirées ({countExpirees})
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -1163,6 +1375,145 @@ export default function MesDemandesPage() {
           </div>
         )}
       </main>
+
+      {/* 🆘 Modal d'aide : Expiration automatique */}
+      {showExpirationHelp && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowExpirationHelp(false)}>
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
+                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                    Comment fonctionne l'expiration des demandes ?
+                  </h2>
+                  <p className="text-blue-100">Comprenez pourquoi vos demandes se ferment automatiquement</p>
+                </div>
+                <button 
+                  onClick={() => setShowExpirationHelp(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Corps du modal */}
+            <div className="p-6 space-y-6">
+              {/* Intro */}
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                <p className="text-gray-700">
+                  <strong>💡 Pourquoi une expiration automatique ?</strong><br />
+                  Pour garantir que les artisans aient suffisamment de temps pour visiter votre chantier et vous envoyer des devis de qualité, tout en évitant les demandes obsolètes.
+                </p>
+              </div>
+
+              {/* Règles détaillées */}
+              <div>
+                <h3 className="text-xl font-bold text-[#2C3E50] mb-4 flex items-center gap-2">
+                  <span className="text-2xl">📐</span>
+                  Les 4 règles de calcul
+                </h3>
+                
+                <div className="space-y-4">
+                  {/* Règle 1 */}
+                  <div className="border-l-4 border-orange-400 bg-orange-50 p-4 rounded">
+                    <h4 className="font-bold text-orange-900 mb-2">🚨 Cas 1 : Travaux urgents (moins de 7 jours)</h4>
+                    <p className="text-sm text-gray-700 mb-2">
+                      <strong>Expiration :</strong> Minimum 5 jours après la création
+                    </p>
+                    <div className="bg-white p-3 rounded text-sm">
+                      <strong>Exemple :</strong><br />
+                      Demande créée : 19 février<br />
+                      Travaux début : 20 février (demain)<br />
+                      → <span className="text-green-600 font-bold">Expiration : 24 février (5 jours)</span><br />
+                      <span className="text-xs text-gray-600">✅ Les artisans ont le temps de répondre</span>
+                    </div>
+                  </div>
+
+                  {/* Règle 2 */}
+                  <div className="border-l-4 border-blue-400 bg-blue-50 p-4 rounded">
+                    <h4 className="font-bold text-blue-900 mb-2">📅 Cas 2 : Travaux normaux (7 à 30 jours)</h4>
+                    <p className="text-sm text-gray-700 mb-2">
+                      <strong>Expiration :</strong> 5 jours avant la date de début des travaux
+                    </p>
+                    <div className="bg-white p-3 rounded text-sm">
+                      <strong>Exemple :</strong><br />
+                      Demande créée : 19 février<br />
+                      Travaux début : 11 mars (dans 20 jours)<br />
+                      → <span className="text-green-600 font-bold">Expiration : 6 mars (11 mars - 5 jours)</span><br />
+                      <span className="text-xs text-gray-600">✅ Artisans ont 15 jours pour envoyer devis</span>
+                    </div>
+                  </div>
+
+                  {/* Règle 3 */}
+                  <div className="border-l-4 border-purple-400 bg-purple-50 p-4 rounded">
+                    <h4 className="font-bold text-purple-900 mb-2">📆 Cas 3 : Travaux lointains (plus de 30 jours)</h4>
+                    <p className="text-sm text-gray-700 mb-2">
+                      <strong>Expiration :</strong> Cap maximum de 30 jours après création
+                    </p>
+                    <div className="bg-white p-3 rounded text-sm">
+                      <strong>Exemple :</strong><br />
+                      Demande créée : 19 février<br />
+                      Travaux début : 20 avril (dans 60 jours)<br />
+                      → <span className="text-green-600 font-bold">Expiration : 21 mars (cap 30 jours)</span><br />
+                      <span className="text-xs text-gray-600">✅ Évite demandes obsolètes</span>
+                    </div>
+                  </div>
+
+                  {/* Règle 4 */}
+                  <div className="border-l-4 border-gray-400 bg-gray-50 p-4 rounded">
+                    <h4 className="font-bold text-gray-900 mb-2">❓ Cas 4 : Pas de date précisée</h4>
+                    <p className="text-sm text-gray-700 mb-2">
+                      <strong>Expiration :</strong> 30 jours par défaut
+                    </p>
+                    <div className="bg-white p-3 rounded text-sm">
+                      <strong>Exemple :</strong><br />
+                      Demande créée : 19 février<br />
+                      Travaux début : "Dès que possible"<br />
+                      → <span className="text-green-600 font-bold">Expiration : 21 mars (30 jours)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* FAQ rapide */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-bold text-[#2C3E50] mb-3">❓ Questions fréquentes</h3>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-semibold text-gray-900">Pourquoi minimum 5 jours ?</p>
+                    <p className="text-gray-700">Les artisans ont besoin de 2-3 jours pour visiter votre chantier et 1-2 jours pour rédiger un devis détaillé. Vous avez ensuite le temps de comparer plusieurs offres.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Ma demande est expirée, que faire ?</p>
+                    <p className="text-gray-700">Créez une nouvelle demande avec des dates actualisées. Vous pouvez réutiliser les photos et descriptions de l'ancienne demande.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Puis-je prolonger une demande ?</p>
+                    <p className="text-gray-700">Non, pour garantir la fraîcheur des demandes. Recréez simplement une nouvelle demande si nécessaire.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bouton fermer */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowExpirationHelp(false)}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  J'ai compris
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

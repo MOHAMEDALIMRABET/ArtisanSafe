@@ -95,6 +95,38 @@ export {
   rappellerDevisNonRepondus
 } from './scheduledJobs/rappellerDevisNonRepondus';
 
+/**
+ * Nettoyage automatique demandes obsolètes
+ * Exécution: Tous les dimanches à 2h du matin
+ * 
+ * Workflow:
+ * 1. Récupère demandes avec statut 'expiree' + dateExpiration > 30 jours
+ * 2. Récupère demandes avec statut 'annulee' + dateModification > 30 jours
+ * 3. Supprime définitivement ces demandes (hard delete Firestore)
+ * 4. Log statistiques détaillées pour monitoring
+ * 
+ * Règles de suppression:
+ * - Demandes expirées depuis > 30 jours → Suppression définitive
+ * - Demandes annulées depuis > 30 jours → Suppression définitive
+ * - Protection contrats actifs (en_cours, attribuee, terminee) → Conservation
+ * 
+ * Benefits:
+ * - ⚡ Performance: Requêtes plus rapides (moins de documents)
+ * - 🧹 UX: Interface client plus claire (moins de "bruit")
+ * - 📜 RGPD: Suppression automatique données obsolètes
+ * - 💾 Coûts: Réduction stockage Firestore
+ * 
+ * Requirement user:
+ * "est ce que les demandes refusées ou bien Expirées disparaissent au bout 
+ *  d'un certain temps selon la logique actuelle ?"
+ * 
+ * Réponse: Option 2 implémentée - Nettoyage automatique hebdomadaire
+ */
+export { 
+  cleanupOldDemandes,
+  cleanupOldDemandesManual  // Version HTTP pour tests manuels
+} from './scheduledJobs/cleanupOldDemandes';
+
 
 // ========================================
 // FIRESTORE TRIGGERS

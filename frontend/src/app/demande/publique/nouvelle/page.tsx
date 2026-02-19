@@ -443,6 +443,10 @@ export default function NouvelleDemandePubliquePage() {
               <li>✓ Tous les artisans correspondants dans la zone sont automatiquement notifiés</li>
               <li>✓ Les nouveaux artisans qui s'inscrivent plus tard reçoivent aussi la notification</li>
               <li>✓ Vous recevez plusieurs devis et choisissez la meilleure offre</li>
+              <li className="flex items-start gap-2">
+                <span>⏰</span>
+                <span><strong>Expiration automatique :</strong> Votre demande se ferme automatiquement 5 jours avant la date de début des travaux (minimum 5 jours pour travaux urgents) afin de garantir que les artisans aient le temps de vous répondre</span>
+              </li>
             </ul>
           </div>
         </Card>
