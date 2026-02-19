@@ -1389,7 +1389,7 @@ export default function NouveauDevisPage() {
                             <p className="font-semibold text-[#2C3E50] mb-1">
                               📋 Création d'une nouvelle variante
                             </p>
-                            <p className="text-sm text-blue-700">
+                            <p className="text-sm text-[#2C3E50]">
                               Ce devis sera automatiquement créé comme <strong>variante {prochaineLettreReference}</strong> pour permettre au client de comparer vos différentes propositions.
                             </p>
                           </div>

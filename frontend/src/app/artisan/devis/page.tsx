@@ -821,10 +821,10 @@ export default function MesDevisPage() {
             <button
               onClick={() => handleFilterChange('envoye')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
-                filter === 'envoye' ? 'bg-blue-600 text-white ring-4 ring-blue-600 ring-opacity-50' : 'bg-white'
+                filter === 'envoye' ? 'bg-purple-600 text-white ring-4 ring-purple-600 ring-opacity-50' : 'bg-white'
               }`}
             >
-              <div className={`text-2xl font-bold ${filter === 'envoye' ? 'text-white' : 'text-blue-600'}`}>{devisEnvoyes.length}</div>
+              <div className={`text-2xl font-bold ${filter === 'envoye' ? 'text-white' : 'text-purple-600'}`}>{devisEnvoyes.length}</div>
               <div className={`text-sm ${filter === 'envoye' ? 'text-white' : 'text-gray-600'}`}>Envoyés</div>
               {compterReponsesRecentes('envoye') > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
@@ -1142,7 +1142,7 @@ export default function MesDevisPage() {
                             <button
                               onClick={() => handleDeclarerFinRapide(d.id, d.numeroDevis)}
                               disabled={actionEnCours === d.id}
-                              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold flex items-center gap-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-3 py-1 bg-[#FF6B00] text-white rounded hover:bg-[#E56100] text-xs font-semibold flex items-center gap-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Déclarer la fin des travaux"
                             >
                               {actionEnCours === d.id ? (
@@ -1166,7 +1166,7 @@ export default function MesDevisPage() {
                         ) : d.statut === 'travaux_termines' ? (
                           // ⏳ EN ATTENTE VALIDATION CLIENT + Lien Voir
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-blue-600 font-semibold">⏳ Attente validation</span>
+                            <span className="text-xs text-purple-600 font-semibold">⏳ Attente validation</span>
                             <button
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
                               className="text-[#FF6B00] hover:underline text-xs"

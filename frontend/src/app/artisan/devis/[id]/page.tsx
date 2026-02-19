@@ -576,7 +576,7 @@ export default function VoirDevisPage() {
                   {devis.matierePremiere && (
                     <tr className="bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2 break-words">
-                        <span className="font-semibold text-blue-600">🛠️ Matière première</span>
+                        <span className="font-semibold text-[#2C3E50]">🛠️ Matière première</span>
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">
                         {devis.matierePremiere.quantite} {devis.matierePremiere.unite || 'forfait'}
@@ -728,9 +728,9 @@ export default function VoirDevisPage() {
                       <svg className="w-5 h-5 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                       </svg>
-                      <div className="text-sm text-blue-800">
+                      <div className="text-sm text-[#2C3E50]">
                         <p className="font-semibold mb-1">Prochaines étapes :</p>
-                        <ul className="list-disc list-inside space-y-1 text-blue-700">
+                        <ul className="list-disc list-inside space-y-1 text-[#2C3E50]">
                           <li>Contactez le client pour planifier les travaux</li>
                           <li>Le paiement sera effectué via la plateforme (séquestre sécurisé)</li>
                           <li>Conservez ce devis signé pour vos dossiers</li>
@@ -945,7 +945,7 @@ export default function VoirDevisPage() {
             {devis.statut === 'refuse' && (
               <button
                 onClick={() => router.push(`/messages?userId=${devis.clientId}&devisId=${devis.id}&demandeId=${devis.demandeId || ''}`)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                className="px-6 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
