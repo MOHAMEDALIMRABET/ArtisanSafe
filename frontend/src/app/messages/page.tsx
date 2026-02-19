@@ -301,6 +301,10 @@ export default function MessagesPage() {
         } else if (statut === 'annule' || statut === 'expire') {
           // Annulation ou expiration → toujours inactive
           isInactive = true;
+        } else if (statut === 'termine_valide' || statut === 'termine_auto_valide') {
+          // Travaux terminés ET validés par les deux parties → conversation close
+          // Plus besoin de communication, prestation complète et acceptée
+          isInactive = true;
         }
         
         setIsConversationInactive(isInactive);
@@ -422,7 +426,11 @@ export default function MessagesPage() {
     
     // Validation instantanée (affichage warning en temps réel)
     // La validation complète multi-couches se fera à l'envoi
-    const validation = validateMessage(value);
+    // 🎉 DEVIS PAYÉ : Bypass validation (permet échange téléphone/email/adresse)
+    // Statuts post-paiement où l'échange de coordonnées est autorisé
+    const statutsPostPaiement = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
+    const isPaid = devisStatus ? statutsPostPaiement.includes(devisStatus) : false;
+    const validation = validateMessage(value, isPaid);
     if (!validation.isValid) {
       setValidationWarning(validation.message || '');
     } else {
@@ -450,7 +458,11 @@ export default function MessagesPage() {
       // ========================================
       // VALIDATION MULTI-COUCHES
       // ========================================
-      const validation = validateMessage(messageContent.trim());
+      // 🎉 DEVIS PAYÉ : Bypass validation (permet échange téléphone/email/adresse)
+      // Statuts post-paiement où l'échange de coordonnées est autorisé
+      const statutsPostPaiement = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
+      const isPaid = devisStatus ? statutsPostPaiement.includes(devisStatus) : false;
+      const validation = validateMessage(messageContent.trim(), isPaid);
 
       if (!validation.isValid) {
         alert(validation.message);
@@ -584,6 +596,7 @@ export default function MessagesPage() {
                             {devisStatus === 'annule' && 'Le devis a été annulé. Vous ne pouvez plus envoyer de messages.'}
                             {devisStatus === 'refuse' && 'Le client a refusé définitivement de travailler avec cet artisan. Vous ne pouvez plus envoyer de messages.'}
                             {devisStatus === 'expire' && 'Le devis a expiré. Vous ne pouvez plus envoyer de messages.'}
+                            {(devisStatus === 'termine_valide' || devisStatus === 'termine_auto_valide') && 'Les travaux ont été terminés et validés par les deux parties. Cette conversation est maintenant close. Vous pouvez consulter l\'historique mais ne pouvez plus envoyer de messages.'}
                           </p>
                           {devisInfo?.numeroDevis && (
                             <p className="text-xs text-gray-500 mt-1">

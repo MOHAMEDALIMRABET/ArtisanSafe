@@ -177,8 +177,18 @@ function detectFragmentedPhoneNumbers(text: string): boolean {
 
 /**
  * Valide un message et détecte les tentatives de bypass
+ * @param content - Le contenu du message à valider
+ * @param isPaid - Si true, bypass toutes les validations (devis payé)
  */
-export function validateMessage(content: string): ValidationResult {
+export function validateMessage(content: string, isPaid: boolean = false): ValidationResult {
+  // 🎉 DEVIS PAYÉ : Autoriser tous les échanges de coordonnées
+  if (isPaid) {
+    return {
+      isValid: true,
+      blockedPatterns: [],
+    };
+  }
+
   const normalizedContent = content.toLowerCase().trim();
   const blockedPatterns: string[] = [];
 

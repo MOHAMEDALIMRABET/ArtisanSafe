@@ -55,6 +55,7 @@ export default function NouvelleDemandePubliquePage() {
   const [showCodePostalSuggestions, setShowCodePostalSuggestions] = useState(false);
   const villeInputRef = useRef<HTMLInputElement>(null);
   const codePostalInputRef = useRef<HTMLInputElement>(null);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
   
   const [formData, setFormData] = useState({
     metier: 'plomberie' as Categorie,
@@ -421,35 +422,52 @@ export default function NouvelleDemandePubliquePage() {
             Retour
           </button>
           
-          <h1 className="text-4xl font-bold text-[#2C3E50] mb-2">
-            📢 Publier une Demande Ouverte
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Recevez plusieurs devis d'artisans qualifiés dans votre zone
-          </p>
-        </div>
-
-        {/* Bannière info */}
-        <Card className="mb-6 border-l-4 border-[#FF6B00] bg-orange-50">
-          <div className="p-4">
-            <h3 className="font-bold text-[#2C3E50] mb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-[#FF6B00]" fill="currentColor" viewBox="0 0 20 20">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-[#2C3E50] mb-2">
+                📢 Publier une Demande Ouverte
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Recevez plusieurs devis d'artisans qualifiés dans votre zone
+              </p>
+            </div>
+            <button
+              onClick={() => setShowHowItWorks(!showHowItWorks)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] transition-colors shadow-md"
+              title="Afficher/masquer comment ça marche"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
-              Comment ça marche ?
-            </h3>
-            <ul className="space-y-1 text-sm text-gray-700">
-              <li>✓ Vous publiez votre demande avec vos critères (métier, localisation, rayon)</li>
-              <li>✓ Tous les artisans correspondants dans la zone sont automatiquement notifiés</li>
-              <li>✓ Les nouveaux artisans qui s'inscrivent plus tard reçoivent aussi la notification</li>
-              <li>✓ Vous recevez plusieurs devis et choisissez la meilleure offre</li>
-              <li className="flex items-start gap-2">
-                <span>⏰</span>
-                <span><strong>Expiration automatique :</strong> Votre demande se ferme automatiquement 5 jours avant la date de début des travaux (minimum 5 jours pour travaux urgents) afin de garantir que les artisans aient le temps de vous répondre</span>
-              </li>
-            </ul>
+              <span className="hidden sm:inline">Comment ça marche</span>
+            </button>
           </div>
-        </Card>
+        </div>
+
+        {/* Encart "Comment ça marche" (affichage conditionnel) */}
+        {showHowItWorks && (
+          <div 
+            className="mb-6 animate-fadeIn"
+            onClick={() => setShowHowItWorks(false)}
+          >
+            <Card className="border-l-4 border-[#FF6B00] bg-orange-50">
+              <div className="p-4">
+                <h3 className="font-bold text-[#2C3E50] mb-2 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-[#FF6B00]" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  Comment ça marche ?
+                </h3>
+                <ul className="space-y-1 text-sm text-gray-700">
+                  <li>✓ Vous publiez votre demande avec vos critères (métier, localisation, rayon)</li>
+                  <li>✓ Tous les artisans correspondants dans la zone sont automatiquement notifiés</li>
+                  <li>✓ Les nouveaux artisans qui s'inscrivent plus tard reçoivent aussi la notification</li>
+                  <li>✓ Vous recevez plusieurs devis et choisissez la meilleure offre</li>
+                </ul>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Formulaire */}
         <form onSubmit={handleSubmit}>

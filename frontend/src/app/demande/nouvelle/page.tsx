@@ -22,6 +22,7 @@ function NouvelleDemandeContent() {
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [searchCriteria, setSearchCriteria] = useState<any>(null);
   const [isEditingBrouillon, setIsEditingBrouillon] = useState(false);
+  const [showExpirationInfo, setShowExpirationInfo] = useState(false);
 
   const artisanPreselect = searchParams.get('artisan');
   const brouillonId = searchParams.get('brouillonId');
@@ -279,48 +280,69 @@ function NouvelleDemandeContent() {
       {/* Header */}
       <header className="bg-[#2C3E50] text-white py-6 shadow-lg">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold">
-            {isEditingBrouillon ? 'Compléter votre brouillon' : 'Créer votre demande de devis'}
-          </h1>
-          <p className="text-[#95A5A6] mt-2">
-            {isEditingBrouillon ? 'Finalisez et publiez votre demande' : 'Complétez les détails de votre projet'}
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">
+                {isEditingBrouillon ? 'Compléter votre brouillon' : 'Créer votre demande de devis'}
+              </h1>
+              <p className="text-[#95A5A6] mt-2">
+                {isEditingBrouillon ? 'Finalisez et publiez votre demande' : 'Complétez les détails de votre projet'}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowExpirationInfo(!showExpirationInfo)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+              title="Afficher/masquer les règles d'expiration"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              </svg>
+              <span className="hidden sm:inline">📅 Règles d'expiration</span>
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Formulaire */}
       <main className="container mx-auto px-4 py-8">
-        {/* 🕒 Encart info expiration automatique */}
-        <Card className="mb-6 border-l-4 border-blue-500 bg-blue-50">
-          <div className="p-4">
-            <h3 className="font-bold text-[#2C3E50] mb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-              </svg>
-              ⏰ Expiration automatique de votre demande
-            </h3>
-            <div className="text-sm text-gray-700 space-y-2">
-              <p className="font-medium">Votre demande sera automatiquement fermée selon ces règles :</p>
-              <ul className="ml-4 space-y-1">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 font-bold">•</span>
-                  <span><strong>Travaux urgents</strong> (dans moins de 7 jours) : minimum 5 jours pour recevoir des devis</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 font-bold">•</span>
-                  <span><strong>Travaux normaux</strong> (7-30 jours) : fermeture 5 jours avant la date de début</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 font-bold">•</span>
-                  <span><strong>Travaux lointains</strong> (plus de 30 jours) : fermeture après 30 jours maximum</span>
-                </li>
-              </ul>
-              <p className="text-xs text-gray-600 mt-2 italic">
-                💡 Ces délais garantissent que les artisans aient le temps de visiter votre chantier et vous envoyer des devis de qualité.
-              </p>
-            </div>
+        {/* 🕒 Encart info expiration automatique (affichage conditionnel) */}
+        {showExpirationInfo && (
+          <div 
+            className="mb-6 animate-fadeIn"
+            onClick={() => setShowExpirationInfo(false)}
+          >
+            <Card className="border-l-4 border-blue-500 bg-blue-50">
+              <div className="p-4">
+                <h3 className="font-bold text-[#2C3E50] mb-2 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                  </svg>
+                  ⏰ Expiration automatique de votre demande
+                </h3>
+                <div className="text-sm text-gray-700 space-y-2">
+                  <p className="font-medium">Votre demande sera automatiquement fermée selon ces règles :</p>
+                  <ul className="ml-4 space-y-1">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold">•</span>
+                      <span><strong>Travaux urgents</strong> (dans moins de 7 jours) : minimum 5 jours pour recevoir des devis</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold">•</span>
+                      <span><strong>Travaux normaux</strong> (7-30 jours) : fermeture 5 jours avant la date de début</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold">•</span>
+                      <span><strong>Travaux lointains</strong> (plus de 30 jours) : fermeture après 30 jours maximum</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-gray-600 mt-2 italic">
+                    💡 Ces délais garantissent que les artisans aient le temps de visiter votre chantier et vous envoyer des devis de qualité.
+                  </p>
+                </div>
+              </div>
+            </Card>
           </div>
-        </Card>
+        )}
 
         {/* Bandeau artisan sélectionné */}
         {artisan && (

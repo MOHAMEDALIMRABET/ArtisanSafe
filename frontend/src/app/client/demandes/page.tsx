@@ -34,6 +34,42 @@ export default function MesDemandesPage() {
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
   const [showExpirationHelp, setShowExpirationHelp] = useState(false);
 
+  // Clé pour sauvegarder l'état dans sessionStorage
+  const STORAGE_KEY = 'client_demandes_state';
+
+  // Restaurer l'état (demande étendue + scroll) au retour depuis /messages
+  useEffect(() => {
+    if (loading) return; // Attendre que les demandes soient chargées
+    
+    const savedState = sessionStorage.getItem(STORAGE_KEY);
+    if (savedState) {
+      try {
+        const { demandeId, scrollY, timestamp } = JSON.parse(savedState);
+        
+        // Valider que l'état est récent (< 5 minutes)
+        if (Date.now() - timestamp < 5 * 60 * 1000) {
+          console.log('✅ Restauration état:', { demandeId, scrollY });
+          
+          // Restaurer l'expansion de la demande
+          setExpandedDemandeIds(new Set([demandeId]));
+          
+          // Scroller vers la position sauvegardée après un court délai
+          setTimeout(() => {
+            window.scrollTo({ top: scrollY, behavior: 'smooth' });
+          }, 100);
+        } else {
+          console.log('⏰ État expiré, ignoré');
+        }
+        
+        // Nettoyer le sessionStorage
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        console.error('❌ Erreur restauration état:', error);
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, [loading]);
+
   useEffect(() => {
     // Attendre que l'auth soit chargée
     if (authLoading) {
@@ -753,7 +789,7 @@ export default function MesDemandesPage() {
                     key={demande.id}
                     onClick={() => toggleExpandDemande(demande.id)}
                     className={`bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer relative border-2 overflow-hidden group ${
-                      isExpanded ? 'border-[#FF6B00] ring-4 ring-[#FF6B00] ring-opacity-20' : 'border-transparent hover:border-gray-200'
+                      isExpanded ? 'border-[#FF6B00] ring-1 ring-[#FF6B00] ring-opacity-30' : 'border-transparent hover:border-gray-200'
                     }`}
                   >
                     {/* Barre latérale colorée selon section et statut */}
@@ -1131,12 +1167,19 @@ export default function MesDemandesPage() {
                             e.stopPropagation();
                             const artisanId = demande.artisansMatches?.[0];
                             if (artisanId) {
+                              // Sauvegarder l'état avant de naviguer (pour restauration au retour)
+                              sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                                demandeId: demande.id,
+                                scrollY: window.scrollY,
+                                timestamp: Date.now()
+                              }));
+                              
                               router.push(`/messages?userId=${artisanId}`);
                             }
                           }}
                           className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
                         >
-                          💬 Contacter client
+                          💬 Contacter artisan
                         </button>
                       </div>
                     </div>

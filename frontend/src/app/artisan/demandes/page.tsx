@@ -657,7 +657,7 @@ export default function ArtisanDemandesPage() {
                 ref={(el) => { demandeRefs.current[demande.id] = el; }}
                 onClick={() => toggleExpandDemande(demande.id)}
                 className={`bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer relative border-2 overflow-hidden group ${
-                  isExpanded ? 'border-[#FF6B00] ring-4 ring-[#FF6B00] ring-opacity-20' : 'border-transparent hover:border-gray-200'
+                  isExpanded ? 'border-[#FF6B00] ring-1 ring-[#FF6B00] ring-opacity-30' : 'border-transparent hover:border-gray-200'
                 }`}
               >
                 {/* Barre latérale colorée selon section et statut */}
