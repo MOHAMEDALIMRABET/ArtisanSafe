@@ -689,7 +689,7 @@ export default function MesDevisPage() {
           </button>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Mes Devis - Mes Factures</h1>
+              <h1 className="text-3xl font-bold">Mes Devis</h1>
               <p className="text-gray-300 mt-2">
                 {highlightedDevisId ? 'Détail du devis' : 'Gérez vos devis et factures'}
               </p>

@@ -698,7 +698,7 @@ export default function ArtisanDashboardPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-800">Mes Devis - Mes Factures</h2>
+                    <h2 className="text-xl font-bold text-gray-800">Mes Devis</h2>
                     {devisNotifications > 0 && (
                       <span className="bg-[#FF6B00] text-white text-xs px-2 py-1 rounded-full font-semibold">
                         {devisNotifications} nouvelle(s)

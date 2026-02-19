@@ -40,6 +40,7 @@ export default function RecherchePage() {
   const [dashboardUrl, setDashboardUrl] = useState('/');
   const [villeSuggestions, setVilleSuggestions] = useState<VilleSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [criteria, setCriteria] = useState<SearchCriteria>({
     categorie: '',
     localisation: {
@@ -253,15 +254,148 @@ export default function RecherchePage() {
       {/* Titre de la page */}
       <div className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-[#2C3E50]">Trouvez votre artisan</h1>
-            <p className="text-[#6C757D] text-sm mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-[#2C3E50]">Trouvez votre artisan</h1>
+              <p className="text-[#6C757D] text-sm mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHowItWorks(!showHowItWorks)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] transition-colors shadow-md"
+              title="Afficher/masquer comment ça marche"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <span className="hidden sm:inline">💡 Comment ça marche ?</span>
+              <span className="sm:hidden">💡</span>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Formulaire de recherche */}
       <main className="container mx-auto px-4 py-8">
+        {/* 💡 Encart "Comment ça marche ?" (affichage conditionnel) */}
+        {showHowItWorks && (
+          <div className="mb-6 animate-fadeIn">
+            <div className="bg-white border-l-4 border-[#FF6B00] rounded-lg shadow-md relative">
+              <button
+                onClick={() => setShowHowItWorks(false)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-orange-100 transition-colors"
+                title="Fermer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="p-6 pr-12">
+                <h3 className="font-bold text-[#2C3E50] mb-4 flex items-center gap-2 text-xl">
+                  <svg className="w-6 h-6 text-[#FF6B00]" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  💡 Comment fonctionne ArtisanSafe ?
+                </h3>
+                <div className="space-y-4">
+                  {/* Étape 1 */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-[#FF6B00] text-white rounded-full flex items-center justify-center font-bold">
+                      1
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[#2C3E50] mb-1">🔍 Recherchez des artisans qualifiés</h4>
+                      <p className="text-sm text-gray-700">
+                        Remplissez le formulaire ci-dessous : type de travaux, localisation et dates souhaitées. 
+                        Nous trouvons automatiquement les artisans disponibles et vérifiés dans votre secteur.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Étape 2 */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-[#FF6B00] text-white rounded-full flex items-center justify-center font-bold">
+                      2
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[#2C3E50] mb-1">📋 Comparez et contactez</h4>
+                      <p className="text-sm text-gray-700">
+                        Consultez les profils des artisans (expérience, avis clients, certifications). 
+                        Créez une demande de devis personnalisée pour décrire votre projet en détail.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Étape 3 */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-[#FF6B00] text-white rounded-full flex items-center justify-center font-bold">
+                      3
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[#2C3E50] mb-1">✅ Recevez des devis détaillés</h4>
+                      <p className="text-sm text-gray-700">
+                        Les artisans intéressés vous envoient des devis chiffrés avec détails des prestations, 
+                        montants HT/TTC et délais de réalisation. Comparez-les en toute transparence.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Étape 4 */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-[#FF6B00] text-white rounded-full flex items-center justify-center font-bold">
+                      4
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[#2C3E50] mb-1">🔒 Sécurité et paiement protégé</h4>
+                      <p className="text-sm text-gray-700">
+                        Une fois votre devis accepté, le paiement est sécurisé avec séquestre (escrow). 
+                        Les fonds sont libérés à l&apos;artisan uniquement après validation des travaux.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Étape 5 */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-[#28A745] text-white rounded-full flex items-center justify-center font-bold">
+                      ✓
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[#2C3E50] mb-1">⭐ Évaluez votre expérience</h4>
+                      <p className="text-sm text-gray-700">
+                        Après les travaux, laissez un avis pour aider la communauté. 
+                        Votre retour garantit la qualité de notre réseau d&apos;artisans.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Garanties */}
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <p className="text-sm text-[#2C3E50] font-semibold mb-2">🛡️ Nos garanties :</p>
+                    <ul className="text-sm text-gray-700 space-y-1 ml-4">
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#28A745]">✓</span>
+                        Artisans vérifiés (KBIS, assurances décennale et RC Pro)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#28A745]">✓</span>
+                        Paiement sécurisé avec séquestre (protection acheteur)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#28A745]">✓</span>
+                        Service client disponible pour médiation en cas de litige
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#28A745]">✓</span>
+                        Aucun partage de coordonnées avant validation du devis
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-8 max-w-3xl mx-auto">
           
           {/* Étape 1: Catégorie */}

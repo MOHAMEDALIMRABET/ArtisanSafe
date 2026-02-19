@@ -291,13 +291,14 @@ function NouvelleDemandeContent() {
             </div>
             <button
               onClick={() => setShowExpirationInfo(!showExpirationInfo)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+              className="flex items-center gap-2 px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] transition-colors shadow-md"
               title="Afficher/masquer les règles d'expiration"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
               </svg>
-              <span className="hidden sm:inline">📅 Règles d'expiration</span>
+              <span className="hidden sm:inline">💡 Comment ça marche ?</span>
+              <span className="sm:hidden">💡</span>
             </button>
           </div>
         </div>
@@ -307,14 +308,20 @@ function NouvelleDemandeContent() {
       <main className="container mx-auto px-4 py-8">
         {/* 🕒 Encart info expiration automatique (affichage conditionnel) */}
         {showExpirationInfo && (
-          <div 
-            className="mb-6 animate-fadeIn"
-            onClick={() => setShowExpirationInfo(false)}
-          >
-            <Card className="border-l-4 border-blue-500 bg-blue-50">
-              <div className="p-4">
+          <div className="mb-6 animate-fadeIn">
+            <Card className="border-l-4 border-[#FF6B00] bg-orange-50 relative">
+              <button
+                onClick={() => setShowExpirationInfo(false)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-orange-100 transition-colors"
+                title="Fermer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="p-4 pr-8">
                 <h3 className="font-bold text-[#2C3E50] mb-2 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-[#FF6B00]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                   </svg>
                   ⏰ Expiration automatique de votre demande
@@ -323,15 +330,15 @@ function NouvelleDemandeContent() {
                   <p className="font-medium">Votre demande sera automatiquement fermée selon ces règles :</p>
                   <ul className="ml-4 space-y-1">
                     <li className="flex items-start gap-2">
-                      <span className="text-blue-600 font-bold">•</span>
+                      <span className="text-[#FF6B00] font-bold">•</span>
                       <span><strong>Travaux urgents</strong> (dans moins de 7 jours) : minimum 5 jours pour recevoir des devis</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-blue-600 font-bold">•</span>
+                      <span className="text-[#FF6B00] font-bold">•</span>
                       <span><strong>Travaux normaux</strong> (7-30 jours) : fermeture 5 jours avant la date de début</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-blue-600 font-bold">•</span>
+                      <span className="text-[#FF6B00] font-bold">•</span>
                       <span><strong>Travaux lointains</strong> (plus de 30 jours) : fermeture après 30 jours maximum</span>
                     </li>
                   </ul>

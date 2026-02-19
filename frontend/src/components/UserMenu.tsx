@@ -367,7 +367,7 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
             {/* Liens spécifiques artisan */}
             {isArtisan && (
               <>
-                {/* Mes Devis - Mes Factures */}
+                {/* Mes Devis */}
                 <button
                   onClick={() => handleNavigationWithMarkRead('/artisan/devis', ['devis_accepte', 'devis_refuse', 'devis_recu', 'nouveau_devis', 'devis_revision'])}
                   className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
@@ -380,7 +380,7 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  <span className="font-medium flex-1">Mes Devis - Mes Factures</span>
+                  <span className="font-medium flex-1">Mes Devis</span>
                   {notifDevis > 0 && (
                     <span className="bg-[#FF6B00] text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
                       {notifDevis}
