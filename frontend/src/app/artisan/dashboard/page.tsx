@@ -189,7 +189,7 @@ export default function ArtisanDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
           <p className="text-gray-600">Chargement...</p>
@@ -199,7 +199,7 @@ export default function ArtisanDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+    <div className="min-h-screen bg-[#F5F7FA]">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Bannière email non vérifié (Artisan - OBLIGATOIRE) */}
         {!emailVerified && (

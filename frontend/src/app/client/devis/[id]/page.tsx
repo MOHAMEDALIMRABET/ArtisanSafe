@@ -583,7 +583,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
           <p className="mt-4 text-[#6C757D]">Chargement...</p>
@@ -733,7 +733,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
           }
         }
       `}</style>
-      <div className="min-h-screen bg-[#F8F9FA] print:bg-white print-area">
+      <div className="min-h-screen bg-[#F5F7FA] print:bg-white print-area">
         {/* Header - masqué à l'impression */}
         <div className="bg-[#2C3E50] text-white py-6 print:hidden">
           <div className="container mx-auto px-4">

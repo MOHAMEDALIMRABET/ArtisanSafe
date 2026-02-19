@@ -28,7 +28,7 @@ export default function DevisGratuitsPage() {
 
           <div className="space-y-8">
             {/* Étape 1 */}
-            <div className="flex items-start gap-6 bg-[#F8F9FA] rounded-xl p-6">
+            <div className="flex items-start gap-6 bg-[#F5F7FA] rounded-xl p-6">
               <div className="w-12 h-12 bg-[#FF6B00] rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                 1
               </div>
@@ -44,7 +44,7 @@ export default function DevisGratuitsPage() {
             </div>
 
             {/* Étape 2 */}
-            <div className="flex items-start gap-6 bg-[#F8F9FA] rounded-xl p-6">
+            <div className="flex items-start gap-6 bg-[#F5F7FA] rounded-xl p-6">
               <div className="w-12 h-12 bg-[#FF6B00] rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                 2
               </div>
@@ -60,7 +60,7 @@ export default function DevisGratuitsPage() {
             </div>
 
             {/* Étape 3 */}
-            <div className="flex items-start gap-6 bg-[#F8F9FA] rounded-xl p-6">
+            <div className="flex items-start gap-6 bg-[#F5F7FA] rounded-xl p-6">
               <div className="w-12 h-12 bg-[#FF6B00] rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                 3
               </div>
@@ -76,7 +76,7 @@ export default function DevisGratuitsPage() {
             </div>
 
             {/* Étape 4 */}
-            <div className="flex items-start gap-6 bg-[#F8F9FA] rounded-xl p-6">
+            <div className="flex items-start gap-6 bg-[#F5F7FA] rounded-xl p-6">
               <div className="w-12 h-12 bg-[#28A745] rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                 ✓
               </div>
@@ -201,7 +201,7 @@ export default function DevisGratuitsPage() {
         </div>
 
         {/* FAQ Rapide */}
-        <div className="bg-[#F8F9FA] rounded-2xl p-8 md:p-12 mb-12 max-w-5xl mx-auto">
+        <div className="bg-[#F5F7FA] rounded-2xl p-8 md:p-12 mb-12 max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-[#2C3E50] mb-8 text-center">
             Questions fréquentes
           </h2>

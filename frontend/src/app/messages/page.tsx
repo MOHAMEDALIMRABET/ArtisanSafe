@@ -519,7 +519,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-[#F5F7FA] pt-20">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-[#2C3E50] mb-6">💬 Messagerie</h1>
 

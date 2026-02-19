@@ -192,7 +192,7 @@ function ResultatsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF6B00] border-t-transparent mx-auto mb-4"></div>
           <p className="text-[#2C3E50] text-lg font-semibold">
@@ -208,7 +208,7 @@ function ResultatsContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <Card className="p-8 text-center max-w-md">
           <div className="text-5xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">Erreur</h2>
@@ -247,7 +247,7 @@ function ResultatsContent() {
   }
   
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Titre de la page */}
       <div className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6">
@@ -275,7 +275,7 @@ function ResultatsContent() {
               {/* Type de travaux */}
               <div className="relative min-w-0 md:col-span-4">
                 <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Type de travaux</label>
-                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
+                <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                   <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
@@ -303,7 +303,7 @@ function ResultatsContent() {
               {/* Localisation */}
               <div className="relative md:col-span-6">
                 <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Localisation</label>
-                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
+                <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
                   <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -347,7 +347,7 @@ function ResultatsContent() {
               {/* Rayon de recherche */}
               <div className="relative md:col-span-3">
                 <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3 whitespace-nowrap">Rayon</label>
-                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
+                <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
                   <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c1.657 0 3-1.343 3-3S13.657 2 12 2 9 3.343 9 5s1.343 3 3 3zm0 0v14m6-6H6" />
                   </svg>
@@ -383,7 +383,7 @@ function ResultatsContent() {
               {/* Date souhaitée */}
               <div className="relative min-w-0 md:col-span-4">
                 <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Date souhaitée</label>
-                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
+                <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
                   <svg className="w-5 h-5 text-[#FF6B00] mr-3 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     onClick={(e) => {
                       const input = e.currentTarget.parentElement?.querySelector('input[type="date"]') as HTMLInputElement;
@@ -407,7 +407,7 @@ function ResultatsContent() {
               {/* Flexibilité */}
               <div className="relative min-w-0 md:col-span-3">
                 <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Flexibilité</label>
-                <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
+                <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
                   <select
                     className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer"
                     value={flexibiliteInput}
@@ -1026,7 +1026,7 @@ function ResultatsContent() {
 export default function ResultatsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF6B00] border-t-transparent"></div>
       </div>
     }>

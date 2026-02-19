@@ -523,14 +523,14 @@ export default function MesDemandesPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF6B00] border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Titre de la page - Version moderne */}
       <div className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-8">

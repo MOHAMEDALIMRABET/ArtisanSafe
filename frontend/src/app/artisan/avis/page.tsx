@@ -167,7 +167,7 @@ export default function AvisArtisanPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
           <p className="mt-4 text-gray-600">Chargement...</p>
@@ -177,7 +177,7 @@ export default function AvisArtisanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[#F5F7FA] py-8">
       <div className="container mx-auto px-4 max-w-6xl">
         {/* Breadcrumb */}
         <div className="mb-6">

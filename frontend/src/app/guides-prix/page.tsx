@@ -661,7 +661,7 @@ export default function GuidesPrixPage() {
   const [categorieActive, setCategorieActive] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#2C3E50] to-[#3D5A73] text-white py-16">
         <div className="container mx-auto px-4">

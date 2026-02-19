@@ -5,7 +5,7 @@ import { Button } from '@/components/ui';
 
 export default function ProtectionMediationPage() {
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#DC3545] to-[#C82333] text-white py-20">
         <div className="container mx-auto px-4">
@@ -119,28 +119,28 @@ export default function ProtectionMediationPage() {
                   Un médiateur ArtisanDispo analyse <strong>l'intégralité de l'historique</strong> du projet.
                 </p>
                 <div className="space-y-3">
-                  <div className="flex items-start gap-3 bg-[#F8F9FA] p-3 rounded">
+                  <div className="flex items-start gap-3 bg-[#F5F7FA] p-3 rounded">
                     <span className="text-2xl">💬</span>
                     <div>
                       <p className="font-semibold text-[#2C3E50] text-sm">Historique messages</p>
                       <p className="text-xs text-[#6C757D]">Toutes les conversations client-artisan sont consultables</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 bg-[#F8F9FA] p-3 rounded">
+                  <div className="flex items-start gap-3 bg-[#F5F7FA] p-3 rounded">
                     <span className="text-2xl">📸</span>
                     <div>
                       <p className="font-semibold text-[#2C3E50] text-sm">Photos avant/après</p>
                       <p className="text-xs text-[#6C757D]">Vous avez uploadé des photos ? Elles servent de preuves</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 bg-[#F8F9FA] p-3 rounded">
+                  <div className="flex items-start gap-3 bg-[#F5F7FA] p-3 rounded">
                     <span className="text-2xl">📄</span>
                     <div>
                       <p className="font-semibold text-[#2C3E50] text-sm">Devis signé</p>
                       <p className="text-xs text-[#6C757D]">Les engagements contractuels sont vérifiés</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 bg-[#F8F9FA] p-3 rounded">
+                  <div className="flex items-start gap-3 bg-[#F5F7FA] p-3 rounded">
                     <span className="text-2xl">🕐</span>
                     <div>
                       <p className="font-semibold text-[#2C3E50] text-sm">Délais et dates</p>
@@ -226,7 +226,7 @@ export default function ProtectionMediationPage() {
 
             <div className="grid md:grid-cols-2 gap-8">
               {/* Dashboard */}
-              <div className="bg-[#F8F9FA] rounded-xl p-6">
+              <div className="bg-[#F5F7FA] rounded-xl p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-[#FF6B00] text-white rounded-full flex items-center justify-center text-2xl">
                     📊
@@ -249,7 +249,7 @@ export default function ProtectionMediationPage() {
               </div>
 
               {/* Messagerie sécurisée */}
-              <div className="bg-[#F8F9FA] rounded-xl p-6">
+              <div className="bg-[#F5F7FA] rounded-xl p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-[#17A2B8] text-white rounded-full flex items-center justify-center text-2xl">
                     💬
@@ -271,7 +271,7 @@ export default function ProtectionMediationPage() {
               </div>
 
               {/* Preuves */}
-              <div className="bg-[#F8F9FA] rounded-xl p-6">
+              <div className="bg-[#F5F7FA] rounded-xl p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-[#FFC107] text-white rounded-full flex items-center justify-center text-2xl">
                     📸
@@ -293,7 +293,7 @@ export default function ProtectionMediationPage() {
               </div>
 
               {/* Suivi temps réel */}
-              <div className="bg-[#F8F9FA] rounded-xl p-6">
+              <div className="bg-[#F5F7FA] rounded-xl p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-[#28A745] text-white rounded-full flex items-center justify-center text-2xl">
                     📍
@@ -364,7 +364,7 @@ export default function ProtectionMediationPage() {
             </h2>
 
             <div className="space-y-6">
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   La médiation est-elle vraiment gratuite ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -376,7 +376,7 @@ export default function ProtectionMediationPage() {
                 </p>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Que se passe-t-il si la médiation échoue ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -391,7 +391,7 @@ export default function ProtectionMediationPage() {
                 </div>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Les médiateurs sont-ils impartiaux ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -403,7 +403,7 @@ export default function ProtectionMediationPage() {
                 </p>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Puis-je contacter directement l'artisan pendant la médiation ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>

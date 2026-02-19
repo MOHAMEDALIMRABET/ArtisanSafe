@@ -5,7 +5,7 @@ import { Button } from '@/components/ui';
 
 export default function PaiementSecurisePage() {
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#2C3E50] to-[#1A3A5C] text-white py-20">
         <div className="container mx-auto px-4">
@@ -170,7 +170,7 @@ export default function PaiementSecurisePage() {
             </h2>
 
             <div className="space-y-6">
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Que se passe-t-il si je ne valide pas après 7 jours ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -182,7 +182,7 @@ export default function PaiementSecurisePage() {
                 </p>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Puis-je récupérer mon argent si les travaux ne sont pas conformes ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -198,7 +198,7 @@ export default function PaiementSecurisePage() {
                 </div>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Quels moyens de paiement sont acceptés ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -213,7 +213,7 @@ export default function PaiementSecurisePage() {
                 </div>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Y a-t-il des frais supplémentaires pour moi ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -224,7 +224,7 @@ export default function PaiementSecurisePage() {
                 </p>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Mes données bancaires sont-elles sécurisées ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>

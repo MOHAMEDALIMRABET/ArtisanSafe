@@ -173,7 +173,7 @@ export default function DemandeExpressDetailArtisanPage() {
   const peutFaireProposition = demande.statut === 'en_attente_proposition' && !maProposition;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F8F9FA] to-white">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-[#E9ECEF]">
         <div className="container mx-auto px-4 py-6">

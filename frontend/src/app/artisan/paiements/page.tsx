@@ -145,7 +145,7 @@ export default function ArtisanPaiementsPage() {
   // Loading state
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
           <p className="text-gray-600">Chargement...</p>
@@ -157,7 +157,7 @@ export default function ArtisanPaiementsPage() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-[#F5F7FA] p-8">
         <div className="max-w-2xl mx-auto">
           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
             <p className="font-semibold text-red-800">❌ Erreur</p>
@@ -177,7 +177,7 @@ export default function ArtisanPaiementsPage() {
   // Pas encore de compte Stripe
   if (!stripeAccountId) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-[#F5F7FA] p-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold text-[#2C3E50] mb-6">
             💰 Configuration des paiements
@@ -239,7 +239,7 @@ export default function ArtisanPaiementsPage() {
 
   // Compte Stripe existant
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-[#F5F7FA] p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-[#2C3E50] mb-6">
           💰 Mes paiements

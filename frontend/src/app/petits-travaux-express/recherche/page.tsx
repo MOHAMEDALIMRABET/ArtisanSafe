@@ -375,7 +375,7 @@ export default function RechercheExpressPage() {
                         key={index}
                         type="button"
                         onClick={() => selectVille(suggestion)}
-                        className="w-full text-left px-4 py-2 hover:bg-[#F8F9FA] transition-colors"
+                        className="w-full text-left px-4 py-2 hover:bg-[#F5F7FA] transition-colors"
                       >
                         <div className="font-semibold text-[#2C3E50]">{suggestion.nom}</div>
                         <div className="text-sm text-[#6C757D]">

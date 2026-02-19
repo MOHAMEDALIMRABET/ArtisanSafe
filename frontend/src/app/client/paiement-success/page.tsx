@@ -142,7 +142,7 @@ export default function PaiementSuccessPage() {
                 <p className="text-sm text-[#6C757D] mb-4">
                   <strong>💳 Détails du paiement</strong>
                 </p>
-                <div className="bg-[#F8F9FA] rounded-lg p-4">
+                <div className="bg-[#F5F7FA] rounded-lg p-4">
                   <p className="text-xs text-[#6C757D]">
                     Vous recevrez un email de confirmation de Stripe avec tous les détails de votre transaction.
                   </p>

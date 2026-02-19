@@ -188,7 +188,7 @@ export default function ClientDevisPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
           <p className="mt-4 text-[#6C757D]">Chargement...</p>
@@ -217,7 +217,7 @@ export default function ClientDevisPage() {
   const totalDevis = devis.length; // Total tous devis visibles (hors brouillons)
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Header */}
       <div className="bg-[#2C3E50] text-white py-8">
         <div className="container mx-auto px-4">

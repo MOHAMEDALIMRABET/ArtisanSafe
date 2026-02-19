@@ -5,7 +5,7 @@ import { Button } from '@/components/ui';
 
 export default function VerificationArtisansPage() {
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#28A745] to-[#20833D] text-white py-20">
         <div className="container mx-auto px-4">
@@ -256,7 +256,7 @@ export default function VerificationArtisansPage() {
           </h2>
 
           <div className="space-y-6">
-            <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+            <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
               <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                 Combien de temps prend la vérification ?
                 <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -267,7 +267,7 @@ export default function VerificationArtisansPage() {
               </p>
             </details>
 
-            <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+            <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
               <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                 Que se passe-t-il si un artisan fournit de faux documents ?
                 <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -278,7 +278,7 @@ export default function VerificationArtisansPage() {
               </p>
             </details>
 
-            <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+            <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
               <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                 Puis-je faire confiance aux artisans vérifiés ?
                 <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>

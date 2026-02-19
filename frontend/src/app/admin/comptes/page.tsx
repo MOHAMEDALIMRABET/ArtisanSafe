@@ -287,7 +287,7 @@ export default function AdminComptesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-[#F5F7FA] p-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Gestion des Comptes</h1>

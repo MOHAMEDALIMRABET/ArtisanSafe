@@ -44,7 +44,7 @@ export default function TestEmailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] py-8">
+    <div className="min-h-screen bg-[#F5F7FA] py-8">
       <div className="container mx-auto px-4 max-w-3xl">
         <h1 className="text-3xl font-bold text-[#2C3E50] mb-6">
           🧪 Test Email de Vérification Firebase

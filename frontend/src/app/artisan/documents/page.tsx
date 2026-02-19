@@ -412,7 +412,7 @@ export default function DocumentsUploadPage() {
   const needsDecennale = artisan.metiers && artisan.metiers.length > 0 && artisanDoitDecennale(artisan.metiers);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[#F5F7FA] py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="mb-8">

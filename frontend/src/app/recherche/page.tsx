@@ -249,7 +249,7 @@ export default function RecherchePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Titre de la page */}
       <div className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6">

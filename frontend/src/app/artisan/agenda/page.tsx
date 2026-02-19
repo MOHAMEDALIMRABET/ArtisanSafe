@@ -526,7 +526,7 @@ export default function AgendaPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
           <p className="text-gray-600">Chargement de l'agenda...</p>
@@ -538,7 +538,7 @@ export default function AgendaPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
         <div className="text-center text-red-600">
           <p className="text-xl font-bold mb-2">❌ Erreur</p>
           <p>{error}</p>
@@ -554,7 +554,7 @@ export default function AgendaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Header */}
       <nav className="bg-white shadow-md sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">

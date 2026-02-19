@@ -131,7 +131,7 @@ export default function ProfilPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
           <p className="text-[#6C757D]">Chargement de votre profil...</p>
@@ -143,7 +143,7 @@ export default function ProfilPage() {
   // Si c'est un artisan, le useEffect redirige automatiquement
   // Cette partie ne s'affiche que pour les clients
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Contenu principal */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Titre */}

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui';
 
 export default function PlanningFlexibilitePage() {
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#17A2B8] to-[#138496] text-white py-20">
         <div className="container mx-auto px-4">
@@ -150,7 +150,7 @@ export default function PlanningFlexibilitePage() {
               Exemple concret : Réparation fuite plomberie
             </h2>
 
-            <div className="bg-[#F8F9FA] rounded-xl p-8 space-y-6">
+            <div className="bg-[#F5F7FA] rounded-xl p-8 space-y-6">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0 w-10 h-10 bg-[#FF6B00] text-white rounded-full flex items-center justify-center font-bold">
                   1
@@ -292,7 +292,7 @@ export default function PlanningFlexibilitePage() {
             </h2>
 
             <div className="space-y-6">
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Que se passe-t-il si l'artisan n'est plus disponible après avoir envoyé un devis ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -304,7 +304,7 @@ export default function PlanningFlexibilitePage() {
                 </p>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Puis-je modifier la date après signature du devis ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -316,7 +316,7 @@ export default function PlanningFlexibilitePage() {
                 </p>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Comment l'artisan est-il notifié quand je signe ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>

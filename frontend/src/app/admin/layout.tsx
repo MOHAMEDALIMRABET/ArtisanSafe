@@ -57,7 +57,7 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
         <p className="text-xl text-gray-600">Chargement...</p>
       </div>
     );
@@ -96,7 +96,7 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Sidebar */}
       <div className="fixed inset-y-0 left-0 w-64 bg-[#2C3E50] text-white">
         {/* Header */}

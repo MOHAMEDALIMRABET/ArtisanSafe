@@ -5,7 +5,7 @@ import { Button } from '@/components/ui';
 
 export default function AvisCertifiesPage() {
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#FFC107] to-[#FFB300] text-[#2C3E50] py-20">
         <div className="container mx-auto px-4">
@@ -110,7 +110,7 @@ export default function AvisCertifiesPage() {
               <p className="text-[#6C757D] text-sm mb-3">
                 Le travail a-t-il été réalisé conformément au devis ? Finitions soignées ? Résultat satisfaisant ?
               </p>
-              <div className="bg-[#F8F9FA] rounded p-3">
+              <div className="bg-[#F5F7FA] rounded p-3">
                 <p className="text-xs text-[#6C757D]">
                   <strong>Exemples de questions :</strong><br/>
                   • Le problème est-il résolu ?<br/>
@@ -134,7 +134,7 @@ export default function AvisCertifiesPage() {
               <p className="text-[#6C757D] text-sm mb-3">
                 L'artisan a-t-il commencé à la date prévue ? A-t-il terminé dans les temps annoncés ?
               </p>
-              <div className="bg-[#F8F9FA] rounded p-3">
+              <div className="bg-[#F5F7FA] rounded p-3">
                 <p className="text-xs text-[#6C757D]">
                   <strong>Exemples de questions :</strong><br/>
                   • Arrivée ponctuelle le jour J ?<br/>
@@ -158,7 +158,7 @@ export default function AvisCertifiesPage() {
               <p className="text-[#6C757D] text-sm mb-3">
                 Le prix est-il justifié par rapport à la qualité du travail fourni ?
               </p>
-              <div className="bg-[#F8F9FA] rounded p-3">
+              <div className="bg-[#F5F7FA] rounded p-3">
                 <p className="text-xs text-[#6C757D]">
                   <strong>Exemples de questions :</strong><br/>
                   • Prix cohérent avec le marché ?<br/>
@@ -182,7 +182,7 @@ export default function AvisCertifiesPage() {
               <p className="text-[#6C757D] text-sm mb-3">
                 L'artisan a-t-il été réactif, clair et professionnel dans ses échanges ?
               </p>
-              <div className="bg-[#F8F9FA] rounded p-3">
+              <div className="bg-[#F5F7FA] rounded p-3">
                 <p className="text-xs text-[#6C757D]">
                   <strong>Exemples de questions :</strong><br/>
                   • Réponses rapides aux messages ?<br/>
@@ -217,7 +217,7 @@ export default function AvisCertifiesPage() {
             </h2>
 
             <div className="grid md:grid-cols-3 gap-6">
-              <div className="bg-[#F8F9FA] rounded-xl p-6 text-center">
+              <div className="bg-[#F5F7FA] rounded-xl p-6 text-center">
                 <div className="text-4xl mb-3">🔒</div>
                 <h3 className="font-bold text-[#2C3E50] mb-2">Avis après paiement uniquement</h3>
                 <p className="text-sm text-[#6C757D]">
@@ -225,7 +225,7 @@ export default function AvisCertifiesPage() {
                 </p>
               </div>
 
-              <div className="bg-[#F8F9FA] rounded-xl p-6 text-center">
+              <div className="bg-[#F5F7FA] rounded-xl p-6 text-center">
                 <div className="text-4xl mb-3">👤</div>
                 <h3 className="font-bold text-[#2C3E50] mb-2">Identité vérifiée</h3>
                 <p className="text-sm text-[#6C757D]">
@@ -233,7 +233,7 @@ export default function AvisCertifiesPage() {
                 </p>
               </div>
 
-              <div className="bg-[#F8F9FA] rounded-xl p-6 text-center">
+              <div className="bg-[#F5F7FA] rounded-xl p-6 text-center">
                 <div className="text-4xl mb-3">🚫</div>
                 <h3 className="font-bold text-[#2C3E50] mb-2">Modération active</h3>
                 <p className="text-sm text-[#6C757D]">
@@ -296,7 +296,7 @@ export default function AvisCertifiesPage() {
                   <p className="text-[#6C757D] text-sm mb-2">
                     La note est toujours accompagnée du <strong>nombre total d'avis</strong>.
                   </p>
-                  <div className="flex items-center gap-4 bg-[#F8F9FA] rounded p-3">
+                  <div className="flex items-center gap-4 bg-[#F5F7FA] rounded p-3">
                     <div className="text-center">
                       <div className="flex items-center gap-1 text-[#FFC107] text-2xl mb-1">
                         ★★★★☆
@@ -325,7 +325,7 @@ export default function AvisCertifiesPage() {
                   <p className="text-[#6C757D] text-sm mb-2">
                     Sur la fiche artisan, vous voyez la note détaillée pour chaque critère :
                   </p>
-                  <div className="bg-[#F8F9FA] rounded p-3 space-y-2 text-sm">
+                  <div className="bg-[#F5F7FA] rounded p-3 space-y-2 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="text-[#6C757D]">🎯 Qualité du travail</span>
                       <span className="font-bold text-[#28A745]">4.8/5</span>
@@ -359,7 +359,7 @@ export default function AvisCertifiesPage() {
             </h2>
 
             <div className="space-y-6">
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Puis-je laisser un avis anonyme ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -370,7 +370,7 @@ export default function AvisCertifiesPage() {
                 </p>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   L'artisan peut-il supprimer un avis négatif ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>
@@ -382,7 +382,7 @@ export default function AvisCertifiesPage() {
                 </p>
               </details>
 
-              <details className="bg-[#F8F9FA] rounded-lg p-6 cursor-pointer group">
+              <details className="bg-[#F5F7FA] rounded-lg p-6 cursor-pointer group">
                 <summary className="font-semibold text-[#2C3E50] text-lg list-none flex items-center justify-between">
                   Combien de temps ai-je pour laisser un avis ?
                   <span className="text-2xl text-[#FF6B00] group-open:rotate-180 transition-transform">⌄</span>

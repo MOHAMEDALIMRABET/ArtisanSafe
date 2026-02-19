@@ -276,7 +276,7 @@ function NouvelleDemandeContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* Header */}
       <header className="bg-[#2C3E50] text-white py-6 shadow-lg">
         <div className="container mx-auto px-4">
@@ -569,7 +569,7 @@ function NouvelleDemandeContent() {
 export default function NouvelleDemandePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF6B00] border-t-transparent"></div>
       </div>
     }>

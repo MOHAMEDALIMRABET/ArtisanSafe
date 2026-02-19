@@ -141,7 +141,7 @@ export default function MesDemandesExpressPage() {
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
               filtreStatut === 'toutes'
                 ? 'bg-[#FF6B00] text-white'
-                : 'bg-white text-[#2C3E50] hover:bg-[#F8F9FA]'
+                : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
             Toutes ({demandes.length})
@@ -151,7 +151,7 @@ export default function MesDemandesExpressPage() {
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
               filtreStatut === 'en_attente_proposition'
                 ? 'bg-[#FF6B00] text-white'
-                : 'bg-white text-[#2C3E50] hover:bg-[#F8F9FA]'
+                : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
             En attente ({demandes.filter(d => d.statut === 'en_attente_proposition').length})
@@ -161,7 +161,7 @@ export default function MesDemandesExpressPage() {
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
               filtreStatut === 'proposition_recue'
                 ? 'bg-[#FF6B00] text-white'
-                : 'bg-white text-[#2C3E50] hover:bg-[#F8F9FA]'
+                : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
             Propositions ({demandes.filter(d => d.statut === 'proposition_recue').length})
@@ -171,7 +171,7 @@ export default function MesDemandesExpressPage() {
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
               filtreStatut === 'en_cours'
                 ? 'bg-[#FF6B00] text-white'
-                : 'bg-white text-[#2C3E50] hover:bg-[#F8F9FA]'
+                : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
             En cours ({demandes.filter(d => d.statut === 'en_cours').length})
@@ -181,7 +181,7 @@ export default function MesDemandesExpressPage() {
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
               filtreStatut === 'terminee'
                 ? 'bg-[#FF6B00] text-white'
-                : 'bg-white text-[#2C3E50] hover:bg-[#F8F9FA]'
+                : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
             Terminées ({demandes.filter(d => d.statut === 'terminee').length})

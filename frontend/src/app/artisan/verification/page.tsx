@@ -174,7 +174,7 @@ export default function VerificationPage() {
   // Afficher un skeleton si chargement ET pas de données en cache
   if (loading && !artisan) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-[#F5F7FA] py-8">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="mb-8 animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -213,7 +213,7 @@ export default function VerificationPage() {
   const siretVerified = artisan?.siretVerified === true;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[#F5F7FA] py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="mb-8">
@@ -676,7 +676,7 @@ export default function VerificationPage() {
 
             {/* Cas 2 : Métiers non renseignés → Message informatif */}
             {(!artisan.metiers || artisan.metiers.length === 0) && (
-              <section className="mt-8 p-6 border border-[#E9ECEF] rounded-lg bg-[#F8F9FA]">
+              <section className="mt-8 p-6 border border-[#E9ECEF] rounded-lg bg-[#F5F7FA]">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">ℹ️</span>
                   <h3 className="font-bold text-lg text-[#2C3E50]">Assurance décennale</h3>

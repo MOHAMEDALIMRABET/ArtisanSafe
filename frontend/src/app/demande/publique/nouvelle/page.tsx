@@ -398,7 +398,7 @@ export default function NouvelleDemandePubliquePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
           <p className="text-gray-600">Chargement...</p>
@@ -408,7 +408,7 @@ export default function NouvelleDemandePubliquePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-12 px-4">
+    <div className="min-h-screen bg-[#F5F7FA] py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* En-tête */}
         <div className="mb-8">

@@ -340,7 +340,7 @@ export default function InscriptionPage() {
 
   // Étape 2 : Formulaire d'inscription
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+    <div className="min-h-screen bg-[#F5F7FA]">
       <div className="container mx-auto px-4 py-8 max-w-md">
         <button
           onClick={() => router.back()}

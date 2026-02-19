@@ -152,7 +152,7 @@ export default function Home() {
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
                     Type de travaux
                   </label>
-                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
+                  <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
@@ -184,7 +184,7 @@ export default function Home() {
                   <div className={`flex items-center rounded-xl px-3 h-11 transition-colors ${
                     blinkingFields.ville 
                       ? 'animate-blink-once' 
-                      : 'bg-[#F8F9FA] hover:bg-[#E9ECEF]'
+                      : 'bg-[#F5F7FA] hover:bg-[#E9ECEF]'
                   }`}>
                     <style jsx>{`
                       @keyframes blink-once {
@@ -243,7 +243,7 @@ export default function Home() {
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
                     Rayon
                   </label>
-                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
+                  <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c1.657 0 3-1.343 3-3S13.657 2 12 2 9 3.343 9 5s1.343 3 3 3zm0 0v14m6-6H6" />
                     </svg>
@@ -270,7 +270,7 @@ export default function Home() {
                   <div className={`flex items-center rounded-xl px-3 h-11 transition-colors ${
                     blinkingFields.date 
                       ? 'animate-blink-once' 
-                      : 'bg-[#F8F9FA] hover:bg-[#E9ECEF]'
+                      : 'bg-[#F5F7FA] hover:bg-[#E9ECEF]'
                   }`}>
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -290,7 +290,7 @@ export default function Home() {
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
                     Flexibilité
                   </label>
-                  <div className="flex items-center bg-[#F8F9FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
+                  <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
