@@ -1335,7 +1335,7 @@ export default function NouveauDevisPage() {
 
           {/* Devis Alternatifs (Variantes) */}
           {(!estPremierDevis || revisionDevisId) && (variantesExistantes.length > 0 || demandeId) ? (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 shadow-sm mb-6">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6 shadow-sm mb-6">
               {revisionDevisId ? (
                 // Mode révision : affichage spécial automatique
                 <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-4 rounded">
@@ -1380,13 +1380,13 @@ export default function NouveauDevisPage() {
                     }
                     
                     return (
-                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+                      <div className="bg-orange-50 border-l-4 border-[#FF6B00] p-4 mb-4 rounded">
                         <div className="flex items-start gap-3">
-                          <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-6 h-6 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                           <div className="flex-1">
-                            <p className="font-semibold text-blue-800 mb-1">
+                            <p className="font-semibold text-[#2C3E50] mb-1">
                               📋 Création d'une nouvelle variante
                             </p>
                             <p className="text-sm text-blue-700">
@@ -1399,14 +1399,14 @@ export default function NouveauDevisPage() {
                   })()}
 
                   {variantesExistantes.length > 0 && (
-                <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
+                <div className="bg-white rounded-lg p-4 mb-4 border border-gray-200">
                   <h3 className="font-medium text-[#2C3E50] mb-2">
                     📊 Devis existants ({variantesExistantes.length})
                   </h3>
                   <div className="space-y-2">
                     {variantesExistantes.map((v) => (
-                      <div key={v.id} className="flex items-center justify-between text-sm bg-blue-50 px-3 py-2 rounded">
-                        <span className="font-mono font-semibold text-blue-700">
+                      <div key={v.id} className="flex items-center justify-between text-sm bg-gray-100 px-3 py-2 rounded">
+                        <span className="font-mono font-semibold text-[#2C3E50]">
                           {v.numeroDevis}
                         </span>
                         <span className="text-[#6C757D]">
@@ -1528,7 +1528,7 @@ export default function NouveauDevisPage() {
               </div>
 
               {/* Matière première - OPTIONNELLE */}
-              <div className={`border rounded-lg p-4 ${ajouterMatierePremiere ? 'border-[#2C3E50] bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+              <div className={`border rounded-lg p-4 ${ajouterMatierePremiere ? 'border-[#2C3E50] bg-gray-100' : 'border-gray-200 bg-gray-50'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <input
@@ -1543,7 +1543,7 @@ export default function NouveauDevisPage() {
                     </label>
                   </div>
                   {ajouterMatierePremiere && (
-                    <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">OPTIONNEL</span>
+                    <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded">OPTIONNEL</span>
                   )}
                 </div>
 
@@ -1846,7 +1846,7 @@ export default function NouveauDevisPage() {
             )}
 
             {dateDebutPrevue && (
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+              <div className="bg-gray-50 border-l-4 border-[#2C3E50] p-4 mb-4">
                 <p className="text-sm">
                   <span className="font-semibold">📅 Date de début prévue :</span>{' '}
                   {new Date(dateDebutPrevue).toLocaleDateString('fr-FR', { 
@@ -1906,9 +1906,9 @@ export default function NouveauDevisPage() {
 
                 {/* Matière première (si activée) */}
                 {ajouterMatierePremiere && (
-                  <tr className="border-t border-gray-200 bg-blue-50">
+                  <tr className="border-t border-gray-200 bg-gray-50">
                     <td className="px-4 py-3 text-sm break-words">
-                      <span className="font-semibold text-blue-600">🛠️ Matière première</span>
+                      <span className="font-semibold text-[#2C3E50]">🛠️ Matière première</span>
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
                       {matierePremiereQuantite}

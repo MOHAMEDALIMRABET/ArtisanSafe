@@ -127,27 +127,27 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Bannière email non vérifié (Client) */}
         {!emailVerified && (
-          <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+          <div className="mb-6 bg-orange-50 border-l-4 border-[#FF6B00] p-4 rounded-lg">
             <div className="flex items-start gap-3">
-              <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div className="flex-1">
-                <h3 className="font-bold text-blue-800 mb-1">
+                <h3 className="font-bold text-[#2C3E50] mb-1">
                   📧 Validez votre email pour débloquer toutes les fonctionnalités
                 </h3>
-                <p className="text-blue-700 text-sm mb-3">
+                <p className="text-gray-700 text-sm mb-3">
                   Certaines fonctionnalités sont limitées jusqu'à validation de votre email (signature de contrat, paiement sécurisé).
                 </p>
                 <div className="flex flex-wrap gap-2 items-center">
                   <button
                     onClick={handleResendEmail}
                     disabled={resendingEmail || !canResend}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition"
+                    className="bg-[#FF6B00] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#E56100] disabled:bg-orange-300 disabled:cursor-not-allowed transition"
                   >
                     {resendingEmail ? 'Envoi...' : !canResend && cooldownSeconds > 0 ? `Attendre ${cooldownSeconds}s` : 'Renvoyer l\'email'}
                   </button>
@@ -194,8 +194,8 @@ export default function DashboardPage() {
 
             <div className="bg-gray-100 rounded-lg shadow-md p-6 opacity-50">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
@@ -258,8 +258,8 @@ export default function DashboardPage() {
             <Link href="/client/demandes">
               <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>

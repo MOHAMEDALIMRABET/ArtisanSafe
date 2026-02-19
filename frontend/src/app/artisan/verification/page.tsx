@@ -264,8 +264,8 @@ export default function VerificationPage() {
 
             {!siretVerified && artisan && (
               <div>
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                  <label className="block text-sm text-blue-700 mb-2 font-semibold">
+                <div className="bg-orange-50 border-l-4 border-[#FF6B00] p-4 mb-4">
+                  <label className="block text-sm text-[#2C3E50] mb-2 font-semibold">
                     <strong>SIRET actuel :</strong>
                   </label>
                   <input
@@ -280,7 +280,7 @@ export default function VerificationPage() {
                       setSiretStatus('pending');
                       setSiretError('');
                     }}
-                    className="w-full border border-blue-300 rounded px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+                    className="w-full border border-gray-300 rounded px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                     maxLength={14}
                     disabled={siretStatus === 'verifying'}
                   />
@@ -306,13 +306,13 @@ export default function VerificationPage() {
                   >
                     Mettre à jour le SIRET
                   </button>
-                  <p className="text-xs text-blue-700 mb-3">
+                  <p className="text-xs text-[#2C3E50] mb-3">
                     <strong>Raison sociale déclarée :</strong> {artisan.raisonSociale}
                   </p>
-                  <p className="text-sm text-blue-700 font-semibold mb-2">
+                  <p className="text-sm text-[#2C3E50] font-semibold mb-2">
                     Vérifications effectuées :
                   </p>
-                  <ul className="text-sm text-blue-700 list-disc list-inside ml-2 space-y-1">
+                  <ul className="text-sm text-[#2C3E50] list-disc list-inside ml-2 space-y-1">
                     <li>Format valide (14 chiffres)</li>
                     <li>Statut de l'entreprise</li>
                     <li>Informations légales de l'entreprise</li>
@@ -402,7 +402,7 @@ export default function VerificationPage() {
                     : artisan?.verificationDocuments?.kbis?.rejected 
                       ? 'bg-red-100'
                       : artisan?.verificationDocuments?.kbis?.url 
-                        ? 'bg-blue-100' 
+                        ? 'bg-purple-100' 
                         : 'bg-orange-100'
                 }`}>
                   <span className="text-2xl">
@@ -440,7 +440,7 @@ export default function VerificationPage() {
                 </span>
               )}
               {artisan?.verificationDocuments?.kbis?.url && !artisan?.verificationDocuments?.kbis?.verified && !artisan?.verificationDocuments?.kbis?.rejected && (
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
                   En cours de vérification
                 </span>
               )}
@@ -483,7 +483,7 @@ export default function VerificationPage() {
                               : artisan?.verificationDocuments?.rcPro?.rejected 
                                 ? 'bg-red-100'
                                 : artisan?.verificationDocuments?.rcPro?.url 
-                                  ? 'bg-blue-100' 
+                                  ? 'bg-purple-100' 
                                   : 'bg-orange-100'
                           }`}>
                             <span className="text-2xl">
@@ -520,7 +520,7 @@ export default function VerificationPage() {
                           </span>
                         )}
                         {artisan?.verificationDocuments?.rcPro?.url && !artisan?.verificationDocuments?.rcPro?.verified && !artisan?.verificationDocuments?.rcPro?.rejected && (
-                          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                          <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
                             En cours de vérification
                           </span>
                         )}
@@ -558,7 +558,7 @@ export default function VerificationPage() {
                     : artisan?.verificationDocuments?.idCard?.rejected 
                       ? 'bg-red-100'
                       : artisan?.verificationDocuments?.idCard?.url 
-                        ? 'bg-blue-100' 
+                        ? 'bg-purple-100' 
                         : 'bg-orange-100'
                 }`}>
                   <span className="text-2xl">
@@ -596,7 +596,7 @@ export default function VerificationPage() {
                 </span>
               )}
               {artisan?.verificationDocuments?.idCard?.url && !artisan?.verificationDocuments?.idCard?.verified && !artisan?.verificationDocuments?.idCard?.rejected && (
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
                   En cours de vérification
                 </span>
               )}

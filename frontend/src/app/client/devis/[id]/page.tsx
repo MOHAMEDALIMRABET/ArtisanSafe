@@ -598,7 +598,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
-      envoye: 'bg-blue-100 text-blue-800',
+      envoye: 'bg-purple-100 text-purple-700',
       accepte: 'bg-green-100 text-green-800',
       refuse: 'bg-red-100 text-red-800',
       expire: 'bg-orange-100 text-orange-800',
@@ -810,14 +810,14 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
           {/* Boutons d'action - masqués à l'impression */}
           {devis.statut === 'envoye' && (
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 print:hidden">
+            <div className="bg-orange-50 border-l-4 border-[#FF6B00] p-4 mb-6 print:hidden">
               <div className="flex items-start">
-                <svg className="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-[#FF6B00] mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="flex-1">
-                  <h3 className="text-blue-800 font-semibold mb-2">Ce devis nécessite une réponse</h3>
-                  <p className="text-blue-700 text-sm mb-4">
+                  <h3 className="text-[#2C3E50] font-semibold mb-2">Ce devis nécessite une réponse</h3>
+                  <p className="text-gray-700 text-sm mb-4">
                     Vous devez accepter ou refuser ce devis avant le {devis.dateValidite?.toDate().toLocaleDateString('fr-FR')}.
                   </p>
                   <div className="flex gap-3">
@@ -951,8 +951,8 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
             {/* Date de début prévue */}
             {devis.dateDebutPrevue && (
-              <div className="mb-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                <p className="text-blue-900 font-semibold">
+              <div className="mb-8 bg-gray-50 border-l-4 border-[#2C3E50] p-4 rounded">
+                <p className="text-[#2C3E50] font-semibold">
                   📅 Date de début prévue des travaux : {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
                     weekday: 'long',
                     year: 'numeric',
@@ -1009,7 +1009,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
                     {/* Matière première (si présente) */}
                     {devis.matierePremiere && (
-                      <tr className="bg-blue-50">
+                      <tr className="bg-gray-50">
                         <td className="border border-gray-300 px-4 py-2 break-words">
                           <span className="font-semibold text-blue-600">🛠️ Matière première</span>
                         </td>

@@ -593,11 +593,11 @@ export default function ArtisanDemandesPage() {
             <button
               onClick={() => setFilter('en_traitement')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-                filter === 'en_traitement' ? 'bg-blue-600 text-white ring-4 ring-blue-600 ring-opacity-50' : 'bg-white'
+                filter === 'en_traitement' ? 'bg-[#FF6B00] text-white ring-4 ring-[#FF6B00] ring-opacity-50' : 'bg-white'
               }`}
             >
               <div className={`text-2xl font-bold ${
-                filter === 'en_traitement' ? 'text-white' : 'text-blue-600'
+                filter === 'en_traitement' ? 'text-white' : 'text-[#FF6B00]'
               }`}>{getDemandesEnTraitement(demandes).length}</div>
               <div className={`text-sm ${
                 filter === 'en_traitement' ? 'text-white' : 'text-gray-600'
@@ -714,7 +714,7 @@ export default function ArtisanDemandesPage() {
                     </h2>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
-                        <span className="text-blue-500">🏷️</span>
+                        <span className="text-[#FF6B00]">🏷️</span>
                         <span className="font-semibold">Catégorie :</span>
                         <span>{demande.categorie}</span>
                       </div>
@@ -840,16 +840,16 @@ export default function ArtisanDemandesPage() {
                   {/* Localisation et Dates souhaitées côte à côte */}
                   <div className="mb-6 grid md:grid-cols-2 gap-4">
                     {/* Localisation */}
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <p className="text-sm font-bold text-[#2C3E50] mb-3 flex items-center gap-2">
                         <span>📍</span>
                         Localisation
                       </p>
                       <div className="space-y-1">
-                        <p className="text-blue-800">
+                        <p className="text-[#2C3E50]">
                           <span className="font-semibold">Ville :</span> {demande.localisation?.ville || 'Non spécifié'}
                         </p>
-                        <p className="text-blue-800">
+                        <p className="text-[#2C3E50]">
                           <span className="font-semibold">Code postal :</span> {demande.localisation?.codePostal || 'N/A'}
                         </p>
                       </div>
@@ -937,7 +937,7 @@ export default function ArtisanDemandesPage() {
                                 handleFinTravaux(devisPaye.id, devisPaye.numeroDevis);
                               }
                             }}
-                            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                            className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
                           >
                             🏁 Fin des travaux
                           </button>

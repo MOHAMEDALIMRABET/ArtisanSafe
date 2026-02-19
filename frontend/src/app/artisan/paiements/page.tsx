@@ -226,8 +226,8 @@ export default function ArtisanPaiementsPage() {
             </button>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-xs text-blue-700">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <p className="text-xs text-[#2C3E50]">
               ℹ️ <strong>Note</strong> : Vous serez redirigé vers Stripe pour compléter votre inscription.
               Préparez vos informations bancaires (IBAN) et pièce d'identité.
             </p>
@@ -320,8 +320,8 @@ export default function ArtisanPaiementsPage() {
               </div>
             </div>
 
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-sm text-blue-700">
+            <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded">
+              <p className="text-sm text-[#2C3E50]">
                 💡 <strong>Bon à savoir</strong> : Vous recevez 92% du montant TTC.
                 Les 8% restants correspondent à la commission de la plateforme ArtisanDispo.
               </p>

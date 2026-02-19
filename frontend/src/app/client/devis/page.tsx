@@ -145,12 +145,12 @@ export default function ClientDevisPage() {
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
       genere: 'bg-gray-100 text-gray-800',
-      envoye: 'bg-blue-100 text-blue-800',
+      envoye: 'bg-purple-100 text-purple-700',
       en_revision: 'bg-purple-100 text-purple-800',
       accepte: 'bg-green-100 text-green-800',
       en_attente_paiement: 'bg-yellow-100 text-yellow-800',
       paye: 'bg-green-600 text-white',
-      en_cours: 'bg-blue-600 text-white',
+      en_cours: 'bg-amber-600 text-white',
       travaux_termines: 'bg-indigo-100 text-indigo-800',
       termine_valide: 'bg-green-700 text-white',
       termine_auto_valide: 'bg-green-600 text-white',

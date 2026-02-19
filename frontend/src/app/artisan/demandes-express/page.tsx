@@ -48,7 +48,7 @@ export default function DemandesExpressArtisanPage() {
   const getStatutColor = (statut: DemandeExpress['statut']) => {
     const colors = {
       en_attente_proposition: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      proposition_recue: 'bg-blue-100 text-blue-800 border-blue-300',
+      proposition_recue: 'bg-purple-100 text-purple-800 border-purple-300',
       acceptee: 'bg-green-100 text-green-800 border-green-300',
       payee: 'bg-green-100 text-green-800 border-green-300',
       en_cours: 'bg-purple-100 text-purple-800 border-purple-300',

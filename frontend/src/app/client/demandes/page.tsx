@@ -256,7 +256,7 @@ export default function MesDemandesPage() {
         }
         if (devisPaye.statut === 'en_cours') {
           return (
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border-2 border-blue-400">
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border-2 border-purple-300">
               🚧 Travaux en cours
             </span>
           );
@@ -301,7 +301,7 @@ export default function MesDemandesPage() {
     const devisEnvoyes = devisForDemande.filter(d => d.statut === 'envoye');
     if (devisEnvoyes.length > 0) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
           📬 {devisEnvoyes.length} devis reçu{devisEnvoyes.length > 1 ? 's' : ''}
         </span>
       );
@@ -339,7 +339,7 @@ export default function MesDemandesPage() {
     
     // Badges statuts standards (fallback)
     const badges = {
-      publiee: 'bg-blue-100 text-blue-800',
+      publiee: 'bg-purple-100 text-purple-700',
       matchee: 'bg-green-100 text-green-800',
       attribuee: 'bg-green-100 text-green-800',
       en_cours: 'bg-yellow-100 text-yellow-800',
@@ -555,7 +555,7 @@ export default function MesDemandesPage() {
             </Button>
             <button
               onClick={() => setShowExpirationHelp(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
               title="Comprendre l'expiration des demandes"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

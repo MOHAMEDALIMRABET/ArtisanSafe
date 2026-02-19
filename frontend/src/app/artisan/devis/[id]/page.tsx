@@ -191,10 +191,10 @@ export default function VoirDevisPage() {
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
       genere: 'bg-gray-100 text-gray-800',
-      envoye: 'bg-blue-100 text-blue-800',
+      envoye: 'bg-purple-100 text-purple-700',
       en_attente_paiement: 'bg-yellow-100 text-yellow-800',
       paye: 'bg-green-100 text-green-800',
-      en_cours: 'bg-cyan-100 text-cyan-800',
+      en_cours: 'bg-amber-100 text-amber-800',
       travaux_termines: 'bg-purple-100 text-purple-800',
       termine_valide: 'bg-emerald-100 text-emerald-800',
       termine_auto_valide: 'bg-emerald-100 text-emerald-800',
@@ -463,8 +463,8 @@ export default function VoirDevisPage() {
 
           {/* Date de début prévue */}
           {devis.dateDebutPrevue && (
-            <div className="mb-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-              <p className="text-blue-900 font-semibold">
+            <div className="mb-8 bg-gray-50 border-l-4 border-[#2C3E50] p-4 rounded">
+              <p className="text-[#2C3E50] font-semibold">
                 📅 Date de début prévue des travaux : {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
                   weekday: 'long',
                   year: 'numeric',
@@ -574,7 +574,7 @@ export default function VoirDevisPage() {
 
                   {/* Matière première (champ optionnel) */}
                   {devis.matierePremiere && (
-                    <tr className="bg-blue-50">
+                    <tr className="bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2 break-words">
                         <span className="font-semibold text-blue-600">🛠️ Matière première</span>
                       </td>
@@ -723,9 +723,9 @@ export default function VoirDevisPage() {
                     </p>
                   </div>
 
-                  <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                  <div className="mt-4 bg-orange-50 border-l-4 border-[#FF6B00] p-4 rounded">
                     <div className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                       </svg>
                       <div className="text-sm text-blue-800">
@@ -781,14 +781,14 @@ export default function VoirDevisPage() {
 
           {/* Statut: en_cours - Travaux en cours */}
           {devis.statut === 'en_cours' && (
-            <div className="bg-blue-50 border-2 border-blue-500 rounded-lg p-6 mb-6 print:hidden">
+            <div className="bg-amber-50 border-2 border-amber-500 rounded-lg p-6 mb-6 print:hidden">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">⚙️</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-blue-800">Travaux en cours</h3>
-                  <p className="text-sm text-blue-700">
+                  <h3 className="text-lg font-bold text-[#2C3E50]">Travaux en cours</h3>
+                  <p className="text-sm text-[#2C3E50]">
                     Démarré le : {devis.travaux?.dateDebut?.toDate().toLocaleDateString('fr-FR', {
                       day: 'numeric',
                       month: 'long',
@@ -885,8 +885,8 @@ export default function VoirDevisPage() {
                   <span className="text-xs text-gray-600">(Commission plateforme : {((devis.totaux?.totalTTC || 0) * 0.08).toFixed(2)}€)</span>
                 </p>
                 
-                <div className="p-3 bg-blue-50 rounded border border-blue-200">
-                  <p className="text-sm text-blue-800">
+                <div className="p-3 bg-gray-50 rounded border border-gray-200">
+                  <p className="text-sm text-[#2C3E50]">
                     ℹ️ Vous recevrez le paiement sous <strong>24-48 heures</strong> par virement bancaire.
                   </p>
                 </div>

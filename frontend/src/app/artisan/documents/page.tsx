@@ -460,7 +460,7 @@ export default function DocumentsUploadPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  kbisVerified ? 'bg-green-100' : kbisRejected ? 'bg-red-100' : kbisUploaded ? 'bg-blue-100' : 'bg-orange-100'
+                  kbisVerified ? 'bg-green-100' : kbisRejected ? 'bg-red-100' : kbisUploaded ? 'bg-purple-100' : 'bg-orange-100'
                 }`}>
                   {kbisVerified ? (
                     <span className="text-2xl">✅</span>
@@ -489,7 +489,7 @@ export default function DocumentsUploadPage() {
                 </span>
               )}
               {kbisUploaded && !kbisVerified && !kbisSuccess && (
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
                   En cours de vérification
                 </span>
               )}
@@ -581,7 +581,7 @@ export default function DocumentsUploadPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  idVerified ? 'bg-green-100' : idRejected ? 'bg-red-100' : idUploaded ? 'bg-blue-100' : 'bg-orange-100'
+                  idVerified ? 'bg-green-100' : idRejected ? 'bg-red-100' : idUploaded ? 'bg-purple-100' : 'bg-orange-100'
                 }`}>
                   {idVerified ? (
                     <span className="text-2xl">✅</span>
@@ -610,7 +610,7 @@ export default function DocumentsUploadPage() {
                 </span>
               )}
               {idUploaded && !idVerified && !idSuccess && (
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
                   En cours de vérification
                 </span>
               )}
@@ -645,11 +645,11 @@ export default function DocumentsUploadPage() {
 
             {(!idVerified && !idUploaded && !idSuccess) && (
               <div>
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                  <p className="text-sm text-blue-700">
+                <div className="bg-gray-50 border-l-4 border-gray-300 p-4 mb-4">
+                  <p className="text-sm text-[#2C3E50]">
                     <strong>📸 Instructions :</strong>
                   </p>
-                  <ul className="text-sm text-blue-700 list-disc list-inside space-y-1 mt-2">
+                  <ul className="text-sm text-[#2C3E50] list-disc list-inside space-y-1 mt-2">
                     <li>Photo ou scan recto-verso de votre CNI/Passeport</li>
                     <li>Image claire et lisible</li>
                     <li>Format : JPG, PNG ou PDF (max 5MB)</li>
@@ -711,7 +711,7 @@ export default function DocumentsUploadPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                rcProVerified ? 'bg-green-100' : rcProRejected ? 'bg-red-100' : rcProUploaded ? 'bg-blue-100' : 'bg-orange-100'
+                rcProVerified ? 'bg-green-100' : rcProRejected ? 'bg-red-100' : rcProUploaded ? 'bg-purple-100' : 'bg-orange-100'
               }`}>
                 {rcProVerified ? (
                   <span className="text-2xl">✅</span>
@@ -740,7 +740,7 @@ export default function DocumentsUploadPage() {
               </span>
             )}
             {rcProUploaded && !rcProVerified && !rcProSuccess && (
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+              <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
                 En cours de vérification
               </span>
             )}
@@ -775,9 +775,9 @@ export default function DocumentsUploadPage() {
 
           {(!rcProVerified && !rcProUploaded && !rcProSuccess) && (
             <div>
-              <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 mb-4">
-                <h4 className="text-blue-900 font-medium mb-2">🛡️ Instructions</h4>
-                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+              <div className="bg-gray-50 border-l-4 border-gray-300 rounded-lg p-4 mb-4">
+                <h4 className="text-[#2C3E50] font-medium mb-2">🛡️ Instructions</h4>
+                <ul className="text-sm text-[#2C3E50] space-y-1 list-disc list-inside">
                   <li>Attestation RC Pro en cours de validité</li>
                   <li>Document clair et lisible</li>
                   <li>Nom et SIRET visibles</li>
@@ -841,7 +841,7 @@ export default function DocumentsUploadPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  decennaleVerified ? 'bg-green-100' : decennaleRejected ? 'bg-red-100' : decennaleUploaded ? 'bg-blue-100' : 'bg-orange-100'
+                  decennaleVerified ? 'bg-green-100' : decennaleRejected ? 'bg-red-100' : decennaleUploaded ? 'bg-purple-100' : 'bg-orange-100'
                 }`}>
                   {decennaleVerified ? (
                     <span className="text-2xl">✅</span>
@@ -870,7 +870,7 @@ export default function DocumentsUploadPage() {
                 </span>
               )}
               {decennaleUploaded && !decennaleVerified && !decennaleSuccess && (
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
                   En cours de vérification
                 </span>
               )}

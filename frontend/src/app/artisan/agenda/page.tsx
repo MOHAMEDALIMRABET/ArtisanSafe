@@ -709,7 +709,7 @@ export default function AgendaPage() {
                             aspect-square flex items-center justify-center text-sm rounded-full
                             ${isPast ? 'text-gray-300 cursor-not-allowed opacity-40 bg-gray-50' : 'text-gray-700 hover:bg-gray-100'}
                             ${isToday && !inRange && !isPast ? 'border-2 border-[#2C3E50]' : ''}
-                            ${inRange && !isStart && !isEnd && !isPast ? 'bg-blue-100' : ''}
+                            ${inRange && !isStart && !isEnd && !isPast ? 'bg-purple-100' : ''}
                             ${(isStart || isEnd) && !isPast ? 'bg-[#2C3E50] text-white font-bold' : ''}
                           `}
                         >
@@ -721,7 +721,7 @@ export default function AgendaPage() {
 
                   {/* Info sélection */}
                   {rangeStart && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
                       <p className="text-gray-700">
                         {rangeEnd ? (
                           <>📅 Du <strong>{format(new Date(rangeStart), 'dd/MM/yyyy', { locale: fr })}</strong> au <strong>{format(new Date(rangeEnd), 'dd/MM/yyyy', { locale: fr })}</strong></>
@@ -768,12 +768,12 @@ export default function AgendaPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Instructions - Tooltip au survol */}
         <div className="mb-6 relative group">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 cursor-help">
-            <h2 className="font-semibold text-blue-900">💡 Comment utiliser l'agenda ?</h2>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-help">
+            <h2 className="font-semibold text-[#2C3E50]">💡 Comment utiliser l'agenda ?</h2>
           </div>
           
           {/* Tooltip qui s'affiche au survol */}
-          <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-blue-300 rounded-lg p-5 shadow-2xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+          <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-gray-300 rounded-lg p-5 shadow-2xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
             <ul className="text-sm text-gray-800 space-y-2">
               <li>• <strong>Sélection rapide</strong> : Cliquez sur "Sélection rapide par dates" pour marquer vos indisponibilités sur plusieurs mois</li>
               <li>• <strong>Vue Agenda</strong> : Pratique pour lister vos indisponibilités</li>
@@ -793,7 +793,7 @@ export default function AgendaPage() {
         <div className="bg-white rounded-lg shadow-lg p-6 overflow-hidden" style={{ height: '700px', maxWidth: '100%' }}>
           {/* Barre de recherche par dates - Visible uniquement en vue Agenda */}
           {currentView === Views.AGENDA && (
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="flex items-end gap-4 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
                   <label className="block text-sm font-medium text-gray-700 mb-1">

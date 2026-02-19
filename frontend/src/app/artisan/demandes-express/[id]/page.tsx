@@ -260,7 +260,7 @@ export default function DemandeExpressDetailArtisanPage() {
 
           {/* Ma proposition (si déjà envoyée) */}
           {maProposition && (
-            <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-6">
+            <div className="bg-purple-50 border-2 border-purple-300 rounded-xl p-6">
               <h3 className="text-lg font-bold text-[#2C3E50] mb-4">
                 ✅ Votre proposition
               </h3>
@@ -364,7 +364,7 @@ export default function DemandeExpressDetailArtisanPage() {
                   />
                 </div>
 
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4">
                   <p className="text-sm text-[#2C3E50]">
                     <strong>ℹ️ À savoir :</strong> Une fois votre proposition envoyée, le client pourra l'accepter et procéder au paiement. L'argent sera bloqué jusqu'à la fin de l'intervention.
                   </p>

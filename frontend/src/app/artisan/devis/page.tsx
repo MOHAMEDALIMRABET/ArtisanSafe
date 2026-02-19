@@ -455,7 +455,7 @@ export default function MesDevisPage() {
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
       brouillon: 'bg-gray-100 text-gray-800',
-      envoye: 'bg-blue-100 text-blue-800',
+      envoye: 'bg-purple-100 text-purple-700',
       accepte: 'bg-green-100 text-green-800',
       refuse: 'bg-red-100 text-red-800',
       expire: 'bg-orange-100 text-orange-800',
@@ -711,14 +711,14 @@ export default function MesDevisPage() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Message informatif sur la suppression automatique */}
-        <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+        <div className="mb-6 bg-gray-50 border-l-4 border-gray-300 p-4 rounded-lg">
           <div className="flex items-start gap-3">
-            <svg className="w-6 h-6 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-[#2C3E50] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-blue-800 font-semibold mb-1">ℹ️ Gestion automatique des devis</p>
-              <p className="text-blue-700 text-sm">
+              <p className="text-[#2C3E50] font-semibold mb-1">ℹ️ Gestion automatique des devis</p>
+              <p className="text-[#2C3E50] text-sm">
                 <span className="block mb-1.5">
                   <strong>Devis refusés :</strong> Supprimés automatiquement après <strong>24 heures</strong>.
                 </span>
@@ -1059,7 +1059,7 @@ export default function MesDevisPage() {
                         ) : d.statut === 'genere' ? (
                           <button
                             onClick={() => router.push(`/artisan/devis/${d.id}`)}
-                            className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
+                            className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition"
                           >
                             👁️ Consulter
                           </button>
