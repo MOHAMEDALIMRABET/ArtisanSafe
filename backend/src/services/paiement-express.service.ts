@@ -12,6 +12,23 @@ import { FieldValue } from 'firebase-admin/firestore';
 // Types
 // ====================================
 
+export interface PaiementExpress {
+  id: string;
+  demandeId: string;
+  propositionId: string;
+  clientId: string;
+  artisanId: string;
+  stripePaymentIntentId: string;
+  montant: number;
+  commission: number;
+  montantArtisan: number;
+  statut: 'paye' | 'libere' | 'rembourse';
+  createdAt: any;
+  paidAt?: any;
+  releasedAt?: any;
+  refundedAt?: any;
+}
+
 interface CreatePaiementExpressData {
   demandeId: string;
   propositionId: string;
@@ -52,7 +69,7 @@ export async function createPaiementExpress(data: CreatePaiementExpressData) {
 // Récupération paiement
 // ====================================
 
-export async function getPaiementByDemandeId(demandeId: string) {
+export async function getPaiementByDemandeId(demandeId: string): Promise<PaiementExpress | null> {
   try {
     const snapshot = await db.collection('paiements_express')
       .where('demandeId', '==', demandeId)
@@ -64,14 +81,14 @@ export async function getPaiementByDemandeId(demandeId: string) {
     }
     
     const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() };
+    return { id: doc.id, ...doc.data() } as PaiementExpress;
   } catch (error) {
     console.error('Erreur getPaiementByDemandeId:', error);
     throw error;
   }
 }
 
-export async function getPaiementByPropositionId(propositionId: string) {
+export async function getPaiementByPropositionId(propositionId: string): Promise<PaiementExpress | null> {
   try {
     const snapshot = await db.collection('paiements_express')
       .where('propositionId', '==', propositionId)
@@ -83,7 +100,7 @@ export async function getPaiementByPropositionId(propositionId: string) {
     }
     
     const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() };
+    return { id: doc.id, ...doc.data() } as PaiementExpress;
   } catch (error) {
     console.error('Erreur getPaiementByPropositionId:', error);
     throw error;

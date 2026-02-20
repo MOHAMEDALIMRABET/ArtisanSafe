@@ -108,7 +108,15 @@ export type NotificationType =
   | 'message'                    // Gardé pour compatibilité
   | 'avis'
   | 'nouvel_avis'
-  | 'litige';
+  | 'litige'
+  | 'litige_ouvert'              // ✅ Nouveau litige déclaré
+  | 'litige_commentaire'         // ✅ Nouveau commentaire sur litige
+  | 'litige_pris_en_charge'      // ✅ Admin a pris en charge le litige
+  | 'litige_proposition'         // ✅ Proposition de résolution par admin
+  | 'litige_acceptation_partielle' // ✅ Une partie a accepté la proposition
+  | 'litige_refus'               // ✅ Proposition refusée
+  | 'litige_resolu'              // ✅ Litige résolu
+  | 'litige_escalade';           // ✅ Litige escaladé
 
 export type MessageType = 'texte' | 'document' | 'image';
 

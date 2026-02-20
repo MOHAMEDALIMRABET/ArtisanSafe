@@ -84,7 +84,7 @@ router.post('/rappel-admin-notification', async (req, res) => {
       return res.json({ success: true, message: 'Email désactivé en mode dev' });
     }
 
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: false,
@@ -196,7 +196,7 @@ router.post('/rappel-client-confirmation', async (req, res) => {
       return res.json({ success: true, message: 'Email désactivé en mode dev' });
     }
 
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: false,

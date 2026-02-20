@@ -6,13 +6,57 @@ import {
   onAuthStateChanged,
   User,
   updateProfile,
-  sendEmailVerification
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  ActionCodeSettings
 } from 'firebase/auth';
 import { createUser } from './firebase/user-service';
 import { createArtisan } from './firebase/artisan-service';
 import { syncEmailVerificationStatus } from './firebase/email-verification-sync';
 import type { User as UserType, Artisan } from '@/types/firestore';
 import { Timestamp, doc, updateDoc } from 'firebase/firestore';
+
+/**
+ * Configuration personnalisée des emails Firebase Auth
+ * Permet de personnaliser l'URL de redirection après vérification email
+ */
+function getActionCodeSettings(params?: { 
+  role?: 'client' | 'artisan',
+  action?: 'verify' | 'reset' | 'change'
+}): ActionCodeSettings {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+  
+  // URL personnalisée selon action
+  let redirectUrl = `${baseUrl}/email-verified`;
+  if (params?.action === 'reset') {
+    redirectUrl = `${baseUrl}/mot-de-passe-redefini`;
+  } else if (params?.action === 'change') {
+    redirectUrl = `${baseUrl}/email-modifie`;
+  }
+  
+  // Ajouter paramètres de tracking
+  const queryParams = new URLSearchParams();
+  if (params?.role) {
+    queryParams.append('role', params.role);
+  }
+  if (params?.action) {
+    queryParams.append('action', params.action);
+  }
+  queryParams.append('timestamp', Date.now().toString());
+  
+  return {
+    url: `${redirectUrl}?${queryParams.toString()}`,
+    handleCodeInApp: false,
+    // Configuration pour future app mobile
+    iOS: {
+      bundleId: 'fr.artisansafe.app'
+    },
+    android: {
+      packageName: 'fr.artisansafe.app',
+      installApp: false
+    }
+  };
+}
 
 /**
  * Traduire les erreurs Firebase Auth en français
@@ -71,11 +115,10 @@ export interface ArtisanSignUpData extends SignUpData {
  */
 export const authService = {
   /**
-   * Inscription client
+   * Inscription client avec configuration personnalisée
    */
   async signUpClient(data: SignUpData) {
     try {
-      // Créer le compte Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
@@ -208,12 +251,12 @@ export const authService = {
       // Synchroniser le statut emailVerified dans Firestore
       await syncEmailVerificationStatus(user.uid);
 
-      // Envoyer l'email de vérification (OBLIGATOIRE pour artisans)
+      // Envoyer l'email de vérification avec configuration personnalisée (OBLIGATOIRE pour artisans)
       try {
-        await sendEmailVerification(user, {
-          url: `${window.location.origin}/email-verified`,
-          handleCodeInApp: false,
-        });
+        await sendEmailVerification(
+          user, 
+          getActionCodeSettings({ role: 'artisan', action: 'verify' })
+        );
         console.log('✅ Email de vérification envoyé à', data.email);
       } catch (emailError) {
         console.error('⚠️ Erreur envoi email de vérification:', emailError);
@@ -286,28 +329,42 @@ export const authService = {
     }
 
     try {
-      // Générer nouveau token (validité 1h)
-      const verificationToken = Math.random().toString(36).substring(2, 15) + 
-                                Math.random().toString(36).substring(2, 15);
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 1);
+      // Récupérer le rôle de l'utilisateur depuis Firestore
+      const userDoc = await import('firebase/firestore').then(mod => 
+        mod.getDoc(doc(db, 'users', user.uid))
+      );
+      const userData = userDoc.exists() ? userDoc.data() as UserType : null;
+      const userRole = userData?.role || 'client';
 
-      // Stocker le token dans Firestore
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        verificationToken,
-        verificationTokenExpires: Timestamp.fromDate(expiresAt)
-      });
-
-      const verificationUrl = `${window.location.origin}/email-verified?token=${verificationToken}&uid=${user.uid}`;
-      await sendEmailVerification(user, {
-        url: verificationUrl,
-        handleCodeInApp: false,
-      });
+      // Envoyer email de vérification avec configuration personnalisée
+      await sendEmailVerification(
+        user, 
+        getActionCodeSettings({ role: userRole, action: 'verify' })
+      );
       console.log('✅ Email de vérification renvoyé');
     } catch (error) {
       console.error('Erreur renvoi email:', error);
       throw error;
+    }
+  },
+
+  /**
+   * Réinitialiser le mot de passe
+   */
+  async resetPassword(email: string) {
+    try {
+      await sendPasswordResetEmail(
+        auth, 
+        email,
+        getActionCodeSettings({ action: 'reset' })
+      );
+      return { success: true, message: 'Email de réinitialisation envoyé' };
+    } catch (error: any) {
+      console.error('Erreur réinitialisation mot de passe:', error);
+      return { 
+        success: false, 
+        error: translateAuthError(error) 
+      };
     }
   },
 };

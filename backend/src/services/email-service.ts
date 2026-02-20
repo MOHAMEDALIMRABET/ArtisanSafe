@@ -5,6 +5,7 @@
 
 import nodemailer from 'nodemailer';
 import { adminDb } from '../config/firebase-admin';
+import { emailTrackingService } from './email-tracking.service';
 
 interface EmailNotification {
   to: string;
@@ -54,9 +55,32 @@ export async function sendEmail(emailData: EmailNotification): Promise<boolean> 
     const info = await transporter.sendMail(mailOptions);
     console.log(`✅ Email envoyé à ${emailData.to} - ID: ${info.messageId}`);
     
+    // 📊 Logger l'email envoyé (Gmail SMTP)
+    await emailTrackingService.logEmail({
+      recipient: emailData.to,
+      subject: emailData.subject,
+      type: emailData.type as any || 'transactional',
+      provider: 'gmail',
+      status: 'sent',
+      metadata: {
+        messageId: info.messageId,
+      },
+    });
+    
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Erreur envoi email:', error);
+    
+    // 📊 Logger l'échec d'envoi
+    await emailTrackingService.logEmail({
+      recipient: emailData.to,
+      subject: emailData.subject,
+      type: emailData.type as any || 'transactional',
+      provider: 'gmail',
+      status: 'failed',
+      error: error.message,
+    });
+    
     throw error;
   }
 }

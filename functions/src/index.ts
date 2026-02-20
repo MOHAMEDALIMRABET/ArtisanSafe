@@ -127,6 +127,46 @@ export {
   cleanupOldDemandesManual  // Version HTTP pour tests manuels
 } from './scheduledJobs/cleanupOldDemandes';
 
+/**
+ * Exécution automatique des suppressions de comptes programmées
+ * Exécution: Tous les jours à 3h du matin
+ * 
+ * Workflow:
+ * 1. Admin programme suppression compte → scheduled_deletions (status: 'scheduled', deletionDate: now + 15j)
+ * 2. Compte suspendu immédiatement + email avertissement utilisateur
+ * 3. Cette fonction s'exécute quotidiennement à 3h du matin
+ * 4. Récupère suppressions programmées arrivées à échéance (deletionDate <= now)
+ * 5. Pour chaque compte : suppression cascade complète sur 15 collections
+ *    - ANONYMISE (rétention légale 10 ans) : avis, devis, demandes, contrats, conversations, messages
+ *    - SUPPRIME (RGPD) : notifications, rappels, disponibilites, users, artisans, Firebase Auth, etc.
+ * 6. Archive statistiques anonymisées dans deleted_accounts
+ * 7. Envoie email confirmation à l'utilisateur
+ * 8. Marque scheduled_deletion comme 'executed'
+ * 
+ * Conformité Légale:
+ * - RGPD Article 17 : Droit à l'effacement avec délai de recours (15 jours)
+ * - Code de Commerce Art. L123-22 : Rétention 10 ans documents comptables (devis, contrats)
+ * - Traçabilité complète : Logs + archives statistiques pour audits
+ * 
+ * Collections gérées (15 au total):
+ * - ANONYMISÉES : avis (auteurNom), devis (client/artisan), demandes (client), 
+ *                 contrats (clientNom/artisanNom), conversations (participantNames), messages (senderName)
+ * - SUPPRIMÉES : notifications, rappels, disponibilites, scheduled_deletions, 
+ *                email_notifications, admin_access_logs, users, artisans, Firebase Auth
+ * 
+ * Requirement user:
+ * "Je veux que les deux workflow existe pour le moment :
+ *  1. Suppression immédiate (tests, fraude) → Bouton admin "Supprimer Immédiatement"
+ *  2. Suppression programmée 15 jours (RGPD) → Bouton admin "Programmer Suppression"
+ *  La suppression doit être complète avec cascade sur toutes les collections."
+ * 
+ * Alternative workflow 1 (immédiat) : Via bouton admin UI → deleteArtisanAccount() / deleteClientAccount()
+ */
+export { 
+  executePendingDeletions,        // Exécution quotidienne à 3h (production)
+  executePendingDeletionsManual   // Version HTTP pour tests manuels
+} from './scheduledJobs/executePendingDeletions';
+
 
 // ========================================
 // FIRESTORE TRIGGERS

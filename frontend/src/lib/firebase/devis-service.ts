@@ -326,6 +326,29 @@ export async function updateDevis(
           console.error('Erreur mise à jour compteur devisRecus:', error);
         }
       }
+      
+      // Envoyer email au client
+      try {
+        const { getUserById } = await import('./user-service');
+        const { getArtisanById } = await import('./artisan-service');
+        const client = await getUserById(devisActuel.clientId);
+        const artisan = await getArtisanById(devisActuel.artisanId);
+        
+        if (client?.email && artisan?.businessName) {
+          const { sendDevisReceivedEmail } = await import('./email-notification-service');
+          const expirationDate = devisActuel.dateValidite?.toDate().toLocaleDateString('fr-FR') || 'Non définie';
+          await sendDevisReceivedEmail(
+            client.email,
+            `${client.prenom} ${client.nom}`,
+            artisan.businessName,
+            devisActuel.montantTTC,
+            expirationDate
+          );
+          console.log(`✅ Email devis reçu envoyé à ${client.email}`);
+        }
+      } catch (emailError) {
+        console.error('⚠️ Erreur envoi email devis reçu:', emailError);
+      }
     } else if (updates.statut === 'accepte') {
       updateData.dateAcceptation = Timestamp.now();
       updateData.dateDerniereNotification = Timestamp.now(); // Notifier l'artisan
@@ -360,6 +383,28 @@ export async function updateDevis(
           devisActuel.demandeId
         );
       }
+      
+      // Envoyer email à l'artisan
+      try {
+        const { getUserById } = await import('./user-service');
+        const { getArtisanById } = await import('./artisan-service');
+        const artisanUser = await getUserById(devisActuel.artisanId);
+        const client = await getUserById(devisActuel.clientId);
+        const artisan = await getArtisanById(devisActuel.artisanId);
+        
+        if (artisanUser?.email && client?.prenom && artisan?.businessName) {
+          const { sendDevisAcceptedEmail } = await import('./email-notification-service');
+          await sendDevisAcceptedEmail(
+            artisanUser.email,
+            `${artisanUser.prenom} ${artisanUser.nom}`,
+            `${client.prenom} ${client.nom}`,
+            devisActuel.montantTTC
+          );
+          console.log(`✅ Email devis accepté envoyé à ${artisanUser.email}`);
+        }
+      } catch (emailError) {
+        console.error('⚠️ Erreur envoi email devis accepté:', emailError);
+      }
     } else if (updates.statut === 'paye') {
       // 🆕 PAIEMENT : Annuler les autres variantes quand une est payée
       updateData.datePaiement = Timestamp.now();
@@ -385,6 +430,41 @@ export async function updateDevis(
           devisActuel.varianteGroupe, 
           devisActuel.demandeId
         );
+      }
+      
+      // Envoyer emails client et artisan
+      try {
+        const { getUserById } = await import('./user-service');
+        const { getArtisanById } = await import('./artisan-service');
+        const client = await getUserById(devisActuel.clientId);
+        const artisan = await getArtisanById(devisActuel.artisanId);
+        const artisanUser = await getUserById(devisActuel.artisanId);
+        
+        // Email client
+        if (client?.email && artisan?.businessName) {
+          const { sendPaymentConfirmedEmail } = await import('./email-notification-service');
+          await sendPaymentConfirmedEmail(
+            client.email,
+            `${client.prenom} ${client.nom}`,
+            artisan.businessName,
+            devisActuel.montantTTC
+          );
+          console.log(`✅ Email paiement confirmé envoyé à ${client.email}`);
+        }
+        
+        // Email artisan
+        if (artisanUser?.email && client?.prenom) {
+          const { sendPaymentReceivedArtisanEmail } = await import('./email-notification-service');
+          await sendPaymentReceivedArtisanEmail(
+            artisanUser.email,
+            `${artisanUser.prenom} ${artisanUser.nom}`,
+            `${client.prenom} ${client.nom}`,
+            devisActuel.montantTTC
+          );
+          console.log(`✅ Email paiement reçu envoyé à ${artisanUser.email}`);
+        }
+      } catch (emailError) {
+        console.error('⚠️ Erreur envoi emails paiement:', emailError);
       }
     } else if (updates.statut === 'refuse') {
       updateData.dateRefus = Timestamp.now();
@@ -802,6 +882,28 @@ export async function declarerFinTravaux(devisId: string, artisanId: string): Pr
     title: 'Travaux terminés',
     message: `${devis.artisan.raisonSociale} a terminé les travaux. Vous avez 7 jours pour valider ou signaler un problème.`,
   });
+  
+  // Envoyer email au client
+  try {
+    const { getUserById } = await import('./user-service');
+    const { getArtisanById } = await import('./artisan-service');
+    const client = await getUserById(devis.clientId);
+    const artisan = await getArtisanById(devis.artisanId);
+    
+    if (client?.email && artisan?.businessName) {
+      const { sendTravauxTerminesEmail } = await import('./email-notification-service');
+      const dateValidation = dateValidationAuto.toDate().toLocaleDateString('fr-FR');
+      await sendTravauxTerminesEmail(
+        client.email,
+        `${client.prenom} ${client.nom}`,
+        artisan.businessName,
+        dateValidation
+      );
+      console.log(`✅ Email travaux terminés envoyé à ${client.email}`);
+    }
+  } catch (emailError) {
+    console.error('⚠️ Erreur envoi email travaux terminés:', emailError);
+  }
 }
 
 /**
@@ -854,6 +956,46 @@ export async function validerTravaux(devisId: string, clientId: string): Promise
     title: 'Travaux validés !',
     message: `${devis.client.prenom} ${devis.client.nom} a validé les travaux. Le paiement sera transféré sous 24-48h.`,
   });
+
+  // Notification client pour l'inviter à donner un avis
+  await notifyClientDevisRecu(devis.clientId, devisId, {
+    type: 'demande_avis_express',
+    title: '⭐ Donnez votre avis !',
+    message: `Aidez la communauté en partageant votre expérience avec ${devis.artisan?.businessName || 'cet artisan'}.`,
+  });
+  
+  // Envoyer emails
+  try {
+    const { getUserById } = await import('./user-service');
+    const { getArtisanById } = await import('./artisan-service');
+    const client = await getUserById(devis.clientId);
+    const artisan = await getArtisanById(devis.artisanId);
+    const artisanUser = await getUserById(devis.artisanId);
+    
+    // Email artisan
+    if (artisanUser?.email && artisan?.businessName) {
+      const { sendPaiementTransfereEmail } = await import('./email-notification-service');
+      await sendPaiementTransfereEmail(
+        artisanUser.email,
+        `${artisanUser.prenom} ${artisanUser.nom}`,
+        devis.montantTTC
+      );
+      console.log(`✅ Email paiement transféré envoyé à ${artisanUser.email}`);
+    }
+    
+    // Email client (validation manuelle)
+    if (client?.email && artisan?.businessName) {
+      const { sendValidationAutomatiqueClientEmail } = await import('./email-notification-service');
+      await sendValidationAutomatiqueClientEmail(
+        client.email,
+        `${client.prenom} ${client.nom}`,
+        artisan.businessName
+      );
+      console.log(`✅ Email validation envoyé au client ${client.email}`);
+    }
+  } catch (emailError) {
+    console.error('⚠️ Erreur envoi emails validation:', emailError);
+  }
 }
 
 /**
@@ -911,6 +1053,39 @@ export async function signalerLitige(
     message: `${devis.client.prenom} ${devis.client.nom} a signalé un problème. Un médiateur va être contacté.`,
   });
   
+  // Envoyer emails client et artisan
+  try {
+    const { getUserById } = await import('./user-service');
+    const { getArtisanById } = await import('./artisan-service');
+    const client = await getUserById(devis.clientId);
+    const artisan = await getArtisanById(devis.artisanId);
+    const artisanUser = await getUserById(devis.artisanId);
+    
+    // Email client
+    if (client?.email && artisan?.businessName) {
+      const { sendLitigeEnregistreClientEmail } = await import('./email-notification-service');
+      await sendLitigeEnregistreClientEmail(
+        client.email,
+        `${client.prenom} ${client.nom}`,
+        artisan.businessName
+      );
+      console.log(`✅ Email litige enregistré envoyé au client ${client.email}`);
+    }
+    
+    // Email artisan
+    if (artisanUser?.email && client?.prenom) {
+      const { sendLitigeSignaleArtisanEmail } = await import('./email-notification-service');
+      await sendLitigeSignaleArtisanEmail(
+        artisanUser.email,
+        `${artisanUser.prenom} ${artisanUser.nom}`,
+        `${client.prenom} ${client.nom}`
+      );
+      console.log(`✅ Email litige signalé envoyé à l'artisan ${artisanUser.email}`);
+    }
+  } catch (emailError) {
+    console.error('⚠️ Erreur envoi emails litige:', emailError);
+  }
+  
   // TODO: Notifier admin pour médiation
 }
 
@@ -964,6 +1139,39 @@ export async function validerAutomatiquementTravaux(devisId: string): Promise<vo
     title: 'Validation automatique',
     message: `Les travaux ont été validés automatiquement (délai de 7 jours écoulé).`,
   });
+  
+  // Envoyer emails client et artisan
+  try {
+    const { getUserById } = await import('./user-service');
+    const { getArtisanById } = await import('./artisan-service');
+    const client = await getUserById(devis.clientId);
+    const artisan = await getArtisanById(devis.artisanId);
+    const artisanUser = await getUserById(devis.artisanId);
+    
+    // Email client
+    if (client?.email && artisan?.businessName) {
+      const { sendValidationAutomatiqueClientEmail } = await import('./email-notification-service');
+      await sendValidationAutomatiqueClientEmail(
+        client.email,
+        `${client.prenom} ${client.nom}`,
+        artisan.businessName
+      );
+      console.log(`✅ Email validation auto envoyé au client ${client.email}`);
+    }
+    
+    // Email artisan
+    if (artisanUser?.email) {
+      const { sendValidationAutomatiqueArtisanEmail } = await import('./email-notification-service');
+      await sendValidationAutomatiqueArtisanEmail(
+        artisanUser.email,
+        `${artisanUser.prenom} ${artisanUser.nom}`,
+        devis.montantTTC
+      );
+      console.log(`✅ Email validation auto envoyé à l'artisan ${artisanUser.email}`);
+    }
+  } catch (emailError) {
+    console.error('⚠️ Erreur envoi emails validation auto:', emailError);
+  }
 }
 
 /**

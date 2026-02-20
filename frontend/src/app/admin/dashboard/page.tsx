@@ -29,9 +29,16 @@ export default function AdminDashboardPage() {
     clientsActifs: 0,
     clientsSuspendus: 0,
   });
+  const [emailStats, setEmailStats] = useState<{
+    gmailCount: number;
+    gmailLimit: number;
+    percentage: number;
+    alertLevel: 'safe' | 'warning' | 'critical' | 'danger';
+  } | null>(null);
 
   useEffect(() => {
     loadStats();
+    loadEmailStats();
   }, []);
 
   const loadStats = async () => {
@@ -73,7 +80,36 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
   };
+const loadEmailStats = async () => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const response = await fetch(`${API_URL}/admin/email-stats/today`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const gmailCount = data.byProvider?.gmail || 0;
+        const gmailLimit = 500;
+        const percentage = Math.round((gmailCount / gmailLimit) * 100);
 
+        let alertLevel: 'safe' | 'warning' | 'critical' | 'danger' = 'safe';
+        if (gmailCount >= 450) alertLevel = 'danger';
+        else if (gmailCount >= 400) alertLevel = 'critical';
+        else if (gmailCount >= 300) alertLevel = 'warning';
+
+        setEmailStats({
+          gmailCount,
+          gmailLimit,
+          percentage,
+          alertLevel
+        });
+      }
+    } catch (error) {
+      console.error('Erreur chargement stats emails:', error);
+      // Ne pas bloquer le dashboard si l'API email n'est pas disponible
+    }
+  };
+
+  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -152,6 +188,13 @@ export default function AdminDashboardPage() {
       icon: '📞',
       link: '/admin/rappels',
       color: 'bg-blue-600'
+    },
+    {
+      title: 'Monitoring Emails',
+      description: 'Suivi quota Gmail et notifications',
+      icon: '📊',
+      link: '/admin/email-monitoring',
+      color: 'bg-purple-600'
     }
   ];
 
@@ -208,6 +251,56 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Alertes */}
+      {/* Alerte quota Gmail */}
+      {emailStats && (emailStats.alertLevel === 'critical' || emailStats.alertLevel === 'danger') && (
+        <div className={`border-l-4 p-6 rounded-lg mb-4 ${
+          emailStats.alertLevel === 'danger' 
+            ? 'bg-red-50 border-red-500' 
+            : 'bg-orange-50 border-orange-500'
+        }`}>
+          <div className="flex items-start gap-4">
+            <span className="text-3xl">{emailStats.alertLevel === 'danger' ? '🔥' : '🚨'}</span>
+            <div className="flex-1">
+              <h3 className={`font-bold mb-1 ${
+                emailStats.alertLevel === 'danger' ? 'text-red-800' : 'text-orange-800'
+              }`}>
+                {emailStats.alertLevel === 'danger' 
+                  ? 'URGENCE : Quota Gmail critique !' 
+                  : 'ALERTE : Quota Gmail élevé'}
+              </h3>
+              <p className={`mb-3 ${
+                emailStats.alertLevel === 'danger' ? 'text-red-700' : 'text-orange-700'
+              }`}>
+                {emailStats.gmailCount} emails envoyés sur {emailStats.gmailLimit} ({emailStats.percentage}%)
+                {emailStats.alertLevel === 'danger' 
+                  ? ' - Risque de suspension. Migrer vers Brevo IMMÉDIATEMENT !' 
+                  : ' - Planifier migration Brevo dans les 24-48h.'}
+              </p>
+              <div className="flex gap-2">
+                <Link
+                  href="/admin/email-monitoring"
+                  className={`inline-block text-white px-4 py-2 rounded-lg transition-colors ${
+                    emailStats.alertLevel === 'danger'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-orange-600 hover:bg-orange-700'
+                  }`}
+                >
+                  Voir détails
+                </Link>
+                <a
+                  href="https://www.brevo.com/fr/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Migrer vers Brevo →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {stats.artisansEnAttente > 0 && (
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
           <div className="flex items-start gap-4">

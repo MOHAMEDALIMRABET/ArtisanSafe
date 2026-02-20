@@ -151,7 +151,7 @@ export default function ClientDevisPage() {
       en_attente_paiement: 'bg-yellow-100 text-yellow-800',
       paye: 'bg-green-600 text-white',
       en_cours: 'bg-amber-600 text-white',
-      travaux_termines: 'bg-indigo-100 text-indigo-800',
+      travaux_termines: 'bg-orange-100 text-orange-800',
       termine_valide: 'bg-green-700 text-white',
       termine_auto_valide: 'bg-green-600 text-white',
       litige: 'bg-red-600 text-white',

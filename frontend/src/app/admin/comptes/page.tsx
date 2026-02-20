@@ -17,6 +17,7 @@ import {
   reactivateClient,
   deleteArtisanAccount,
   deleteClientAccount,
+  scheduleAccountDeletion,
   addAdminNoteArtisan,
   addAdminNoteClient
 } from '@/lib/firebase/account-service';
@@ -54,13 +55,11 @@ export default function AdminComptesPage() {
   // Modals
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   
   // Form states
   const [suspensionReason, setSuspensionReason] = useState('');
-  const [deletionReason, setDeletionReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -218,27 +217,97 @@ export default function AdminComptesPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedAccount || !deletionReason.trim()) return;
-    if (!confirm('⚠️ ATTENTION : Cette action est IRRÉVERSIBLE. Confirmer la suppression définitive ?')) return;
+  // Suppression PROGRAMMÉE (15 jours) - RECOMMANDÉ
+  const handleScheduledDeleteDirect = async (account: Artisan | Client) => {
+    const reason = prompt(
+      '📅 SUPPRESSION PROGRAMMÉE (15 jours)\n\n' +
+      'L\'utilisateur sera notifié et aura 15 jours pour contester.\n' +
+      'Le compte sera suspendu immédiatement.\n\n' +
+      'Raison de la suppression :'
+    );
+    
+    if (!reason || !reason.trim()) {
+      alert('Raison obligatoire');
+      return;
+    }
+
+    if (!confirm(
+      '✅ Confirmer la suppression programmée ?\n\n' +
+      `Utilisateur : ${account.nom} ${account.prenom}\n` +
+      `Email : ${account.email}\n` +
+      `Raison : ${reason}\n\n` +
+      '→ Compte suspendu immédiatement\n' +
+      '→ Email de notification envoyé\n' +
+      '→ Suppression définitive dans 15 jours'
+    )) return;
+
+    setActionLoading(true);
+    try {
+      const result = await scheduleAccountDeletion(
+        account.userId,
+        accountType === 'artisans' ? 'artisan' : 'client',
+        reason,
+        'admin_temp',
+        'Admin',
+        15
+      );
+
+      if (result.success) {
+        await loadData();
+        alert('✅ Suppression programmée avec succès\n\n→ Utilisateur notifié par email\n→ Délai de recours : 15 jours\n→ Compte suspendu immédiatement');
+      } else {
+        alert('❌ ' + (result.error || 'Erreur lors de la programmation'));
+      }
+    } catch (error) {
+      alert('❌ Erreur lors de la programmation de la suppression');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Suppression IMMÉDIATE - DANGER (tests, fraude uniquement)
+  const handleImmediateDeleteDirect = async (account: Artisan | Client) => {
+    const reason = prompt(
+      '⚠️ SUPPRESSION IMMÉDIATE DÉFINITIVE\n\n' +
+      'Cette action est IRRÉVERSIBLE et IMMÉDIATE.\n' +
+      'À utiliser uniquement pour : tests, fraude avérée, demande urgente\n\n' +
+      'Raison de la suppression :'
+    );
+    
+    if (!reason || !reason.trim()) {
+      alert('Raison obligatoire');
+      return;
+    }
+
+    if (!confirm(
+      '⚠️⚠️⚠️ DERNIÈRE CONFIRMATION ⚠️⚠️⚠️\n\n' +
+      'SUPPRESSION IMMÉDIATE ET IRRÉVERSIBLE\n\n' +
+      `Utilisateur : ${account.nom} ${account.prenom}\n` +
+      `Email : ${account.email}\n` +
+      `Raison : ${reason}\n\n` +
+      '→ Toutes les données personnelles seront supprimées MAINTENANT\n' +
+      '→ AUCUN délai de recours\n' +
+      '→ IMPOSSIBLE à annuler\n\n' +
+      'Êtes-vous ABSOLUMENT SÛR ?'
+    )) return;
+
+    // Double confirmation pour sécurité
+    if (!confirm('⚠️ CONFIRMER UNE DERNIÈRE FOIS ?\n\nSuppression IRRÉVERSIBLE de ' + account.email)) return;
 
     setActionLoading(true);
     try {
       const result = accountType === 'artisans'
-        ? await deleteArtisanAccount(selectedAccount.userId, 'admin_temp', 'Admin', deletionReason)
-        : await deleteClientAccount(selectedAccount.userId, 'admin_temp', 'Admin', deletionReason);
+        ? await deleteArtisanAccount(account.userId, 'admin_temp', 'Admin', reason)
+        : await deleteClientAccount(account.userId, 'admin_temp', 'Admin', reason);
 
       if (result.success) {
         await loadData();
-        setShowDeleteDialog(false);
-        setDeletionReason('');
-        setSelectedAccount(null);
-        alert('Compte supprimé définitivement');
+        alert('✅ Compte supprimé définitivement');
       } else {
-        alert(result.error || 'Erreur lors de la suppression');
+        alert('❌ ' + (result.error || 'Erreur lors de la suppression'));
       }
     } catch (error) {
-      alert('Erreur lors de la suppression');
+      alert('❌ Erreur lors de la suppression');
     } finally {
       setActionLoading(false);
     }
@@ -505,14 +574,20 @@ export default function AdminComptesPage() {
                       Note
                     </button>
                     <button
-                      onClick={() => {
-                        setSelectedAccount(account);
-                        setShowDeleteDialog(true);
-                      }}
+                      onClick={() => handleScheduledDeleteDirect(account)}
                       disabled={actionLoading}
-                      className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                      className="text-red-600 hover:text-red-900 disabled:opacity-50 font-semibold"
+                      title="Suppression programmée (15 jours) avec notification utilisateur"
                     >
                       Supprimer
+                    </button>
+                    <button
+                      onClick={() => handleImmediateDeleteDirect(account)}
+                      disabled={actionLoading}
+                      className="text-xs text-red-800 hover:text-red-950 disabled:opacity-50 underline"
+                      title="⚠️ Suppression immédiate et irréversible (tests/fraude uniquement)"
+                    >
+                      Immédiat
                     </button>
                   </td>
                 </tr>
@@ -568,48 +643,7 @@ export default function AdminComptesPage() {
         </div>
       )}
 
-      {/* Modal Suppression */}
-      {showDeleteDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4 text-red-600">⚠️ Suppression Définitive</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Cette action est <strong>IRRÉVERSIBLE</strong>. Toutes les données seront supprimées conformément au RGPD.
-            </p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Raison de la suppression *
-              </label>
-              <textarea
-                value={deletionReason}
-                onChange={(e) => setDeletionReason(e.target.value)}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                placeholder="Expliquez la raison de la suppression..."
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleDelete}
-                disabled={actionLoading || !deletionReason.trim()}
-                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {actionLoading ? 'Suppression...' : 'Supprimer Définitivement'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowDeleteDialog(false);
-                  setDeletionReason('');
-                  setSelectedAccount(null);
-                }}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
-              >
-                Annuler
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Suppression - SUPPRIMÉ (actions directes dans la liste) */}
 
       {/* Modal Note */}
       {showNoteDialog && (

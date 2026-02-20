@@ -15,15 +15,33 @@ import {
 
 const router = express.Router();
 
-// Initialiser Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2026-01-28.clover',
-});
+// Initialiser Stripe seulement si la clé est configurée
+let stripe: Stripe | null = null;
+
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2026-01-28.clover',
+  });
+  console.log('✅ Stripe initialisé pour paiements Express');
+} else {
+  console.warn('⚠️  STRIPE_SECRET_KEY non configurée - Routes Stripe Express désactivées');
+}
+
+// Middleware pour vérifier si Stripe est configuré
+const requireStripe = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      error: 'Service de paiement non disponible',
+      message: 'Stripe n\'est pas configuré. Veuillez contacter l\'administrateur.'
+    });
+  }
+  next();
+};
 
 // ====================================
 // 1. Créer PaymentIntent (escrow)
 // ====================================
-router.post('/create-payment-intent', async (req, res) => {
+router.post('/create-payment-intent', requireStripe, async (req, res) => {
   try {
     const { propositionId } = req.body;
 
@@ -57,6 +75,11 @@ router.post('/create-payment-intent', async (req, res) => {
     const demande = await getDemandeExpressById(proposition.demandeId);
     if (!demande) {
       return res.status(404).json({ error: 'Demande introuvable' });
+    }
+
+    // Vérifier Stripe configuré
+    if (!stripe) {
+      return res.status(503).json({ error: 'Service de paiement non configuré' });
     }
 
     // Créer PaymentIntent avec CAPTURE MANUELLE (escrow)
@@ -100,6 +123,10 @@ router.post(
   '/webhook',
   express.raw({ type: 'application/json' }),
   async (req, res) => {
+    if (!stripe) {
+      return res.status(503).send('Service de paiement non disponible');
+    }
+
     const sig = req.headers['stripe-signature'] as string;
 
     if (!sig) {
@@ -205,7 +232,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
 // ====================================
 // 3. Capture paiement (libérer escrow)
 // ====================================
-router.post('/capture-payment', async (req, res) => {
+router.post('/capture-payment', requireStripe, async (req, res) => {
   try {
     const { demandeId } = req.body;
 
@@ -238,6 +265,11 @@ router.post('/capture-payment', async (req, res) => {
     console.log(`🔓 Capture paiement: ${paiement.stripePaymentIntentId}`);
     console.log(`   - Montant total: ${paiement.montant}€`);
     console.log(`   - Montant artisan: ${paiement.montantArtisan}€`);
+
+    // Vérifier Stripe configuré
+    if (!stripe) {
+      return res.status(503).json({ error: 'Service de paiement non configuré' });
+    }
 
     // Capturer PaymentIntent (libérer escrow)
     const capturedPaymentIntent = await stripe.paymentIntents.capture(
@@ -275,7 +307,7 @@ router.post('/capture-payment', async (req, res) => {
 // ====================================
 // 4. Remboursement (litige)
 // ====================================
-router.post('/refund-payment', async (req, res) => {
+router.post('/refund-payment', requireStripe, async (req, res) => {
   try {
     const { demandeId, reason } = req.body;
 
@@ -305,6 +337,11 @@ router.post('/refund-payment', async (req, res) => {
     console.log(`💸 Remboursement demandé: ${paiement.stripePaymentIntentId}`);
     console.log(`   - Montant: ${paiement.montant}€`);
     console.log(`   - Raison: ${reason || 'Non spécifiée'}`);
+
+    // Vérifier Stripe configuré
+    if (!stripe) {
+      return res.status(503).json({ error: 'Service de paiement non configuré' });
+    }
 
     // Créer refund Stripe
     const refund = await stripe.refunds.create({
@@ -340,7 +377,7 @@ router.post('/refund-payment', async (req, res) => {
 // ====================================
 // 5. Statut paiement (pour debug)
 // ====================================
-router.get('/payment-status/:demandeId', async (req, res) => {
+router.get('/payment-status/:demandeId', requireStripe, async (req, res) => {
   try {
     const { demandeId } = req.params;
     

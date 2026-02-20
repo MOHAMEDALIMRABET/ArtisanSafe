@@ -374,6 +374,27 @@ export async function approveArtisan(
       timestamp: Timestamp.now(),
     });
 
+    // Envoyer email de notification si profil totalement approuvé
+    if (allStepsComplete) {
+      try {
+        const { getUserById } = await import('./user-service');
+        const user = await getUserById(artisan.userId);
+        
+        if (user?.email) {
+          const { sendArtisanApprovedEmail } = await import('./email-notification-service');
+          await sendArtisanApprovedEmail(
+            user.email,
+            `${user.prenom} ${user.nom}`,
+            artisan.businessName
+          );
+          console.log(`✅ Email d'approbation envoyé à ${user.email}`);
+        }
+      } catch (emailError) {
+        console.error('⚠️ Erreur envoi email approbation:', emailError);
+        // Ne pas bloquer l'exécution si l'email échoue
+      }
+    }
+
     return { success: true };
   } catch (error) {
     console.error('Erreur approbation artisan:', error);
@@ -439,8 +460,25 @@ export async function rejectArtisan(
       timestamp: Timestamp.now(),
     });
 
-    // TODO: Envoyer email de notification à l'artisan
-    console.log(`📧 Email à envoyer à l'artisan - Raison: ${reason}`);
+    // Envoyer email de notification à l'artisan
+    try {
+      const artisanData = artisanSnap.data() as any;
+      const { getUserById } = await import('./user-service');
+      const user = await getUserById(artisanData.userId);
+      
+      if (user?.email) {
+        const { sendArtisanRejectedEmail } = await import('./email-notification-service');
+        await sendArtisanRejectedEmail(
+          user.email,
+          `${user.prenom} ${user.nom}`,
+          reason
+        );
+        console.log(`✅ Email de rejet envoyé à ${user.email}`);
+      }
+    } catch (emailError) {
+      console.error('⚠️ Erreur envoi email rejet:', emailError);
+      // Ne pas bloquer l'exécution si l'email échoue
+    }
 
     return { success: true };
   } catch (error) {

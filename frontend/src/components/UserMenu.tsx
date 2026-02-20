@@ -9,6 +9,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useContratsANoter } from '@/hooks/useContratsANoter';
 import { collection, query, where, onSnapshot, or } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import type { User } from '@/types/firestore';
@@ -26,6 +27,9 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
   // Ne charger les notifications que si l'utilisateur existe
   const shouldLoadNotifications = !!user?.uid;
   const { notifications, markTypeAsRead } = useNotifications(shouldLoadNotifications ? user.uid : undefined);
+
+  // Hook pour les contrats à noter (clients uniquement)
+  const { count: avisEnAttente } = useContratsANoter(!isArtisan && user?.uid ? user.uid : undefined);
 
   // État pour les messages non lus
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -360,6 +364,11 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
                     />
                   </svg>
                   <span className="font-medium flex-1">Avis</span>
+                  {avisEnAttente > 0 && (
+                    <span className="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {avisEnAttente}
+                    </span>
+                  )}
                 </button>
               </>
             )}

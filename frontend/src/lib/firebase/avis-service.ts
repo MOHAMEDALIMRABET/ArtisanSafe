@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import type { Avis } from '@/types/firestore';
+import type { Devis } from '@/types/devis';
 import { updateNotation } from './artisan-service';
 import { updateNoteGlobale } from './artisan-stats-service';
 
@@ -278,34 +279,48 @@ export async function calculateAverageRating(artisanId: string): Promise<{
 /**
  * Récupérer les contrats terminés sans avis pour un client
  * (pour afficher les invitations à laisser un avis)
+ * Limite : 30 jours après validation (évite avis obsolètes)
  */
-export async function getContratsTerminesSansAvis(clientId: string): Promise<any[]> {
+export async function getContratsTerminesSansAvis(clientId: string): Promise<Devis[]> {
   try {
-    const contratsRef = collection(db, 'contrats');
+    // Récupérer les devis terminés et validés (devis signé = contrat juridique)
+    const devisRef = collection(db, 'devis');
     const q = query(
-      contratsRef,
+      devisRef,
       where('clientId', '==', clientId),
-      where('statut', '==', 'termine')
+      where('statut', 'in', ['termine_valide', 'termine_auto_valide'])
     );
 
     const snapshot = await getDocs(q);
     const contrats = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    } as Devis));
 
-    // Filtrer ceux qui n'ont pas encore d'avis
+    // Constante : Délai maximum 30 jours pour laisser un avis
+    const DELAI_MAX_AVIS = 30 * 24 * 60 * 60 * 1000; // 30 jours en ms
+
+    // Filtrer ceux qui n'ont pas encore d'avis ET < 30 jours
     const contratsAvecAvis = await Promise.all(
       contrats.map(async (contrat) => {
         const avisExistant = await getAvisByContratId(contrat.id);
+        
+        // Vérifier la date de validation (travaux.dateValidationClient)
+        const dateValidation = contrat.travaux?.dateValidationClient?.toMillis() || 0;
+        const maintenant = Date.now();
+        const delaiEcoule = maintenant - dateValidation;
+        const estDansLesDelais = delaiEcoule <= DELAI_MAX_AVIS;
+        
         return {
           ...contrat,
           hasAvis: !!avisExistant,
+          estDansLesDelais,
         };
       })
     );
 
-    return contratsAvecAvis.filter(c => !c.hasAvis);
+    // Retourner uniquement les contrats sans avis ET dans les 30 jours
+    return contratsAvecAvis.filter(c => !c.hasAvis && c.estDansLesDelais);
   } catch (error) {
     console.error('❌ Erreur récupération contrats sans avis:', error);
     return [];

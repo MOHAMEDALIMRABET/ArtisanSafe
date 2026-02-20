@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { doc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase/config';
@@ -22,6 +23,7 @@ import {
   validerTravaux, 
   signalerLitige 
 } from '@/lib/firebase/devis-service';
+import { getAvisByContratId } from '@/lib/firebase/avis-service';
 import { Logo } from '@/components/ui';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
@@ -118,6 +120,8 @@ export default function ClientDevisDetailPage() {
   const [showLitigeModal, setShowLitigeModal] = useState(false);
   const [motifLitige, setMotifLitige] = useState('');
   const [litigeEnCours, setLitigeEnCours] = useState(false);
+  const [avisExiste, setAvisExiste] = useState(false);
+  const [checkingAvis, setCheckingAvis] = useState(false);
 
   const devisId = params.id as string;
   const action = searchParams.get('action');
@@ -178,6 +182,14 @@ export default function ClientDevisDetailPage() {
       }
 
       setDevis(devisData);
+
+      // Vérifier si un avis a déjà été donné pour ce contrat (si travaux terminés)
+      if (['termine_valide', 'termine_auto_valide'].includes(devisData.statut)) {
+        setCheckingAvis(true);
+        const avisExistant = await getAvisByContratId(devisId);
+        setAvisExiste(!!avisExistant);
+        setCheckingAvis(false);
+      }
 
       // Charger les autres variantes si ce devis fait partie d'un groupe
       if (devisData.varianteGroupe) {
@@ -1290,13 +1302,39 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                   💰 Montant : <strong>{devis.totaux.totalTTC.toFixed(2)}€</strong>
                 </p>
                 
-                <div className="p-3 bg-blue-50 rounded border border-blue-200">
+                <div className="p-3 bg-blue-50 rounded border border-blue-200 mb-3">
                   <p className="text-sm text-blue-800">
                     💡 <strong>Merci d'avoir utilisé ArtisanDispo !</strong>
                     <br />
                     Vous pouvez laisser un avis sur l'artisan pour aider d'autres clients.
                   </p>
                 </div>
+
+                {/* Bouton donner un avis */}
+                {!checkingAvis && !avisExiste && (
+                  <Link href={`/client/avis/nouveau/${devis.id}`}>
+                    <button className="w-full bg-[#FF6B00] hover:bg-[#E56100] text-white px-6 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2">
+                      <span className="text-xl">⭐</span>
+                      Donner mon avis maintenant
+                    </button>
+                  </Link>
+                )}
+
+                {/* Message si avis déjà donné */}
+                {!checkingAvis && avisExiste && (
+                  <div className="p-3 bg-green-100 rounded border border-green-300">
+                    <p className="text-sm text-green-800 text-center">
+                      ✅ Vous avez déjà donné votre avis pour cette intervention
+                    </p>
+                  </div>
+                )}
+
+                {/* Loading pendant vérification */}
+                {checkingAvis && (
+                  <div className="text-center text-gray-500 text-sm">
+                    Vérification...
+                  </div>
+                )}
               </div>
             </div>
           )}

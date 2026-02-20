@@ -29,20 +29,40 @@ export interface AccountAction {
 }
 
 // ============================================
-// ANONYMISATION DES DONNÉES
+// SUPPRESSION CASCADE COMPLÈTE
 // ============================================
 
 /**
- * Anonymiser tous les avis publiés par un utilisateur
- * Utilisé lors de la suppression d'un compte (RGPD)
+ * SUPPRESSION COMPLÈTE avec cascade sur toutes les collections
+ * Conforme RGPD + obligations légales françaises
+ * Utilisé par DEUX workflows :
+ * 1. Suppression immédiate (admin urgent ou demande utilisateur)
+ * 2. Suppression programmée J+15 (via executePendingDeletions)
  */
-async function anonymizeUserReviews(userId: string): Promise<void> {
+async function deleteUserCompletely(
+  userId: string,
+  accountType: 'artisan' | 'client',
+  adminId: string,
+  adminName: string,
+  reason: string,
+  userEmail: string,
+  userName: string
+): Promise<{ success: boolean; error?: string; details?: string }> {
   try {
-    const avisRef = collection(db, 'avis');
-    const q = query(avisRef, where('auteurId', '==', userId));
-    const querySnapshot = await getDocs(q);
+    const deletedCollections: string[] = [];
+    const anonymizedCollections: string[] = [];
 
-    const anonymizePromises = querySnapshot.docs.map(async (avisDoc) => {
+    console.log(`🗑️ Début suppression complète userId: ${userId} (${accountType})`);
+
+    // ========================================
+    // 1. ANONYMISER (obligations légales 10 ans)
+    // ========================================
+
+    // Avis → Anonymiser auteur
+    const avisSnapshot = await getDocs(
+      query(collection(db, 'avis'), where('auteurId', '==', userId))
+    );
+    for (const avisDoc of avisSnapshot.docs) {
       await updateDoc(avisDoc.ref, {
         auteurNom: '[Compte supprimé]',
         auteurEmail: null,
@@ -50,13 +70,229 @@ async function anonymizeUserReviews(userId: string): Promise<void> {
         anonymized: true,
         anonymizedAt: Timestamp.now()
       });
-    });
+    }
+    if (avisSnapshot.size > 0) {
+      anonymizedCollections.push(`avis (${avisSnapshot.size})`);
+    }
 
-    await Promise.all(anonymizePromises);
-    console.log(`✅ ${querySnapshot.size} avis anonymisés pour userId ${userId}`);
+    // Devis → Anonymiser parties (conserver montants pour compta légale)
+    const devisField = accountType === 'artisan' ? 'artisanId' : 'clientId';
+    const devisSnapshot = await getDocs(
+      query(collection(db, 'devis'), where(devisField, '==', userId))
+    );
+    for (const devisDoc of devisSnapshot.docs) {
+      const updates: any = {
+        anonymizedAt: Timestamp.now()
+      };
+      if (accountType === 'artisan') {
+        updates['artisan.nom'] = '[Compte supprimé]';
+        updates['artisan.email'] = null;
+        updates['artisan.telephone'] = null;
+        updates.anonymizedArtisan = true;
+      } else {
+        updates['client.nom'] = '[Compte supprimé]';
+        updates['client.email'] = null;
+        updates['client.telephone'] = null;
+        updates.anonymizedClient = true;
+      }
+      await updateDoc(devisDoc.ref, updates);
+    }
+    if (devisSnapshot.size > 0) {
+      anonymizedCollections.push(`devis (${devisSnapshot.size})`);
+    }
+
+    // Demandes → Anonymiser client (si client)
+    if (accountType === 'client') {
+      const demandesSnapshot = await getDocs(
+        query(collection(db, 'demandes'), where('clientId', '==', userId))
+      );
+      for (const demandeDoc of demandesSnapshot.docs) {
+        await updateDoc(demandeDoc.ref, {
+          'client.nom': '[Compte supprimé]',
+          'client.email': null,
+          'client.telephone': null,
+          anonymizedClient: true,
+          anonymizedAt: Timestamp.now()
+        });
+      }
+      if (demandesSnapshot.size > 0) {
+        anonymizedCollections.push(`demandes (${demandesSnapshot.size})`);
+      }
+    }
+
+    // Contrats → Anonymiser parties (conserver données financières)
+    const contratsField = accountType === 'artisan' ? 'artisanId' : 'clientId';
+    const contratsSnapshot = await getDocs(
+      query(collection(db, 'contrats'), where(contratsField, '==', userId))
+    );
+    for (const contratDoc of contratsSnapshot.docs) {
+      const updates: any = {
+        anonymizedAt: Timestamp.now()
+      };
+      if (accountType === 'artisan') {
+        updates.artisanNom = '[Compte supprimé]';
+        updates.artisanEmail = null;
+        updates.anonymizedArtisan = true;
+      } else {
+        updates.clientNom = '[Compte supprimé]';
+        updates.clientEmail = null;
+        updates.anonymizedClient = true;
+      }
+      await updateDoc(contratDoc.ref, updates);
+    }
+    if (contratsSnapshot.size > 0) {
+      anonymizedCollections.push(`contrats (${contratsSnapshot.size})`);
+    }
+
+    // Conversations → Marquer participant comme supprimé
+    const conversationsSnapshot = await getDocs(
+      query(collection(db, 'conversations'), where('participants', 'array-contains', userId))
+    );
+    for (const convDoc of conversationsSnapshot.docs) {
+      await updateDoc(convDoc.ref, {
+        [`participantNames.${userId}`]: '[Compte supprimé]',
+        participantDeleted: true,
+        deletedParticipantId: userId,
+        deletedAt: Timestamp.now()
+      });
+    }
+    if (conversationsSnapshot.size > 0) {
+      anonymizedCollections.push(`conversations (${conversationsSnapshot.size})`);
+    }
+
+    // Messages → Anonymiser expéditeur
+    const messagesSnapshot = await getDocs(
+      query(collection(db, 'messages'), where('senderId', '==', userId))
+    );
+    for (const messageDoc of messagesSnapshot.docs) {
+      await updateDoc(messageDoc.ref, {
+        senderName: '[Compte supprimé]',
+        anonymizedSender: true,
+        anonymizedAt: Timestamp.now()
+      });
+    }
+    if (messagesSnapshot.size > 0) {
+      anonymizedCollections.push(`messages (${messagesSnapshot.size})`);
+    }
+
+    // ========================================
+    // 2. SUPPRIMER DÉFINITIVEMENT (RGPD)
+    // ========================================
+
+    // Notifications
+    const notificationsSnapshot = await getDocs(
+      query(collection(db, 'notifications'), where('recipientId', '==', userId))
+    );
+    for (const notifDoc of notificationsSnapshot.docs) {
+      await deleteDoc(notifDoc.ref);
+    }
+    if (notificationsSnapshot.size > 0) {
+      deletedCollections.push(`notifications (${notificationsSnapshot.size})`);
+    }
+
+    // Rappels
+    const rappelsSnapshot = await getDocs(
+      query(collection(db, 'rappels'), where('userId', '==', userId))
+    );
+    for (const rappelDoc of rappelsSnapshot.docs) {
+      await deleteDoc(rappelDoc.ref);
+    }
+    if (rappelsSnapshot.size > 0) {
+      deletedCollections.push(`rappels (${rappelsSnapshot.size})`);
+    }
+
+    // Disponibilités (artisan uniquement)
+    if (accountType === 'artisan') {
+      const disponibilitesSnapshot = await getDocs(
+        query(collection(db, 'disponibilites'), where('artisanId', '==', userId))
+      );
+      for (const dispoDoc of disponibilitesSnapshot.docs) {
+        await deleteDoc(dispoDoc.ref);
+      }
+      if (disponibilitesSnapshot.size > 0) {
+        deletedCollections.push(`disponibilites (${disponibilitesSnapshot.size})`);
+      }
+    }
+
+    // Suppression programmée (si existe)
+    const scheduledDeletionRef = doc(db, 'scheduled_deletions', userId);
+    const scheduledDeletionSnap = await getDoc(scheduledDeletionRef);
+    if (scheduledDeletionSnap.exists()) {
+      await deleteDoc(scheduledDeletionRef);
+      deletedCollections.push('scheduled_deletions (1)');
+    }
+
+    // ========================================
+    // 3. CRÉER ARCHIVE ANONYMISÉE
+    // ========================================
+
+    const archiveRef = doc(collection(db, 'deleted_accounts'), userId);
+    const archiveData: any = {
+      type: accountType,
+      deletedAt: Timestamp.now(),
+      deletedBy: adminId,
+      deletedByName: adminName,
+      reason,
+      deletedCollections,
+      anonymizedCollections
+    };
+
+    // Statistiques anonymisées uniquement (pas de données perso)
+    if (accountType === 'artisan') {
+      const artisanSnap = await getDoc(doc(db, 'artisans', userId));
+      if (artisanSnap.exists()) {
+        const artisanData = artisanSnap.data();
+        if (artisanData.siret) archiveData.siret = artisanData.siret;
+        if (artisanData.metiers) archiveData.metiers = artisanData.metiers;
+        if (artisanData.dateInscription) archiveData.dateInscription = artisanData.dateInscription;
+      }
+    }
+
+    await setDoc(archiveRef, archiveData);
+
+    // ========================================
+    // 4. SUPPRIMER PROFILS PRINCIPAUX
+    // ========================================
+
+    if (accountType === 'artisan') {
+      await deleteDoc(doc(db, 'artisans', userId));
+      deletedCollections.push('artisans');
+    }
+    await deleteDoc(doc(db, 'users', userId));
+    deletedCollections.push('users');
+
+    // ========================================
+    // 5. EMAIL CONFIRMATION
+    // ========================================
+
+    await sendDeletionConfirmationEmail(userEmail, userName, reason);
+
+    // ========================================
+    // 6. SUPPRIMER FIREBASE AUTH
+    // ========================================
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const response = await fetch(`${apiUrl}/auth/users/${userId}`, { method: 'DELETE' });
+      if (response.ok) {
+        console.log(`✅ Compte Firebase Auth supprimé pour ${userId}`);
+      }
+    } catch (authError) {
+      console.error('⚠️ Erreur suppression Firebase Auth:', authError);
+    }
+
+    const details = `
+Supprimées: ${deletedCollections.join(', ')}
+Anonymisées: ${anonymizedCollections.join(', ')}
+    `.trim();
+
+    console.log(`✅ Suppression complète terminée pour ${accountType} ${userId}`);
+    console.log(details);
+
+    return { success: true, details };
   } catch (error) {
-    console.error('Erreur anonymisation avis:', error);
-    throw error;
+    console.error('❌ Erreur suppression complète:', error);
+    return { success: false, error: 'Erreur lors de la suppression complète' };
   }
 }
 
@@ -235,28 +471,22 @@ export async function reactivateClient(
 }
 
 // ============================================
-// SUPPRESSION RGPD
+// SUPPRESSION RGPD - WORKFLOW IMMÉDIAT
 // ============================================
 
 /**
- * Supprimer définitivement un compte artisan (RGPD)
+ * Supprimer définitivement un compte artisan IMMÉDIATEMENT
+ * ⚠️ WORKFLOW 1 : Suppression immédiate (fraude, demande utilisateur, tests)
+ * Pour suppression programmée (15j), utiliser scheduleAccountDeletion()
  */
 export async function deleteArtisanAccount(
   userId: string,
   adminId: string,
   adminName: string,
   reason: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; details?: string }> {
   try {
     // 1. Récupérer les données avant suppression
-    const artisanRef = doc(db, 'artisans', userId);
-    const artisanSnap = await getDoc(artisanRef);
-    
-    if (!artisanSnap.exists()) {
-      return { success: false, error: 'Artisan non trouvé' };
-    }
-
-    const artisanData = artisanSnap.data();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     
@@ -268,52 +498,23 @@ export async function deleteArtisanAccount(
     const userEmail = userData.email;
     const userName = `${userData.prenom} ${userData.nom}`;
 
-    // 2. Anonymiser les avis publiés par cet artisan
-    await anonymizeUserReviews(userId);
-
-    // 3. Créer un enregistrement d'archive (anonymisé)
-    const archiveRef = doc(collection(db, 'deleted_accounts'), userId);
-    const archiveData: any = {
-      type: 'artisan',
-      deletedAt: Timestamp.now(),
-      deletedBy: adminId,
-      deletedByName: adminName,
-      reason
-    };
-
-    // Ajouter seulement les données statistiques qui existent
-    if (artisanData.siret) archiveData.siret = artisanData.siret;
-    if (artisanData.dateInscription) archiveData.dateInscription = artisanData.dateInscription;
-    if (artisanData.metiers) archiveData.metiers = artisanData.metiers;
-
-    await setDoc(archiveRef, archiveData);
-
-    // 4. Supprimer les documents Firestore
-    await deleteDoc(artisanRef);
-    await deleteDoc(userRef);
-
-    // 5. Envoyer l'email de confirmation
-    await sendDeletionConfirmationEmail(userEmail, userName, reason);
-
-    // 6. Supprimer le compte Firebase Auth via l'API backend
-    try {
-      const response = await fetch(`http://localhost:5000/api/v1/auth/users/${userId}`, {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        console.log(`✅ Compte Firebase Auth supprimé pour ${userId}`);
-      } else {
-        console.warn(`⚠️ Erreur suppression Auth pour ${userId}:`, await response.text());
-      }
-    } catch (authError) {
-      console.error('Erreur suppression Firebase Auth:', authError);
-      // Continue quand même, les données Firestore sont déjà supprimées
+    const artisanRef = doc(db, 'artisans', userId);
+    const artisanSnap = await getDoc(artisanRef);
+    
+    if (!artisanSnap.exists()) {
+      return { success: false, error: 'Artisan non trouvé' };
     }
 
-    console.log(`✅ Compte artisan ${userId} supprimé définitivement`);
-
-    return { success: true };
+    // 2. Appeler la suppression complète (toutes collections)
+    return await deleteUserCompletely(
+      userId,
+      'artisan',
+      adminId,
+      adminName,
+      reason,
+      userEmail,
+      userName
+    );
   } catch (error) {
     console.error('Erreur suppression artisan:', error);
     return { success: false, error: 'Erreur lors de la suppression' };
@@ -321,14 +522,16 @@ export async function deleteArtisanAccount(
 }
 
 /**
- * Supprimer définitivement un compte client (RGPD)
+ * Supprimer définitivement un compte client IMMÉDIATEMENT
+ * ⚠️ WORKFLOW 1 : Suppression immédiate (fraude, demande utilisateur, tests)
+ * Pour suppression programmée (15j), utiliser scheduleAccountDeletion()
  */
 export async function deleteClientAccount(
   userId: string,
   adminId: string,
   adminName: string,
   reason: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; details?: string }> {
   try {
     // 1. Récupérer les données avant suppression
     const userRef = doc(db, 'users', userId);
@@ -342,50 +545,16 @@ export async function deleteClientAccount(
     const userEmail = userData.email;
     const userName = `${userData.prenom} ${userData.nom}`;
 
-    // 2. Anonymiser les avis publiés par ce client
-    await anonymizeUserReviews(userId);
-
-    // 3. Créer archive
-    const archiveRef = doc(collection(db, 'deleted_accounts'), userId);
-    const archiveData: any = {
-      type: 'client',
-      deletedAt: Timestamp.now(),
-      deletedBy: adminId,
-      deletedByName: adminName,
-      reason
-    };
-
-    // Ajouter seulement les données qui existent
-    if (userData.dateInscription) archiveData.dateInscription = userData.dateInscription;
-
-    await setDoc(archiveRef, archiveData);
-
-    // 4. Supprimer le compte Firestore
-    await deleteDoc(userRef);
-
-    // 5. Envoyer l'email de confirmation
-    await sendDeletionConfirmationEmail(userEmail, userName, reason);
-
-    // 6. Supprimer le compte Firebase Auth via l'API backend
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
-      const response = await fetch(`${apiUrl}/auth/users/${userId}`, {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        console.log(`✅ Compte Firebase Auth supprimé pour ${userId}`);
-      } else {
-        console.warn(`⚠️ Erreur suppression Auth pour ${userId}:`, await response.text());
-      }
-    } catch (authError) {
-      console.error('Erreur suppression Firebase Auth:', authError);
-      // Continue quand même, les données Firestore sont déjà supprimées
-    }
-
-    console.log(`✅ Compte client ${userId} supprimé définitivement`);
-
-    return { success: true };
+    // 2. Appeler la suppression complète (toutes collections)
+    return await deleteUserCompletely(
+      userId,
+      'client',
+      adminId,
+      adminName,
+      reason,
+      userEmail,
+      userName
+    );
   } catch (error) {
     console.error('Erreur suppression client:', error);
     return { success: false, error: 'Erreur lors de la suppression' };

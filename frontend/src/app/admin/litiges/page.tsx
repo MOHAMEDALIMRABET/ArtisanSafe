@@ -14,7 +14,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { authService } from '@/lib/auth-service';
 import { db } from '@/lib/firebase/config';
 import { 
   collection, 
@@ -60,7 +60,6 @@ interface UserInfo {
 
 export default function AdminLitigesPage() {
   const router = useRouter();
-  const { user, userProfile, authLoading } = useAuth();
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
@@ -69,6 +68,7 @@ export default function AdminLitigesPage() {
   const [participantsInfo, setParticipantsInfo] = useState<{ [key: string]: UserInfo }>({});
   
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLitige, setFilterLitige] = useState<'all' | 'litige' | 'normal'>('all');
@@ -77,53 +77,60 @@ export default function AdminLitigesPage() {
   const [litigeDescription, setLitigeDescription] = useState('');
   const [markingLitige, setMarkingLitige] = useState(false);
 
-  // Vérification admin
+  // Vérification admin et chargement
   useEffect(() => {
-    if (!authLoading && (!user || userProfile?.role !== 'admin')) {
-      router.push('/');
-    }
-  }, [user, userProfile, authLoading, router]);
+    const checkAuth = async () => {
+      try {
+        setAuthLoading(true);
+        const user = authService.getCurrentUser();
+        if (!user) {
+          router.push('/access-x7k9m2p4w8n3');
+          return;
+        }
+        await loadAllConversations();
+      } catch (error) {
+        console.error('Erreur authentification:', error);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   // Charger toutes les conversations
-  useEffect(() => {
-    if (!user || userProfile?.role !== 'admin') return;
+  async function loadAllConversations() {
+    try {
+      setLoading(true);
+      const q = query(collection(db, 'conversations'));
+      const querySnapshot = await getDocs(q);
+      
+      const convs: Conversation[] = [];
+      const userIds = new Set<string>();
 
-    async function loadAllConversations() {
-      try {
-        setLoading(true);
-        const q = query(collection(db, 'conversations'));
-        const querySnapshot = await getDocs(q);
-        
-        const convs: Conversation[] = [];
-        const userIds = new Set<string>();
+      querySnapshot.forEach((doc) => {
+        const data = doc.data() as Omit<Conversation, 'id'>;
+        convs.push({ id: doc.id, ...data });
+        data.participants.forEach(uid => userIds.add(uid));
+      });
 
-        querySnapshot.forEach((doc) => {
-          const data = doc.data() as Omit<Conversation, 'id'>;
-          convs.push({ id: doc.id, ...data });
-          data.participants.forEach(uid => userIds.add(uid));
-        });
+      // Trier par date décroissante
+      convs.sort((a, b) => {
+        const dateA = a.lastMessageDate?.toMillis() || 0;
+        const dateB = b.lastMessageDate?.toMillis() || 0;
+        return dateB - dateA;
+      });
 
-        // Trier par date décroissante
-        convs.sort((a, b) => {
-          const dateA = a.lastMessageDate?.toMillis() || 0;
-          const dateB = b.lastMessageDate?.toMillis() || 0;
-          return dateB - dateA;
-        });
+      setConversations(convs);
+      setFilteredConversations(convs);
 
-        setConversations(convs);
-        setFilteredConversations(convs);
-
-        // Charger les infos des utilisateurs
-        await loadUsersInfo(Array.from(userIds));
-      } catch (error) {
-        console.error('Erreur chargement conversations:', error);
-      } finally {
-        setLoading(false);
-      }
+      // Charger les infos des utilisateurs
+      await loadUsersInfo(Array.from(userIds));
+    } catch (error) {
+      console.error('Erreur chargement conversations:', error);
+    } finally {
+      setLoading(false);
     }
-
-    loadAllConversations();
-  }, [user, userProfile]);
+  }
 
   // Charger les infos des utilisateurs
   async function loadUsersInfo(userIds: string[]) {
@@ -223,13 +230,19 @@ export default function AdminLitigesPage() {
       return;
     }
 
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) {
+      alert('Erreur : utilisateur non connecté');
+      return;
+    }
+
     try {
       setMarkingLitige(true);
       await updateDoc(doc(db, 'conversations', selectedConversation), {
         litige: true,
         litigeDate: Timestamp.now(),
         litigeDescription: litigeDescription.trim(),
-        litigeMarkedBy: user?.uid,
+        litigeMarkedBy: currentUser.uid,
       });
 
       // Mettre à jour l'état local
@@ -240,7 +253,7 @@ export default function AdminLitigesPage() {
               litige: true, 
               litigeDate: Timestamp.now(),
               litigeDescription: litigeDescription.trim(),
-              litigeMarkedBy: user?.uid,
+              litigeMarkedBy: currentUser.uid,
             }
           : conv
       ));
@@ -299,9 +312,7 @@ export default function AdminLitigesPage() {
     );
   }
 
-  if (!user || userProfile?.role !== 'admin') {
-    return null;
-  }
+
 
   const selectedConv = conversations.find(c => c.id === selectedConversation);
 

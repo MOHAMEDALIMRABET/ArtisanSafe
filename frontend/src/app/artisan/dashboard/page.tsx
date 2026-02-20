@@ -705,7 +705,7 @@ export default function ArtisanDashboardPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">Gérer vos devis et factures</p>
+                  <p className="text-sm text-gray-600">Gérer vos devis</p>
                 </div>
               </div>
             </div>

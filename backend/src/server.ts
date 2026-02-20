@@ -13,6 +13,7 @@ import sireneRoutes from './routes/sirene.routes';
 import paymentsRoutes from './routes/payments.routes';
 import webhooksRoutes from './routes/webhooks.routes';
 import stripeExpressRoutes from './routes/stripe-express';
+import adminEmailMonitoringRoutes from './routes/admin-email-monitoring.routes';
 import { startEmailWatcher } from './services/email-service';
 
 const app: Express = express();
@@ -58,6 +59,9 @@ app.use('/api/v1/sirene', sireneRoutes);
 
 // Routes Paiements (Stripe escrow)
 app.use('/api/v1/payments', paymentsRoutes);
+
+// Routes Admin - Monitoring Emails
+app.use('/api/v1/admin', adminEmailMonitoringRoutes);
 
 // Gestion des erreurs 404
 app.use((req: Request, res: Response) => {
