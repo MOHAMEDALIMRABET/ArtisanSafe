@@ -329,7 +329,10 @@ export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
 };
 
 /**
- * Couleurs pour les statuts (TailwindCSS)         // Jaune
+ * Couleurs pour les statuts (TailwindCSS)
+ */
+export const LITIGE_STATUT_COLORS: Record<LitigeStatut, string> = {
+  ouvert: 'bg-[#FFC107] text-white',                    // Jaune
   en_mediation: 'bg-[#FF6B00] text-white',              // Orange
   proposition_resolution: 'bg-[#17A2B8] text-white',    // Info
   resolu_accord: 'bg-[#28A745] text-white',             // Vert
@@ -338,10 +341,7 @@ export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   abandonne: 'bg-[#6C757D] text-white',                 // Gris
   clos_sans_suite: 'bg-[#6C757D] text-white',           // Gris
   escalade: 'bg-[#DC3545] text-white',                  // Rouge
-  escalade_juridique: 'bg-[#DC3545] text-white'        // Orange
-  resolu: 'bg-[#28A745] text-white',           // Vert
-  clos_sans_suite: 'bg-[#6C757D] text-white',  // Gris
-  escalade_juridique: 'bg-[#DC3545] text-white' // Rouge
+  escalade_juridique: 'bg-[#DC3545] text-white'         // Rouge
 };
 
 export const LITIGE_PRIORITE_COLORS: Record<LitigePriorite, string> = {

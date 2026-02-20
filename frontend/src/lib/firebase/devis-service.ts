@@ -572,6 +572,45 @@ async function annulerAutresVariantes(
 }
 
 /**
+ * Mettre à jour uniquement le statut d'un devis
+ * Fonction simplifiée pour usage externe (ex: litige-service.ts)
+ * ⚠️ Pour changements de statut complexes (accepté, refusé, etc.), utiliser updateDevis()
+ */
+export async function updateDevisStatus(
+  devisId: string,
+  statut: DevisStatut
+): Promise<void> {
+  try {
+    const devisRef = doc(db, COLLECTION_NAME, devisId);
+    const devisDoc = await getDoc(devisRef);
+    
+    if (!devisDoc.exists()) {
+      throw new Error('Devis introuvable');
+    }
+    
+    const devisActuel = devisDoc.data() as Devis;
+    
+    await updateDoc(devisRef, {
+      statut,
+      dateModification: Timestamp.now(),
+      historiqueStatuts: [
+        ...(devisActuel.historiqueStatuts || []),
+        {
+          statut,
+          date: Timestamp.now(),
+          commentaire: statut === 'litige' ? 'Litige déclaré sur ce devis' : undefined,
+        }
+      ]
+    });
+    
+    console.log(`✅ Statut devis mis à jour : ${devisActuel.statut} → ${statut}`);
+  } catch (error) {
+    console.error('Erreur updateDevisStatus:', error);
+    throw error;
+  }
+}
+
+/**
  * Récupérer un devis par son ID
  */
 export async function getDevisById(devisId: string): Promise<Devis | null> {

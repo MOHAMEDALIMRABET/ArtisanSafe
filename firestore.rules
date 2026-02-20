@@ -320,9 +320,9 @@ service cloud.firestore {
       allow update: if isOwner(resource.data.declarantId) || isAdmin();
       allow delete: if isAdmin();
       
-      // Validation motif
-      allow write: if request.resource.data.motif in ['non_conformite', 'retard', 'abandon', 'qualite', 'paiement', 'autre'] &&
-                      request.resource.data.statut in ['ouvert', 'en_mediation', 'resolu', 'clos'];
+      // Validation type et statut (cohérent avec types/litige.ts)
+      allow write: if request.resource.data.type in ['non_conformite', 'retard', 'abandon_chantier', 'facture_excessive', 'malfacon', 'non_respect_delais', 'autre'] &&
+                      request.resource.data.statut in ['ouvert', 'en_mediation', 'proposition_resolution', 'resolu_accord', 'resolu_admin', 'resolu', 'abandonne', 'clos_sans_suite', 'escalade', 'escalade_juridique'];
     }
     
     // ============================================

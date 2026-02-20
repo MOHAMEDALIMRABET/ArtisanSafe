@@ -31,6 +31,8 @@ import {
   LitigeActionType,
   CreateLitigeData,
   LitigeStatut,
+  LitigeType,
+  LitigePriorite,
 } from '@/types/litige';
 import { createNotification } from './notification-service';
 import { getDevisById } from './devis-service';
@@ -54,15 +56,28 @@ export async function createLitige(data: CreateLitigeData): Promise<string> {
       throw new Error('Seuls les devis acceptés peuvent faire l\'objet d\'un litige');
     }
 
+    // Récupérer le contrat lié au devis (si existe)
+    const contratsQuery = query(
+      collection(db, 'contrats'),
+      where('devisId', '==', data.devisId)
+    );
+    const contratsSnap = await getDocs(contratsQuery);
+    const contratId = !contratsSnap.empty ? contratsSnap.docs[0].id : undefined;
+
+    // Calculer priorité automatique selon type et montant
+    const priorite = calculatePriorite(data.type, data.montantConteste);
+
     // Créer le litige
     const litige: Omit<Litige, 'id'> = {
       devisId: data.devisId,
+      contratId,
       clientId: data.clientId,
       artisanId: data.artisanId,
       declarantId: data.declarantId,
       declarantRole: data.declarantRole,
       type: data.type,
       statut: 'ouvert',
+      priorite,
       motif: data.motif,
       description: data.description,
       montantConteste: data.montantConteste || 0,
@@ -74,6 +89,7 @@ export async function createLitige(data: CreateLitigeData): Promise<string> {
       resolution: null,
       createdAt: serverTimestamp() as Timestamp,
       updatedAt: serverTimestamp() as Timestamp,
+      versionSchema: 1,
     };
 
     const docRef = await addDoc(collection(db, LITIGES_COLLECTION), litige);
@@ -91,11 +107,8 @@ export async function createLitige(data: CreateLitigeData): Promise<string> {
     });
 
     // Mettre à jour le statut du devis
-    // Note: updateDevisStatus n'existe pas, on doit utiliser updateDoc directement
-    await updateDoc(doc(db, 'devis', data.devisId), {
-      statut: 'en_litige' as const,
-      updatedAt: serverTimestamp(),
-    });
+    const { updateDevisStatus } = await import('./devis-service');
+    await updateDevisStatus(data.devisId, 'litige');
 
     // Notifier la partie adverse
     const recipientId = data.declarantRole === 'client' ? data.artisanId : data.clientId;
@@ -186,6 +199,31 @@ export async function getLitigesByUser(userId: string): Promise<Litige[]> {
 }
 
 /**
+ * Récupérer TOUS les litiges (admin uniquement)
+ */
+export async function getAllLitiges(): Promise<Litige[]> {
+  try {
+    const q = query(collection(db, LITIGES_COLLECTION));
+    const snapshot = await getDocs(q);
+    
+    const litiges = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Litige[];
+
+    // Tri côté client par date (plus récent d'abord)
+    return litiges.sort((a, b) => {
+      const dateA = a.dateOuverture?.toMillis() || 0;
+      const dateB = b.dateOuverture?.toMillis() || 0;
+      return dateB - dateA;
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de tous les litiges:', error);
+    throw error;
+  }
+}
+
+/**
  * Récupérer litiges pour admin (avec filtres)
  */
 export async function getAdminLitiges(filters?: {
@@ -240,7 +278,7 @@ export async function addLitigeAction(
       throw new Error('Litige introuvable');
     }
 
-    // Convertir au format HistoriqueAction pour cohérence
+    // Format HistoriqueAction (structure unifiée)
     const action: any = {
       id: crypto.randomUUID ? crypto.randomUUID() : `action_${Date.now()}`,
       timestamp: serverTimestamp(),
@@ -250,12 +288,6 @@ export async function addLitigeAction(
       type: actionData.type,
       description: actionData.description,
       metadata: actionData.details,
-      // Garder aussi auteurId/auteurRole pour compatibilité
-      auteurId: actionData.auteurId,
-      auteurRole: actionData.auteurRole,
-      details: actionData.details,
-      piecesJointes: actionData.piecesJointes || [],
-      date: serverTimestamp(),
     };
 
     await updateDoc(doc(db, LITIGES_COLLECTION, litigeId), {
@@ -632,13 +664,30 @@ async function notifyAdminsNewLitige(
   litigeId: string,
   data: CreateLitigeData
 ): Promise<void> {
-  // TODO: Récupérer liste des admins depuis Firestore
-  // Pour l'instant, log console
-  console.log('🚨 Nouveau litige créé:', {
-    litigeId,
-    type: data.type,
-    declarant: data.declarantRole,
-  });
+  try {
+    // Récupérer tous les admins
+    const adminsQuery = query(
+      collection(db, 'users'),
+      where('role', '==', 'admin')
+    );
+    const adminsSnap = await getDocs(adminsQuery);
+    
+    // Notifier chaque admin
+    const notifications = adminsSnap.docs.map(async (adminDoc) => {
+      return createNotification(adminDoc.id, {
+        type: 'litige_ouvert',
+        titre: '🚨 Nouveau litige à traiter',
+        message: `Type: ${data.type} - Déclaré par: ${data.declarantRole}`,
+        lien: `/admin/litiges/${litigeId}`,
+      });
+    });
+    
+    await Promise.all(notifications);
+    console.log(`✅ ${adminsSnap.size} admin(s) notifié(s) du nouveau litige`);
+  } catch (error) {
+    console.error('Erreur notification admins:', error);
+    // Ne pas bloquer la création du litige si notification échoue
+  }
 }
 
 /**
@@ -655,4 +704,60 @@ function getResolutionMessage(statut: string): string {
     default:
       return 'Litige résolu';
   }
+}
+
+/**
+ * Mettre à jour le statut d'un litige (fonction utilitaire)
+ */
+export async function updateLitigeStatus(
+  litigeId: string,
+  newStatut: LitigeStatut
+): Promise<void> {
+  try {
+    await updateDoc(doc(db, LITIGES_COLLECTION, litigeId), {
+      statut: newStatut,
+      updatedAt: serverTimestamp(),
+    });
+
+    const litige = await getLitigeById(litigeId);
+    if (!litige) return;
+
+    // Ajouter action au historique
+    await addLitigeAction(litigeId, {
+      type: 'changement_statut',
+      auteurId: 'admin',
+      auteurRole: 'admin',
+      description: `Statut changé vers: ${newStatut}`,
+      details: { nouveauStatut: newStatut },
+    });
+  } catch (error) {
+    console.error('Erreur updateLitigeStatus:', error);
+    throw error;
+  }
+}
+
+/**
+ * Helper - Calculer priorité automatique selon type et montant
+ */
+function calculatePriorite(
+  type: LitigeType,
+  montantConteste?: number
+): LitigePriorite {
+  // Priorité URGENTE : abandon chantier
+  if (type === 'abandon_chantier') {
+    return 'urgente';
+  }
+  
+  // Priorité HAUTE : malfaçon, facture excessive, montant > 5000€
+  if (type === 'malfacon' || type === 'facture_excessive' || (montantConteste && montantConteste > 5000)) {
+    return 'haute';
+  }
+  
+  // Priorité MOYENNE : non-conformité, retard important, montant 1000-5000€
+  if (type === 'non_conformite' || type === 'retard' || type === 'non_respect_delais' || (montantConteste && montantConteste > 1000)) {
+    return 'moyenne';
+  }
+  
+  // Priorité BASSE : autres cas
+  return 'basse';
 }

@@ -1,53 +1,18 @@
 # ArtisanSafe - Instructions Copilot
 
-> **Plateforme marketplace française** connectant clients et artisans qualifiés (plombiers, électriciens, menuisiers, maçons). Bilingue français/anglais, avec focus sécurité, profils vérifiés et paiements sécurisés.
-
 ## 🚀 Quick Start for AI Agents
 
 **Start here for immediate productivity:**
 
-### 1. Development Environment (Windows)
-```bash
-# Frontend (Next.js 15, port 3000)
-cd frontend && npm run dev
-
-# Backend (Node.js + Express, port 5000)
-cd backend && npm run dev
-
-# Verify setup
-node verify-setup.js
-```
-
-### 2. CRITICAL Rules - Read Before Any Code Change
-
-⚠️ **NEVER do these** (will break the app):
-- ❌ Access Firestore directly - ALWAYS use `frontend/src/lib/firebase/*-service.ts`
-- ❌ Combine `where()` + `orderBy()` on different fields - sort client-side with `.sort()`
-- ❌ Use `bg-blue-600` or `text-blue-500` - ONLY `bg-[#FF6B00]` (orange) and `bg-[#2C3E50]` (blue)
-- ❌ Create local validation patterns - ALWAYS use `antiBypassValidator.ts`
-- ❌ Modify `.github/copilot-instructions.md` without reading the entire file first
-
-✅ **ALWAYS do these**:
-- Use service layer: `artisan-service.ts`, `devis-service.ts`, `user-service.ts`, etc.
-- Validate messages with `validateMessage()` from `antiBypassValidator.ts`
-- Use `bg-[#FF6B00]` for primary buttons, `bg-[#2C3E50]` for headers/navigation
-- Check `docs/` folder for workflow documentation before implementing features
-- Run `npx ts-node` with `--project scripts/tsconfig.json` for scripts
-
-### 3. Most Important Files (Memorize These)
-```
-frontend/src/lib/
-├── firebase/
-│   ├── artisan-service.ts       # Artisan CRUD
-│   ├── devis-service.ts          # Quote/estimate lifecycle
-│   ├── demande-service.ts        # Client requests
-│   ├── notification-service.ts   # Real-time notifications
-│   ├── soft-delete.ts            # RGPD-compliant deletion (30-day retention)
-│   ├── schema-versioning.ts      # Progressive data migrations
-│   └── document-parser.ts        # OCR Tesseract.js (1105 lines)
-├── antiBypassValidator.ts        # ⚠️ CRITICAL - Blocks 40+ contact sharing patterns
-└── auth-service.ts               # signUpClient, signUpArtisan, signIn, signOut
-```
+1. **Run dev servers**: `cd frontend && npm run dev` (port 3000) | `cd backend && npm run dev` (port 5000)
+2. **Color scheme**: ALWAYS use `bg-[#FF6B00]` (orange) for primary buttons, `bg-[#2C3E50]` (blue) for headers - NEVER use generic blue/green
+3. **Services pattern**: ALWAYS use `frontend/src/lib/firebase/*-service.ts` - NEVER access Firestore directly
+4. **Anti-bypass**: ALWAYS use `antiBypassValidator.ts` for message validation - blocks 40+ patterns including edge cases like `NUMEROtelephione066882710`
+5. **Firestore queries**: NEVER combine `where()` + `orderBy()` on different fields → sort client-side with `.sort()` to avoid composite indexes
+6. **Critical files**: 
+   - Validation: `frontend/src/lib/antiBypassValidator.ts` (285 lines)
+   - OCR: `frontend/src/lib/firebase/document-parser.ts` (1105 lines)
+   - Patterns: `frontend/src/lib/firebase/soft-delete.ts`, `schema-versioning.ts`
 
 **Common tasks:**
 ```bash

@@ -6,9 +6,10 @@
  */
 
 import { useState } from 'react';
-import { LitigeType, LITIGE_TYPE_LABELS } from '@/types/litige';
+import { LitigeType, LITIGE_TYPE_LABELS, LitigePieceJointe } from '@/types/litige';
 import { createLitige } from '@/lib/firebase/litige-service';
 import { authService } from '@/lib/auth-service';
+import UploadPiecesJointes from './UploadPiecesJointes';
 
 interface DeclarerLitigeModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export default function DeclarerLitigeModal({
   const [motif, setMotif] = useState('');
   const [description, setDescription] = useState('');
   const [montantConteste, setMontantConteste] = useState<number>(0);
+  const [piecesJointes, setPiecesJointes] = useState<LitigePieceJointe[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +68,7 @@ export default function DeclarerLitigeModal({
         motif: motif.trim(),
         description: description.trim(),
         montantConteste: montantConteste > 0 ? montantConteste : undefined,
+        piecesJointes: piecesJointes.length > 0 ? piecesJointes : undefined,
       });
 
       // Succès
@@ -76,6 +79,7 @@ export default function DeclarerLitigeModal({
       // Reset form
       setMotif('');
       setDescription('');
+      setPiecesJointes([]);
       setMontantConteste(0);
     } catch (err: any) {
       console.error('Erreur lors de la déclaration du litige:', err);
@@ -176,6 +180,13 @@ export default function DeclarerLitigeModal({
               Si le litige concerne un montant financier précis
             </p>
           </div>
+
+          {/* Pièces jointes */}
+          <UploadPiecesJointes
+            onFilesUploaded={setPiecesJointes}
+            maxFiles={5}
+            maxSizePerFile={10}
+          />
 
           {/* Info médiation */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

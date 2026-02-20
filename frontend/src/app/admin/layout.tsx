@@ -88,6 +88,12 @@ export default function AdminLayout({
       description: 'Artisans & Clients'
     },
     {
+      name: 'Gestion Litiges',
+      path: '/admin/gestion-litiges',
+      icon: '⚖️',
+      description: 'Médiation & Résolution'
+    },
+    {
       name: 'Logs d\'accès',
       path: '/admin/logs',
       icon: '📋',

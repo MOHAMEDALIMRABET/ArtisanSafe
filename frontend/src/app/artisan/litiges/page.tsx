@@ -1,6 +1,6 @@
 /**
- * Page Client - Mes Litiges
- * Liste et gestion des litiges déclarés
+ * Page Artisan - Mes Litiges
+ * Liste et gestion des litiges concernant l'artisan
  */
 
 'use client';
@@ -10,12 +10,12 @@ import { useRouter } from 'next/navigation';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { getLitigesByUser } from '@/lib/firebase/litige-service';
 import { Litige, LitigeType } from '@/types/litige';
-import { AlertTriangle, Eye, Plus, Filter } from 'lucide-react';
+import { AlertTriangle, Eye, Filter } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
 
-export default function ClientLitigesPage() {
+export default function ArtisanLitigesPage() {
   const router = useRouter();
   const { user, role, loading: authLoading } = useAuthStatus();
   const [litiges, setLitiges] = useState<Litige[]>([]);
@@ -24,7 +24,7 @@ export default function ClientLitigesPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user || role !== 'client') {
+    if (!user || role !== 'artisan') {
       router.push('/login');
       return;
     }
@@ -93,6 +93,24 @@ export default function ClientLitigesPage() {
     );
   };
 
+  const getPrioriteBadge = (priorite?: string) => {
+    if (!priorite) return null;
+
+    const styles: Record<string, { bg: string; text: string; label: string }> = {
+      basse: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Basse' },
+      moyenne: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Moyenne' },
+      haute: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Haute' },
+      urgente: { bg: 'bg-red-100', text: 'text-red-800', label: 'Urgente' },
+    };
+
+    const style = styles[priorite] || styles.moyenne;
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-medium ${style.bg} ${style.text}`}>
+        🔥 {style.label}
+      </span>
+    );
+  };
+
   if (authLoading || loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -109,16 +127,9 @@ export default function ClientLitigesPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#2C3E50]">Mes Litiges</h1>
-            <p className="text-gray-600 mt-2">Gérez vos litiges et suivez leur résolution</p>
+            <h1 className="text-3xl font-bold text-[#2C3E50]">Litiges</h1>
+            <p className="text-gray-600 mt-2">Gérez les litiges concernant vos prestations</p>
           </div>
-          <Link
-            href="/client/litiges/nouveau"
-            className="flex items-center gap-2 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition"
-          >
-            <Plus className="w-5 h-5" />
-            Déclarer un litige
-          </Link>
         </div>
 
         {/* Filtres */}
@@ -190,12 +201,18 @@ export default function ClientLitigesPage() {
             >
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     {getStatusBadge(litige.statut)}
                     {getTypeBadge(litige.type)}
+                    {getPrioriteBadge(litige.priorite)}
                     {litige.adminAssigne && (
                       <span className="px-2 py-1 rounded text-xs bg-purple-100 text-purple-700">
                         👤 Médiateur assigné
+                      </span>
+                    )}
+                    {litige.declarantRole === 'artisan' && (
+                      <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700">
+                        📢 Vous avez déclaré ce litige
                       </span>
                     )}
                   </div>
@@ -203,38 +220,46 @@ export default function ClientLitigesPage() {
                   <p className="text-gray-600 text-sm line-clamp-2">{litige.description}</p>
                 </div>
                 <Link
-                  href={`/client/litiges/${litige.id}`}
-                  className="flex items-center gap-2 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition"
+                  href={`/artisan/litiges/${litige.id}`}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] transition whitespace-nowrap"
                 >
                   <Eye className="w-4 h-4" />
                   Voir
                 </Link>
               </div>
 
-              <div className="flex items-center justify-between text-sm text-gray-500">
-                <div className="flex items-center gap-4">
-                  <span>
-                    📅 Ouvert{' '}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm border-t pt-4">
+                <div>
+                  <p className="text-gray-500">Ouvert le</p>
+                  <p className="font-medium text-[#2C3E50]">
                     {litige.dateOuverture
                       ? formatDistanceToNow(litige.dateOuverture.toDate(), {
                           addSuffix: true,
                           locale: fr,
                         })
                       : 'Date inconnue'}
-                  </span>
-                  {litige.montantConteste > 0 && (
-                    <span>💰 Montant contesté : {litige.montantConteste}€</span>
-                  )}
-                  <span>📝 {litige.historique.length} action(s)</span>
+                  </p>
+                </div>
+                {litige.montantConteste && litige.montantConteste > 0 && (
+                  <div>
+                    <p className="text-gray-500">Montant contesté</p>
+                    <p className="font-medium text-[#2C3E50]">{litige.montantConteste}€</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-gray-500">Actions</p>
+                  <p className="font-medium text-[#2C3E50]">{litige.historique.length}</p>
                 </div>
                 {litige.dateResolution && (
-                  <span className="text-green-600 font-medium">
-                    ✅ Résolu{' '}
-                    {formatDistanceToNow(litige.dateResolution.toDate(), {
-                      addSuffix: true,
-                      locale: fr,
-                    })}
-                  </span>
+                  <div>
+                    <p className="text-gray-500">Résolu le</p>
+                    <p className="font-medium text-green-600">
+                      {formatDistanceToNow(litige.dateResolution.toDate(), {
+                        addSuffix: true,
+                        locale: fr,
+                      })}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>

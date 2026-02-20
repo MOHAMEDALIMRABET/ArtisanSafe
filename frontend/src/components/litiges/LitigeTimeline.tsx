@@ -5,7 +5,7 @@
 
 'use client';
 
-import { LitigeAction } from '@/types/litige';
+import { HistoriqueAction } from '@/types/litige';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -20,15 +20,15 @@ import {
 } from 'lucide-react';
 
 interface LitigeTimelineProps {
-  historique: LitigeAction[];
+  historique: HistoriqueAction[];
   currentUserId: string;
 }
 
 export default function LitigeTimeline({ historique, currentUserId }: LitigeTimelineProps) {
   // Trier par date décroissante (plus récent en haut)
   const sortedHistorique = [...historique].sort((a, b) => {
-    const dateA = a.date?.toMillis() || 0;
-    const dateB = b.date?.toMillis() || 0;
+    const dateA = a.timestamp?.toMillis() || 0;
+    const dateB = b.timestamp?.toMillis() || 0;
     return dateB - dateA;
   });
 
@@ -115,9 +115,9 @@ export default function LitigeTimeline({ historique, currentUserId }: LitigeTime
                     {/* Auteur et rôle */}
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-medium text-[#2C3E50]">
-                        {getRoleLabel(action.auteurRole)}
+                        {getRoleLabel(action.acteurRole)}
                       </span>
-                      {action.auteurId === currentUserId && (
+                      {action.acteur === currentUserId && (
                         <span className="px-2 py-0.5 text-xs bg-[#FF6B00] text-white rounded">
                           Vous
                         </span>
@@ -128,55 +128,33 @@ export default function LitigeTimeline({ historique, currentUserId }: LitigeTime
                     <p className="text-gray-700 mb-2">{action.description}</p>
 
                     {/* Détails supplémentaires */}
-                    {action.details && Object.keys(action.details).length > 0 && (
+                    {action.metadata && Object.keys(action.metadata).length > 0 && (
                       <div className="mt-2 p-3 bg-white/50 rounded border border-gray-200">
                         <p className="text-sm text-gray-600 font-medium mb-1">Détails :</p>
-                        {action.details.montantClient !== undefined && (
+                        {action.metadata.montantClient !== undefined && (
                           <p className="text-sm text-gray-700">
-                            • Remboursement client : {action.details.montantClient}€
+                            • Remboursement client : {action.metadata.montantClient}€
                           </p>
                         )}
-                        {action.details.montantArtisan !== undefined && (
+                        {action.metadata.montantArtisan !== undefined && (
                           <p className="text-sm text-gray-700">
-                            • Paiement artisan : {action.details.montantArtisan}€
+                            • Paiement artisan : {action.metadata.montantArtisan}€
                           </p>
                         )}
-                        {action.details.motif && (
-                          <p className="text-sm text-gray-700">• Motif : {action.details.motif}</p>
+                        {action.metadata.motif && (
+                          <p className="text-sm text-gray-700">• Motif : {action.metadata.motif}</p>
                         )}
-                        {action.details.raison && (
-                          <p className="text-sm text-gray-700">• Raison : {action.details.raison}</p>
+                        {action.metadata.raison && (
+                          <p className="text-sm text-gray-700">• Raison : {action.metadata.raison}</p>
                         )}
-                      </div>
-                    )}
-
-                    {/* Pièces jointes */}
-                    {action.piecesJointes && action.piecesJointes.length > 0 && (
-                      <div className="mt-3">
-                        <p className="text-sm text-gray-600 font-medium mb-2">
-                          📎 Pièces jointes :
-                        </p>
-                        <div className="space-y-1">
-                          {action.piecesJointes.map((piece, idx) => (
-                            <a
-                              key={idx}
-                              href={piece.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block text-sm text-[#FF6B00] hover:underline"
-                            >
-                              {piece.nom} ({(piece.taille / 1024).toFixed(1)} Ko)
-                            </a>
-                          ))}
-                        </div>
                       </div>
                     )}
                   </div>
 
                   {/* Date */}
                   <span className="text-xs text-gray-500 whitespace-nowrap">
-                    {action.date
-                      ? formatDistanceToNow(action.date.toDate(), {
+                    {action.timestamp
+                      ? formatDistanceToNow(action.timestamp.toDate(), {
                           addSuffix: true,
                           locale: fr,
                         })
