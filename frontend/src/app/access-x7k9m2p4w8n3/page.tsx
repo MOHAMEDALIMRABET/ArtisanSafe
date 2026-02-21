@@ -12,6 +12,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { isAdmin } from '@/lib/firebase/admin-service';
 import { logAdminAccess, detectBruteForce, blockIP, isIPBlocked } from '@/lib/firebase/admin-access-log';
+import { isWhitelistedAdmin } from '@/lib/auth-service';
 
 export default function SecureAdminLoginPage() {
   const router = useRouter();
@@ -59,7 +60,23 @@ export default function SecureAdminLoginPage() {
     }
 
     try {
-      // 📝 Logger la tentative
+      // � SÉCURITÉ NIVEAU 0 : Vérifier whitelist AVANT toute tentative de connexion
+      if (!isWhitelistedAdmin(email)) {
+        // Logger la tentative d'accès non autorisé
+        await logAdminAccess({
+          action: 'whitelist_blocked',
+          adminEmail: email,
+          ipAddress,
+          userAgent,
+          details: 'Email non autorisé dans la whitelist admin',
+        });
+
+        setError('Accès refusé. Cet email n\'est pas autorisé à accéder à l\'interface administrateur.');
+        setLoading(false);
+        return;
+      }
+
+      // �📝 Logger la tentative
       await logAdminAccess({
         action: 'login_attempt',
         adminEmail: email,

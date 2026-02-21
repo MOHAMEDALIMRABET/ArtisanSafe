@@ -6,11 +6,11 @@
 import { db } from '@/lib/firebase/config';
 import { collection, addDoc, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
 
-interface AdminAccessLog {
+export interface AdminAccessLog {
   timestamp: Timestamp;
   adminId?: string;
   adminEmail?: string;
-  action: 'login_attempt' | 'login_success' | 'login_failed' | 'logout' | 'unauthorized_access';
+  action: 'login_attempt' | 'login_success' | 'login_failed' | 'logout' | 'unauthorized_access' | 'whitelist_blocked';
   ipAddress: string;
   userAgent: string;
   details?: string;

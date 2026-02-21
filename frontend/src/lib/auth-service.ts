@@ -8,13 +8,66 @@ import {
   updateProfile,
   sendEmailVerification,
   sendPasswordResetEmail,
-  ActionCodeSettings
+  ActionCodeSettings,
+  GoogleAuthProvider,
+  signInWithPopup,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { createUser } from './firebase/user-service';
 import { createArtisan } from './firebase/artisan-service';
 import { syncEmailVerificationStatus } from './firebase/email-verification-sync';
 import type { User as UserType, Artisan } from '@/types/firestore';
 import { Timestamp, doc, updateDoc } from 'firebase/firestore';
+
+/**
+ * 🔒 SÉCURITÉ : Liste des emails administrateurs
+ * Ces emails NE PEUVENT PAS se connecter via Google Sign-In
+ * Les admins doivent OBLIGATOIREMENT utiliser l'interface dédiée /access-x7k9m2p4w8n3
+ */
+const ADMIN_EMAILS_BLACKLIST = [
+  'admin@artisansafe.fr',
+  'admin@artisandispo.fr',
+  'support@artisansafe.fr',
+  'root@artisansafe.fr',
+  // Ajoutez ici tous les emails d'administrateurs
+];
+
+/**
+ * 🔐 SÉCURITÉ RENFORCÉE : Whitelist des emails administrateurs autorisés
+ * SEULS ces emails peuvent se connecter via l'interface admin /access-x7k9m2p4w8n3
+ * Tout autre email sera refusé MÊME s'il a le rôle 'admin' dans Firestore
+ */
+const ADMIN_EMAILS_WHITELIST = [
+  'admin@artisansafe.fr',
+  'admin@artisandispo.fr',
+  'support@artisansafe.fr',
+  'root@artisansafe.fr',
+  // Ajoutez ici UNIQUEMENT les emails administrateurs de confiance
+];
+
+/**
+ * Vérifier si un email fait partie de la liste des administrateurs
+ */
+function isAdminEmail(email: string | null): boolean {
+  if (!email) return false;
+  const normalizedEmail = email.toLowerCase().trim();
+  return ADMIN_EMAILS_BLACKLIST.some(adminEmail => 
+    adminEmail.toLowerCase() === normalizedEmail
+  );
+}
+
+/**
+ * Vérifier si un email est autorisé à se connecter comme administrateur
+ * @param email - Email à vérifier
+ * @returns true si l'email est dans la whitelist, false sinon
+ */
+function isWhitelistedAdmin(email: string | null): boolean {
+  if (!email) return false;
+  const normalizedEmail = email.toLowerCase().trim();
+  return ADMIN_EMAILS_WHITELIST.some(adminEmail => 
+    adminEmail.toLowerCase() === normalizedEmail
+  );
+}
 
 /**
  * Configuration personnalisée des emails Firebase Auth
@@ -119,6 +172,20 @@ export const authService = {
    */
   async signUpClient(data: SignUpData) {
     try {
+      // 🔍 VÉRIFICATION PRÉALABLE : Détecter si email existe avec un autre provider
+      const methods = await fetchSignInMethodsForEmail(auth, data.email);
+      
+      if (methods.length > 0) {
+        if (methods.includes('google.com')) {
+          throw new Error(
+            'Ce compte existe déjà avec Google Sign-In. Veuillez vous connecter avec Google.'
+          );
+        } else {
+          // Email existe déjà avec password ou autre provider
+          throw new Error('Cette adresse email est déjà utilisée par un autre compte.');
+        }
+      }
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
@@ -181,6 +248,20 @@ export const authService = {
    */
   async signUpArtisan(data: ArtisanSignUpData) {
     try {
+      // 🔍 VÉRIFICATION PRÉALABLE : Détecter si email existe avec un autre provider
+      const methods = await fetchSignInMethodsForEmail(auth, data.email);
+      
+      if (methods.length > 0) {
+        if (methods.includes('google.com')) {
+          throw new Error(
+            'Ce compte existe déjà avec Google Sign-In. Veuillez vous connecter avec Google.'
+          );
+        } else {
+          // Email existe déjà avec password ou autre provider
+          throw new Error('Cette adresse email est déjà utilisée par un autre compte.');
+        }
+      }
+
       // Créer le compte Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -290,6 +371,172 @@ export const authService = {
   },
 
   /**
+   * Connexion avec Google (OAuth)
+   * Comportement adapté au marché : permet Account Linking via Firebase Email Enumeration Protection
+   * 
+   * IMPORTANT : Activer "Email enumeration protection" dans Firebase Console
+   * → Authentication → Settings → Email enumeration protection
+   * 
+   * Effet : Firebase lie automatiquement les providers au même compte
+   * → User peut se connecter avec email/password OU Google (même UID)
+   * 
+   * Retourne l'utilisateur et un indicateur si c'est une nouvelle inscription
+   */
+  async signInWithGoogle(): Promise<{ user: User; isNewUser: boolean; existingRole?: 'client' | 'artisan' | 'admin' }> {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account' // Force la sélection du compte à chaque fois
+      });
+
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // 🔒 SÉCURITÉ NIVEAU 1 : Vérifier si l'email fait partie de la blacklist admin
+      // Cette vérification se fait AVANT toute création de document Firestore
+      if (isAdminEmail(user.email)) {
+        await firebaseSignOut(auth);
+        throw new Error('Les administrateurs doivent se connecter via l\'interface dédiée.');
+      }
+
+      // Note : Avec Email Enumeration Protection activée dans Firebase Console,
+      // si l'email existe déjà avec un provider password, Firebase liera automatiquement
+      // le provider Google au compte existant (même UID). Pas besoin de bloquer ici.
+
+      // Vérifier si l'utilisateur existe déjà dans Firestore
+      const { getDoc } = await import('firebase/firestore');
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+
+      if (userDoc.exists()) {
+        // Utilisateur existant
+        const userData = userDoc.data() as UserType;
+        
+        // Synchroniser le statut emailVerified (Google vérifie automatiquement l'email)
+        await syncEmailVerificationStatus(user.uid);
+        
+        // 🔒 SÉCURITÉ NIVEAU 2 : Vérifier le rôle dans Firestore
+        // Double vérification pour les comptes existants
+        if (userData.role === 'admin') {
+          // Déconnecter immédiatement les admins
+          await firebaseSignOut(auth);
+          throw new Error('Les administrateurs doivent se connecter via l\'interface dédiée.');
+        }
+
+        return { 
+          user, 
+          isNewUser: false, 
+          existingRole: userData.role 
+        };
+      } else {
+        // Nouvel utilisateur - il faudra choisir le rôle
+        // On ne crée pas encore le document Firestore
+        // L'utilisateur sera redirigé vers une page de sélection de rôle
+        return { 
+          user, 
+          isNewUser: true 
+        };
+      }
+    } catch (error: any) {
+      console.error('Error signing in with Google:', error);
+      
+      // Gestion spécifique des erreurs OAuth
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Connexion annulée');
+      } else if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup bloquée par le navigateur. Veuillez autoriser les popups.');
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        throw new Error('Connexion annulée');
+      }
+      
+      const errorMessage = translateAuthError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Compléter l'inscription Google avec le rôle choisi
+   * À appeler après signInWithGoogle pour les nouveaux utilisateurs
+   */
+  async completeGoogleSignUp(role: 'client' | 'artisan', phone?: string) {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('Aucun utilisateur connecté');
+      }
+
+      // 🔒 SÉCURITÉ : Double vérification email admin
+      // Empêche toute manipulation de l'interface pour créer un compte admin
+      if (isAdminEmail(user.email)) {
+        await firebaseSignOut(auth);
+        throw new Error('Les administrateurs doivent se connecter via l\'interface dédiée.');
+      }
+
+      // 🔒 SÉCURITÉ : Interdire la création directe de comptes admin
+      // Le rôle admin ne peut être attribué QUE via le script create-admin.js
+      if (role === 'admin') {
+        await firebaseSignOut(auth);
+        throw new Error('Action non autorisée');
+      }
+
+      // Extraire nom et prénom depuis displayName de Google
+      const displayName = user.displayName || '';
+      const nameParts = displayName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Créer le document utilisateur dans Firestore
+      const userData: Omit<UserType, 'id'> = {
+        email: user.email || '',
+        nom: lastName,
+        prenom: firstName,
+        telephone: phone || '',
+        role: role,
+        statut: role === 'client' ? 'verifie' : 'non_verifie',
+        preferences: {
+          notifications: {
+            email: true,
+            push: true,
+            sms: false,
+          },
+        },
+        dateCreation: Timestamp.now(),
+        dateModification: Timestamp.now(),
+      };
+
+      await createUser(user.uid, userData);
+
+      // Si artisan, créer aussi le profil artisan (profil minimal)
+      if (role === 'artisan') {
+        const artisanData = {
+          userId: user.uid,
+          siret: '',
+          raisonSociale: displayName || 'À compléter',
+          formeJuridique: 'SARL' as const,
+          metiers: [],
+          zonesIntervention: [],
+          disponibilites: [],
+          notation: 0,
+          nombreAvis: 0,
+          siretVerified: false,
+          verified: false,
+          verificationStatus: 'pending' as const,
+          statut: 'inactif' as const,
+        };
+
+        await createArtisan(artisanData);
+      }
+
+      // Synchroniser le statut emailVerified (Google vérifie automatiquement)
+      await syncEmailVerificationStatus(user.uid);
+
+      return user;
+    } catch (error: any) {
+      console.error('Error completing Google sign up:', error);
+      throw new Error('Erreur lors de la finalisation de l\'inscription');
+    }
+  },
+
+  /**
    * Déconnexion
    */
   async signOut() {
@@ -373,6 +620,9 @@ export const authService = {
 export const signUpClient = authService.signUpClient.bind(authService);
 export const signUpArtisan = authService.signUpArtisan.bind(authService);
 export const signIn = authService.signIn.bind(authService);
+export const signInWithGoogle = authService.signInWithGoogle.bind(authService);
+export const completeGoogleSignUp = authService.completeGoogleSignUp.bind(authService);
+export { isWhitelistedAdmin };
 export const signOut = authService.signOut.bind(authService);
 export const getCurrentUser = authService.getCurrentUser.bind(authService);
 export const resendVerificationEmail = authService.resendVerificationEmail.bind(authService);
