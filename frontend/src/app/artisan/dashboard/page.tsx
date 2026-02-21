@@ -455,8 +455,8 @@ export default function ArtisanDashboardPage() {
 
           {/* Profil - Position 2 */}
           {isFullyVerified ? (
-            <Link href="/artisan/profil">
-              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+            <Link href="/artisan/profil" className="h-full">
+              <div className="h-full flex flex-col bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                     <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -465,7 +465,7 @@ export default function ArtisanDashboardPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-bold text-gray-800">Mon Profil</h2>
+                      <h2 className="text-xl font-bold text-gray-800">Espace Artisan</h2>
                       <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium flex items-center gap-1">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
@@ -485,7 +485,7 @@ export default function ArtisanDashboardPage() {
               </div>
             </Link>
           ) : (
-            <div className="bg-gray-100 rounded-lg shadow-md p-6 border-2 border-gray-300 opacity-60 cursor-not-allowed">
+            <div className="h-full flex flex-col bg-gray-100 rounded-lg shadow-md p-6 border-2 border-gray-300 opacity-60 cursor-not-allowed">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                   <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -494,7 +494,7 @@ export default function ArtisanDashboardPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-500">Mon Profil</h2>
+                    <h2 className="text-xl font-bold text-gray-500">Espace Artisan</h2>
                     <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
                       🔒 Bloqué
                     </span>
@@ -509,8 +509,8 @@ export default function ArtisanDashboardPage() {
           )}
 
           {/* Agenda - Position 3 */}
-          <Link href="/artisan/agenda">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+          <Link href="/artisan/agenda" className="h-full">
+            <div className="h-full flex flex-col bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -531,8 +531,8 @@ export default function ArtisanDashboardPage() {
           </Link>
 
           {/* Mon Wallet - Position 4 */}
-          <Link href="/artisan/wallet">
-            <div className="bg-gradient-to-br from-[#FF6B00] to-[#E56100] rounded-lg shadow-md p-6 hover:shadow-xl transition-all cursor-pointer border-2 border-transparent hover:scale-105">
+          <Link href="/artisan/wallet" className="h-full">
+            <div className="h-full flex flex-col bg-gradient-to-br from-[#FF6B00] to-[#E56100] rounded-lg shadow-md p-6 hover:shadow-xl transition-all cursor-pointer border-2 border-transparent hover:scale-105">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
                   <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -568,8 +568,8 @@ export default function ArtisanDashboardPage() {
           </Link>
 
           {/* Documents KBIS et Pièce d'identité - Position 5 */}
-          <Link href="/artisan/documents">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+          <Link href="/artisan/documents" className="h-full">
+            <div className="h-full flex flex-col bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                   <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -682,8 +682,8 @@ export default function ArtisanDashboardPage() {
             </Link>
 
           {/* Demandes - Position 6 */}
-          <Link href="/artisan/demandes">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00] relative">
+          <Link href="/artisan/demandes" className="h-full">
+            <div className="h-full flex flex-col bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00] relative">
               {/* Badge notification */}
               {nouvellesDemandes > 0 && (
                 <div className="absolute -top-2 -right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg animate-pulse">
@@ -719,8 +719,8 @@ export default function ArtisanDashboardPage() {
           </Link>
 
           {/* Devis - Position 7 */}
-          <Link href="/artisan/devis">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+          <Link href="/artisan/devis" className="h-full">
+            <div className="h-full flex flex-col bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center relative">
                   <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -748,8 +748,8 @@ export default function ArtisanDashboardPage() {
           </Link>
 
           {/* Messages - Position 8 */}
-          <Link href="/messages">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00] relative">
+          <Link href="/messages" className="h-full">
+            <div className="h-full flex flex-col bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00] relative">
               {/* Badge notification */}
               {unreadMessagesCount > 0 && (
                 <div className="absolute -top-2 -right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg animate-pulse">
@@ -795,8 +795,8 @@ export default function ArtisanDashboardPage() {
           </Link>
 
           {/* Avis - Position 9 */}
-          <Link href="/artisan/avis">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+          <Link href="/artisan/avis" className="h-full">
+            <div className="h-full flex flex-col bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
                   <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
