@@ -85,7 +85,10 @@ export default function NotificationBell() {
       case 'nouvel_avis':
         return '⭐';
       case 'litige':
+      case 'litige_ouvert':
         return '⚠️';
+      case 'admin_surveillance':
+        return '🚨';
       default:
         return '🔔';
     }

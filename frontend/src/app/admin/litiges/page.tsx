@@ -14,6 +14,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { db } from '@/lib/firebase/config';
 import { 
@@ -26,6 +27,18 @@ import {
   where,
   Timestamp 
 } from 'firebase/firestore';
+import { 
+  getLitigesByAdmin,
+  getLitigesStats,
+} from '@/lib/firebase/litige-service';
+import { createNotification } from '@/lib/firebase/notification-service';
+import type { Litige } from '@/types/litige';
+import {
+  LITIGE_TYPE_LABELS,
+  LITIGE_STATUT_LABELS,
+  LITIGE_PRIORITE_LABELS,
+} from '@/types/litige';
+import LitigesNavigation from '@/components/admin/LitigesNavigation';
 
 interface Conversation {
   id: string;
@@ -33,6 +46,7 @@ interface Conversation {
   participantNames: { [key: string]: string };
   lastMessage: string;
   lastMessageDate: Timestamp;
+  demandeId?: string;
   litige?: boolean;
   litigeDate?: Timestamp;
   litigeDescription?: string;
@@ -48,6 +62,9 @@ interface Message {
   content: string;
   createdAt: Timestamp;
   read: boolean;
+  deleted?: boolean;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }
 
 interface UserInfo {
@@ -61,11 +78,27 @@ interface UserInfo {
 export default function AdminLitigesPage() {
   const router = useRouter();
   
+  // État pour les onglets
+  const [activeTab, setActiveTab] = useState<'conversations' | 'litiges'>('conversations');
+  
+  // État pour les conversations
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [participantsInfo, setParticipantsInfo] = useState<{ [key: string]: UserInfo }>({});
+  
+  // État pour les litiges formels
+  const [litiges, setLitiges] = useState<Litige[]>([]);
+  const [filteredLitiges, setFilteredLitiges] = useState<Litige[]>([]);
+  const [litigesStats, setLitigesStats] = useState({
+    total: 0,
+    ouverts: 0,
+    enMediation: 0,
+    resolus: 0,
+    abandonnes: 0,
+    delaiMoyenResolution: 0,
+  });
   
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
@@ -76,6 +109,9 @@ export default function AdminLitigesPage() {
   const [showLitigeModal, setShowLitigeModal] = useState(false);
   const [litigeDescription, setLitigeDescription] = useState('');
   const [markingLitige, setMarkingLitige] = useState(false);
+  const [showEscaladeModal, setShowEscaladeModal] = useState(false);
+  const [escalading, setEscalading] = useState(false);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
 
   // Vérification admin et chargement
   useEffect(() => {
@@ -87,7 +123,10 @@ export default function AdminLitigesPage() {
           router.push('/access-x7k9m2p4w8n3');
           return;
         }
-        await loadAllConversations();
+        await Promise.all([
+          loadAllConversations(),
+          loadLitigesFormels(),
+        ]);
       } catch (error) {
         console.error('Erreur authentification:', error);
       } finally {
@@ -173,18 +212,36 @@ export default function AdminLitigesPage() {
         msgs.push({ id: doc.id, ...doc.data() } as Message);
       });
 
+      // ✅ Filtrer les messages supprimés
+      const activeMessages = msgs.filter(msg => !msg.deleted);
+
       // Trier par date croissante (ordre chronologique)
-      msgs.sort((a, b) => {
+      activeMessages.sort((a, b) => {
         const dateA = a.createdAt?.toMillis() || 0;
         const dateB = b.createdAt?.toMillis() || 0;
         return dateA - dateB;
       });
 
-      setMessages(msgs);
+      setMessages(activeMessages);
     } catch (error) {
       console.error('Erreur chargement messages:', error);
     } finally {
       setLoadingMessages(false);
+    }
+  }
+
+  // Charger les litiges formels
+  async function loadLitigesFormels() {
+    try {
+      const [litigesData, statsData] = await Promise.all([
+        getLitigesByAdmin(),
+        getLitigesStats(),
+      ]);
+      setLitiges(litigesData);
+      setFilteredLitiges(litigesData);
+      setLitigesStats(statsData);
+    } catch (error) {
+      console.error('Erreur chargement litiges formels:', error);
     }
   }
 
@@ -223,6 +280,23 @@ export default function AdminLitigesPage() {
     setFilteredConversations(filtered);
   }, [searchTerm, filterLitige, conversations, participantsInfo]);
 
+  // Filtrer les litiges formels  
+  useEffect(() => {
+    if (activeTab !== 'litiges') return;
+    
+    let filtered = litiges;
+
+    if (searchTerm) {
+      filtered = filtered.filter(l =>
+        l.motif?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        l.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        l.id.includes(searchTerm)
+      );
+    }
+
+    setFilteredLitiges(filtered);
+  }, [searchTerm, litiges, activeTab]);
+
   // Marquer comme litige
   async function handleMarkLitige() {
     if (!selectedConversation || !litigeDescription.trim()) {
@@ -238,12 +312,71 @@ export default function AdminLitigesPage() {
 
     try {
       setMarkingLitige(true);
+      
+      // Récupérer la conversation pour avoir les participants
+      const convDoc = await getDocs(
+        query(collection(db, 'conversations'), where('__name__', '==', selectedConversation))
+      );
+      
+      if (convDoc.empty) {
+        alert('Conversation introuvable');
+        return;
+      }
+
+      const convData = convDoc.docs[0].data();
+      const [clientId, artisanId] = convData.participants || [];
+
+      console.log('🔍 [DEBUG] Participants:', { clientId, artisanId, allParticipants: convData.participants });
+
+      if (!clientId || !artisanId) {
+        alert('❌ Erreur : Impossible de récupérer les participants de la conversation');
+        console.error('❌ Participants manquants:', { clientId, artisanId });
+        return;
+      }
+
+      // Mettre à jour la conversation
       await updateDoc(doc(db, 'conversations', selectedConversation), {
         litige: true,
         litigeDate: Timestamp.now(),
         litigeDescription: litigeDescription.trim(),
         litigeMarkedBy: currentUser.uid,
       });
+
+      // 🆕 NOTIFIER LE CLIENT ET L'ARTISAN
+      console.log('📧 [NOTIFICATIONS] Début envoi notifications...');
+      
+      try {
+        if (clientId) {
+          console.log('📧 Envoi notification CLIENT:', clientId);
+          const notifId = await createNotification(clientId, {
+            type: 'admin_surveillance',
+            titre: '⚠️ Conversation sous surveillance',
+            message: 'Un administrateur surveille votre conversation pour détecter d\'eventuels problèmes. Merci de rester courtois et professionnel.',
+            lien: `/messages?conversationId=${selectedConversation}`,
+          });
+          console.log('✅ Notification CLIENT créée avec ID:', notifId);
+        } else {
+          console.warn('⚠️ ClientId manquant, notification non envoyée');
+        }
+
+        if (artisanId) {
+          console.log('📧 Envoi notification ARTISAN:', artisanId);
+          const notifId = await createNotification(artisanId, {
+            type: 'admin_surveillance',
+            titre: '⚠️ Conversation sous surveillance',
+            message: 'Un administrateur surveille votre conversation pour détecter d\'eventuels problèmes. Merci de rester courtois et professionnel.',
+            lien: `/messages?conversationId=${selectedConversation}`,
+          });
+          console.log('✅ Notification ARTISAN créée avec ID:', notifId);
+        } else {
+          console.warn('⚠️ ArtisanId manquant, notification non envoyée');
+        }
+        
+        console.log('✅ [NOTIFICATIONS] Toutes les notifications ont été envoyées avec succès');
+      } catch (notifError) {
+        console.error('❌ Erreur lors de l\'envoi des notifications:', notifError);
+        // Ne pas bloquer l'opération si les notifications échouent
+      }
 
       // Mettre à jour l'état local
       setConversations(prev => prev.map(conv => 
@@ -260,12 +393,63 @@ export default function AdminLitigesPage() {
 
       setShowLitigeModal(false);
       setLitigeDescription('');
-      alert('✅ Conversation marquée comme litige');
+      
+      const message = clientId && artisanId 
+        ? '✅ Conversation marquée comme litige\n📧 Client et artisan ont été notifiés'
+        : '✅ Conversation marquée comme litige\n⚠️ Attention : Certains participants n\'ont pas pu être notifiés';
+      
+      alert(message);
     } catch (error) {
       console.error('Erreur marquage litige:', error);
       alert('Erreur lors du marquage');
     } finally {
       setMarkingLitige(false);
+    }
+  }
+
+  // Escalader vers litige formel
+  async function handleEscalade() {
+    if (!selectedConversation) return;
+
+    const selectedConv = conversations.find(c => c.id === selectedConversation);
+    if (!selectedConv) return;
+
+    if (!confirm(
+      '⚠️ ESCALADE VERS LITIGE FORMEL\n\n' +
+      'Cette action va :\n' +
+      '1. Créer un litige formel dans le système\n' +
+      '2. Notifier le client et l\'artisan\n' +
+      '3. Bloquer la conversation jusqu\'à résolution\n\n' +
+      'Voulez-vous continuer ?'
+    )) return;
+
+    try {
+      setEscalading(true);
+
+      // Récupérer la demande liée à cette conversation
+      const demandeId = selectedConv.demandeId;
+      if (!demandeId) {
+        alert('❌ Impossible : aucune demande liée à cette conversation');
+        return;
+      }
+
+      // Récupérer les participants
+      const [clientId, artisanId] = selectedConv.participants;
+
+      // Rediriger vers la page de création de litige formel avec contexte
+      alert(
+        '✅ Préparation de l\'escalade\n\n' +
+        'Vous allez être redirigé vers la page de gestion des litiges formels.\n' +
+        'La conversation restera marquée en surveillance.'
+      );
+
+      // Rediriger vers /admin/gestion-litiges avec le contexte
+      router.push(`/admin/gestion-litiges?demandeId=${demandeId}&source=escalade`);
+    } catch (error) {
+      console.error('Erreur escalade:', error);
+      alert('Erreur lors de l\'escalade');
+    } finally {
+      setEscalading(false);
     }
   }
 
@@ -301,6 +485,63 @@ export default function AdminLitigesPage() {
     alert('Fonctionnalité d\'export PDF à venir');
   }
 
+  // 🗑️ Fonction de suppression admin de message
+  async function handleDeleteMessage(messageId: string) {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) {
+      alert('❌ Erreur : utilisateur non connecté');
+      return;
+    }
+
+    const confirmed = confirm(
+      '❓ Supprimer ce message ?\n\n⚠️ Action Admin : Le message sera supprimé définitivement pour tous les participants.\n\n✅ Cette action sera tracée dans les logs.'
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingMessageId(messageId);
+
+      await updateDoc(doc(db, 'messages', messageId), {
+        deleted: true,
+        deletedAt: Timestamp.now(),
+        deletedBy: currentUser.uid,
+      });
+
+      // Mettre à jour localement
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+
+      console.log('✅ [ADMIN] Message supprimé:', messageId, 'par:', currentUser.email);
+      alert('✅ Message supprimé avec succès');
+    } catch (error) {
+      console.error('❌ Erreur suppression message:', error);
+      alert('❌ Erreur lors de la suppression du message');
+    } finally {
+      setDeletingMessageId(null);
+    }
+  }
+
+  // Helpers pour les badges de couleur des litiges formels
+  const getPrioriteColor = (priorite?: string) => {
+    switch (priorite) {
+      case 'urgente': return 'bg-[#DC3545] text-white';
+      case 'haute': return 'bg-[#FF6B00] text-white';
+      case 'moyenne': return 'bg-[#FFC107] text-black';
+      case 'basse': return 'bg-[#28A745] text-white';
+      default: return 'bg-[#6C757D] text-white';
+    }
+  };
+
+  const getStatutColor = (statut: string) => {
+    switch (statut) {
+      case 'ouvert': return 'bg-[#FF6B00] text-white';
+      case 'en_mediation': return 'bg-[#FFC107] text-black';
+      case 'resolu_accord':
+      case 'resolu_admin': return 'bg-[#28A745] text-white';
+      case 'abandonne': return 'bg-[#6C757D] text-white';
+      default: return 'bg-[#2C3E50] text-white';
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -317,7 +558,8 @@ export default function AdminLitigesPage() {
   const selectedConv = conversations.find(c => c.id === selectedConversation);
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] pt-20">
+    <div className="min-h-screen bg-[#F5F7FA]">
+      <LitigesNavigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -442,12 +684,21 @@ export default function AdminLitigesPage() {
                     </div>
                     <div className="flex gap-2">
                       {selectedConv?.litige ? (
-                        <button
-                          onClick={handleUnmarkLitige}
-                          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
-                        >
-                          ✅ Retirer litige
-                        </button>
+                        <>
+                          <button
+                            onClick={handleEscalade}
+                            disabled={escalading}
+                            className="bg-[#DC3545] hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                          >
+                            🚀 Escalader vers litige formel
+                          </button>
+                          <button
+                            onClick={handleUnmarkLitige}
+                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
+                          >
+                            ✅ Retirer surveillance
+                          </button>
+                        </>
                       ) : (
                         <button
                           onClick={() => setShowLitigeModal(true)}
@@ -467,14 +718,27 @@ export default function AdminLitigesPage() {
 
                   {/* Info litige */}
                   {selectedConv?.litige && (
-                    <div className="mt-4 bg-red-600 p-3 rounded">
-                      <p className="font-semibold">🚨 LITIGE DÉCLARÉ</p>
-                      <p className="text-sm mt-1">
-                        {selectedConv.litigeDescription || 'Pas de description'}
-                      </p>
-                      <p className="text-xs text-gray-200 mt-1">
-                        Le {selectedConv.litigeDate?.toDate().toLocaleString('fr-FR')}
-                      </p>
+                    <div className="mt-4 bg-red-600 p-4 rounded">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold">🚨 CONVERSATION SOUS SURVEILLANCE</p>
+                          <p className="text-sm mt-1">
+                            {selectedConv.litigeDescription || 'Pas de description'}
+                          </p>
+                          <p className="text-xs text-gray-200 mt-1">
+                            Marquée le {selectedConv.litigeDate?.toDate().toLocaleString('fr-FR')}
+                          </p>
+                        </div>
+                        <span className="bg-white text-red-600 text-xs px-2 py-1 rounded font-medium">
+                          PRÉVENTION
+                        </span>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-red-500">
+                        <p className="text-xs text-gray-200">
+                          ℹ️ Le client et l'artisan ont été notifiés de la surveillance.<br/>
+                          Vous pouvez escalader vers un litige formel si nécessaire.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -494,29 +758,42 @@ export default function AdminLitigesPage() {
                       {messages.map((msg) => {
                         const sender = participantsInfo[msg.senderId];
                         const isArtisan = sender?.role === 'artisan';
+                        const isDeleting = deletingMessageId === msg.id;
                         
                         return (
                           <div
                             key={msg.id}
-                            className={`flex ${isArtisan ? 'justify-start' : 'justify-end'}`}
+                            className={`flex ${isArtisan ? 'justify-start' : 'justify-end'} group`}
                           >
-                            <div className={`max-w-[70%] ${isArtisan ? 'bg-white border border-gray-300' : 'bg-[#FF6B00] text-white'} rounded-lg p-3 shadow`}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-sm">
-                                  {sender ? `${sender.prenom} ${sender.nom}` : 'Utilisateur inconnu'}
-                                </span>
-                                <span className={`text-xs px-2 py-0.5 rounded ${
-                                  isArtisan ? 'bg-blue-100 text-blue-800' : 'bg-orange-200 text-orange-900'
-                                }`}>
-                                  {sender?.role || 'N/A'}
-                                </span>
+                            <div className="flex items-end gap-2">
+                              {/* 🗑️ Bouton suppression admin (toujours visible au hover) */}
+                              <button
+                                onClick={() => handleDeleteMessage(msg.id)}
+                                disabled={isDeleting}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs shadow-lg disabled:opacity-50"
+                                title="[Admin] Supprimer ce message définitivement"
+                              >
+                                {isDeleting ? '⏳' : '🗑️'}
+                              </button>
+                              
+                              <div className={`max-w-[70%] ${isArtisan ? 'bg-white border border-gray-300' : 'bg-[#FF6B00] text-white'} rounded-lg p-3 shadow`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold text-sm">
+                                    {sender ? `${sender.prenom} ${sender.nom}` : 'Utilisateur inconnu'}
+                                  </span>
+                                  <span className={`text-xs px-2 py-0.5 rounded ${
+                                    isArtisan ? 'bg-blue-100 text-blue-800' : 'bg-orange-200 text-orange-900'
+                                  }`}>
+                                    {sender?.role || 'N/A'}
+                                  </span>
+                                </div>
+                                <p className={`text-sm ${isArtisan ? 'text-gray-800' : 'text-white'}`}>
+                                  {msg.content}
+                                </p>
+                                <p className={`text-xs mt-1 ${isArtisan ? 'text-gray-400' : 'text-orange-100'}`}>
+                                  {msg.createdAt?.toDate().toLocaleString('fr-FR')}
+                                </p>
                               </div>
-                              <p className={`text-sm ${isArtisan ? 'text-gray-800' : 'text-white'}`}>
-                                {msg.content}
-                              </p>
-                              <p className={`text-xs mt-1 ${isArtisan ? 'text-gray-400' : 'text-orange-100'}`}>
-                                {msg.createdAt?.toDate().toLocaleString('fr-FR')}
-                              </p>
                             </div>
                           </div>
                         );

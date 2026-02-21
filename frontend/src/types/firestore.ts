@@ -116,7 +116,8 @@ export type NotificationType =
   | 'litige_acceptation_partielle' // ✅ Une partie a accepté la proposition
   | 'litige_refus'               // ✅ Proposition refusée
   | 'litige_resolu'              // ✅ Litige résolu
-  | 'litige_escalade';           // ✅ Litige escaladé
+  | 'litige_escalade'            // ✅ Litige escaladé
+  | 'admin_surveillance';        // ✅ Admin surveille conversation (prévention)
 
 export type MessageType = 'texte' | 'document' | 'image';
 
@@ -644,6 +645,9 @@ export interface Message {
   modere: boolean; // true si contient coordonnées filtrées
   dateEnvoi: Timestamp;
   dateLecture?: Timestamp;
+  deleted?: boolean; // ✅ Soft delete - message supprimé par l'utilisateur
+  deletedAt?: Timestamp; // ✅ Date de suppression
+  deletedBy?: string; // ✅ UID de l'utilisateur qui a supprimé
 }
 
 // ============================================

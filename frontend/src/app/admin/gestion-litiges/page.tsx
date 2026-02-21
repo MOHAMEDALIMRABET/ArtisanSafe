@@ -36,6 +36,7 @@ import {
   LITIGE_PRIORITE_COLORS,
 } from '@/types/litige';
 import LitigeTimeline from '@/components/litiges/LitigeTimeline';
+import LitigesNavigation from '@/components/admin/LitigesNavigation';
 import {
   AlertTriangle,
   CheckCircle,
@@ -362,7 +363,9 @@ export default function AdminGestionLitigesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50">
+      <LitigesNavigation />
+      <div className="py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
@@ -741,6 +744,7 @@ export default function AdminGestionLitigesPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

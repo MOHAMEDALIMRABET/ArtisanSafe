@@ -35,7 +35,10 @@ import {
   LitigePriorite,
 } from '@/types/litige';
 import { createNotification } from './notification-service';
-import { getDevisById } from './devis-service';
+import { getDevisById, getDevisByDemande } from './devis-service';
+import { getDemandeById } from './demande-service';
+import type { Demande } from '@/types/firestore';
+import type { Devis, DevisStatut } from '@/types/devis'; // Utiliser le type de devis.ts car c'est celui retourné par devis-service
 
 /**
  * Collection Firestore
@@ -47,13 +50,26 @@ const LITIGES_COLLECTION = 'litiges';
  */
 export async function createLitige(data: CreateLitigeData): Promise<string> {
   try {
-    // Vérifier que le devis existe et est accepté
+    // Vérifier que le devis existe
     const devis = await getDevisById(data.devisId);
     if (!devis) {
       throw new Error('Devis introuvable');
     }
-    if (devis.statut !== 'accepte') {
-      throw new Error('Seuls les devis acceptés peuvent faire l\'objet d\'un litige');
+
+    // Vérifier que le devis est dans un statut permettant l'ouverture d'un litige
+    const statutsAutorises: DevisStatut[] = [
+      'paye',                  // Contrat signé et payé (problème avant/pendant travaux)
+      'en_cours',              // Travaux en cours (abandon, retard, malfaçon)
+      'travaux_termines',      // Fin déclarée par artisan (client conteste)
+      'termine_valide',        // Validé par client (découverte malfaçon après validation)
+      'termine_auto_valide',   // Auto-validé (découverte malfaçon après 7 jours)
+    ];
+
+    if (!statutsAutorises.includes(devis.statut)) {
+      throw new Error(
+        `Impossible d'ouvrir un litige pour un devis en statut "${devis.statut}". ` +
+        `Un litige ne peut être ouvert que pour un devis payé ou en cours d'exécution.`
+      );
     }
 
     // Récupérer le contrat lié au devis (si existe)
@@ -256,6 +272,13 @@ export async function getAdminLitiges(filters?: {
     console.error('Erreur lors de la récupération des litiges admin:', error);
     throw error;
   }
+}
+
+/**
+ * Alias pour getAllLitiges() - Utilisé par l'interface admin
+ */
+export async function getLitigesByAdmin(): Promise<Litige[]> {
+  return getAllLitiges();
 }
 
 /**
@@ -760,4 +783,177 @@ function calculatePriorite(
   
   // Priorité BASSE : autres cas
   return 'basse';
+}
+
+/**
+ * Récupérer la demande associée à un litige (ADMIN)
+ * Permet de voir le contexte initial de la demande
+ */
+export async function getDemandeFromLitige(litigeId: string): Promise<Demande | null> {
+  try {
+    const litige = await getLitigeById(litigeId);
+    if (!litige) {
+      console.error('Litige introuvable:', litigeId);
+      return null;
+    }
+
+    // Récupérer le devis pour obtenir le demandeId
+    const devis = await getDevisById(litige.devisId);
+    if (!devis || !devis.demandeId) {
+      console.error('Devis ou demandeId introuvable pour litige:', litigeId);
+      return null;
+    }
+
+    // Récupérer la demande
+    const demande = await getDemandeById(devis.demandeId);
+    return demande;
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la demande du litige:', error);
+    throw error;
+  }
+}
+
+/**
+ * Récupérer l'historique complet des devis de la demande (ADMIN)
+ * Permet de voir tous les devis qui ont été proposés, pas seulement celui du litige
+ */
+export async function getHistoriqueDevisFromLitige(litigeId: string): Promise<Devis[]> {
+  try {
+    const litige = await getLitigeById(litigeId);
+    if (!litige) {
+      console.error('Litige introuvable:', litigeId);
+      return [];
+    }
+
+    // Récupérer le devis pour obtenir le demandeId
+    const devis = await getDevisById(litige.devisId);
+    if (!devis || !devis.demandeId) {
+      console.error('Devis ou demandeId introuvable pour litige:', litigeId);
+      return [];
+    }
+
+    // Récupérer tous les devis de cette demande
+    const tousLesDevis = await getDevisByDemande(devis.demandeId);
+    
+    // Trier par date de création (plus ancien d'abord)
+    return tousLesDevis.sort((a, b) => {
+      const dateA = a.dateCreation?.toMillis() || 0;
+      const dateB = b.dateCreation?.toMillis() || 0;
+      return dateA - dateB;
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'historique des devis:', error);
+    throw error;
+  }
+}
+
+/**
+ * Récupérer le contexte complet d'un litige pour l'admin
+ * Combine: litige + demande + tous les devis + devis concerné
+ */
+export async function getContexteCompletLitige(litigeId: string): Promise<{
+  litige: Litige | null;
+  demande: Demande | null;
+  devisConcerne: Devis | null;
+  historiqueDevis: Devis[];
+  statistiques: {
+    totalDevis: number;
+    devisAcceptes: number;
+    devisRefuses: number;
+    montantMoyenDevis: number;
+  };
+} | null> {
+  try {
+    // Récupérer le litige
+    const litige = await getLitigeById(litigeId);
+    if (!litige) {
+      return null;
+    }
+
+    // Récupérer le devis concerné par le litige
+    const devisConcerne = await getDevisById(litige.devisId);
+    if (!devisConcerne) {
+      return null;
+    }
+
+    // Récupérer la demande initiale
+    const demande = devisConcerne.demandeId 
+      ? await getDemandeById(devisConcerne.demandeId)
+      : null;
+
+    // Récupérer l'historique complet des devis
+    const historiqueDevis = devisConcerne.demandeId
+      ? await getDevisByDemande(devisConcerne.demandeId)
+      : [];
+
+    // Calculer statistiques
+    const statistiques = {
+      totalDevis: historiqueDevis.length,
+      devisAcceptes: historiqueDevis.filter(d => d.statut === 'accepte' || d.statut === 'paye').length,
+      devisRefuses: historiqueDevis.filter(d => d.statut === 'refuse').length,
+      montantMoyenDevis: historiqueDevis.length > 0
+        ? historiqueDevis.reduce((sum, d) => sum + (d.totaux?.totalTTC || 0), 0) / historiqueDevis.length
+        : 0,
+    };
+
+    return {
+      litige,
+      demande,
+      devisConcerne,
+      historiqueDevis,
+      statistiques,
+    };
+  } catch (error) {
+    console.error('Erreur lors de la récupération du contexte complet du litige:', error);
+    throw error;
+  }
+}
+/**
+ * Récupérer la conversation et les messages liés à une demande
+ * Utilisé par l'admin pour voir l'historique complet des échanges client/artisan
+ */
+export async function getConversationFromDemande(demandeId: string): Promise<{
+  conversation: any | null;
+  messages: any[];
+} | null> {
+  try {
+    // Récupérer la conversation liée à cette demande
+    const conversationsQuery = query(
+      collection(db, 'conversations'),
+      where('demandeId', '==', demandeId)
+    );
+    const conversationsSnap = await getDocs(conversationsQuery);
+
+    if (conversationsSnap.empty) {
+      console.log('Aucune conversation trouvée pour cette demande');
+      return { conversation: null, messages: [] };
+    }
+
+    // Prendre la première conversation (normalement il n'y en a qu'une par demande)
+    const conversationDoc = conversationsSnap.docs[0];
+    const conversation = {
+      id: conversationDoc.id,
+      ...conversationDoc.data(),
+    };
+
+    // Récupérer tous les messages de cette conversation
+    const messagesQuery = query(
+      collection(db, 'messages'),
+      where('conversationId', '==', conversation.id),
+      orderBy('dateEnvoi', 'asc')
+    );
+    const messagesSnap = await getDocs(messagesQuery);
+    const messages = messagesSnap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return {
+      conversation,
+      messages,
+    };
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la conversation:', error);
+    return null;
+  }
 }

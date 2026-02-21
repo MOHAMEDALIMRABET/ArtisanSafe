@@ -33,6 +33,9 @@ interface Message {
   content: string;
   createdAt: Timestamp;
   read: boolean;
+  deleted?: boolean; // Soft delete par admin uniquement
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }
 
 interface Conversation {
@@ -224,14 +227,17 @@ export default function MessagesPage() {
         });
       });
 
+      // ✅ Filtrer les messages supprimés (par admin uniquement)
+      const activeMessages = msgs.filter(msg => !msg.deleted);
+
       // Tri côté client par date de création
-      msgs.sort((a, b) => {
+      activeMessages.sort((a, b) => {
         const dateA = a.createdAt?.toMillis() || 0;
         const dateB = b.createdAt?.toMillis() || 0;
         return dateA - dateB; // Ordre croissant (ancien → récent)
       });
 
-      setMessages(msgs);
+      setMessages(activeMessages);
       
       // Marquer comme lu
       markAsRead(selectedConversation);
@@ -610,6 +616,7 @@ export default function MessagesPage() {
 
                   {messages.map((msg) => {
                     const isOwn = msg.senderId === user.uid;
+                    
                     return (
                       <div
                         key={msg.id}
