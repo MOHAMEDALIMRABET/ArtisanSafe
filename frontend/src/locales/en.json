@@ -35,7 +35,8 @@
     "quotes": "Quotes",
     "logout": "Logout",
     "moreNotifications": "more notification(s)",
-    "wait": "Wait"
+    "wait": "Wait",
+    "verifiedProfile": "Verified Profile"
   },
   "nav": {
     "home": "Home",

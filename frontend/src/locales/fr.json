@@ -35,7 +35,8 @@
     "quotes": "Devis",
     "logout": "Se déconnecter",
     "moreNotifications": "notification(s) de plus",
-    "wait": "Attendre"
+    "wait": "Attendre",
+    "verifiedProfile": "Profil Vérifié"
   },
   "nav": {
     "home": "Accueil",
