@@ -109,13 +109,13 @@ export default function InscriptionPage() {
     }
 
     if (role === 'artisan' && !representantLegal.trim()) {
-      setError('Le nom du représentant légal est obligatoire pour vérifier votre KBIS');
+      setError(t('signup.legalRepresentativeRequired'));
       return;
     }
 
     // Validation du code postal français (5 chiffres)
     if (role === 'artisan' && postalCode && !/^\d{5}$/.test(postalCode)) {
-      setError('Le code postal doit être composé de 5 chiffres');
+      setError(t('signup.postalCodeError'));
       return;
     }
 
@@ -124,7 +124,7 @@ export default function InscriptionPage() {
       // 0. ⚠️ VALIDATION STRICTE : SIRET doit avoir EXACTEMENT 14 chiffres
       const cleanSiret = siret.replace(/\s/g, '');
       if (!/^\d{14}$/.test(cleanSiret)) {
-        setError('Vérifiez que votre SIRET est correct et que votre entreprise est active.');
+        setError(t('signup.siretVerificationError'));
         return;
       }
 
@@ -137,7 +137,7 @@ export default function InscriptionPage() {
         }
       } catch (error) {
         console.error('Erreur vérification SIRET:', error);
-        setError('Impossible de vérifier le SIRET. Veuillez réessayer.');
+        setError(t('signup.siretCheckFailed'));
         return;
       }
 
@@ -233,7 +233,7 @@ export default function InscriptionPage() {
         router.push('/artisan/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue lors de l\'inscription');
+      setError(err.message || t('signup.signupError'));
     } finally {
       setIsLoading(false);
     }
@@ -248,10 +248,10 @@ export default function InscriptionPage() {
         <div className="flex items-center justify-center p-4 py-16">
           <Card className="max-w-2xl w-full">
           <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
-            Bienvenue sur Artisan Dispo
+            {t('signup.welcomeTitle')}
           </h1>
           <p className="text-center text-gray-600 mb-8">
-            Choisissez votre profil pour commencer
+            {t('signup.chooseProfile')}
           </p>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -266,28 +266,28 @@ export default function InscriptionPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Client</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('signup.clientCard')}</h3>
                 <p className="text-sm text-gray-600 text-center">
-                  Je cherche un artisan pour mes travaux
+                  {t('signup.clientDesc')}
                 </p>
                 <ul className="mt-4 space-y-2 text-sm text-gray-600">
                   <li className="flex items-center">
                     <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    Gratuit à vie
+                    {t('signup.freeForLife')}
                   </li>
                   <li className="flex items-center">
                     <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    Recherche illimitée
+                    {t('signup.unlimitedSearch')}
                   </li>
                   <li className="flex items-center">
                     <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    Devis gratuits
+                    {t('signup.freeQuotesCard')}
                   </li>
                 </ul>
               </div>
@@ -304,22 +304,22 @@ export default function InscriptionPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Artisan</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('signup.artisanCard')}</h3>
                 <p className="text-sm text-gray-600 text-center">
-                  Je propose mes services professionnels
+                  {t('signup.artisanDesc')}
                 </p>
                 <ul className="mt-4 space-y-2 text-sm text-gray-600">
                   <li className="flex items-center">
                     <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    Inscription gratuite
+                    {t('signup.freeSignup')}
                   </li>
                   <li className="flex items-center">
                     <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    Visibilité locale
+                    {t('signup.localVisibility')}
                   </li>
                 </ul>
               </div>
@@ -328,9 +328,9 @@ export default function InscriptionPage() {
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              Vous avez déjà un compte ?{' '}
+              {t('signup.alreadyHaveAccount')}{' '}
               <Link href="/connexion" className="text-[#FF6B00] hover:underline font-medium">
-                Se connecter
+                {t('auth.login')}
               </Link>
             </p>
           </div>
@@ -351,14 +351,14 @@ export default function InscriptionPage() {
           <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Retour
+          {t('signup.backButton')}
         </button>
 
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          Inscription {role === 'client' ? 'Client' : 'Artisan'}
+          {role === 'client' ? t('signup.signupClient') : t('signup.signupArtisan')}
         </h2>
         <p className="text-gray-600 mb-6">
-          Créez votre compte pour commencer
+          {t('signup.createAccount')}
         </p>
 
         {error && (
@@ -369,25 +369,25 @@ export default function InscriptionPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Email"
+            label={t('common.email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            placeholder="votre@email.com"
+            placeholder={t('signup.emailPlaceholder')}
           />
 
           <Input
-            label="Mot de passe"
+            label={t('common.password')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            placeholder="Minimum 6 caractères"
+            placeholder={t('signup.passwordPlaceholder')}
           />
 
           <Input
-            label="Confirmer le mot de passe"
+            label={t('signup.confirmPassword')}
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -396,13 +396,13 @@ export default function InscriptionPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Prénom"
+              label={t('signup.firstName')}
               value={prenom}
               onChange={(e) => setPrenom(e.target.value)}
               required
             />
             <Input
-              label="Nom"
+              label={t('signup.lastName')}
               value={nom}
               onChange={(e) => setNom(e.target.value)}
               required
@@ -410,35 +410,35 @@ export default function InscriptionPage() {
           </div>
 
           <Input
-            label="Téléphone"
+            label={t('common.phone')}
             type="tel"
             value={telephone}
             onChange={(e) => setTelephone(e.target.value)}
             required
-            placeholder="06 12 34 56 78"
-            helperText="10 chiffres commençant par 0"
+            placeholder={t('signup.phonePlaceholder')}
+            helperText={t('signup.phoneHelper')}
           />
 
           {role === 'artisan' && (
             <>
               <Input
-                label="Raison Sociale"
+                label={t('signup.businessName')}
                 value={entreprise}
                 onChange={(e) => setEntreprise(e.target.value)}
                 required
               />
 
               <Input
-                label="Représentant légal"
+                label={t('signup.legalRepresentative')}
                 value={representantLegal}
                 onChange={(e) => setRepresentantLegal(e.target.value)}
                 required
-                placeholder="Nom complet (ex: Pierre DUPONT)"
-                helperText="Doit correspondre au nom figurant sur votre KBIS"
+                placeholder={t('signup.legalRepresentativePlaceholder')}
+                helperText={t('signup.legalRepresentativeHelper')}
               />
 
               <Input
-                label="SIRET"
+                label={t('signup.siretLabel')}
                 type="text"
                 value={siret}
                 onChange={(e) => {
@@ -448,15 +448,15 @@ export default function InscriptionPage() {
                   setSiret(value.slice(0, 14));
                 }}
                 required
-                placeholder="14 chiffres (ex: 12345678901234)"
-                helperText="Format français : exactement 14 chiffres"
+                placeholder={t('signup.siretPlaceholder')}
+                helperText={t('signup.siretHelper')}
                 pattern="\d{14}"
                 minLength={14}
                 maxLength={14}
               />
 
               <AddressAutocomplete
-                label="Adresse de l'entreprise"
+                label={t('signup.addressLabel')}
                 value={address}
                 onChange={(value) => setAddress(value)}
                 onAddressSelect={(data) => {
@@ -465,26 +465,26 @@ export default function InscriptionPage() {
                   setPostalCode(data.codePostal || postalCode);
                 }}
                 required
-                placeholder="123 rue de la République"
-                helper="Suggestions automatiques via l’API adresse"
+                placeholder={t('signup.addressPlaceholder')}
+                helper={t('signup.addressHelper')}
               />
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Ville"
+                  label={t('signup.city')}
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   required
-                  placeholder="Paris"
+                  placeholder={t('signup.cityPlaceholder')}
                 />
                 <Input
-                  label="Code postal"
+                  label={t('signup.postalCode')}
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
                   required
-                  placeholder="75001"
+                  placeholder={t('signup.postalCodePlaceholder')}
                   maxLength={5}
-                  helperText="5 chiffres"
+                  helperText={t('signup.postalCodeHelper')}
                 />
               </div>
             </>
@@ -499,15 +499,15 @@ export default function InscriptionPage() {
                 className="mt-1 w-4 h-4 rounded border-gray-300 text-[#FF6B00] focus:ring-[#FF6B00] cursor-pointer"
               />
               <span className="text-sm text-gray-700 leading-relaxed">
-                J'accepte les{' '}
+                {t('signup.termsAccept')}{' '}
                 <Link 
                   href="/confiance/conditions-generales" 
                   className="text-[#FF6B00] hover:underline font-medium"
                   target="_blank"
                 >
-                  conditions générales d'utilisation
+                  {t('signup.termsConditions')}
                 </Link>
-                {' '}et consens à l'exploitation de mes données personnelles
+                {' '}{t('signup.termsConsent')}
               </span>
             </label>
           </div>
@@ -519,14 +519,14 @@ export default function InscriptionPage() {
             className="w-full"
             isLoading={isLoading}
           >
-            S'inscrire
+            {t('signup.signupButton')}
           </Button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          Vous avez déjà un compte ?{' '}
+          {t('signup.alreadyHaveAccount')}{' '}
           <Link href="/connexion" className="text-blue-600 hover:underline font-medium">
-            Se connecter
+            {t('auth.login')}
           </Link>
         </div>
       </div>

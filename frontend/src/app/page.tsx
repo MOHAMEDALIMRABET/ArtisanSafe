@@ -233,7 +233,7 @@ export default function Home() {
                             <span className="font-medium text-[#2C3E50]">{suggestion.nom}</span>
                             <span className="text-sm text-[#6C757D]">{suggestion.codePostal}</span>
                           </div>
-                          <span className="text-xs text-[#95A5A6]">Dépt. {suggestion.departement}</span>
+                          <span className="text-xs text-[#95A5A6]">{t('home.department')} {suggestion.departement}</span>
                         </button>
                       ))}
                     </div>
@@ -267,7 +267,7 @@ export default function Home() {
                 {/* Date souhaitée */}
                 <div className="relative md:col-span-4">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
-                    Date souhaitée
+                    {t('home.searchDate')}
                   </label>
                   <div className={`flex items-center rounded-xl px-3 h-11 transition-colors ${
                     blinkingFields.date 
@@ -279,7 +279,7 @@ export default function Home() {
                     </svg>
                     <input 
                       type="date" 
-                      placeholder="Dès que possible" 
+                      placeholder={t('home.datePlaceholder')} 
                       className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium placeholder-[#95A5A6]"
                       value={searchForm.date}
                       onChange={(e) => setSearchForm({...searchForm, date: e.target.value})}
@@ -290,7 +290,7 @@ export default function Home() {
                 {/* Flexibilité */}
                 <div className="relative md:col-span-3">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
-                    Flexibilité
+                    {t('home.flexibility')}
                   </label>
                   <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -303,11 +303,11 @@ export default function Home() {
                         setSearchForm({...searchForm, flexible: e.target.value !== '0', flexibiliteDays: e.target.value});
                       }}
                     >
-                      <option value="0">±0 jour</option>
-                      <option value="1">± 1 jour</option>
-                      <option value="3">± 3 jours</option>
-                      <option value="7">± 1 semaine</option>
-                      <option value="14">± 2 semaines</option>
+                      <option value="0">{t('home.flexibilityOption0')}</option>
+                      <option value="1">{t('home.flexibilityOption1')}</option>
+                      <option value="3">{t('home.flexibilityOption3')}</option>
+                      <option value="7">{t('home.flexibilityOption7')}</option>
+                      <option value="14">{t('home.flexibilityOption14')}</option>
                     </select>
                   </div>
                 </div>
@@ -319,7 +319,7 @@ export default function Home() {
                     onClick={handleSearch}
                     className="w-full h-11 bg-[#FF6B00] hover:bg-[#E56100] text-white font-bold rounded-xl px-6 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center"
                   >
-                    Rechercher
+                    {t('home.searchButton')}
                   </button>
                 </div>
               </div>
@@ -331,10 +331,10 @@ export default function Home() {
         <div className="mt-24 mb-8">
           <div className="text-center mb-12">
             <h2 className="text-5xl md:text-6xl font-extrabold text-[#2C3E50] mb-6 leading-tight">
-              Pourquoi choisir ArtisanDispo ?
+              {t('home.whyChoose')}
             </h2>
             <p className="text-2xl md:text-3xl font-semibold text-[#28A745] max-w-4xl mx-auto leading-relaxed">
-              Vos projets méritent des artisans fiables, disponibles et de confiance. Avec ArtisanDispo, tout commence sereinement
+              {t('home.whyChooseSubtitle')}
             </p>
           </div>
 
@@ -347,7 +347,7 @@ export default function Home() {
               className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-xl rounded-full p-3 hover:bg-[#FF6B00] hover:text-white transition-all duration-300 ${
                 currentCardIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:scale-110'
               }`}
-              aria-label="Carte précédente"
+              aria-label={t('home.previousCard')}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -369,25 +369,25 @@ export default function Home() {
                       <span className="text-4xl">🔒</span>
                     </div>
                     <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
-                      Paiement 100% sécurisé
+                      {t('home.securePayment')}
                     </h3>
                     <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Paiement bloqué jusqu'à validation</span>
+                        <span>{t('home.securePaymentItem1')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Déblocage automatique après 7 jours</span>
+                        <span>{t('home.securePaymentItem2')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Aucun risque d'arnaque</span>
+                        <span>{t('home.securePaymentItem3')}</span>
                       </li>
                     </ul>
                     <div className="text-center">
                       <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
-                        En savoir plus →
+                        {t('home.learnMore')}
                       </span>
                     </div>
                   </div>
@@ -400,25 +400,25 @@ export default function Home() {
                       <span className="text-4xl">✓</span>
                     </div>
                     <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
-                      Artisans rigoureusement vérifiés
+                      {t('home.verifiedArtisans')}
                     </h3>
                     <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>KBIS/SIREN obligatoire</span>
+                        <span>{t('home.verifiedArtisansItem1')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Identité contrôlée</span>
+                        <span>{t('home.verifiedArtisansItem2')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Assurances vérifiées</span>
+                        <span>{t('home.verifiedArtisansItem3')}</span>
                       </li>
                     </ul>
                     <div className="text-center">
                       <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
-                        En savoir plus →
+                        {t('home.learnMore')}
                       </span>
                     </div>
                   </div>
@@ -431,25 +431,25 @@ export default function Home() {
                       <span className="text-4xl">📅</span>
                     </div>
                     <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
-                      Planning flexible & transparent
+                      {t('home.flexiblePlanning')}
                     </h3>
                     <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Disponibilités temps réel</span>
+                        <span>{t('home.flexiblePlanningItem1')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Flexibilité ±7 jours</span>
+                        <span>{t('home.flexiblePlanningItem2')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Confirmation instantanée</span>
+                        <span>{t('home.flexiblePlanningItem3')}</span>
                       </li>
                     </ul>
                     <div className="text-center">
                       <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
-                        En savoir plus →
+                        {t('home.learnMore')}
                       </span>
                     </div>
                   </div>
@@ -462,25 +462,25 @@ export default function Home() {
                       <span className="text-4xl">⭐</span>
                     </div>
                     <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
-                      Avis 100% certifiés
+                      {t('home.certifiedReviews')}
                     </h3>
                     <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Uniquement après paiement</span>
+                        <span>{t('home.certifiedReviewsItem1')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Notation multi-critères</span>
+                        <span>{t('home.certifiedReviewsItem2')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Score dynamique</span>
+                        <span>{t('home.certifiedReviewsItem3')}</span>
                       </li>
                     </ul>
                     <div className="text-center">
                       <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
-                        En savoir plus →
+                        {t('home.learnMore')}
                       </span>
                     </div>
                   </div>
@@ -493,25 +493,25 @@ export default function Home() {
                       <span className="text-4xl">💰</span>
                     </div>
                     <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
-                      Devis 100% gratuits
+                      {t('home.freeQuotes')}
                     </h3>
                     <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Recevez plusieurs devis sans engagement</span>
+                        <span>{t('home.freeQuotesItem1')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Comparez les prix facilement</span>
+                        <span>{t('home.freeQuotesItem2')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Zéro frais cachés</span>
+                        <span>{t('home.freeQuotesItem3')}</span>
                       </li>
                     </ul>
                     <div className="text-center">
                       <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
-                        En savoir plus →
+                        {t('home.learnMore')}
                       </span>
                     </div>
                   </div>
@@ -524,25 +524,25 @@ export default function Home() {
                       <span className="text-4xl">🔧</span>
                     </div>
                     <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
-                      Petits travaux rapides
+                      {t('home.quickWorks')}
                     </h3>
                     <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Intervention sous 2h possible</span>
+                        <span>{t('home.quickWorksItem1')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Sans devis si &lt; 150€</span>
+                        <span>{t('home.quickWorksItem2')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Tarif horaire transparent</span>
+                        <span>{t('home.quickWorksItem3')}</span>
                       </li>
                     </ul>
                     <div className="text-center">
                       <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
-                        En savoir plus →
+                        {t('home.learnMore')}
                       </span>
                     </div>
                   </div>
@@ -555,25 +555,25 @@ export default function Home() {
                       <span className="text-4xl">🛡️</span>
                     </div>
                     <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
-                      Protection & médiation
+                      {t('home.protectionMediation')}
                     </h3>
                     <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Centre de litiges dédié</span>
+                        <span>{t('home.protectionMediationItem1')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Historique preuves complet</span>
+                        <span>{t('home.protectionMediationItem2')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>Médiation gratuite</span>
+                        <span>{t('home.protectionMediationItem3')}</span>
                       </li>
                     </ul>
                     <div className="text-center">
                       <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
-                        En savoir plus →
+                        {t('home.learnMore')}
                       </span>
                     </div>
                   </div>
@@ -588,7 +588,7 @@ export default function Home() {
               className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-xl rounded-full p-3 hover:bg-[#FF6B00] hover:text-white transition-all duration-300 ${
                 currentCardIndex === 2 ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:scale-110'
               }`}
-              aria-label="Carte suivante"
+              aria-label={t('home.nextCard')}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -628,14 +628,14 @@ export default function Home() {
           <div className="bg-gradient-to-r from-[#2C3E50] to-[#3D5A73] rounded-2xl p-8 md:p-12 text-white">
             <div className="text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Vous êtes particulier ?
+                {t('home.areYouClient')}
               </h2>
               <p className="text-lg mb-6 text-[#E9ECEF]">
-                Trouver l'artisan idéal pour vos travaux. Comparez les devis et choisissez en toute confiance.
+                {t('home.clientDescription')}
               </p>
               <Link href="/inscription?role=client">
                 <button className="bg-white text-[#2C3E50] hover:bg-[#E9ECEF] hover:text-[#1A3A5C] px-6 py-3 text-lg font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
-                  Créer mon profil particulier
+                  {t('home.createClientProfile')}
                 </button>
               </Link>
             </div>
@@ -645,15 +645,14 @@ export default function Home() {
           <div className="bg-gradient-to-r from-[#FF6B00] to-[#E56100] rounded-2xl p-8 md:p-12 text-white">
             <div className="text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Vous êtes artisan ?
+                {t('home.areYouArtisan')}
               </h2>
               <p className="text-lg mb-6 text-orange-100">
-                Rejoignez notre plateforme et développez votre activité. 
-                Inscription gratuite, commission uniquement sur les prestations réalisées.
+                {t('home.artisanDescription')}
               </p>
               <Link href="/inscription?role=artisan">
                 <button className="bg-white text-[#FF6B00] hover:bg-[#E9ECEF] hover:text-[#E56100] px-6 py-3 text-lg font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
-                  Créer mon profil artisan
+                  {t('home.createArtisanProfile')}
                 </button>
               </Link>
             </div>

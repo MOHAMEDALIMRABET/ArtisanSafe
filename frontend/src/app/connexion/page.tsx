@@ -26,9 +26,9 @@ export default function ConnexionPage() {
     setEmailError('');
 
     if (value && !value.includes('@')) {
-      setEmailError('Format d\'email invalide');
+      setEmailError(t('auth.invalidEmailFormat'));
     } else if (value && value.includes('@') && !value.split('@')[1]?.includes('.')) {
-      setEmailError('Format d\'email invalide');
+      setEmailError(t('auth.invalidEmailFormat'));
     }
   };
 
@@ -49,7 +49,7 @@ export default function ConnexionPage() {
       if (userData?.role === 'admin') {
         // Déconnecter immédiatement
         await authService.signOut();
-        setError('Les administrateurs doivent se connecter via l\'interface dédiée.');
+        setError(t('auth.adminLoginError'));
         setIsLoading(false);
         
         // Rediriger vers la page de login admin sécurisée après 2 secondes
@@ -75,7 +75,7 @@ export default function ConnexionPage() {
       }
     } catch (err: any) {
       // Affiche toujours le message utilisateur (jamais le message technique Firebase)
-      setError(err.message || 'Email ou mot de passe incorrect');
+      setError(err.message || t('auth.loginError'));
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +113,7 @@ export default function ConnexionPage() {
       }
     } catch (err: any) {
       console.error('Erreur Google Sign-In:', err);
-      setError(err.message || 'Erreur lors de la connexion avec Google');
+      setError(err.message || t('auth.googleSignInError'));
     } finally {
       setIsGoogleLoading(false);
     }
@@ -126,7 +126,7 @@ export default function ConnexionPage() {
           <div className="flex justify-center mb-4">
             <Logo size="md" href="/" />
           </div>
-          <p className="text-gray-600">Connectez-vous à votre compte</p>
+          <p className="text-gray-600">{t('auth.loginTitle')}</p>
         </div>
 
         {error && (
@@ -140,13 +140,13 @@ export default function ConnexionPage() {
                   href="/mot-de-passe-oublie" 
                   className="block text-sm text-[#FF6B00] hover:underline"
                 >
-                  → Réinitialiser mon mot de passe
+                  {t('auth.resetPassword')}
                 </Link>
                 <Link 
                   href="/inscription" 
                   className="block text-sm text-[#FF6B00] hover:underline"
                 >
-                  → Créer un nouveau compte
+                  {t('auth.createNewAccount')}
                 </Link>
               </div>
             )}
