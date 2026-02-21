@@ -4,10 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui';
 import type { Categorie } from '@/types/firestore';
 
 export default function Home() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [blinkingFields, setBlinkingFields] = useState<{ville: boolean, date: boolean}>({ ville: false, date: false });
   const [villeSuggestions, setVilleSuggestions] = useState<Array<{nom: string, codePostal: string, departement: string}>>([]);
@@ -138,10 +140,10 @@ export default function Home() {
           <div className="relative z-10 py-12 px-6 md:px-12 h-full flex flex-col justify-center">
             {/* Slogan accrocheur */}
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 text-center drop-shadow-lg">
-              Le moyen fiable d'engager un artisan
+              {t('home.heroTitle')}
             </h1>
             <p className="text-center text-white text-lg mb-8 drop-shadow-md">
-              Publiez votre projet gratuitement et recevez des devis d'artisans vérifiés
+              {t('home.heroSubtitle')}
             </p>
 
             {/* Formulaire de recherche */}
@@ -150,7 +152,7 @@ export default function Home() {
                 {/* Type de travaux */}
                 <div className="relative md:col-span-4">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
-                    Type de travaux
+                    {t('home.searchTypeOfWork')}
                   </label>
                   <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,26 +163,26 @@ export default function Home() {
                       value={searchForm.metier}
                       onChange={(e) => setSearchForm({...searchForm, metier: e.target.value as Categorie})}
                     >
-                      <option value="plomberie">Plomberie</option>
-                      <option value="electricite">Électricité</option>
-                      <option value="peinture">Peinture</option>
-                      <option value="menuiserie">Menuiserie</option>
-                      <option value="maconnerie">Maçonnerie</option>
-                      <option value="carrelage">Carrelage</option>
-                      <option value="chauffage">Chauffage</option>
-                      <option value="climatisation">Climatisation</option>
-                      <option value="toiture">Toiture</option>
-                      <option value="isolation">Isolation</option>
-                      <option value="serrurerie">Serrurerie</option>
-                      <option value="exterieur-jardin">Extérieur et jardin</option>
-                      <option value="renovation">Rénovation</option>
+                      <option value="plomberie">{t('home.plumbing')}</option>
+                      <option value="electricite">{t('home.electricity')}</option>
+                      <option value="peinture">{t('home.painting')}</option>
+                      <option value="menuiserie">{t('home.carpentry')}</option>
+                      <option value="maconnerie">{t('home.masonry')}</option>
+                      <option value="carrelage">{t('home.tiling')}</option>
+                      <option value="chauffage">{t('home.heating')}</option>
+                      <option value="climatisation">{t('home.airConditioning')}</option>
+                      <option value="toiture">{t('home.roofing')}</option>
+                      <option value="isolation">{t('home.insulation')}</option>
+                      <option value="serrurerie">{t('home.locksmith')}</option>
+                      <option value="exterieur-jardin">{t('home.exteriorGarden')}</option>
+                      <option value="renovation">{t('home.renovation')}</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Ville */}
               <div className="relative md:col-span-6">
-                  <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Localisation</label>
+                  <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">{t('home.searchLocation')}</label>
                   <div className={`flex items-center rounded-xl px-3 h-11 transition-colors ${
                     blinkingFields.ville 
                       ? 'animate-blink-once' 
@@ -202,7 +204,7 @@ export default function Home() {
                     </svg>
                     <input 
                       type="text" 
-                      placeholder="Paris, Lyon..." 
+                      placeholder={t('home.locationPlaceholder')}
                       className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium placeholder-[#95A5A6]"
                       value={searchForm.ville}
                       onChange={(e) => {
@@ -241,7 +243,7 @@ export default function Home() {
                 {/* Rayon de recherche */}
                 <div className="relative md:col-span-3">
                   <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">
-                    Rayon
+                    {t('home.searchRadius')}
                   </label>
                   <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                     <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -7,8 +7,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function GuestMenu() {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -71,9 +73,9 @@ export default function GuestMenu() {
         <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
           {/* En-tête */}
           <div className="bg-gradient-to-r from-[#2C3E50] to-[#34495E] text-white px-4 py-3">
-            <p className="font-semibold text-center">Bienvenue</p>
+            <p className="font-semibold text-center">{t('userMenu.welcome')}</p>
             <p className="text-xs text-gray-300 text-center mt-1">
-              Connectez-vous pour accéder à votre compte
+              {t('userMenu.connectToAccess')}
             </p>
           </div>
 
@@ -92,7 +94,7 @@ export default function GuestMenu() {
                   d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                 />
               </svg>
-              <span className="font-medium">Connexion</span>
+              <span className="font-medium">{t('nav.login')}</span>
             </button>
 
             {/* Inscription */}
@@ -108,7 +110,7 @@ export default function GuestMenu() {
                   d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
                 />
               </svg>
-              <span className="font-medium">Inscription</span>
+              <span className="font-medium">{t('nav.signup')}</span>
             </button>
           </div>
         </div>

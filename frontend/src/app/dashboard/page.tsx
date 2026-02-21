@@ -7,10 +7,12 @@ import { authService, resendVerificationEmail } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { getAvisByClientId, getContratsTerminesSansAvis } from '@/lib/firebase/avis-service';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { User, Avis } from '@/types/firestore';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [emailVerified, setEmailVerified] = useState(true);
@@ -120,7 +122,7 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -138,10 +140,10 @@ export default function DashboardPage() {
               </svg>
               <div className="flex-1">
                 <h3 className="font-bold text-[#2C3E50] mb-1">
-                  📧 Validez votre email pour débloquer toutes les fonctionnalités
+                  📧 {t('dashboard.verifyEmailTitle')}
                 </h3>
                 <p className="text-gray-700 text-sm mb-3">
-                  Certaines fonctionnalités sont limitées jusqu'à validation de votre email (signature de contrat, paiement sécurisé).
+                  {t('dashboard.verifyEmailMessage')}
                 </p>
                 <div className="flex flex-wrap gap-2 items-center">
                   <button
@@ -149,7 +151,7 @@ export default function DashboardPage() {
                     disabled={resendingEmail || !canResend}
                     className="bg-[#FF6B00] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#E56100] disabled:bg-orange-300 disabled:cursor-not-allowed transition"
                   >
-                    {resendingEmail ? 'Envoi...' : !canResend && cooldownSeconds > 0 ? `Attendre ${cooldownSeconds}s` : 'Renvoyer l\'email'}
+                    {resendingEmail ? t('dashboard.sending') : !canResend && cooldownSeconds > 0 ? `${t('common.wait')} ${cooldownSeconds}s` : t('dashboard.resendEmail')}
                   </button>
                   {resendMessage && (
                     <span className="text-sm font-medium">{resendMessage}</span>
@@ -163,12 +165,12 @@ export default function DashboardPage() {
         {/* En-tête */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h1 className="text-3xl font-bold text-[#2C3E50] mb-3">
-            Tableau de bord Client
+            {t('dashboard.clientTitle')}
           </h1>
           <div className="flex items-center gap-2 text-lg">
             <span className="text-2xl">👋</span>
             <p className="text-gray-700">
-              Bienvenue <span className="font-semibold text-[#FF6B00]">{user?.prenom} {user?.nom}</span>
+              {t('dashboard.welcome')} <span className="font-semibold text-[#FF6B00]">{user?.prenom} {user?.nom}</span>
             </p>
           </div>
         </div>
@@ -185,8 +187,8 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800">Mon Profil</h2>
-                    <p className="text-sm text-gray-600">SIRET, métiers, zones</p>
+                    <h2 className="text-xl font-bold text-gray-800">{t('common.profile')}</h2>
+                    <p className="text-sm text-gray-600">{t('profile.siretTrades')}</p>
                   </div>
                 </div>
               </div>
@@ -200,8 +202,8 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Agenda</h2>
-                  <p className="text-sm text-gray-600">À venir</p>
+                  <h2 className="text-xl font-bold text-gray-800">{t('common.schedule')}</h2>
+                  <p className="text-sm text-gray-600">{t('dashboard.comingSoon')}</p>
                 </div>
               </div>
             </div>
@@ -214,8 +216,8 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Demandes</h2>
-                  <p className="text-sm text-gray-600">À venir</p>
+                  <h2 className="text-xl font-bold text-gray-800">{t('common.requests')}</h2>
+                  <p className="text-sm text-gray-600">{t('dashboard.comingSoon')}</p>
                 </div>
               </div>
             </div>
@@ -228,8 +230,8 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Devis</h2>
-                  <p className="text-sm text-gray-600">À venir</p>
+                  <h2 className="text-xl font-bold text-gray-800">{t('common.quotes')}</h2>
+                  <p className="text-sm text-gray-600">{t('dashboard.comingSoon')}</p>
                 </div>
               </div>
             </div>
@@ -248,8 +250,8 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800">Rechercher un artisan</h2>
-                    <p className="text-sm text-gray-600">Trouver le bon professionnel</p>
+                    <h2 className="text-xl font-bold text-gray-800">{t('dashboard.searchCraftsman')}</h2>
+                    <p className="text-sm text-gray-600">{t('dashboard.findProfessional')}</p>
                   </div>
                 </div>
               </div>
@@ -264,8 +266,8 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800">Mes demandes</h2>
-                    <p className="text-sm text-gray-600">Suivre vos demandes de devis</p>
+                    <h2 className="text-xl font-bold text-gray-800">{t('common.myRequests')}</h2>
+                    <p className="text-sm text-gray-600">{t('dashboard.trackRequests')}</p>
                   </div>
                 </div>
               </div>
@@ -280,8 +282,8 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800">Mes devis</h2>
-                    <p className="text-sm text-gray-600">Consulter vos devis reçus</p>
+                    <h2 className="text-xl font-bold text-gray-800">{t('common.myQuotes')}</h2>
+                    <p className="text-sm text-gray-600">{t('dashboard.viewQuotes')}</p>
                   </div>
                 </div>
               </div>
@@ -296,16 +298,16 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800">Avis</h2>
+                    <h2 className="text-xl font-bold text-gray-800">{t('common.reviews')}</h2>
                     <p className="text-sm text-gray-600">
                       {avisClient.length > 0 ? (
-                        <>{avisClient.length} avis donné{avisClient.length > 1 ? 's' : ''}</>
+                        <>{avisClient.length} {avisClient.length > 1 ? t('reviews.reviewsPlural') : t('reviews.reviewSingular')} {t('reviews.given')}</>
                       ) : (
-                        'Donner un avis'
+                        t('reviews.giveReview')
                       )}
                       {contratsANoter.length > 0 && (
                         <span className="ml-1 text-[#FF6B00] font-semibold">
-                          • {contratsANoter.length} à noter
+                          • {contratsANoter.length} {t('reviews.toRate')}
                         </span>
                       )}
                     </p>
@@ -320,7 +322,7 @@ export default function DashboardPage() {
         {user?.role === 'client' && contratsANoter.length > 0 && (
           <div className="mt-8">
             <h2 className="text-2xl font-bold text-[#2C3E50] mb-4">
-              Interventions terminées - Donnez votre avis
+              {t('dashboard.completedWorks')}
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {contratsANoter.map((contrat) => (
@@ -331,22 +333,22 @@ export default function DashboardPage() {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h3 className="font-semibold text-[#2C3E50] mb-1">
-                        Intervention terminée
+                        {t('dashboard.workCompleted')}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        Partagez votre expérience
+                        {t('dashboard.shareExperience')}
                       </p>
                     </div>
                     <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                       </svg>
-                      À noter
+                      {t('reviews.toRate')}
                     </span>
                   </div>
                   <Link href={`/client/avis/nouveau/${contrat.id}`}>
                     <button className="w-full bg-[#FF6B00] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#E56100] transition-colors">
-                      ⭐ Donner un avis
+                      ⭐ {t('reviews.giveReview')}
                     </button>
                   </Link>
                 </div>

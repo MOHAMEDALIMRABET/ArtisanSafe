@@ -123,7 +123,7 @@ function translateAuthError(error: any): string {
     case 'auth/invalid-email':
       return 'L\'adresse email n\'est pas valide.';
     case 'auth/operation-not-allowed':
-      return 'L\'inscription par email/mot de passe n\'est pas activée.';
+      return 'Cette méthode de connexion n\'est pas activée. Veuillez contacter l\'administrateur ou utiliser une autre méthode.';
     case 'auth/weak-password':
       return 'Le mot de passe est trop faible. Utilisez au moins 6 caractères.';
     case 'auth/user-disabled':
@@ -626,5 +626,6 @@ export { isWhitelistedAdmin };
 export const signOut = authService.signOut.bind(authService);
 export const getCurrentUser = authService.getCurrentUser.bind(authService);
 export const resendVerificationEmail = authService.resendVerificationEmail.bind(authService);
+export const resetPassword = authService.resetPassword.bind(authService);
 export const onAuthChanged = authService.onAuthStateChanged.bind(authService);
 

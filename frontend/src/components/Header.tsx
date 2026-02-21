@@ -11,12 +11,15 @@ import Link from 'next/link';
 import { Logo } from '@/components/ui';
 import UserMenu from '@/components/UserMenu';
 import GuestMenu from '@/components/GuestMenu';
+import LanguageSelector from '@/components/LanguageSelector';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { authService } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import type { User, Artisan } from '@/types/firestore';
 
 export default function Header() {
+  const { t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -112,7 +115,7 @@ export default function Header() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <span className="whitespace-nowrap">Être rappelé</span>
+                    <span className="whitespace-nowrap">{t('nav.callback')}</span>
                   </button>
                 </Link>
               )}
@@ -125,7 +128,7 @@ export default function Header() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <span className="whitespace-nowrap">
-                    {user?.role === 'artisan' ? 'Demandes express' : 'Petits travaux express'}
+                    {user?.role === 'artisan' ? t('nav.expressRequests') : t('nav.expressWorks')}
                   </span>
                 </button>
               </Link>
@@ -146,14 +149,14 @@ export default function Header() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    Nos artisans
+                    {t('nav.directory')}
                   </Link>
                   
                   <Link
                     href="/comment-ca-marche"
                     className="text-gray-700 hover:text-[#FF6B00] font-medium transition-colors"
                   >
-                    Comment ça marche
+                    {t('nav.howItWorks')}
                   </Link>
                 </nav>
                 
@@ -163,7 +166,7 @@ export default function Header() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="whitespace-nowrap">Particulier</span>
+                    <span className="whitespace-nowrap">{t('nav.individual')}</span>
                   </button>
                 </Link>
                 
@@ -173,7 +176,7 @@ export default function Header() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <span className="whitespace-nowrap">Artisan</span>
+                    <span className="whitespace-nowrap">{t('nav.tradesperson')}</span>
                   </button>
                 </Link>
 
@@ -216,11 +219,17 @@ export default function Header() {
                         </span>
                       )}
                       
+                      {/* Sélecteur de langue */}
+                      <LanguageSelector />
+                      
                       {/* Menu utilisateur connecté */}
                       <UserMenu user={user} isArtisan={user.role === 'artisan'} />
                     </>
                   ) : (
                     <>
+                      {/* Sélecteur de langue */}
+                      <LanguageSelector />
+                      
                       {/* Menu invité (non connecté) */}
                       <GuestMenu />
                     </>

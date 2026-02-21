@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { authService } from '@/lib/auth-service';
 import { checkSiretExists } from '@/lib/firebase/artisan-service';
 import { Button, Input, Card } from '@/components/ui';
@@ -14,6 +15,7 @@ import type { Categorie } from '@/types/firestore';
 type UserRole = 'client' | 'artisan';
 
 export default function InscriptionPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [role, setRole] = useState<UserRole | null>(null);
@@ -91,18 +93,18 @@ export default function InscriptionPage() {
 
     // Validation
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+      setError(t('signup.passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères');
+      setError(t('signup.passwordTooShort'));
       return;
     }
 
     // Validation du téléphone
     if (!isValidFrenchPhone(telephone)) {
-      setError('Le numéro de téléphone doit être un numéro français valide (10 chiffres commençant par 0)');
+      setError(t('signup.invalidPhone'));
       return;
     }
 
@@ -130,7 +132,7 @@ export default function InscriptionPage() {
       try {
         const siretExists = await checkSiretExists(cleanSiret);
         if (siretExists) {
-          setError('Ce numéro SIRET est déjà utilisé par un autre artisan. Veuillez vérifier votre saisie.');
+          setError(t('signup.siretExists'));
           return;
         }
       } catch (error) {

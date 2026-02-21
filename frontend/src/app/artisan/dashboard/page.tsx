@@ -12,10 +12,12 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { artisanDoitDecennale } from '@/lib/decennale-helper';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, or, onSnapshot } from 'firebase/firestore';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { User, Artisan, Avis } from '@/types/firestore';
 
 export default function ArtisanDashboardPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -192,7 +194,7 @@ export default function ArtisanDashboardPage() {
       <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -210,14 +212,13 @@ export default function ArtisanDashboardPage() {
               </svg>
               <div className="flex-1">
                 <h3 className="font-bold text-red-800 mb-1">
-                  ⚠️ Validation de votre email OBLIGATOIRE
+                  ⚠️ {t('dashboard.artisan.emailRequired')}
                 </h3>
                 <p className="text-red-700 text-sm mb-3">
-                  <strong>Votre profil est invisible</strong> tant que votre email n'est pas validé. Les clients ne peuvent pas vous trouver.
-                  Consultez votre boîte mail et cliquez sur le lien de validation.
+                  {t('dashboard.artisan.profileInvisible')}
                 </p>
                 <p className="text-red-600 text-sm mb-3 bg-red-50 p-2 rounded border-l-4 border-red-400">
-                  📧 <strong>Astuce :</strong> Vérifiez aussi votre dossier <strong>Spam/Courrier indésirable</strong> si vous ne trouvez pas l'email dans votre boîte de réception.
+                  📧 <strong>{t('dashboard.artisan.tip')}:</strong> {t('dashboard.artisan.checkSpam')}
                 </p>
                 <div className="flex flex-wrap gap-2 items-center">
                   <button
@@ -225,7 +226,7 @@ export default function ArtisanDashboardPage() {
                     disabled={resendingEmail || !canResend}
                     className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed transition"
                   >
-                    {resendingEmail ? 'Envoi...' : !canResend && cooldownSeconds > 0 ? `Attendre ${cooldownSeconds}s` : 'Renvoyer l\'email'}
+                    {resendingEmail ? t('dashboard.sending') : !canResend && cooldownSeconds > 0 ? `${t('common.wait')} ${cooldownSeconds}s` : t('dashboard.resendEmail')}
                   </button>
                   {resendMessage && (
                     <span className="text-sm font-medium">{resendMessage}</span>
@@ -239,18 +240,18 @@ export default function ArtisanDashboardPage() {
         {/* En-tête */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h1 className="text-3xl font-bold text-[#2C3E50] mb-3">
-            Tableau de bord Artisan
+            {t('dashboard.artisanTitle')}
           </h1>
           <div className="flex items-center gap-2 text-lg">
             <span className="text-2xl">👋</span>
             <p className="text-gray-700">
-              Bienvenue <span className="font-semibold text-[#FF6B00]">{user?.prenom} {user?.nom}</span>
+              {t('dashboard.welcome')} <span className="font-semibold text-[#FF6B00]">{user?.prenom} {user?.nom}</span>
               {artisan?.verified && (
                 <span className="ml-2 inline-flex items-center gap-1 text-green-600 text-sm font-medium">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Vérifié
+                  {t('dashboard.artisan.verified')}
                 </span>
               )}
             </p>
@@ -266,38 +267,37 @@ export default function ArtisanDashboardPage() {
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-[#FF6B00] mb-2">
-                  🚫 Votre profil n'est PAS VISIBLE dans les recherches
+                  🚫 {t('dashboard.artisan.profileNotVisible')}
                 </h3>
                 <p className="text-sm text-gray-700 mb-3">
-                  Vos métiers (<strong>{artisan.metiers.join(', ')}</strong>) nécessitent une <strong>garantie décennale obligatoire</strong>. 
-                  Tant que ce document n'est pas validé par notre équipe, <strong>votre profil reste invisible</strong> pour les clients.
+                  {t('dashboard.artisan.decennaleRequired').replace('{{trades}}', artisan.metiers.join(', '))}
                 </p>
                 
                 {!artisan?.verificationDocuments?.decennale?.url ? (
                   <div className="bg-white rounded-lg p-3 mb-3">
                     <p className="text-sm font-semibold text-red-700 mb-1">
-                      ❌ Attestation décennale non uploadée
+                      ❌ {t('dashboard.artisan.decennaleNotUploaded')}
                     </p>
                     <p className="text-xs text-gray-600">
-                      Vous devez uploader votre attestation de garantie décennale pour que votre profil soit activé.
+                      {t('dashboard.artisan.decennaleMustUpload')}
                     </p>
                   </div>
                 ) : artisan?.verificationDocuments?.decennale?.rejected ? (
                   <div className="bg-white rounded-lg p-3 mb-3">
                     <p className="text-sm font-semibold text-red-700 mb-1">
-                      ❌ Attestation décennale rejetée
+                      ❌ {t('dashboard.artisan.decennaleRejected')}
                     </p>
                     <p className="text-xs text-gray-600">
-                      <strong>Raison :</strong> {artisan.verificationDocuments.decennale.rejectionReason || 'Non spécifiée'}
+                      <strong>{t('dashboard.artisan.reason')} :</strong> {artisan.verificationDocuments.decennale.rejectionReason || t('dashboard.artisan.notSpecified')}
                     </p>
                   </div>
                 ) : (
                   <div className="bg-white rounded-lg p-3 mb-3">
                     <p className="text-sm font-semibold text-purple-700 mb-1">
-                      ⏳ Attestation décennale en cours de vérification
+                      ⏳ {t('dashboard.artisan.decennalePending')}
                     </p>
                     <p className="text-xs text-gray-600">
-                      Notre équipe examine votre document. Vous serez visible dès validation (sous 24-48h).
+                      {t('dashboard.artisan.decennaleReview')}
                     </p>
                   </div>
                 )}
@@ -307,8 +307,8 @@ export default function ArtisanDashboardPage() {
                   className="bg-[#FF6B00] hover:bg-[#E56100] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
                 >
                   {!artisan?.verificationDocuments?.decennale?.url || artisan?.verificationDocuments?.decennale?.rejected 
-                    ? '📤 Uploader ma garantie décennale' 
-                    : '📄 Voir mes documents'}
+                    ? `📤 ${t('dashboard.artisan.uploadDecennale')}` 
+                    : `📄 ${t('dashboard.artisan.viewDocuments')}`}
                 </button>
               </div>
             </div>
@@ -326,25 +326,25 @@ export default function ArtisanDashboardPage() {
               </div>
               <div className="flex-1">
                 <h3 className="text-base font-bold text-red-800 mb-2">
-                  ⚠️ Document(s) rejeté(s) - Action requise
+                  ⚠️ {t('dashboard.artisan.documentsRejected')}
                 </h3>
                 {artisan?.verificationDocuments?.kbis?.rejected && (
                   <div className="mb-3 bg-white bg-opacity-60 rounded p-3">
                     <p className="text-sm font-semibold text-red-700">
-                      📄 KBIS rejeté
+                      📄 {t('dashboard.artisan.kbisRejected')}
                     </p>
                     <p className="text-sm text-red-600 mt-1">
-                      <strong>Raison :</strong> {artisan.verificationDocuments.kbis.rejectionReason || 'Non spécifiée'}
+                      <strong>{t('dashboard.artisan.reason')} :</strong> {artisan.verificationDocuments.kbis.rejectionReason || t('dashboard.artisan.notSpecified')}
                     </p>
                   </div>
                 )}
                 {artisan?.verificationDocuments?.idCard?.rejected && (
                   <div className="mb-3 bg-white bg-opacity-60 rounded p-3">
                     <p className="text-sm font-semibold text-red-700">
-                      🆔 Pièce d'identité rejetée
+                      🆔 {t('dashboard.artisan.idCardRejected')}
                     </p>
                     <p className="text-sm text-red-600 mt-1">
-                      <strong>Raison :</strong> {artisan.verificationDocuments.idCard.rejectionReason || 'Non spécifiée'}
+                      <strong>{t('dashboard.artisan.reason')} :</strong> {artisan.verificationDocuments.idCard.rejectionReason || t('dashboard.artisan.notSpecified')}
                     </p>
                   </div>
                 )}
@@ -352,7 +352,7 @@ export default function ArtisanDashboardPage() {
                   onClick={() => router.push('/artisan/documents')}
                   className="mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
                 >
-                  📤 Uploader un nouveau document
+                  📤 {t('dashboard.artisan.uploadNewDocument')}
                 </button>
               </div>
             </div>
@@ -373,12 +373,12 @@ export default function ArtisanDashboardPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h2 className="text-xl font-bold text-gray-800">Vérification Profil</h2>
+                      <h2 className="text-xl font-bold text-gray-800">{t('dashboard.artisan.profileVerification')}</h2>
                       <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-bounce">
-                        Action requise
+                        {t('dashboard.artisan.actionRequired')}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600">Complétez votre vérification pour débloquer toutes les fonctionnalités</p>
+                    <p className="text-sm text-gray-600">{t('dashboard.artisan.completeVerification')}</p>
                   </div>
                 </div>
                 <div className="bg-white bg-opacity-70 rounded-lg p-3 space-y-2">
@@ -386,13 +386,13 @@ export default function ArtisanDashboardPage() {
                     <span className={artisan?.siretVerified ? "text-green-600" : "text-orange-600"}>
                       {artisan?.siretVerified ? "✅" : "⏳"}
                     </span>
-                    <span className="text-gray-700">SIRET de l'entreprise</span>
+                    <span className="text-gray-700">{t('dashboard.artisan.siretCompany')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-green-600">
                       ✅
                     </span>
-                    <span className="text-gray-700">Validation téléphone</span>
+                    <span className="text-gray-700">{t('dashboard.artisan.phoneValidation')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className={
@@ -409,7 +409,7 @@ export default function ArtisanDashboardPage() {
                           : "⏳"}
                     </span>
                     <span className="text-gray-700">
-                      Vérification KBIS {artisan?.verificationDocuments?.kbis?.rejected ? "rejeté" : "vérifié"}
+                      {t('dashboard.artisan.kbisVerification')} {artisan?.verificationDocuments?.kbis?.rejected ? t('dashboard.artisan.rejected') : t('dashboard.artisan.verified')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
@@ -427,7 +427,7 @@ export default function ArtisanDashboardPage() {
                           : "⏳"}
                     </span>
                     <span className="text-gray-700">
-                      Vérification pièce d'identité {artisan?.verificationDocuments?.idCard?.rejected ? "rejetée" : "vérifiée"}
+                      {t('dashboard.artisan.idVerification')} {artisan?.verificationDocuments?.idCard?.rejected ? t('dashboard.artisan.rejected') : t('dashboard.artisan.verified')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
@@ -445,7 +445,7 @@ export default function ArtisanDashboardPage() {
                           : "⏳"}
                     </span>
                     <span className="text-gray-700">
-                      Vérification assurance resp civile Pro {artisan?.verificationDocuments?.rcPro?.rejected ? "rejetée" : "vérifiée"}
+                      {t('dashboard.artisan.rcProVerification')} {artisan?.verificationDocuments?.rcPro?.rejected ? t('dashboard.artisan.rejected') : t('dashboard.artisan.verified')}
                     </span>
                   </div>
                 </div>
@@ -465,21 +465,21 @@ export default function ArtisanDashboardPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-bold text-gray-800">Espace Artisan</h2>
+                      <h2 className="text-xl font-bold text-gray-800">{t('dashboard.artisan.craftspaceTitle')}</h2>
                       <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium flex items-center gap-1">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
                         </svg>
-                        Vérifié
+                        {t('dashboard.artisan.verified')}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600">SIRET, métiers, zones</p>
+                    <p className="text-sm text-gray-600">{t('profile.siretTrades')}</p>
                   </div>
                 </div>
                 {artisan && (
                   <div className="text-sm text-gray-500">
-                    <p>📍 {artisan.zonesIntervention?.length || 0} zones d'intervention</p>
-                    <p>🔧 {artisan.metiers?.length || 0} métier(s)</p>
+                    <p>📍 {artisan.zonesIntervention?.length || 0} {t('dashboard.artisan.zones')}</p>
+                    <p>🔧 {artisan.metiers?.length || 0} {t('dashboard.artisan.trades')}</p>
                   </div>
                 )}
               </div>
@@ -494,16 +494,16 @@ export default function ArtisanDashboardPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-500">Espace Artisan</h2>
-                    <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
-                      🔒 Bloqué
+                      <h2 className="text-xl font-bold text-gray-500">{t('dashboard.artisan.craftspaceTitle')}</h2>
+                      <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
+                        🔒 {t('dashboard.artisan.locked')}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500">Débloqué après vérification</p>
+                  <p className="text-sm text-gray-500">{t('dashboard.artisan.unlockedAfterVerification')}</p>
                 </div>
               </div>
               <div className="text-sm text-gray-500">
-                Pour compléter votre profil, vous devez d'abord vérifier votre identité (SIRET, téléphone) et uploader le KBIS, la pièce d'identité et responsabilité civile professionnelle dans "Mes Documents".
+                {t('dashboard.artisan.completeProfileInstructions')}
               </div>
             </div>
           )}
@@ -518,13 +518,13 @@ export default function ArtisanDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Mon Agenda</h2>
-                  <p className="text-sm text-gray-600">Disponibilités & créneaux</p>
+                  <h2 className="text-xl font-bold text-gray-800">{t('dashboard.artisan.mySchedule')}</h2>
+                  <p className="text-sm text-gray-600">{t('dashboard.artisan.availabilitySlots')}</p>
                 </div>
               </div>
               {artisan && (
                 <div className="text-sm text-gray-500">
-                  <p>📅 {artisan.disponibilites?.length || 0} créneau(x) défini(s)</p>
+                  <p>📅 {artisan.disponibilites?.length || 0} {t('dashboard.artisan.slotsCount')}</p>
                 </div>
               )}
             </div>
@@ -540,27 +540,27 @@ export default function ArtisanDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">Mon Wallet</h2>
-                  <p className="text-sm text-orange-100">Gestion financière</p>
+                  <h2 className="text-xl font-bold text-white">{t('dashboard.artisan.myWallet')}</h2>
+                  <p className="text-sm text-orange-100">{t('dashboard.artisan.financialManagement')}</p>
                 </div>
               </div>
               <div className="text-white">
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-3xl font-bold">0,00 €</span>
-                  <span className="text-sm opacity-80">disponible</span>
+                  <span className="text-sm opacity-80">{t('dashboard.artisan.available')}</span>
                 </div>
                 <div className="flex items-center gap-4 text-xs opacity-90">
                   <div className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>0 transaction</span>
+                    <span>0 {t('dashboard.artisan.transaction')}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>0,00 € en attente</span>
+                    <span>0,00 € {t('dashboard.artisan.pending')}</span>
                   </div>
                 </div>
               </div>
@@ -578,7 +578,7 @@ export default function ArtisanDashboardPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-800">Mes Documents</h2>
+                    <h2 className="text-xl font-bold text-gray-800">{t('dashboard.artisan.myDocuments')}</h2>
                     {(() => {
                       const kbisVerified = artisan?.verificationDocuments?.kbis?.verified === true;
                       const idVerified = artisan?.verificationDocuments?.idCard?.verified === true;
@@ -621,7 +621,7 @@ export default function ArtisanDashboardPage() {
                       if (kbisEnCours || idEnCours || rcProEnCours || decennaleEnCours) {
                         return (
                           <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
-                            En cours de vérification
+                          {t('dashboard.artisan.underReview')}
                           </span>
                         );
                       }
@@ -629,13 +629,13 @@ export default function ArtisanDashboardPage() {
                       // Sinon : badge "À compléter"
                       return (
                         <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
-                          À compléter
+                          {t('dashboard.artisan.toComplete')}
                         </span>
                       );
                     })()}
                   </div>
                   <p className="text-sm text-gray-600">
-                    KBIS, Pièce d'identité, RC Pro{artisan?.metiers && artisanDoitDecennale(artisan.metiers) ? ' & Garantie Décennale' : ''}
+                    {t('dashboard.artisan.kbis')}, {t('dashboard.artisan.idCard')}, {t('dashboard.artisan.rcPro')}{artisan?.metiers && artisanDoitDecennale(artisan.metiers) ? ` & ${t('dashboard.artisan.decennale')}` : ''}
                   </p>
                 </div>
               </div>
@@ -646,7 +646,7 @@ export default function ArtisanDashboardPage() {
                         {artisan.verificationDocuments?.kbis?.verified ? "✅" : "📄"}
                       </span>
                       <span className="text-gray-700">
-                        KBIS {artisan.verificationDocuments?.kbis?.verified ? "vérifié" : "requis"}
+                        {t('dashboard.artisan.kbis')} {artisan.verificationDocuments?.kbis?.verified ? t('dashboard.artisan.verified') : t('dashboard.artisan.required')}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -654,7 +654,7 @@ export default function ArtisanDashboardPage() {
                         {artisan.verificationDocuments?.idCard?.verified ? "✅" : "🪪"}
                       </span>
                       <span className="text-gray-700">
-                        Pièce d'identité {artisan.verificationDocuments?.idCard?.verified ? "vérifiée" : "requise"}
+                        {t('dashboard.artisan.idCard')} {artisan.verificationDocuments?.idCard?.verified ? t('dashboard.artisan.verified') : t('dashboard.artisan.required')}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -662,7 +662,7 @@ export default function ArtisanDashboardPage() {
                         {artisan.verificationDocuments?.rcPro?.verified ? "✅" : "🛡️"}
                       </span>
                       <span className="text-gray-700">
-                        Responsabilité Civile Pro {artisan.verificationDocuments?.rcPro?.verified ? "vérifiée" : "requise"}
+                        {t('dashboard.artisan.rcPro')} {artisan.verificationDocuments?.rcPro?.verified ? t('dashboard.artisan.verified') : t('dashboard.artisan.required')}
                       </span>
                     </div>
                     {/* Décennale conditionnelle */}
@@ -672,7 +672,7 @@ export default function ArtisanDashboardPage() {
                           {artisan.verificationDocuments?.decennale?.verified ? "✅" : "🏗️"}
                         </span>
                         <span className="text-gray-700">
-                          Garantie Décennale {artisan.verificationDocuments?.decennale?.verified ? "vérifiée" : "requise"}
+                          {t('dashboard.artisan.decennale')} {artisan.verificationDocuments?.decennale?.verified ? t('dashboard.artisan.verified') : t('dashboard.artisan.required')}
                         </span>
                       </div>
                     )}
@@ -698,21 +698,21 @@ export default function ArtisanDashboardPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-800">Demandes Clients</h2>
+                    <h2 className="text-xl font-bold text-gray-800">{t('common.clientRequests')}</h2>
                     {nouvellesDemandes > 0 && (
                       <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
-                        {nouvellesDemandes} nouvelle{nouvellesDemandes > 1 ? 's' : ''}
+                        {nouvellesDemandes} {nouvellesDemandes > 1 ? t('requests.newPlural') : t('requests.newSingular')}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">Nouvelles demandes de devis</p>
+                  <p className="text-sm text-gray-600">{t('requests.newQuoteRequests')}</p>
                 </div>
               </div>
               <div className="text-sm text-gray-500">
                 {nouvellesDemandes > 0 ? (
-                  <p className="text-green-600 font-medium">🔔 {nouvellesDemandes} demande{nouvellesDemandes > 1 ? 's' : ''} en attente</p>
+                  <p className="text-green-600 font-medium">🔔 {nouvellesDemandes} {nouvellesDemandes > 1 ? t('requests.requestsPending') : t('requests.requestPending')}</p>
                 ) : (
-                  <p className="text-gray-500">📬 Aucune nouvelle demande</p>
+                  <p className="text-gray-500">📬 {t('requests.noNewRequests')}</p>
                 )}
               </div>
             </div>
@@ -734,14 +734,14 @@ export default function ArtisanDashboardPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-800">Mes Devis</h2>
+                    <h2 className="text-xl font-bold text-gray-800">{t('common.myQuotes')}</h2>
                     {devisNotifications > 0 && (
                       <span className="bg-[#FF6B00] text-white text-xs px-2 py-1 rounded-full font-semibold">
-                        {devisNotifications} nouvelle(s)
+                        {devisNotifications} {devisNotifications > 1 ? t('quotes.newPlural') : t('quotes.newSingular')}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">Gérer vos devis</p>
+                  <p className="text-sm text-gray-600">{t('quotes.manageYourQuotes')}</p>
                 </div>
               </div>
             </div>
@@ -774,21 +774,21 @@ export default function ArtisanDashboardPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-800">Messages</h2>
+                    <h2 className="text-xl font-bold text-gray-800">{t('common.messages')}</h2>
                     {unreadMessagesCount > 0 && (
                       <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
-                        {unreadMessagesCount} non lu{unreadMessagesCount > 1 ? 's' : ''}
+                        {unreadMessagesCount} {unreadMessagesCount > 1 ? t('messages.unreadPlural') : t('messages.unreadSingular')}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">Conversations avec vos clients</p>
+                  <p className="text-sm text-gray-600">{t('messages.clientConversations')}</p>
                 </div>
               </div>
               <div className="text-sm text-gray-500">
                 {unreadMessagesCount > 0 ? (
-                  <p className="text-red-600 font-medium">💬 {unreadMessagesCount} message{unreadMessagesCount > 1 ? 's' : ''} non lu{unreadMessagesCount > 1 ? 's' : ''}</p>
+                  <p className="text-red-600 font-medium">💬 {unreadMessagesCount} {unreadMessagesCount > 1 ? t('messages.unreadPlural') : t('messages.unreadSingular')}</p>
                 ) : (
-                  <p className="text-gray-500">📭 Aucun nouveau message</p>
+                  <p className="text-gray-500">📭 {t('messages.noNewMessages')}</p>
                 )}
               </div>
             </div>
@@ -804,15 +804,15 @@ export default function ArtisanDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Avis</h2>
+                  <h2 className="text-xl font-bold text-gray-800">{t('common.reviews')}</h2>
                   <p className="text-sm text-gray-600">
                     {statsAvis.total > 0 ? (
                       <>
                         <span className="font-semibold text-[#FF6B00]">{statsAvis.moyenne.toFixed(1)}/5</span>
-                        {' '}• {statsAvis.total} avis
+                        {' '}• {statsAvis.total} {statsAvis.total > 1 ? t('reviews.reviewsPlural') : t('reviews.reviewSingular')}
                       </>
                     ) : (
-                      'Aucun avis pour le moment'
+                      t('reviews.noReviews')
                     )}
                   </p>
                 </div>

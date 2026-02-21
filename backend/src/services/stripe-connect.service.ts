@@ -16,9 +16,12 @@
 import Stripe from 'stripe';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2026-01-28.clover',
-});
+// ⚠️ Initialisation conditionnelle de Stripe (Phase 2)
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-01-28.clover',
+    })
+  : null;
 
 const db = getFirestore();
 
@@ -70,6 +73,10 @@ export async function createStripeConnectAccount(
   ibanLast4?: string;
 }> {
   try {
+    if (!stripe) {
+      throw new Error('STRIPE_SECRET_KEY non configurée - Fonctionnalité Phase 2 non activée');
+    }
+
     // Étape 1 : Créer le compte Stripe Connect (type Express)
     const account = await stripe.accounts.create({
       type: 'express',
@@ -187,6 +194,10 @@ export async function uploadVerificationDocument(
   filename: string
 ): Promise<void> {
   try {
+    if (!stripe) {
+      throw new Error('STRIPE_SECRET_KEY non configurée - Fonctionnalité Phase 2 non activée');
+    }
+
     // Upload du fichier vers Stripe
     const file = await stripe.files.create({
       purpose: 'identity_document',
@@ -243,6 +254,10 @@ export async function getStripeAccountStatus(stripeAccountId: string): Promise<{
   disabledReason?: string;
 }> {
   try {
+    if (!stripe) {
+      throw new Error('STRIPE_SECRET_KEY non configurée - Fonctionnalité Phase 2 non activée');
+    }
+
     const account = await stripe.accounts.retrieve(stripeAccountId);
 
     return {
@@ -286,6 +301,10 @@ export async function getDetailedAccountStatus(stripeAccountId: string): Promise
   actionRequired?: string;
 }> {
   try {
+    if (!stripe) {
+      throw new Error('STRIPE_SECRET_KEY non configurée - Fonctionnalité Phase 2 non activée');
+    }
+
     const account = await stripe.accounts.retrieve(stripeAccountId);
 
     // Mapper le statut

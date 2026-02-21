@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import type { Devis } from '@/types/devis';
@@ -27,6 +28,7 @@ export default function ClientDevisPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [devis, setDevis] = useState<Devis[]>([]);
   const [demandes, setDemandes] = useState<Map<string, Demande>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -111,18 +113,11 @@ export default function ClientDevisPage() {
 
     // Message d'avertissement CLAIR et professionnel
     const confirmAnnulation = window.confirm(
-      `⚠️ ATTENTION : Annulation d'un devis déjà accepté\n\n` +
-      `Devis : ${numeroDevis}\n` +
-      `Artisan : ${nomArtisan}\n` +
-      `Montant : ${montantTTC.toFixed(2)}€ TTC\n\n` +
-      `En annulant ce devis, votre demande sera CLOSE définitivement.\n\n` +
-      `CONSÉQUENCES :\n` +
-      `• L'artisan a déjà planifié votre chantier dans son agenda\n` +
-      `• Vous ne pourrez plus recevoir de devis pour cette demande\n` +
-      `• Les autres devis reçus resteront annulés\n` +
-      `• Pour relancer ce projet : créer une NOUVELLE demande\n\n` +
-      `Cette action est IRRÉVERSIBLE.\n\n` +
-      `Êtes-vous CERTAIN de vouloir annuler ce devis ?`
+      `⚠️ ${t('quotes.cancelQuoteWarningTitle')}\n\n` +
+      `${t('quotes.quoteNumber')} : ${numeroDevis}\n` +
+      `${t('quotes.craftsman')} : ${nomArtisan}\n` +
+      `${t('quotes.amount')} : ${montantTTC.toFixed(2)}€ ${t('quotes.ttc')}\n\n` +
+      t('quotes.cancelQuoteWarningMessage')
     );
 
     if (!confirmAnnulation) return;
@@ -130,15 +125,13 @@ export default function ClientDevisPage() {
     try {
       await annulerDevisParClient(devisId, user.uid, 'Client désisté avant paiement');
       alert(
-        '✅ Devis annulé avec succès\n\n' +
-        `Votre demande a été close définitivement.\n` +
-        `L'artisan ${nomArtisan} a été notifié de votre désistement.\n\n` +
-        `Pour relancer ce projet, créez une nouvelle demande depuis votre tableau de bord.`
+        `✅ ${t('quotes.cancelQuoteSuccessTitle')}\n\n` +
+        t('quotes.cancelQuoteSuccessMessage').replace('{{artisanName}}', nomArtisan)
       );
       await loadDevis(); // Recharger la liste
     } catch (error: any) {
       console.error('Erreur annulation devis:', error);
-      alert(`❌ Erreur lors de l'annulation : ${error.message || 'Erreur inconnue'}`);
+      alert(`❌ ${t('quotes.cancelQuoteError')} : ${error.message || t('common.unknownError')}`);
     }
   };
 
@@ -162,21 +155,21 @@ export default function ClientDevisPage() {
     };
 
     const labels: { [key: string]: string } = {
-      genere: '📝 Brouillon',
-      envoye: '🆕 Nouveau',
-      en_revision: '🔄 En révision',
-      accepte: '✅ Accepté',
-      en_attente_paiement: '💳 Attente paiement',
-      paye: '💰 Payé',
-      en_cours: '🚧 Travaux en cours',
-      travaux_termines: '✅ Travaux terminés',
-      termine_valide: '✔️ Validé',
-      termine_auto_valide: '✔️ Auto-validé',
-      litige: '⚠️ Litige',
-      refuse: '❌ Refusé',
-      expire: '⏰ Expiré',
-      remplace: '🔄 Remplacé',
-      annule: '🚫 Annulé',
+      genere: `📝 ${t('quotes.draft')}`,
+      envoye: `🆕 ${t('quotes.new')}`,
+      en_revision: `🔄 ${t('quotes.inRevision')}`,
+      accepte: `✅ ${t('quotes.accepted')}`,
+      en_attente_paiement: `💳 ${t('quotes.waitingPayment')}`,
+      paye: `💰 ${t('quotes.paid')}`,
+      en_cours: `🚧 ${t('quotes.inProgress')}`,
+      travaux_termines: `✅ ${t('quotes.worksCompleted')}`,
+      termine_valide: `✔️ ${t('quotes.validated')}`,
+      termine_auto_valide: `✔️ ${t('quotes.autoValidated')}`,
+      litige: `⚠️ ${t('quotes.dispute')}`,
+      refuse: `❌ ${t('quotes.refused')}`,
+      expire: `⏰ ${t('quotes.expired')}`,
+      remplace: `🔄 ${t('quotes.replaced')}`,
+      annule: `🚫 ${t('quotes.cancelled')}`,
     };
 
     return (
@@ -191,7 +184,7 @@ export default function ClientDevisPage() {
       <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
-          <p className="mt-4 text-[#6C757D]">Chargement...</p>
+          <p className="mt-4 text-[#6C757D]">{t('quotes.loading')}</p>
         </div>
       </div>
     );
@@ -228,10 +221,10 @@ export default function ClientDevisPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Retour au tableau de bord
+            {t('quotes.backToDashboard')}
           </button>
-          <h1 className="text-3xl font-bold">Mes Devis Reçus</h1>
-          <p className="text-gray-300 mt-2">Consultez et gérez vos devis</p>
+          <h1 className="text-3xl font-bold">{t('quotes.myReceivedQuotes')}</h1>
+          <p className="text-gray-300 mt-2">{t('quotes.consultManage')}</p>
         </div>
       </div>
 
@@ -247,7 +240,7 @@ export default function ClientDevisPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              📋 Tous ({totalDevis})
+              📋 {t('quotes.all')} ({totalDevis})
             </button>
             <button
               onClick={() => setFilter('en_attente')}
@@ -257,7 +250,7 @@ export default function ClientDevisPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🆕 Nouveaux ({devisEnAttente.length})
+              🆕 {t('quotes.newPlural')} ({devisEnAttente.length})
             </button>
             <button
               onClick={() => setFilter('acceptes')}
@@ -267,7 +260,7 @@ export default function ClientDevisPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ✅ Acceptés / En attente ({devisAcceptes.length})
+              ✅ {t('quotes.acceptedPending')} ({devisAcceptes.length})
             </button>
             <button
               onClick={() => setFilter('payes')}
@@ -277,7 +270,7 @@ export default function ClientDevisPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              💰 Payés ({devisPayes.length})
+              💰 {t('quotes.paidPlural')} ({devisPayes.length})
             </button>
             <button
               onClick={() => setFilter('refuses')}
@@ -287,7 +280,7 @@ export default function ClientDevisPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ❌ Refusés/Expirés ({devisRefuses.length})
+              ❌ {t('quotes.refusedExpired')} ({devisRefuses.length})
             </button>
           </div>
         </div>
@@ -298,10 +291,10 @@ export default function ClientDevisPage() {
             <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <p className="text-gray-600 mb-4">Aucun devis pour le moment</p>
+            <p className="text-gray-600 mb-4">{t('quotes.noQuotesYet')}</p>
             <Link href="/client/demandes">
               <button className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg hover:bg-[#E56100]">
-                Voir mes demandes
+                {t('quotes.viewMyRequests')}
               </button>
             </Link>
           </div>
@@ -321,11 +314,11 @@ export default function ClientDevisPage() {
                       </div>
                       {demande && (
                         <p className="text-sm text-gray-600 mb-2">
-                          📋 Demande : {demande.titre || demande.categorie}
+                          📋 {t('quotes.request')} : {demande.titre || demande.categorie}
                         </p>
                       )}
                       <p className="text-sm text-gray-600">
-                        👷 Artisan : {d.artisan.prenom} {d.artisan.nom}
+                        👷 {t('quotes.craftsman')} : {d.artisan.prenom} {d.artisan.nom}
                         {d.artisan.raisonSociale && ` - ${d.artisan.raisonSociale}`}
                       </p>
                     </div>
@@ -333,30 +326,30 @@ export default function ClientDevisPage() {
                       <div className="text-2xl font-bold text-[#FF6B00]">
                         {d.totaux.totalTTC.toFixed(2)} €
                       </div>
-                      <div className="text-xs text-gray-500">TTC</div>
+                      <div className="text-xs text-gray-500">{t('quotes.ttc')}</div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
                     <div>
-                      <span className="text-gray-500">N° Devis :</span>
+                      <span className="text-gray-500">{t('quotes.quoteNumber')} :</span>
                       <p className="font-semibold">{d.numeroDevis}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Date :</span>
+                      <span className="text-gray-500">{t('quotes.date')} :</span>
                       <p className="font-semibold">
                         {d.dateCreation?.toDate().toLocaleDateString('fr-FR')}
                       </p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Valide jusqu'au :</span>
+                      <span className="text-gray-500">{t('quotes.validUntil')} :</span>
                       <p className="font-semibold">
                         {d.dateValidite?.toDate().toLocaleDateString('fr-FR')}
                       </p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Délai :</span>
-                      <p className="font-semibold">{d.delaiRealisation || 'Non précisé'}</p>
+                      <span className="text-gray-500">{t('quotes.deadline')} :</span>
+                      <p className="font-semibold">{d.delaiRealisation || t('quotes.notSpecified')}</p>
                     </div>
                   </div>
 
@@ -375,7 +368,7 @@ export default function ClientDevisPage() {
                           }}
                           className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
                         >
-                          📄 Voir le détail
+                          📄 {t('quotes.viewDetails')}
                         </div>
                         <div
                           onClick={(e) => {
@@ -384,7 +377,7 @@ export default function ClientDevisPage() {
                           }}
                           className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-center font-medium cursor-pointer"
                         >
-                          ✅ Accepter
+                          ✅ {t('quotes.accept')}
                         </div>
                         <div
                           onClick={(e) => {
@@ -393,7 +386,7 @@ export default function ClientDevisPage() {
                           }}
                           className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-center font-medium cursor-pointer"
                         >
-                          ❌ Refuser
+                          ❌ {t('quotes.refuse')}
                         </div>
                       </>
                     )}
@@ -408,7 +401,7 @@ export default function ClientDevisPage() {
                           }}
                           className="flex-1 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition font-medium"
                         >
-                          💳 Procéder au paiement
+                          💳 {t('quotes.proceedPayment')}
                         </button>
                         <button
                           onClick={(e) => {
@@ -418,7 +411,7 @@ export default function ClientDevisPage() {
                           }}
                           className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition font-medium"
                         >
-                          🚫 Annuler
+                          🚫 {t('quotes.cancel')}
                         </button>
                         <div
                           onClick={(e) => {
@@ -427,7 +420,7 @@ export default function ClientDevisPage() {
                           }}
                           className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
                         >
-                          📄 Voir le détail
+                          📄 {t('quotes.viewDetails')}
                         </div>
                       </>
                     )}
@@ -444,7 +437,7 @@ export default function ClientDevisPage() {
                         }}
                         className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
                       >
-                        📄 Voir le détail
+                        📄 {t('quotes.viewDetails')}
                       </div>
                     )}
                   </div>

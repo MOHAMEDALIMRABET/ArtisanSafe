@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { authService } from '@/lib/auth-service';
 import { Button, Input, Card, Logo } from '@/components/ui';
 import { getSearchContext } from '@/lib/utils/search-context';
 
 export default function ConnexionPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
@@ -130,20 +132,24 @@ export default function ConnexionPage() {
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-700 text-sm font-medium">{error}</p>
-            <div className="mt-3 space-y-2">
-              <Link 
-                href="/mot-de-passe-oublie" 
-                className="block text-sm text-[#FF6B00] hover:underline"
-              >
-                → Réinitialiser mon mot de passe
-              </Link>
-              <Link 
-                href="/inscription" 
-                className="block text-sm text-[#FF6B00] hover:underline"
-              >
-                → Créer un nouveau compte
-              </Link>
-            </div>
+            
+            {/* Afficher les liens UNIQUEMENT pour les erreurs liées au mot de passe */}
+            {(error.toLowerCase().includes('mot de passe') || error.toLowerCase().includes('email') || error.toLowerCase().includes('identifiants')) && (
+              <div className="mt-3 space-y-2">
+                <Link 
+                  href="/mot-de-passe-oublie" 
+                  className="block text-sm text-[#FF6B00] hover:underline"
+                >
+                  → Réinitialiser mon mot de passe
+                </Link>
+                <Link 
+                  href="/inscription" 
+                  className="block text-sm text-[#FF6B00] hover:underline"
+                >
+                  → Créer un nouveau compte
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
@@ -164,22 +170,22 @@ export default function ConnexionPage() {
           </div>
 
           <Input
-            label="Mot de passe"
+            label={t('auth.password')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            placeholder="Votre mot de passe"
+            placeholder={t('auth.passwordPlaceholder')}
             autoComplete="current-password"
           />
 
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center text-gray-600">
               <input type="checkbox" className="mr-2" />
-              Se souvenir de moi
+              {t('auth.rememberMe')}
             </label>
             <Link href="/mot-de-passe-oublie" className="text-[#FF6B00] hover:underline">
-              Mot de passe oublié ?
+              {t('auth.forgotPassword')}
             </Link>
           </div>
 
@@ -190,21 +196,21 @@ export default function ConnexionPage() {
             className="w-full"
             isLoading={isLoading}
           >
-            Se connecter
+            {t('auth.login')}
           </Button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-gray-600">
-            Vous n'avez pas de compte ?{' '}
+            {t('auth.noAccount')}{' '}
             <Link href="/inscription" className="text-[#FF6B00] hover:underline font-medium">
-              S'inscrire
+              {t('auth.signUp')}
             </Link>
           </p>
         </div>
 
         <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-center text-sm text-gray-500 mb-4">Ou continuer avec</p>
+          <p className="text-center text-sm text-gray-500 mb-4">{t('auth.orContinueWith')}</p>
           <div className="flex justify-center">
             <button
               type="button"
@@ -234,19 +240,9 @@ export default function ConnexionPage() {
                   />
                 </svg>
               )}
-              {isGoogleLoading ? 'Connexion en cours...' : 'Google'}
+              {isGoogleLoading ? t('auth.signingIn') : 'Google'}
             </button>
           </div>
-        </div>
-
-        {/* Lien discret pour les administrateurs */}
-        <div className="mt-6 text-center">
-          <Link 
-            href="/access-x7k9m2p4w8n3" 
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            Accès administrateur
-          </Link>
         </div>
       </Card>
     </div>

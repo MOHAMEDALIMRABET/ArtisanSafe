@@ -8,6 +8,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { collection, query, where, getDocs, orderBy, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import type { Devis } from '@/types/devis';
@@ -30,6 +31,7 @@ export default function MesDevisPage() {
   const highlightedDevisId = searchParams?.get('devisId');
   const filtreDemandeId = searchParams?.get('demandeId');
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>('devis');
   const [devis, setDevis] = useState<Devis[]>([]);
   const [demandesInfo, setDemandesInfo] = useState<Record<string, DemandeInfo>>({});
@@ -471,22 +473,22 @@ export default function MesDevisPage() {
       annule: 'bg-gray-200 text-gray-700',
     };
 
-    const labels: { [key: string]: string } = {
-      brouillon: '📝 Brouillon',
-      envoye: '📤 Envoyé',
-      accepte: '✅ Accepté',
-      en_attente_paiement: '💳 Attente paiement',
-      paye: '💰 Payé',
-      en_cours: '🚧 Travaux en cours',
-      travaux_termines: '✅ Travaux terminés',
-      termine_valide: '✔️ Validé',
-      termine_auto_valide: '✔️ Auto-validé',
-      litige: '⚠️ Litige',
-      refuse: '❌ Refusé',
-      en_revision: '🔄 En révision',
-      expire: '⏰ Expiré',
-      remplace: '🔄 Remplacé',
-      annule: '🚫 Annulé',
+    const labels: { [key: string]: string} = {
+      brouillon: `📝 ${t('quotes.draft')}`,
+      envoye: `📤 ${t('quotes.sent')}`,
+      accepte: `✅ ${t('quotes.accepted')}`,
+      en_attente_paiement: `💳 ${t('quotes.waitingPayment')}`,
+      paye: `💰 ${t('quotes.paid')}`,
+      en_cours: `🚧 ${t('quotes.inProgress')}`,
+      travaux_termines: `✅ ${t('quotes.worksCompleted')}`,
+      termine_valide: `✔️ ${t('quotes.validated')}`,
+      termine_auto_valide: `✔️ ${t('quotes.autoValidated')}`,
+      litige: `⚠️ ${t('quotes.dispute')}`,
+      refuse: `❌ ${t('quotes.refused')}`,
+      en_revision: `🔄 ${t('quotes.inRevision')}`,
+      expire: `⏰ ${t('quotes.expired')}`,
+      remplace: `🔄 ${t('quotes.replaced')}`,
+      annule: `🚫 ${t('quotes.cancelled')}`,
     };
 
     return (
@@ -501,7 +503,7 @@ export default function MesDevisPage() {
       <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
-          <p className="mt-4 text-[#6C757D]">Chargement...</p>
+          <p className="mt-4 text-[#6C757D]">{t('quotes.loading')}</p>
         </div>
       </div>
     );
@@ -705,9 +707,9 @@ export default function MesDevisPage() {
           </button>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Mes Devis</h1>
+              <h1 className="text-3xl font-bold">{t('quotes.myQuotes')}</h1>
               <p className="text-gray-300 mt-2">
-                {highlightedDevisId ? 'Détail du devis' : 'Gérez vos devis et factures'}
+                {highlightedDevisId ? t('quotes.quoteDetail') : t('quotes.manageQuotesInvoices')}
               </p>
             </div>
             {highlightedDevisId && (
@@ -718,7 +720,7 @@ export default function MesDevisPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Retour à tous les devis
+                {t('quotes.backToAllQuotes')}
               </button>
             )}
           </div>
@@ -733,16 +735,16 @@ export default function MesDevisPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-[#2C3E50] font-semibold mb-1">ℹ️ Gestion automatique des devis</p>
+              <p className="text-[#2C3E50] font-semibold mb-1">ℹ️ {t('quotes.automaticManagement')}</p>
               <p className="text-[#2C3E50] text-sm">
                 <span className="block mb-1.5">
-                  <strong>Devis refusés :</strong> Supprimés automatiquement après <strong>24 heures</strong>.
+                  <strong>{t('quotes.refusedQuoteCleanup')}</strong>
                 </span>
                 <span className="block mb-1.5">
-                  <strong>Devis annulés :</strong> Supprimés automatiquement après <strong>24 heures</strong> (client s'est désisté après avoir accepté le devis, avant paiement).
+                  <strong>{t('quotes.cancelledQuoteCleanup')}</strong>
                 </span>
                 <span className="block">
-                  <strong>Devis en révision :</strong> Supprimés immédiatement après création de la variante.
+                  <strong>{t('quotes.revisionQuoteCleanup')}</strong>
                 </span>
               </p>
             </div>
@@ -760,15 +762,15 @@ export default function MesDevisPage() {
                 </svg>
               </div>
               <div>
-                <p className="font-bold">📋 Consultation d'un devis spécifique</p>
-                <p className="text-sm text-white text-opacity-90">Le devis concerné est mis en évidence ci-dessous avec une bordure orange</p>
+                <p className="font-bold">📋 {t('quotes.specificQuoteConsultation')}</p>
+                <p className="text-sm text-white text-opacity-90">{t('quotes.quoteHighlighted')}</p>
               </div>
             </div>
             <button
               onClick={() => router.push('/artisan/devis')}
               className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition flex items-center gap-2"
             >
-              <span className="text-sm font-semibold">Voir tous les devis</span>
+              <span className="text-sm font-semibold">{t('quotes.viewAllQuotes')}</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -787,7 +789,7 @@ export default function MesDevisPage() {
                   : 'text-gray-600 hover:text-[#FF6B00]'
               }`}
             >
-              📋 Devis ({devisActifs.length})
+              📋 {t('quotes.title')} ({devisActifs.length})
             </button>
             <button
               onClick={() => setActiveTab('factures')}
@@ -797,7 +799,7 @@ export default function MesDevisPage() {
                   : 'text-gray-600 hover:text-[#FF6B00]'
               }`}
             >
-              🧾 Factures (0)
+              🧾 {t('quotes.invoices')} (0)
             </button>
           </div>
         </div>
@@ -813,9 +815,9 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'tous' ? 'text-white' : 'text-[#FF6B00]'}`}>{devisActifs.length}</div>
-              <div className={`text-sm ${filter === 'tous' ? 'text-white' : 'text-gray-600'}`}>Tous</div>
+              <div className={`text-sm ${filter === 'tous' ? 'text-white' : 'text-gray-600'}`}>{t('quotes.all')}</div>
               {compterReponsesRecentes('tous') > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('tous')}
                 </span>
               )}
@@ -827,9 +829,9 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'genere' ? 'text-white' : 'text-gray-600'}`}>{devisGeneres.length}</div>
-              <div className={`text-sm ${filter === 'genere' ? 'text-white' : 'text-gray-600'}`}>Générés</div>
+              <div className={`text-sm ${filter === 'genere' ? 'text-white' : 'text-gray-600'}`}>{t('quotes.generated')}</div>
               {compterReponsesRecentes('genere') > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('genere')}
                 </span>
               )}
@@ -841,9 +843,9 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'envoye' ? 'text-white' : 'text-purple-600'}`}>{devisEnvoyes.length}</div>
-              <div className={`text-sm ${filter === 'envoye' ? 'text-white' : 'text-gray-600'}`}>Envoyés</div>
+              <div className={`text-sm ${filter === 'envoye' ? 'text-white' : 'text-gray-600'}`}>{t('quotes.sentPlural')}</div>
               {compterReponsesRecentes('envoye') > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('envoye')}
                 </span>
               )}
@@ -855,9 +857,9 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'en_attente_paiement' ? 'text-white' : 'text-yellow-600'}`}>{devisEnAttentePaiement.length}</div>
-              <div className={`text-sm ${filter === 'en_attente_paiement' ? 'text-white' : 'text-yellow-700'} font-semibold`}>⏳ En attente</div>
+              <div className={`text-sm ${filter === 'en_attente_paiement' ? 'text-white' : 'text-yellow-700'} font-semibold`}>⏳ {t('quotes.pending')}</div>
               {compterReponsesRecentes('en_attente_paiement') > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('en_attente_paiement')}
                 </span>
               )}
@@ -869,9 +871,9 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'paye' ? 'text-white' : 'text-green-600'}`}>{devisPayes.length}</div>
-              <div className={`text-sm ${filter === 'paye' ? 'text-white' : 'text-gray-600'}`}>💰 Payés</div>
+              <div className={`text-sm ${filter === 'paye' ? 'text-white' : 'text-gray-600'}`}>💰 {t('quotes.paidPlural')}</div>
               {compterReponsesRecentes('paye') > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('paye')}
                 </span>
               )}
@@ -883,9 +885,9 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'revision' ? 'text-white' : 'text-orange-600'}`}>{devisRevisionDemandee.length}</div>
-              <div className={`text-sm ${filter === 'revision' ? 'text-white' : 'text-orange-700'} font-semibold`}>🔄 Révisions</div>
+              <div className={`text-sm ${filter === 'revision' ? 'text-white' : 'text-orange-700'} font-semibold`}>🔄 {t('quotes.revisions')}</div>
               {compterReponsesRecentes('revision') > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('revision')}
                 </span>
               )}
@@ -897,9 +899,9 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'refuse' ? 'text-white' : 'text-red-600'}`}>{devisRefuses.length}</div>
-              <div className={`text-sm ${filter === 'refuse' ? 'text-white' : 'text-gray-600'}`}>Refusés</div>
+              <div className={`text-sm ${filter === 'refuse' ? 'text-white' : 'text-gray-600'}`}>{t('quotes.refusedPlural')}</div>
               {compterReponsesRecentes('refuse') > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title="Réponses clients récentes">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('refuse')}
                 </span>
               )}
@@ -916,11 +918,11 @@ export default function MesDevisPage() {
                   className="w-4 h-4 text-[#FF6B00] border-gray-300 rounded focus:ring-[#FF6B00]"
                 />
                 <label htmlFor="showRemplace" className="text-sm text-gray-700 cursor-pointer">
-                  Afficher les devis remplacés ({devisRemplace.length})
+                  {t('quotes.showReplaced')} ({devisRemplace.length})
                 </label>
               </div>
               <span className="text-xs text-gray-500 bg-purple-50 px-2 py-1 rounded">
-                🔄 Devis obsolètes
+                🔄 {t('quotes.obsoleteQuotes')}
               </span>
             </div>
           )}
@@ -936,21 +938,21 @@ export default function MesDevisPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <p className="text-gray-600 mb-4">
-                  {filter === 'tous' ? 'Aucun devis pour le moment' : `Aucun devis ${filter === 'genere' ? 'généré' : filter === 'envoye' ? 'envoyé' : filter === 'en_attente_paiement' ? 'en attente de paiement' : filter === 'paye' ? 'payé' : filter === 'revision' ? 'en révision' : 'refusé'}`}
+                  {filter === 'tous' ? t('quotes.noQuotesYet') : `${t('quotes.noQuotes')} ${filter === 'genere' ? t('quotes.noGeneratedQuote') : filter === 'envoye' ? t('quotes.noSentQuote') : filter === 'en_attente_paiement' ? t('quotes.noWaitingPaymentQuote') : filter === 'paye' ? t('quotes.noPaidQuote') : filter === 'revision' ? t('quotes.noRevisionQuote') : t('quotes.noRefusedQuote')}`}
                 </p>
                 {filter === 'tous' ? (
                   <button
                     onClick={() => router.push('/artisan/demandes')}
                     className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg hover:bg-[#E56100]"
                   >
-                    Voir les demandes
+                    {t('quotes.viewRequests')}
                   </button>
                 ) : (
                   <button
                     onClick={() => handleFilterChange('tous')}
                     className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg hover:bg-[#E56100]"
                   >
-                    Voir tous les devis
+                    {t('quotes.viewAllQuotes')}
                   </button>
                 )}
               </div>
@@ -969,28 +971,28 @@ export default function MesDevisPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Numéro
+                      {t('quotes.number')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Demande associée
+                      {t('quotes.associatedRequest')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Client
+                      {t('quotes.client')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Titre
+                      {t('quotes.title')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Montant
+                      {t('quotes.amount')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Statut
+                      {t('quotes.status')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
+                      {t('quotes.date')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {t('quotes.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -1032,11 +1034,11 @@ export default function MesDevisPage() {
                           </button>
                         ) : d.demandeId ? (
                           <div className="text-gray-500 text-xs">
-                            <div>Chargement...</div>
+                            <div>{t('common.loading')}</div>
                             <div className="font-mono text-[10px] text-gray-400">{d.demandeId.substring(0, 8)}...</div>
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-xs italic">Devis manuel</span>
+                          <span className="text-gray-400 text-xs italic">{t('quotes.manualQuote')}</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -1052,7 +1054,7 @@ export default function MesDevisPage() {
                         {d.statut === 'remplace' && d.devisRevisionId ? (
                           <div className="flex flex-col gap-1">
                             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
-                              🔄 Remplacé
+                              🔄 {t('quotes.replaced')}
                             </span>
                             <button
                               onClick={async () => {
@@ -1065,19 +1067,19 @@ export default function MesDevisPage() {
                               }}
                               className="text-xs text-[#FF6B00] hover:underline"
                             >
-                              → Voir la révision
+                              → {t('quotes.seeRevision')}
                             </button>
                           </div>
                         ) : d.statut === 'en_revision' ? (
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
-                            🔄 Révision demandée
+                            🔄 {t('quotes.revisionRequested')}
                           </span>
                         ) : d.statut === 'genere' ? (
                           <button
                             onClick={() => router.push(`/artisan/devis/${d.id}`)}
                             className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition"
                           >
-                            👁️ Consulter
+                            👁️ {t('quotes.consult')}
                           </button>
                         ) : (
                           getStatutBadge(d.statut)
@@ -1092,17 +1094,17 @@ export default function MesDevisPage() {
                             onClick={() => router.push(`/artisan/devis/nouveau?demandeId=${d.demandeId}&revisionDevisId=${d.id}`)}
                             className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-xs font-semibold"
                           >
-                            📝 Créer révision
+                            📝 {t('quotes.createRevision')}
                           </button>
                         ) : d.statut === 'refuse' ? (
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-gray-500 italic">Refus définitif</span>
-                            <span className="text-[10px] text-gray-400">Pas de nouvelle proposition</span>
+                            <span className="text-xs text-gray-500 italic">{t('quotes.definitiveRefusal')}</span>
+                            <span className="text-[10px] text-gray-400">{t('quotes.noNewProposal')}</span>
                           </div>
                         ) : d.statut === 'annule' ? (
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-orange-600 italic">Client s'est désisté</span>
-                            <span className="text-[10px] text-gray-400">Suppression auto dans 24h</span>
+                            <span className="text-xs text-orange-600 italic">{t('quotes.clientWithdrew')}</span>
+                            <span className="text-[10px] text-gray-400">{t('quotes.autoDeleteIn24h')}</span>
                           </div>
                         ) : d.statut === 'genere' ? (
                           <div className="flex items-center gap-2">
@@ -1113,12 +1115,12 @@ export default function MesDevisPage() {
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                               </svg>
-                              Envoyer au client
+                              {t('quotes.sendToClient')}
                             </button>
                             <button
                               onClick={() => handleSupprimerDevis(d.id, d.numeroDevis)}
                               className="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 hover:bg-red-600 hover:text-white rounded transition border border-red-300"
-                              title="Supprimer ce devis"
+                              title={t('quotes.deleteThisQuote')}
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -1135,13 +1137,13 @@ export default function MesDevisPage() {
                               title="Déclarer le début des travaux"
                             >
                               {actionEnCours === d.id ? (
-                                <>⏳ Chargement...</>
+                                <>⏳ {t('common.loading')}...</>
                               ) : (
                                 <>
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                   </svg>
-                                  🔨 Commencer les travaux
+                                  🔨 {t('quotes.startWork')}
                                 </>
                               )}
                             </button>
@@ -1149,7 +1151,7 @@ export default function MesDevisPage() {
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
                               className="text-[#FF6B00] hover:underline text-xs"
                             >
-                              Voir détails
+                              {t('quotes.viewDetails')}
                             </button>
                           </div>
                         ) : d.statut === 'en_cours' ? (
@@ -1162,13 +1164,13 @@ export default function MesDevisPage() {
                               title="Déclarer la fin des travaux"
                             >
                               {actionEnCours === d.id ? (
-                                <>⏳ Chargement...</>
+                                <>⏳ {t('common.loading')}...</>
                               ) : (
                                 <>
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
-                                  🏁 Déclarer fin
+                                  🏁 {t('quotes.declareEnd')}
                                 </>
                               )}
                             </button>
@@ -1176,40 +1178,40 @@ export default function MesDevisPage() {
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
                               className="text-[#FF6B00] hover:underline text-xs"
                             >
-                              Voir détails
+                              {t('quotes.viewDetails')}
                             </button>
                           </div>
                         ) : d.statut === 'travaux_termines' ? (
                           // ⏳ EN ATTENTE VALIDATION CLIENT + Lien Voir
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-purple-600 font-semibold">⏳ Attente validation</span>
+                            <span className="text-xs text-purple-600 font-semibold">⏳ {t('quotes.waitingValidation')}</span>
                             <button
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
                               className="text-[#FF6B00] hover:underline text-xs"
                             >
-                              Voir détails
+                              {t('quotes.viewDetails')}
                             </button>
                           </div>
                         ) : ['termine_valide', 'termine_auto_valide'].includes(d.statut) ? (
                           // ✅ TRAVAUX VALIDÉS - PAIEMENT LIBÉRÉ + Lien Voir
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-green-600 font-semibold">✅ Validé</span>
+                            <span className="text-xs text-green-600 font-semibold">✅ {t('quotes.validated')}</span>
                             <button
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
                               className="text-[#FF6B00] hover:underline text-xs"
                             >
-                              Voir détails
+                              {t('quotes.viewDetails')}
                             </button>
                           </div>
                         ) : d.statut === 'litige' ? (
                           // ⚠️ LITIGE EN COURS
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-red-600 font-semibold">⚠️ Litige</span>
+                            <span className="text-xs text-red-600 font-semibold">⚠️ {t('quotes.dispute')}</span>
                             <button
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
                               className="text-[#FF6B00] hover:underline text-xs"
                             >
-                              Voir détails
+                              {t('quotes.viewDetails')}
                             </button>
                           </div>
                         ) : (
@@ -1217,7 +1219,7 @@ export default function MesDevisPage() {
                             onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
                             className="text-[#FF6B00] hover:text-[#E56100]"
                           >
-                            Voir
+                            {t('quotes.see')}
                           </button>
                         )}
                       </td>
@@ -1236,8 +1238,8 @@ export default function MesDevisPage() {
             <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Section Factures</h3>
-            <p className="text-gray-600">La gestion des factures sera disponible prochainement</p>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">{t('quotes.invoicesSection')}</h3>
+            <p className="text-gray-600">{t('quotes.invoicesComingSoon')}</p>
           </div>
         )}
       </div>

@@ -12,9 +12,12 @@
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2026-01-28.clover',
-});
+// ⚠️ Initialisation conditionnelle de Stripe (Phase 2)
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-01-28.clover',
+    })
+  : null;
 
 const db = admin.firestore();
 
@@ -194,6 +197,10 @@ export async function handleAccountDeauthorized(accountId: string): Promise<void
  */
 export async function handleCapabilityUpdated(capability: Stripe.Capability): Promise<void> {
   try {
+    if (!stripe) {
+      throw new Error('STRIPE_SECRET_KEY non configurée - Fonctionnalité Phase 2 non activée');
+    }
+
     console.log(`📡 Webhook: capability.updated - ${capability.id}`);
 
     const accountId = capability.account;
@@ -220,6 +227,10 @@ export function verifyWebhookSignature(
   webhookSecret: string
 ): Stripe.Event {
   try {
+    if (!stripe) {
+      throw new Error('STRIPE_SECRET_KEY non configurée - Fonctionnalité Phase 2 non activée');
+    }
+
     return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
   } catch (error: any) {
     console.error('❌ Erreur vérification signature webhook:', error.message);
