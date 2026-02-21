@@ -525,7 +525,6 @@ export default function ArtisanDashboardPage() {
               {artisan && (
                 <div className="text-sm text-gray-500">
                   <p>📅 {artisan.disponibilites?.length || 0} créneau(x) défini(s)</p>
-                  <p className="text-green-600 font-medium mt-1">✨ Nouveau !</p>
                 </div>
               )}
             </div>
@@ -541,12 +540,7 @@ export default function ArtisanDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-white">Mon Wallet</h2>
-                    <span className="text-xs bg-white bg-opacity-30 text-white px-2 py-1 rounded-full font-medium">
-                      ✨ Nouveau
-                    </span>
-                  </div>
+                  <h2 className="text-xl font-bold text-white">Mon Wallet</h2>
                   <p className="text-sm text-orange-100">Gestion financière</p>
                 </div>
               </div>
