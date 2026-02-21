@@ -17,7 +17,7 @@ import Stripe from 'stripe';
 import { getFirestore } from 'firebase-admin/firestore';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
+  apiVersion: '2026-01-28.clover',
 });
 
 const db = getFirestore();
@@ -129,7 +129,7 @@ export async function createStripeConnectAccount(
         account_holder_name: data.accountHolderName,
         account_holder_type: data.businessProfile ? 'company' : 'individual',
         account_number: data.iban, // ⚠️ IBAN transmis à Stripe uniquement
-      } as Stripe.BankAccountCreateParams,
+      },
     });
 
     console.log('✅ IBAN ajouté au compte Stripe:', account.id);
@@ -254,7 +254,107 @@ export async function getStripeAccountStatus(stripeAccountId: string): Promise<{
     };
   } catch (error: any) {
     console.error('❌ Erreur récupération statut:', error);
+    
+    // Gérer les erreurs spécifiques Stripe
+    if (error.type === 'StripeInvalidRequestError') {
+      throw new Error(`Compte Stripe invalide: ${error.message}`);
+    }
+    
+    if (error.code === 'account_invalid') {
+      throw new Error('Compte Stripe inexistant ou supprimé');
+    }
+    
     throw new Error(`Erreur récupération statut: ${error.message}`);
+  }
+}
+
+/**
+ * Récupérer le statut détaillé avec mapping vers notre système
+ * 
+ * @param stripeAccountId - ID du compte Stripe
+ * @returns Statut détaillé avec raisons et actions requises
+ */
+export async function getDetailedAccountStatus(stripeAccountId: string): Promise<{
+  status: 'not_started' | 'pending' | 'documents_required' | 'under_review' | 'active' | 'rejected' | 'restricted';
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  currentlyDue: string[];
+  eventuallyDue: string[];
+  pendingVerification: string[];
+  errors: Array<{ code: string; reason: string; requirement: string }>;
+  disabledReason?: string;
+  actionRequired?: string;
+}> {
+  try {
+    const account = await stripe.accounts.retrieve(stripeAccountId);
+
+    // Mapper le statut
+    let status: 'not_started' | 'pending' | 'documents_required' | 'under_review' | 'active' | 'rejected' | 'restricted';
+    let actionRequired: string | undefined;
+
+    // Compte complètement actif
+    if (account.charges_enabled && account.payouts_enabled) {
+      status = 'active';
+    }
+    // Documents manquants
+    else if (account.requirements?.currently_due && account.requirements.currently_due.length > 0) {
+      status = 'documents_required';
+      actionRequired = `Documents requis: ${account.requirements.currently_due.join(', ')}`;
+    }
+    // En cours de vérification
+    else if (account.requirements?.pending_verification && account.requirements.pending_verification.length > 0) {
+      status = 'under_review';
+      actionRequired = 'Vérification en cours par Stripe';
+    }
+    // Compte rejeté ou restreint
+    else if (account.requirements?.disabled_reason) {
+      const disabledReason = account.requirements.disabled_reason;
+      
+      // Rejets définitifs
+      if (['rejected.fraud', 'rejected.terms_of_service', 'rejected.listed', 'rejected.other'].includes(disabledReason)) {
+        status = 'rejected';
+        actionRequired = `Compte rejeté: ${disabledReason}`;
+      }
+      // Restrictions temporaires
+      else {
+        status = 'restricted';
+        actionRequired = `Compte restreint: ${disabledReason}`;
+      }
+    }
+    // Par défaut, en attente
+    else {
+      status = 'pending';
+      actionRequired = 'Configuration en cours';
+    }
+
+    return {
+      status,
+      chargesEnabled: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+      currentlyDue: account.requirements?.currently_due || [],
+      eventuallyDue: account.requirements?.eventually_due || [],
+      pendingVerification: account.requirements?.pending_verification || [],
+      errors: (account.requirements?.errors || []).map((err: any) => ({
+        code: err.code,
+        reason: err.reason,
+        requirement: err.requirement,
+      })),
+      disabledReason: account.requirements?.disabled_reason || undefined,
+      actionRequired,
+    };
+  } catch (error: any) {
+    console.error('❌ Erreur getDetailedAccountStatus:', error);
+    
+    // Gérer les erreurs spécifiques
+    if (error.type === 'StripeInvalidRequestError') {
+      throw new Error(`Compte Stripe invalide: ${error.message}`);
+    }
+    
+    if (error.code === 'account_invalid') {
+      throw new Error('Compte Stripe inexistant ou supprimé');
+    }
+    
+    throw new Error(`Erreur récupération statut détaillé: ${error.message}`);
   }
 }
 
@@ -291,6 +391,7 @@ export default {
   createStripeConnectAccount,
   uploadVerificationDocument,
   getStripeAccountStatus,
+  getDetailedAccountStatus,
   validateIBAN,
   validateBIC,
 };

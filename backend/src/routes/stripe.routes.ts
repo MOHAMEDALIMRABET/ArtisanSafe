@@ -17,6 +17,10 @@ import {
   validateBIC,
   StripeOnboardingData,
 } from '../services/stripe-connect.service';
+import {
+  verifyWebhookSignature,
+  handleStripeWebhook,
+} from '../services/stripe-webhook-handler.service';
 
 const router = Router();
 
@@ -65,6 +69,37 @@ router.post('/onboard', async (req: Request, res: Response) => {
         success: false,
         error: 'Champs obligatoires manquants',
       });
+    }
+
+    // ⚠️ VÉRIFICATION CRITIQUE : Empêcher création de compte en double
+    const admin = await import('firebase-admin');
+    const db = admin.default.firestore();
+    
+    const walletDoc = await db.collection('wallets').doc(data.artisanId).get();
+    
+    if (walletDoc.exists) {
+      const walletData = walletDoc.data();
+      const existingAccountId = walletData?.stripeAccountId;
+      const existingStatus = walletData?.stripeOnboardingStatus;
+      
+      // Bloquer si compte déjà configuré (sauf si rejeté)
+      if (existingAccountId && existingStatus !== 'rejected') {
+        console.warn(`⚠️ Tentative de création de compte en double pour artisan ${data.artisanId}`);
+        console.warn(`   Compte existant: ${existingAccountId} (statut: ${existingStatus})`);
+        
+        return res.status(409).json({
+          success: false,
+          error: 'Compte bancaire déjà configuré',
+          details: `Votre compte Stripe est déjà configuré (statut: ${existingStatus}). Pour modifier vos informations bancaires, contactez le support.`,
+          existingAccountId,
+          existingStatus,
+        });
+      }
+      
+      // Si compte rejeté, permettre reconfiguration
+      if (existingStatus === 'rejected') {
+        console.log(`✅ Reconfiguration autorisée (ancien compte rejeté: ${existingAccountId})`);
+      }
     }
 
     if (!data.iban || !data.accountHolderName) {
@@ -196,6 +231,70 @@ router.get('/account-status/:accountId', async (req: Request, res: Response) => 
     res.status(500).json({
       success: false,
       error: error.message || 'Erreur lors de la récupération du statut',
+    });
+  }
+});
+
+/**
+ * POST /api/stripe/webhook
+ * Endpoint pour recevoir les webhooks Stripe
+ * 
+ * ⚠️ IMPORTANT : Ce endpoint doit recevoir le body RAW (pas de JSON parsing)
+ * Configuration dans server.ts : app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }))
+ * 
+ * Headers:
+ * - stripe-signature: Signature Stripe pour vérification
+ * 
+ * Events gérés:
+ * - account.updated : Mise à jour statut compte
+ * - account.application.deauthorized : Compte déconnecté
+ * - capability.updated : Capacités de paiement mises à jour
+ */
+router.post('/webhook', async (req: Request, res: Response) => {
+  const signature = req.headers['stripe-signature'] as string;
+
+  if (!signature) {
+    console.error('❌ Webhook: Signature manquante');
+    return res.status(400).json({
+      success: false,
+      error: 'Missing stripe-signature header',
+    });
+  }
+
+  const webhookSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.error('❌ STRIPE_CONNECT_WEBHOOK_SECRET non configuré');
+    return res.status(500).json({
+      success: false,
+      error: 'Webhook secret not configured',
+    });
+  }
+
+  try {
+    // Vérifier la signature et construire l'événement
+    const event = verifyWebhookSignature(
+      req.body, // Body RAW (Buffer)
+      signature,
+      webhookSecret
+    );
+
+    console.log(`✅ Webhook vérifié: ${event.type}`);
+
+    // Traiter l'événement de manière asynchrone
+    // On répond 200 immédiatement, puis on traite
+    res.json({ received: true });
+
+    // Traiter l'événement (ne bloque pas la réponse)
+    handleStripeWebhook(event).catch((error) => {
+      console.error('❌ Erreur traitement webhook (async):', error);
+    });
+
+  } catch (error: any) {
+    console.error('❌ Erreur webhook:', error.message);
+    return res.status(400).json({
+      success: false,
+      error: `Webhook Error: ${error.message}`,
     });
   }
 });

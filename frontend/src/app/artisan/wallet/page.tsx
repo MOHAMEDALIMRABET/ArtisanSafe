@@ -41,6 +41,11 @@ export default function WalletPage() {
   const [stripeOnboardingStatus, setStripeOnboardingStatus] = useState<StripeOnboardingStatus>('not_started');
   const [ibanLast4, setIbanLast4] = useState<string | undefined>(undefined);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  
+  // UI states
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [showConfigProcess, setShowConfigProcess] = useState(false);
+  const [showAlreadyConfiguredError, setShowAlreadyConfiguredError] = useState(false);
 
   // Charger les infos artisan
   useEffect(() => {
@@ -83,11 +88,16 @@ export default function WalletPage() {
     loadUserData();
   }, [firebaseUser, authLoading, router]);
 
-  // Vérifier si onboarding vient d'être complété
+  // Vérifier si onboarding vient d'être complété ou si erreur
   useEffect(() => {
     if (searchParams.get('onboarding') === 'success') {
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 5000);
+    }
+    
+    if (searchParams.get('error') === 'already_configured') {
+      setShowAlreadyConfiguredError(true);
+      setTimeout(() => setShowAlreadyConfiguredError(false), 8000);
     }
   }, [searchParams]);
 
@@ -166,6 +176,34 @@ export default function WalletPage() {
 
       {/* Contenu principal */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Message d'erreur : compte déjà configuré */}
+        {showAlreadyConfiguredError && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <h4 className="font-semibold text-orange-900 mb-1">⚠️ Compte bancaire déjà configuré</h4>
+                <p className="text-sm text-orange-800">
+                  Votre compte Stripe est déjà configuré. Pour des raisons de sécurité, vous ne pouvez pas créer un nouveau compte bancaire.
+                </p>
+                <p className="text-sm text-orange-700 mt-2">
+                  <strong>Pour modifier vos informations bancaires :</strong> Contactez le support à <a href="mailto:support@artisandispo.fr" className="underline hover:text-orange-900">support@artisandispo.fr</a>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAlreadyConfiguredError(false)}
+                className="text-orange-600 hover:text-orange-800 transition"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Message de succès onboarding */}
         {showSuccessMessage && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
@@ -276,13 +314,48 @@ export default function WalletPage() {
         {/* Historique des transactions */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="bg-gradient-to-r from-[#2C3E50] to-[#34495E] text-white px-6 py-4">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              Historique des transactions
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Historique des transactions
+              </h2>
+              
+              <button
+                onClick={() => setShowHowItWorks(!showHowItWorks)}
+                className="flex items-center gap-2 bg-[#FF6B00] hover:bg-[#E56100] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                💡 Comment ça marche ?
+              </button>
+            </div>
           </div>
+
+          {/* Message explicatif (toggle) */}
+          {showHowItWorks && (
+            <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
+              <div className="flex gap-3 max-w-4xl">
+                <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h4 className="font-semibold text-blue-900 mb-2">💡 Comment ça marche ?</h4>
+                  <ul className="text-sm text-blue-800 space-y-1.5">
+                    <li>• Recevez des paiements sécurisés de vos clients via Stripe</li>
+                    <li>• Les fonds restent en séquestre jusqu'à validation des travaux</li>
+                    <li>• Une fois validés, les fonds sont transférés automatiquement vers votre compte bancaire</li>
+                    <li>• Suivez l'historique complet de vos transactions ici</li>
+                  </ul>
+                  <p className="text-xs text-blue-700 mt-3 bg-blue-100 rounded px-3 py-2 inline-block">
+                    ⚠️ <strong>Fonctionnalité en développement</strong> - L'intégration Stripe sera disponible prochainement
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="p-8">
             {walletLoading ? (
@@ -298,30 +371,12 @@ export default function WalletPage() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">Aucune transaction</h3>
-                <p className="text-[#6C757D] mb-6 max-w-md mx-auto">
+                <p className="text-[#6C757D] max-w-md mx-auto">
                   Vos transactions apparaîtront ici une fois que vous aurez reçu des paiements de clients.
                 </p>
-
-                {/* Message informatif */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto text-left">
-                  <div className="flex gap-3">
-                    <svg className="w-6 h-6 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <h4 className="font-semibold text-blue-900 mb-1">💡 Comment ça marche ?</h4>
-                      <ul className="text-sm text-blue-800 space-y-1">
-                        <li>• Recevez des paiements sécurisés de vos clients via Stripe</li>
-                        <li>• Les fonds restent en séquestre jusqu'à validation des travaux</li>
-                        <li>• Une fois validés, les fonds sont transférés automatiquement vers votre compte bancaire</li>
-                        <li>• Suivez l'historique complet de vos transactions ici</li>
-                      </ul>
-                      <p className="text-xs text-blue-700 mt-3 bg-blue-100 rounded px-3 py-2 inline-block">
-                        ⚠️ <strong>Fonctionnalité en développement</strong> - L'intégration Stripe sera disponible prochainement
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-sm text-[#95A5A6] mt-4">
+                  💡 Cliquez sur <span className="font-semibold text-[#FF6B00]">"Comment ça marche ?"</span> pour en savoir plus
+                </p>
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
@@ -415,13 +470,48 @@ export default function WalletPage() {
         {/* Section Configuration compte bancaire */}
         <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
           <div className="bg-gradient-to-r from-[#2C3E50] to-[#34495E] text-white px-6 py-4">
-            <h3 className="text-xl font-bold flex items-center gap-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              Configuration du compte bancaire
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Configuration du compte bancaire
+              </h3>
+              
+              <button
+                onClick={() => setShowConfigProcess(!showConfigProcess)}
+                className="flex items-center gap-2 bg-[#FF6B00] hover:bg-[#E56100] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                💡 Processus de configuration
+              </button>
+            </div>
           </div>
+
+          {/* Message explicatif (toggle) */}
+          {showConfigProcess && (
+            <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
+              <div className="flex gap-3 max-w-4xl">
+                <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h4 className="font-semibold text-blue-900 mb-2">💡 Processus de configuration</h4>
+                  <ul className="text-sm text-blue-800 space-y-1.5">
+                    <li>✅ Remplissez le formulaire dans ArtisanDispo (2 minutes)</li>
+                    <li>✅ Vos données sont transmises de manière sécurisée à Stripe</li>
+                    <li>✅ Vérification automatique par Stripe (24-48h)</li>
+                    <li>✅ Recevez vos paiements automatiquement</li>
+                  </ul>
+                  <p className="text-xs text-blue-700 mt-3 bg-blue-100 rounded px-3 py-2 inline-block">
+                    🔒 <strong>Sécurité maximale</strong> : Vos coordonnées bancaires ne sont jamais stockées dans notre base de données
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="p-6">
             {walletLoading ? (
@@ -441,30 +531,12 @@ export default function WalletPage() {
                 <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">
                   🏦 Configurez votre compte bancaire
                 </h3>
-                <p className="text-[#6C757D] mb-6 max-w-md mx-auto">
+                <p className="text-[#6C757D] mb-4 max-w-md mx-auto">
                   Pour recevoir vos paiements automatiquement après validation des travaux, ajoutez votre IBAN.
                 </p>
-
-                {/* Informations */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto text-left mb-6">
-                  <div className="flex gap-3">
-                    <svg className="w-6 h-6 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <h4 className="font-semibold text-blue-900 mb-1">💡 Processus de configuration</h4>
-                      <ul className="text-sm text-blue-800 space-y-1">
-                        <li>✅ Remplissez le formulaire dans ArtisanDispo (2 minutes)</li>
-                        <li>✅ Vos données sont transmises de manière sécurisée à Stripe</li>
-                        <li>✅ Vérification automatique par Stripe (24-48h)</li>
-                        <li>✅ Recevez vos paiements automatiquement</li>
-                      </ul>
-                      <p className="text-xs text-blue-700 mt-3 bg-blue-100 rounded px-3 py-2">
-                        🔒 <strong>Sécurité maximale</strong> : Vos coordonnées bancaires ne sont jamais stockées dans notre base de données
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-sm text-[#95A5A6] mb-6">
+                  💡 Cliquez sur <span className="font-semibold text-[#FF6B00]">"Processus de configuration"</span> pour en savoir plus
+                </p>
 
                 <button
                   onClick={() => router.push('/artisan/stripe-onboarding')}
@@ -536,12 +608,27 @@ export default function WalletPage() {
                         💡 <strong>Transferts automatiques</strong> : Les fonds sont transférés par Stripe sous 2 jours ouvrés après validation
                       </p>
                     </div>
+                    
+                    <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <p className="text-sm text-[#6C757D] mb-2">
+                        🔒 <strong>Modifier votre IBAN ?</strong> Pour des raisons de sécurité, vous devez contacter le support.
+                      </p>
+                      <button
+                        onClick={() => router.push('/artisan/contact-support?sujet=modification_iban')}
+                        className="text-[#FF6B00] hover:underline font-semibold text-sm flex items-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                        📨 Contacter le support
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             ) : stripeOnboardingStatus === 'rejected' ? (
               /* Compte rejeté */
-              <div className="text-center py-8">
+              <div className="text-center py-8">`
                 <div className="inline-block bg-red-50 rounded-full p-6 mb-4">
                   <svg className="w-16 h-16 text-red-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -557,10 +644,42 @@ export default function WalletPage() {
 
                 <button
                   onClick={() => router.push('/artisan/stripe-onboarding')}
-                  className="bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
+                  className="bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition inline-flex items-center gap-2"
                 >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
                   Reconfigurer mon compte
                 </button>
+                
+                <p className="text-xs text-[#95A5A6] mt-4">
+                  ✅ Reconfiguration autorisée car votre compte précédent a été rejeté
+                </p>
+              </div>
+            ) : stripeOnboardingStatus === 'restricted' ? (
+              /* Compte restreint */
+              <div className="text-center py-8">
+                <div className="inline-block bg-orange-50 rounded-full p-6 mb-4">
+                  <svg className="w-16 h-16 text-orange-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+
+                <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">
+                  ⚠️ Compte restreint
+                </h3>
+                <p className="text-[#6C757D] mb-6 max-w-md mx-auto">
+                  Votre compte Stripe a été temporairement restreint. Veuillez vérifier votre email pour plus d'informations.
+                </p>
+
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 max-w-md mx-auto">
+                  <p className="text-orange-800 text-sm">
+                    💬 Contactez le support pour résoudre ce problème :{' '}
+                    <a href="mailto:support@artisandispo.fr" className="underline hover:text-orange-900 font-semibold">
+                      support@artisandispo.fr
+                    </a>
+                  </p>
+                </div>
               </div>
             ) : (
               /* Compte restreint */

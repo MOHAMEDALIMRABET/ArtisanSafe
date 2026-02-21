@@ -15,6 +15,7 @@ import webhooksRoutes from './routes/webhooks.routes';
 import stripeExpressRoutes from './routes/stripe-express';
 import stripeRoutes from './routes/stripe.routes';
 import adminEmailMonitoringRoutes from './routes/admin-email-monitoring.routes';
+import supportRoutes from './routes/support.routes';
 import { startEmailWatcher } from './services/email-service';
 
 const app: Express = express();
@@ -26,6 +27,9 @@ app.use(cors());
 // ⚠️ IMPORTANT : Webhooks Stripe AVANT express.json()
 // Stripe nécessite le raw body pour vérifier la signature
 app.use('/api/v1/webhooks', express.raw({ type: 'application/json' }), webhooksRoutes);
+
+// Webhook Stripe Connect (raw body requis)
+app.use('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }));
 
 // Routes Stripe Express (inclut son propre webhook avec raw body)
 app.use('/api/v1/stripe-express', stripeExpressRoutes);
@@ -63,6 +67,9 @@ app.use('/api/v1/payments', paymentsRoutes);
 
 // Routes Stripe Connect (onboarding artisans)
 app.use('/api/v1/stripe', stripeRoutes);
+
+// Routes Support Tickets
+app.use('/api/v1/support', supportRoutes);
 
 // Routes Admin - Monitoring Emails
 app.use('/api/v1/admin', adminEmailMonitoringRoutes);

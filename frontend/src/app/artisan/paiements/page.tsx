@@ -1,153 +1,31 @@
 'use client';
 
 /**
- * Page de configuration Stripe Connect pour artisans
- * Permet l'onboarding et le suivi des paiements
+ * Redirection de l'ancienne page /artisan/paiements vers /artisan/wallet
  * 
- * Route : /artisan/paiements
+ * ⚠️ Cette page est obsolète. La configuration Stripe Connect se fait
+ * maintenant directement dans Mon Wallet via un formulaire intégré.
+ * 
+ * Ancienne méthode (supprimée) : Redirection vers lien Stripe hébergé
+ * Nouvelle méthode : Formulaire multi-étapes dans ArtisanDispo
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
 
-export default function ArtisanPaiementsPage() {
+export default function ArtisanPaiementsPageRedirect() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
-  const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      router.push('/connexion');
-      return;
-    }
+    // Redirection automatique vers Mon Wallet
+    router.replace('/artisan/wallet');
+  }, [router]);
 
-    checkStripeAccount();
-  }, [user, authLoading]);
-
-  const checkStripeAccount = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Vérifier si artisan a déjà un compte Stripe
-      const artisanDoc = await getDoc(doc(db, 'artisans', user!.uid));
-      
-      if (!artisanDoc.exists()) {
-        setError('Profil artisan non trouvé');
-        setLoading(false);
-        return;
-      }
-
-      const data = artisanDoc.data();
-      const accountId = data?.stripeAccountId;
-      const completed = data?.stripeOnboardingCompleted || false;
-
-      if (accountId) {
-        setStripeAccountId(accountId);
-        setOnboardingCompleted(completed);
-      }
-
-    } catch (err: any) {
-      console.error('Erreur vérification compte Stripe:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateAccount = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Appeler backend pour créer compte Stripe Connect
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/create-connect-account`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          artisanId: user!.uid,
-          email: user!.email,
-          returnUrl: `${window.location.origin}/artisan/paiements?onboarding=complete`,
-          refreshUrl: `${window.location.origin}/artisan/paiements?onboarding=refresh`
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || 'Erreur création compte Stripe');
-      }
-
-      const { accountId, onboardingUrl } = await response.json();
-
-      // Sauvegarder accountId dans Firestore
-      await updateDoc(doc(db, 'artisans', user!.uid), {
-        stripeAccountId: accountId,
-        stripeOnboardingCompleted: false,
-        stripeOnboardingStartDate: new Date()
-      });
-
-      console.log('✅ Compte Stripe Connect créé:', accountId);
-
-      // Rediriger vers Stripe pour compléter onboarding
-      window.location.href = onboardingUrl;
-
-    } catch (err: any) {
-      console.error('❌ Erreur création compte Stripe:', err);
-      setError(err.message);
-      alert('Erreur lors de la création du compte. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCompleteOnboarding = async () => {
-    try {
-      setLoading(true);
-
-      // Marquer onboarding comme complété
-      await updateDoc(doc(db, 'artisans', user!.uid), {
-        stripeOnboardingCompleted: true,
-        stripeOnboardingDate: new Date()
-      });
-
-      setOnboardingCompleted(true);
-      
-    } catch (err: any) {
-      console.error('Erreur finalisation onboarding:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Gérer retour depuis Stripe après onboarding
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const onboardingStatus = params.get('onboarding');
-
-    if (onboardingStatus === 'complete' && stripeAccountId) {
-      handleCompleteOnboarding();
-      
-      // Nettoyer URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete('onboarding');
-      window.history.replaceState({}, '', url.toString());
-    }
-  }, [stripeAccountId]);
-
-  // Loading state
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
+  // Loading pendant la redirection
+  return (
+    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
           <p className="text-gray-600">Chargement...</p>
         </div>
       </div>

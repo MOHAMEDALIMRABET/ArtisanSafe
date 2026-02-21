@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import { getWalletSummary } from '@/lib/firebase/wallet-service';
 import type { User, Artisan, StripeBankAccountData } from '@/types/firestore';
 
 export default function StripeOnboardingPage() {
@@ -69,6 +70,28 @@ export default function StripeOnboardingPage() {
         }
 
         setArtisan(artisanData);
+
+        // ⚠️ VÉRIFICATION CRITIQUE : Bloquer si compte déjà configuré
+        // Sauf si compte rejeté (permettre reconfiguration)
+        const walletData = await getWalletSummary(firebaseUser.uid);
+        
+        if (walletData && walletData.wallet) {
+          const stripeStatus = walletData.wallet.stripeOnboardingStatus;
+          
+          // Statuts qui bloquent la reconfiguration
+          const blockedStatuses = ['pending', 'documents_required', 'under_review', 'active', 'restricted'];
+          
+          if (blockedStatuses.includes(stripeStatus)) {
+            console.warn(`⚠️ Compte déjà configuré (statut: ${stripeStatus}). Redirection vers wallet.`);
+            
+            // Rediriger vers wallet avec message informatif
+            router.push('/artisan/wallet?error=already_configured');
+            return;
+          }
+          
+          // Si compte rejeté (rejected) ou pas encore commencé (not_started), autoriser la configuration
+          console.log(`✅ Configuration autorisée (statut: ${stripeStatus})`);
+        }
 
         // Pré-remplir avec les données existantes
         setFormData((prev) => ({
