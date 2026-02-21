@@ -1042,3 +1042,86 @@ export interface PaiementExpress {
   releasedAt?: Timestamp; // Libéré à l'artisan
   refundedAt?: Timestamp; // Remboursé au client
 }
+
+// ============================================
+// 14. WALLET ARTISAN
+// ============================================
+
+/**
+ * Type de transaction wallet
+ */
+export type WalletTransactionType =
+  | 'credit'        // Crédit (paiement client reçu)
+  | 'debit'         // Débit (retrait vers compte bancaire)
+  | 'commission'    // Commission plateforme
+  | 'remboursement' // Remboursement client (litige)
+  | 'bonus';        // Bonus/promotion
+
+/**
+ * Statut de transaction wallet
+ */
+export type WalletTransactionStatut =
+  | 'pending'   // En attente
+  | 'completed' // Complétée
+  | 'failed'    // Échouée
+  | 'cancelled'; // Annulée
+
+/**
+ * Transaction du wallet artisan
+ */
+export interface WalletTransaction {
+  id: string;
+  artisanId: string;
+  type: WalletTransactionType;
+  montant: number;
+  statut: WalletTransactionStatut;
+  description: string;
+  
+  // Références
+  contratId?: string;
+  devisId?: string;
+  demandeId?: string;
+  
+  // Stripe (si applicable)
+  stripeTransferId?: string;
+  stripePaymentIntentId?: string;
+  
+  // Dates
+  createdAt: Timestamp;
+  completedAt?: Timestamp;
+  
+  // Métadonnées
+  metadata?: {
+    [key: string]: any;
+  };
+}
+
+/**
+ * Wallet artisan (document dans Firestore)
+ * 
+ * ⚠️ IMPORTANT : Le wallet est un SUIVI UNIQUEMENT
+ * Les transferts vers le compte bancaire sont gérés AUTOMATIQUEMENT par Stripe
+ */
+export interface Wallet {
+  id: string; // = artisanId
+  artisanId: string;
+  
+  // Soldes (suivi uniquement)
+  soldeDisponible: number; // En cours de transfert par Stripe
+  soldeEnAttente: number;  // En séquestre Stripe (travaux en cours)
+  soldeTotal: number;      // Total = disponible + attente
+  
+  // Statistiques
+  totalEncaisse: number;   // Total encaissé depuis le début
+  totalRetire: number;     // Total transféré par Stripe vers compte bancaire
+  
+  // Stripe Connect
+  stripeAccountId?: string; // Stripe Connect Account ID (compte artisan)
+  ibanVerified: boolean;    // IBAN vérifié dans Stripe
+  
+  // Dates
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastTransaction?: Timestamp;
+}
+

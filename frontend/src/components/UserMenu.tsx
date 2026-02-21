@@ -392,6 +392,22 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
                   <span className="font-medium flex-1">Mon Agenda</span>
                 </button>
 
+                {/* Mon Wallet */}
+                <button
+                  onClick={() => handleNavigation('/artisan/wallet')}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                    />
+                  </svg>
+                  <span className="font-medium flex-1">Mon Wallet</span>
+                </button>
+
                 {/* Mes Devis */}
                 <button
                   onClick={() => handleNavigationWithMarkRead('/artisan/devis', ['devis_accepte', 'devis_refuse', 'devis_recu', 'nouveau_devis', 'devis_revision'])}

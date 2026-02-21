@@ -531,7 +531,49 @@ export default function ArtisanDashboardPage() {
             </div>
           </Link>
 
-          {/* Documents KBIS et Pièce d'identité - Position 4 */}
+          {/* Mon Wallet - Position 4 */}
+          <Link href="/artisan/wallet">
+            <div className="bg-gradient-to-br from-[#FF6B00] to-[#E56100] rounded-lg shadow-md p-6 hover:shadow-xl transition-all cursor-pointer border-2 border-transparent hover:scale-105">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
+                  <svg className="w-6 h-6 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-white">Mon Wallet</h2>
+                    <span className="text-xs bg-white bg-opacity-30 text-white px-2 py-1 rounded-full font-medium">
+                      ✨ Nouveau
+                    </span>
+                  </div>
+                  <p className="text-sm text-orange-100">Gestion financière</p>
+                </div>
+              </div>
+              <div className="text-white">
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-3xl font-bold">0,00 €</span>
+                  <span className="text-sm opacity-80">disponible</span>
+                </div>
+                <div className="flex items-center gap-4 text-xs opacity-90">
+                  <div className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>0 transaction</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>0,00 € en attente</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Documents KBIS et Pièce d'identité - Position 5 */}
           <Link href="/artisan/documents">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
               <div className="flex items-center gap-4 mb-4">
@@ -645,7 +687,7 @@ export default function ArtisanDashboardPage() {
               </div>
             </Link>
 
-          {/* Demandes */}
+          {/* Demandes - Position 6 */}
           <Link href="/artisan/demandes">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00] relative">
               {/* Badge notification */}
@@ -682,7 +724,7 @@ export default function ArtisanDashboardPage() {
             </div>
           </Link>
 
-          {/* Devis */}
+          {/* Devis - Position 7 */}
           <Link href="/artisan/devis">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
               <div className="flex items-center gap-4 mb-4">
@@ -711,7 +753,7 @@ export default function ArtisanDashboardPage() {
             </div>
           </Link>
 
-          {/* Messages */}
+          {/* Messages - Position 8 */}
           <Link href="/messages">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00] relative">
               {/* Badge notification */}
@@ -758,7 +800,7 @@ export default function ArtisanDashboardPage() {
             </div>
           </Link>
 
-          {/* Avis */}
+          {/* Avis - Position 9 */}
           <Link href="/artisan/avis">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
               <div className="flex items-center gap-4 mb-4">
