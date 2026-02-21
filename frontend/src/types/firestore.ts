@@ -1097,6 +1097,49 @@ export interface WalletTransaction {
 }
 
 /**
+ * Statut d'onboarding Stripe Connect
+ */
+export type StripeOnboardingStatus =
+  | 'not_started'      // Pas encore commencé
+  | 'pending'          // En cours de configuration
+  | 'documents_required' // Documents manquants
+  | 'under_review'     // En cours de vérification par Stripe
+  | 'active'           // Compte activé
+  | 'rejected'         // Rejeté par Stripe
+  | 'restricted';      // Restreint
+
+/**
+ * Données bancaires pour onboarding (temporaires - envoyées à Stripe uniquement)
+ * ⚠️ JAMAIS stockées dans Firestore
+ */
+export interface StripeBankAccountData {
+  // IBAN/BIC
+  iban: string;
+  bic?: string;
+  accountHolderName: string;
+  
+  // Informations personnelles (pour Stripe KYC)
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string; // Format: YYYY-MM-DD
+  
+  // Adresse
+  address: {
+    line1: string;
+    line2?: string;
+    city: string;
+    postalCode: string;
+    country: string; // 'FR'
+  };
+  
+  // Documents (Base64 ou File objects)
+  documents?: {
+    idCard?: File | string; // Pièce d'identité
+    addressProof?: File | string; // Justificatif domicile
+  };
+}
+
+/**
  * Wallet artisan (document dans Firestore)
  * 
  * ⚠️ IMPORTANT : Le wallet est un SUIVI UNIQUEMENT
@@ -1117,11 +1160,16 @@ export interface Wallet {
   
   // Stripe Connect
   stripeAccountId?: string; // Stripe Connect Account ID (compte artisan)
+  stripeOnboardingStatus: StripeOnboardingStatus; // Statut configuration
   ibanVerified: boolean;    // IBAN vérifié dans Stripe
+  ibanLast4?: string;       // 4 derniers chiffres IBAN (affichage sécurisé)
+  bankName?: string;        // Nom banque (si fourni par Stripe)
   
   // Dates
   createdAt: Timestamp;
   updatedAt: Timestamp;
   lastTransaction?: Timestamp;
+  stripeAccountCreatedAt?: Timestamp; // Date création compte Stripe
+  stripeAccountVerifiedAt?: Timestamp; // Date vérification Stripe
 }
 

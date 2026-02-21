@@ -14,15 +14,16 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { getWalletSummary } from '@/lib/firebase/wallet-service';
-import type { User, Artisan, WalletTransaction } from '@/types/firestore';
+import type { User, Artisan, WalletTransaction, StripeOnboardingStatus } from '@/types/firestore';
 
 export default function WalletPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user: firebaseUser, loading: authLoading } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
@@ -35,6 +36,11 @@ export default function WalletPage() {
   const [totalEncaisse, setTotalEncaisse] = useState(0);
   const [totalRetire, setTotalRetire] = useState(0);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  
+  // Stripe Connect
+  const [stripeOnboardingStatus, setStripeOnboardingStatus] = useState<StripeOnboardingStatus>('not_started');
+  const [ibanLast4, setIbanLast4] = useState<string | undefined>(undefined);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Charger les infos artisan
   useEffect(() => {
@@ -77,6 +83,14 @@ export default function WalletPage() {
     loadUserData();
   }, [firebaseUser, authLoading, router]);
 
+  // Vérifier si onboarding vient d'être complété
+  useEffect(() => {
+    if (searchParams.get('onboarding') === 'success') {
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+    }
+  }, [searchParams]);
+
   // Charger les données du wallet
   useEffect(() => {
     if (!artisan) return;
@@ -90,6 +104,8 @@ export default function WalletPage() {
         if (summary.wallet) {
           setSoldeDisponible(summary.wallet.soldeDisponible);
           setSoldeEnAttente(summary.wallet.soldeEnAttente);
+          setStripeOnboardingStatus(summary.wallet.stripeOnboardingStatus);
+          setIbanLast4(summary.wallet.ibanLast4);
         }
         setTotalEncaisse(summary.stats.totalEncaisse);
         setTotalRetire(summary.stats.totalRetire);
@@ -150,6 +166,23 @@ export default function WalletPage() {
 
       {/* Contenu principal */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Message de succès onboarding */}
+        {showSuccessMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <div>
+                <h4 className="font-semibold text-green-900">✅ Compte bancaire configuré !</h4>
+                <p className="text-sm text-green-800">
+                  Vos informations bancaires ont été transmises à Stripe. Vous pourrez recevoir des paiements une fois la vérification terminée (24-48h).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Solde disponible */}
         <div className="bg-gradient-to-br from-[#FF6B00] to-[#E56100] rounded-xl shadow-lg p-8 text-white mb-8">
           <div className="flex items-center justify-between">
@@ -379,25 +412,174 @@ export default function WalletPage() {
           </div>
         </div>
 
-        {/* Section RIB (à venir) */}
-        <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold text-[#2C3E50] mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-            Informations bancaires
-          </h3>
-          <div className="bg-[#F8F9FA] rounded-lg p-6 text-center">
-            <p className="text-[#6C757D] mb-4">
-              Ajoutez vos coordonnées bancaires pour recevoir vos paiements
-            </p>
-            <button
-              className="bg-[#2C3E50] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#1A3A5C] transition"
-              disabled
-            >
-              🏦 Ajouter un RIB
-            </button>
-            <p className="text-xs text-[#95A5A6] mt-2">Disponible prochainement</p>
+        {/* Section Configuration compte bancaire */}
+        <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-gradient-to-r from-[#2C3E50] to-[#34495E] text-white px-6 py-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Configuration du compte bancaire
+            </h3>
+          </div>
+
+          <div className="p-6">
+            {walletLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
+                <p className="mt-4 text-[#6C757D]">Chargement...</p>
+              </div>
+            ) : stripeOnboardingStatus === 'not_started' || stripeOnboardingStatus === 'pending' ? (
+              /* Compte pas encore configuré */
+              <div className="text-center py-8">
+                <div className="inline-block bg-[#F8F9FA] rounded-full p-6 mb-4">
+                  <svg className="w-16 h-16 text-[#FF6B00] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+
+                <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">
+                  🏦 Configurez votre compte bancaire
+                </h3>
+                <p className="text-[#6C757D] mb-6 max-w-md mx-auto">
+                  Pour recevoir vos paiements automatiquement après validation des travaux, ajoutez votre IBAN.
+                </p>
+
+                {/* Informations */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto text-left mb-6">
+                  <div className="flex gap-3">
+                    <svg className="w-6 h-6 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <h4 className="font-semibold text-blue-900 mb-1">💡 Processus de configuration</h4>
+                      <ul className="text-sm text-blue-800 space-y-1">
+                        <li>✅ Remplissez le formulaire dans ArtisanDispo (2 minutes)</li>
+                        <li>✅ Vos données sont transmises de manière sécurisée à Stripe</li>
+                        <li>✅ Vérification automatique par Stripe (24-48h)</li>
+                        <li>✅ Recevez vos paiements automatiquement</li>
+                      </ul>
+                      <p className="text-xs text-blue-700 mt-3 bg-blue-100 rounded px-3 py-2">
+                        🔒 <strong>Sécurité maximale</strong> : Vos coordonnées bancaires ne sont jamais stockées dans notre base de données
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => router.push('/artisan/stripe-onboarding')}
+                  className="bg-[#FF6B00] text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-[#E56100] transition shadow-lg inline-flex items-center gap-2"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Configurer mon compte bancaire
+                </button>
+              </div>
+            ) : stripeOnboardingStatus === 'documents_required' || stripeOnboardingStatus === 'under_review' ? (
+              /* Documents en attente ou en cours de vérification */
+              <div className="text-center py-8">
+                <div className="inline-block bg-yellow-50 rounded-full p-6 mb-4">
+                  <svg className="w-16 h-16 text-yellow-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+
+                <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">
+                  ⏳ Vérification en cours
+                </h3>
+                <p className="text-[#6C757D] mb-6 max-w-md mx-auto">
+                  Stripe vérifie vos informations bancaires. Cela prend généralement 24 à 48 heures.
+                </p>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
+                  <p className="text-yellow-800 text-sm">
+                    Vous recevrez un email dès que votre compte sera vérifié et actif.
+                  </p>
+                </div>
+              </div>
+            ) : stripeOnboardingStatus === 'active' ? (
+              /* Compte activé */
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="bg-green-100 rounded-full p-4">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-green-900 mb-2">
+                      ✅ Compte bancaire vérifié
+                    </h3>
+                    <p className="text-green-800 mb-4">
+                      Votre IBAN est vérifié. Les paiements seront transférés automatiquement vers votre compte bancaire après validation des travaux.
+                    </p>
+
+                    {ibanLast4 && (
+                      <div className="bg-white rounded-lg p-4 border border-green-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-[#6C757D] mb-1">IBAN enregistré</p>
+                            <p className="font-mono text-[#2C3E50] font-semibold">
+                              FR** **** **** **** **** **** {ibanLast4}
+                            </p>
+                          </div>
+                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-800">
+                        💡 <strong>Transferts automatiques</strong> : Les fonds sont transférés par Stripe sous 2 jours ouvrés après validation
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : stripeOnboardingStatus === 'rejected' ? (
+              /* Compte rejeté */
+              <div className="text-center py-8">
+                <div className="inline-block bg-red-50 rounded-full p-6 mb-4">
+                  <svg className="w-16 h-16 text-red-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+
+                <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">
+                  ❌ Vérification échouée
+                </h3>
+                <p className="text-[#6C757D] mb-6 max-w-md mx-auto">
+                  Stripe n'a pas pu vérifier vos informations bancaires. Veuillez réessayer avec des informations valides.
+                </p>
+
+                <button
+                  onClick={() => router.push('/artisan/stripe-onboarding')}
+                  className="bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition"
+                >
+                  Reconfigurer mon compte
+                </button>
+              </div>
+            ) : (
+              /* Compte restreint */
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-orange-900 mb-2">
+                      ⚠️ Compte limité
+                    </h3>
+                    <p className="text-orange-800">
+                      Votre compte nécessite des informations supplémentaires. Contactez le support pour plus de détails.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

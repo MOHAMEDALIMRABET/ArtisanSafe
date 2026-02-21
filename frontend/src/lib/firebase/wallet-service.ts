@@ -55,6 +55,7 @@ export async function createWallet(artisanId: string): Promise<Wallet> {
     soldeTotal: 0,
     totalEncaisse: 0,  // Total reçu depuis le début
     totalRetire: 0,    // Total transféré par Stripe vers compte bancaire
+    stripeOnboardingStatus: 'not_started', // Onboarding pas encore commencé
     ibanVerified: false,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
