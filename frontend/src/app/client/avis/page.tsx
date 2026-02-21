@@ -151,70 +151,25 @@ export default function AvisClientPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
-        {/* Breadcrumb */}
-        <div className="mb-6">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 text-[#FF6B00] hover:underline"
+    <div className="min-h-screen bg-[#F5F7FA]">
+      {/* Header */}
+      <div className="bg-[#2C3E50] text-white py-8">
+        <div className="container mx-auto px-4">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Retour au tableau de bord
-          </Link>
+          </button>
+          <h1 className="text-3xl font-bold">Mes Avis</h1>
+          <p className="text-gray-300 mt-2">Consultez les avis que vous avez donnés</p>
         </div>
+      </div>
 
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Avis Clients</h1>
-          <p className="text-gray-600">
-            Consultez les retours de vos clients et répondez-y pour améliorer votre réputation
-          </p>
-        </div>
-
-        {/* Statistiques avec répartition */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Note moyenne */}
-              <div>
-                <h2 className="text-lg font-semibold text-[#2C3E50] mb-4">Note globale</h2>
-                <div className="flex items-center gap-6">
-                  <div className="text-6xl font-bold text-[#FF6B00]">
-                    {calculerStats().moyenne.toFixed(1)}
-                  </div>
-                  <div>
-                    {renderStars(Math.round(calculerStats().moyenne))}
-                    <p className="text-sm text-gray-600 mt-1">
-                      {calculerStats().total} avis au total
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Répartition */}
-              <div>
-                <h2 className="text-lg font-semibold text-[#2C3E50] mb-4">Répartition des notes</h2>
-                <div className="space-y-2">
-                  {calculerRepartition().map(({ note, count, percentage }) => (
-                    <div key={note} className="flex items-center gap-3">
-                      <span className="text-sm text-gray-600 w-8">{note}★</span>
-                      <div className="flex-1 bg-gray-200 rounded-full h-2.5">
-                        <div
-                          className="bg-[#FF6B00] h-2.5 rounded-full transition-all"
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-gray-600 w-12 text-right">
-                        {count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-        </div>
+      <div className="container mx-auto px-4 max-w-6xl py-8">
 
         {/* Filtres et recherche */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -298,11 +253,11 @@ export default function AvisClientPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                {avis.length === 0 ? 'Aucun avis pour le moment' : 'Aucun résultat'}
+                {avis.length === 0 ? 'Aucun avis donné pour le moment' : 'Aucun résultat'}
               </h3>
               <p className="text-gray-500">
                 {avis.length === 0
-                  ? 'Les avis de vos clients apparaîtront ici après la fin de leurs interventions.'
+                  ? 'Après vos projets terminés, vous pourrez donner votre avis aux artisans qui ont réalisé les travaux.'
                   : 'Essayez de modifier vos filtres de recherche.'}
               </p>
             </div>

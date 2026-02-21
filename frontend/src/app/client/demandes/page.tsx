@@ -531,38 +531,45 @@ export default function MesDemandesPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
-      {/* Titre de la page - Version moderne */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="bg-[#2C3E50] text-white py-8">
+        <div className="container mx-auto px-4">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Retour au tableau de bord
+          </button>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-extrabold text-[#2C3E50] tracking-tight">
-                Mes demandes
-              </h1>
-              <p className="text-base text-[#6C757D] mt-2 font-medium">
-                Suivez vos projets en temps réel
-              </p>
+              <h1 className="text-3xl font-bold">Mes Demandes</h1>
+              <p className="text-gray-300 mt-2">Suivez vos projets en temps réel</p>
             </div>
             
-            <Button
-              onClick={() => router.push('/recherche')}
-              className="bg-[#FF6B00] hover:bg-[#E56100] text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Nouvelle demande
-            </Button>
-            <button
-              onClick={() => setShowExpirationHelp(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
-              title="Comprendre l'expiration des demandes"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-              </svg>
-              <span className="hidden sm:inline">Aide : Expiration</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => router.push('/recherche')}
+                className="bg-[#FF6B00] hover:bg-[#E56100] text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Nouvelle demande
+              </Button>
+              <button
+                onClick={() => setShowExpirationHelp(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-10 text-white rounded-lg hover:bg-opacity-20 transition-colors"
+                title="Comprendre l'expiration des demandes"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <span>Aide : Expiration</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

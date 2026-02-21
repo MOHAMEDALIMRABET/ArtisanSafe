@@ -239,7 +239,7 @@ export default function DashboardPage() {
         {/* Dashboard Client */}
         {user?.role === 'client' && (
           <div className="grid md:grid-cols-2 gap-6">
-            <Link href="/recherche">
+            <Link href="/recherche?from=dashboard">
               <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">

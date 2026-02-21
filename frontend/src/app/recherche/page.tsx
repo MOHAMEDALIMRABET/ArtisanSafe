@@ -39,6 +39,7 @@ export default function RecherchePage() {
   const [user, setUser] = useState<User | null>(null);
   const [dashboardUrl, setDashboardUrl] = useState('/');
   const [villeSuggestions, setVilleSuggestions] = useState<VilleSuggestion[]>([]);
+  const fromDashboard = searchParams.get('from') === 'dashboard';
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [criteria, setCriteria] = useState<SearchCriteria>({
@@ -252,28 +253,63 @@ export default function RecherchePage() {
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
       {/* Titre de la page */}
-      <div className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-[#2C3E50]">Trouvez votre artisan</h1>
-              <p className="text-[#6C757D] text-sm mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
-            </div>
+      {fromDashboard ? (
+        // Header bleu avec retour (style pages client)
+        <div className="bg-[#2C3E50] text-white py-8">
+          <div className="container mx-auto px-4">
             <button
-              type="button"
-              onClick={() => setShowHowItWorks(!showHowItWorks)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] transition-colors shadow-md"
-              title="Afficher/masquer comment ça marche"
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4"
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              <span className="hidden sm:inline">💡 Comment ça marche ?</span>
-              <span className="sm:hidden">💡</span>
+              Retour au tableau de bord
             </button>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">Trouvez votre artisan</h1>
+                <p className="text-gray-300 mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHowItWorks(!showHowItWorks)}
+                className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-10 text-white rounded-lg hover:bg-opacity-20 transition-colors"
+                title="Afficher/masquer comment ça marche"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <span>💡 Comment ça marche ?</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        // Header blanc classique (depuis page d'accueil ou autre)
+        <div className="bg-white shadow-sm">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-[#2C3E50]">Trouvez votre artisan</h1>
+                <p className="text-[#6C757D] text-sm mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHowItWorks(!showHowItWorks)}
+                className="flex items-center gap-2 px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] transition-colors shadow-md"
+                title="Afficher/masquer comment ça marche"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <span className="hidden sm:inline">💡 Comment ça marche ?</span>
+                <span className="sm:hidden">💡</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Formulaire de recherche */}
       <main className="container mx-auto px-4 py-8">

@@ -255,34 +255,36 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
               <span className="font-medium">Tableau de bord</span>
             </button>
 
-            {/* Mon profil */}
-            <button
-              onClick={() => {
-                // Bloquer l'accès au profil pour les artisans non vérifiés
-                if (isArtisan && user.statut !== 'verifie') {
-                  alert('⚠️ Profil non vérifié\n\nVous devez d\'abord compléter la vérification de votre profil (KBIS, CNI, RC Pro) avant d\'accéder à cette section.\n\nVous allez être redirigé vers la page de vérification.');
-                  handleNavigation('/artisan/verification');
-                } else {
-                  handleNavigation(isArtisan ? '/artisan/profil' : '/profil');
-                }
-              }}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
-            >
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-              <span className="font-medium">{isArtisan ? 'Espace Artisan' : 'Mon profil'}</span>
-              {isArtisan && user.statut !== 'verifie' && (
-                <span className="text-lg">
-                  🔒
-                </span>
-              )}
-            </button>
+            {/* Espace Artisan - uniquement pour artisans */}
+            {isArtisan && (
+              <button
+                onClick={() => {
+                  // Bloquer l'accès au profil pour les artisans non vérifiés
+                  if (user.statut !== 'verifie') {
+                    alert('⚠️ Profil non vérifié\n\nVous devez d\'abord compléter la vérification de votre profil (KBIS, CNI, RC Pro) avant d\'accéder à cette section.\n\nVous allez être redirigé vers la page de vérification.');
+                    handleNavigation('/artisan/verification');
+                  } else {
+                    handleNavigation('/artisan/profil');
+                  }
+                }}
+                className="w-full px-4 py-3 text-left hover:bg-gray-50 transition flex items-center gap-3 text-gray-700"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                <span className="font-medium">Espace Artisan</span>
+                {user.statut !== 'verifie' && (
+                  <span className="text-lg">
+                    🔒
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Liens spécifiques client */}
             {!isArtisan && (
