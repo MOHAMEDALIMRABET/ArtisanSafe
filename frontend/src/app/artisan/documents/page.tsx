@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { getUserById } from '@/lib/firebase/user-service';
@@ -38,6 +39,7 @@ async function createAdminNotification(artisanId: string, notification: {
 
 export default function DocumentsUploadPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -423,12 +425,12 @@ export default function DocumentsUploadPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Retour au tableau de bord
+            {t('documents.backToDashboard')}
           </button>
 
-          <h1 className="text-3xl font-bold text-gray-900">Documents Justificatifs</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('documents.pageTitle')}</h1>
           <p className="text-gray-600 mt-2">
-            Uploadez vos documents pour finaliser la vérification de votre profil
+            {t('documents.pageDescription')}
           </p>
         </div>
 
@@ -441,13 +443,13 @@ export default function DocumentsUploadPage() {
               </svg>
               <div>
                 <p className="text-sm text-yellow-700">
-                  <strong>Attention :</strong> Complétez d'abord la vérification SIRET avant d'uploader vos documents.
+                  <strong>{t('common.wait')}:</strong> {t('documents.siretWarning')}
                 </p>
                 <button
                   onClick={() => router.push('/artisan/verification')}
                   className="text-sm text-yellow-700 underline mt-1"
                 >
-                  → Aller aux vérifications
+                  {t('documents.goToVerification')}
                 </button>
               </div>
             </div>
@@ -473,24 +475,24 @@ export default function DocumentsUploadPage() {
                   )}
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Extrait Kbis</h3>
-                  <p className="text-sm text-gray-600">Moins de 3 mois</p>
+                  <h3 className="font-bold text-lg">{t('documents.kbis.title')}</h3>
+                  <p className="text-sm text-gray-600">{t('documents.kbis.description')}</p>
                 </div>
               </div>
 
               {kbisVerified && (
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  ✓ Vérifié
+                  ✓ {t('documents.status.verified')}
                 </span>
               )}
               {kbisRejected && (
                 <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  ✗ Rejeté
+                  ✗ {t('documents.status.rejected')}
                 </span>
               )}
               {kbisUploaded && !kbisVerified && !kbisSuccess && (
                 <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  En cours de vérification
+                  {t('documents.status.pending')}
                 </span>
               )}
             </div>
@@ -498,7 +500,7 @@ export default function DocumentsUploadPage() {
             {kbisSuccess && (
               <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
                 <p className="text-sm text-green-700 font-semibold">
-                  ✅ Document uploadé ! Il sera vérifié par notre équipe sous 24-48h.
+                  {t('documents.messages.uploadSuccess')}
                 </p>
               </div>
             )}
@@ -509,13 +511,13 @@ export default function DocumentsUploadPage() {
                   <span className="text-2xl">❌</span>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-red-800 mb-2">
-                      Document rejeté par notre équipe
+                      {t('documents.messages.rejectedTitle')}
                     </p>
                     <p className="text-sm text-red-700 mb-3">
-                      <strong>Raison :</strong> {kbisRejectionReason || 'Non spécifiée'}
+                      <strong>{t('documents.messages.rejectedReason')}</strong> {kbisRejectionReason || t('documents.messages.rejectedReasonNotSpecified')}
                     </p>
                     <p className="text-sm text-red-600">
-                      📤 Veuillez uploader un nouveau document conforme aux exigences.
+                      {t('documents.messages.rejectedAction')}
                     </p>
                   </div>
                 </div>
@@ -533,7 +535,7 @@ export default function DocumentsUploadPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Sélectionner le fichier Kbis (PDF, JPG, PNG)
+                      {t('documents.kbis.selectFile')}
                     </label>
                     <input
                       type="file"
@@ -565,10 +567,10 @@ export default function DocumentsUploadPage() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Traitement en cours...
+                        {t('documents.kbis.uploading')}
                       </span>
                     ) : (
-                      '📤 Uploader le Kbis'
+                      t('documents.kbis.uploadButton')
                     )}
                   </button>
                 </div>
@@ -594,24 +596,24 @@ export default function DocumentsUploadPage() {
                   )}
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Pièce d'Identité</h3>
-                  <p className="text-sm text-gray-600">CNI ou Passeport en cours de validité</p>
+                  <h3 className="font-bold text-lg">{t('documents.idCard.title')}</h3>
+                  <p className="text-sm text-gray-600">{t('documents.idCard.description')}</p>
                 </div>
               </div>
 
               {idVerified && (
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  ✓ Vérifié
+                  ✓ {t('documents.status.verified')}
                 </span>
               )}
               {idRejected && (
                 <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  ✗ Rejeté
+                  ✗ {t('documents.status.rejected')}
                 </span>
               )}
               {idUploaded && !idVerified && !idSuccess && (
                 <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  En cours de vérification
+                  {t('documents.status.pending')}
                 </span>
               )}
             </div>
@@ -619,7 +621,7 @@ export default function DocumentsUploadPage() {
             {idSuccess && (
               <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
                 <p className="text-sm text-green-700">
-                  ✅ Document uploadé ! Il sera vérifié par notre équipe sous 24-48h.
+                  {t('documents.messages.uploadSuccess')}
                 </p>
               </div>
             )}
@@ -630,13 +632,13 @@ export default function DocumentsUploadPage() {
                   <span className="text-2xl">❌</span>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-red-800 mb-2">
-                      Document rejeté par notre équipe
+                      {t('documents.messages.rejectedTitle')}
                     </p>
                     <p className="text-sm text-red-700 mb-3">
-                      <strong>Raison :</strong> {idRejectionReason || 'Non spécifiée'}
+                      <strong>{t('documents.messages.rejectedReason')}</strong> {idRejectionReason || t('documents.messages.rejectedReasonNotSpecified')}
                     </p>
                     <p className="text-sm text-red-600">
-                      📤 Veuillez uploader un nouveau document conforme aux exigences.
+                      {t('documents.messages.rejectedAction')}
                     </p>
                   </div>
                 </div>
@@ -647,12 +649,12 @@ export default function DocumentsUploadPage() {
               <div>
                 <div className="bg-gray-50 border-l-4 border-gray-300 p-4 mb-4">
                   <p className="text-sm text-[#2C3E50]">
-                    <strong>📸 Instructions :</strong>
+                    <strong>{t('documents.idCard.instructionsTitle')}</strong>
                   </p>
                   <ul className="text-sm text-[#2C3E50] list-disc list-inside space-y-1 mt-2">
-                    <li>Photo ou scan recto-verso de votre CNI/Passeport</li>
-                    <li>Image claire et lisible</li>
-                    <li>Format : JPG, PNG ou PDF (max 5MB)</li>
+                    <li>{t('documents.idCard.instruction1')}</li>
+                    <li>{t('documents.idCard.instruction2')}</li>
+                    <li>{t('documents.idCard.instruction3')}</li>
                   </ul>
                 </div>
 
@@ -665,7 +667,7 @@ export default function DocumentsUploadPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Sélectionner votre pièce d'identité (JPG, PNG, PDF)
+                      {t('documents.idCard.selectFile')}
                     </label>
                     <input
                       type="file"
@@ -697,9 +699,9 @@ export default function DocumentsUploadPage() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Envoi en cours...
+                        {t('documents.idCard.uploading')}
                       </>
-                    ) : '📤 Uploader la pièce d\'identité'}
+                    ) : t('documents.idCard.uploadButton')}
                   </button>
                 </div>
               </div>
@@ -724,24 +726,24 @@ export default function DocumentsUploadPage() {
                 )}
               </div>
               <div>
-                <h3 className="font-bold text-lg">Responsabilité Civile Professionnelle (RC Pro)</h3>
-                <p className="text-sm text-gray-600">Attestation RC Pro en cours de validité</p>
+                <h3 className="font-bold text-lg">{t('documents.rcPro.title')}</h3>
+                <p className="text-sm text-gray-600">{t('documents.rcPro.description')}</p>
               </div>
             </div>
 
             {rcProVerified && (
               <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                ✓ Vérifié
+                ✓ {t('documents.status.verified')}
               </span>
             )}
             {rcProRejected && (
               <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                ✗ Rejeté
+                ✗ {t('documents.status.rejected')}
               </span>
             )}
             {rcProUploaded && !rcProVerified && !rcProSuccess && (
               <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-                En cours de vérification
+                {t('documents.status.pending')}
               </span>
             )}
           </div>
@@ -749,7 +751,7 @@ export default function DocumentsUploadPage() {
           {rcProSuccess && (
             <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
               <p className="text-sm text-green-700">
-                ✅ Document uploadé ! Il sera vérifié par notre équipe sous 24-48h.
+                {t('documents.messages.uploadSuccess')}
               </p>
             </div>
           )}
@@ -760,13 +762,13 @@ export default function DocumentsUploadPage() {
                 <span className="text-2xl">❌</span>
                 <div className="flex-1">
                   <p className="text-sm font-bold text-red-800 mb-2">
-                    Document rejeté par notre équipe
+                    {t('documents.messages.rejectedTitle')}
                   </p>
                   <p className="text-sm text-red-700 mb-3">
-                    <strong>Raison :</strong> {rcProRejectionReason || 'Non spécifiée'}
+                    <strong>{t('documents.messages.rejectedReason')}</strong> {rcProRejectionReason || t('documents.messages.rejectedReasonNotSpecified')}
                   </p>
                   <p className="text-sm text-red-600">
-                    📤 Veuillez uploader un nouveau document conforme aux exigences.
+                    {t('documents.messages.rejectedAction')}
                   </p>
                 </div>
               </div>
@@ -776,12 +778,12 @@ export default function DocumentsUploadPage() {
           {(!rcProVerified && !rcProUploaded && !rcProSuccess) && (
             <div>
               <div className="bg-gray-50 border-l-4 border-gray-300 rounded-lg p-4 mb-4">
-                <h4 className="text-[#2C3E50] font-medium mb-2">🛡️ Instructions</h4>
+                <h4 className="text-[#2C3E50] font-medium mb-2">{t('documents.rcPro.instructionsTitle')}</h4>
                 <ul className="text-sm text-[#2C3E50] space-y-1 list-disc list-inside">
-                  <li>Attestation RC Pro en cours de validité</li>
-                  <li>Document clair et lisible</li>
-                  <li>Nom et SIRET visibles</li>
-                  <li>Format : PDF, JPG ou PNG</li>
+                  <li>{t('documents.rcPro.instruction1')}</li>
+                  <li>{t('documents.rcPro.instruction2')}</li>
+                  <li>{t('documents.rcPro.instruction3')}</li>
+                  <li>{t('documents.rcPro.instruction4')}</li>
                 </ul>
               </div>
 
@@ -794,7 +796,7 @@ export default function DocumentsUploadPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sélectionner votre RC Pro (JPG, PNG, PDF)
+                    {t('documents.rcPro.selectFile')}
                   </label>
                   <input
                     type="file"
@@ -826,9 +828,9 @@ export default function DocumentsUploadPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Envoi en cours...
+                      {t('documents.rcPro.uploading')}
                     </>
-                  ) : '📤 Uploader l\'attestation RC Pro'}
+                  ) : t('documents.rcPro.uploadButton')}
                 </button>
               </div>
             </div>
@@ -854,24 +856,24 @@ export default function DocumentsUploadPage() {
                   )}
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Garantie Décennale</h3>
-                  <p className="text-sm text-gray-600">Assurance obligatoire pour vos métiers</p>
+                  <h3 className="font-bold text-lg">{t('documents.decennale.title')}</h3>
+                  <p className="text-sm text-gray-600">{t('documents.decennale.description')}</p>
                 </div>
               </div>
 
               {decennaleVerified && (
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  ✓ Vérifié
+                  ✓ {t('documents.status.verified')}
                 </span>
               )}
               {decennaleRejected && (
                 <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  ✗ Rejeté
+                  ✗ {t('documents.status.rejected')}
                 </span>
               )}
               {decennaleUploaded && !decennaleVerified && !decennaleSuccess && (
                 <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  En cours de vérification
+                  {t('documents.status.pending')}
                 </span>
               )}
             </div>
@@ -888,16 +890,16 @@ export default function DocumentsUploadPage() {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-red-900 font-medium mb-1">Document refusé</h4>
+                      <h4 className="text-red-900 font-medium mb-1">{t('documents.messages.rejectedShort')}</h4>
                       <p className="text-sm text-red-700">{decennaleRejectionReason}</p>
-                      <p className="text-sm text-red-600 mt-2">Veuillez uploader un nouveau document conforme.</p>
+                      <p className="text-sm text-red-600 mt-2">{t('documents.messages.uploadNewDocument')}</p>
                     </div>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sélectionner votre nouvelle attestation (JPG, PNG, PDF)
+                    {t('documents.decennale.selectFile')}
                   </label>
                   <input
                     type="file"
@@ -926,14 +928,14 @@ export default function DocumentsUploadPage() {
                   {decennaleUploading ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Envoi en cours...
+                      {t('documents.decennale.uploading')}
                     </>
                   ) : (
                     <>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
-                      Télécharger
+                      {t('buttons.download')}
                     </>
                   )}
                 </button>
@@ -953,21 +955,21 @@ export default function DocumentsUploadPage() {
             ) : decennaleUploaded && !decennaleSuccess ? null : (
               <div className="space-y-4">
                 <div className="bg-yellow-50 border-l-4 border-[#FFC107] rounded-lg p-4">
-                  <h4 className="text-yellow-900 font-medium mb-2">⚠️ Document obligatoire</h4>
+                  <h4 className="text-yellow-900 font-medium mb-2">{t('documents.decennale.mandatoryTitle')}</h4>
                   <p className="text-sm text-yellow-800 mb-3">
-                    Vos métiers nécessitent une garantie décennale obligatoire. Sans ce document, votre profil ne pourra pas être activé.
+                    {t('documents.decennale.mandatoryDescription')}
                   </p>
                   <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside">
-                    <li>Attestation décennale en cours de validité</li>
-                    <li>Couvrant vos métiers déclarés</li>
-                    <li>Document clair et lisible</li>
-                    <li>Format : PDF, JPG ou PNG</li>
+                    <li>{t('documents.decennale.instruction1')}</li>
+                    <li>{t('documents.decennale.instruction2')}</li>
+                    <li>{t('documents.decennale.instruction3')}</li>
+                    <li>{t('documents.decennale.instruction4')}</li>
                   </ul>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sélectionner votre attestation décennale (JPG, PNG, PDF)
+                    {t('documents.decennale.selectFile')}
                   </label>
                   <input
                     type="file"
@@ -999,9 +1001,9 @@ export default function DocumentsUploadPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Envoi en cours...
+                      {t('documents.decennale.uploading')}
                     </>
-                  ) : '📤 Uploader l\'attestation décennale'}
+                  ) : t('documents.decennale.uploadButton')}
                 </button>
 
                 {decennaleError && (

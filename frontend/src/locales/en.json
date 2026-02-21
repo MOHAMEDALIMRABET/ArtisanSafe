@@ -667,5 +667,70 @@
     "close": "Close",
     "yes": "Yes",
     "no": "No"
+  },
+  "documents": {
+    "pageTitle": "Supporting Documents",
+    "pageDescription": "Upload your documents to finalize your profile verification",
+    "backToDashboard": "Back to dashboard",
+    "siretWarning": "Warning: Complete SIRET verification first before uploading your documents",
+    "goToVerification": "→ Go to verifications",
+    "status": {
+      "verified": "Verified",
+      "rejected": "Rejected",
+      "pending": "Under review"
+    },
+    "kbis": {
+      "title": "Kbis Extract",
+      "description": "Less than 3 months old",
+      "selectFile": "Select Kbis file (PDF, JPG, PNG)",
+      "uploadButton": "📤 Upload Kbis",
+      "uploading": "Processing..."
+    },
+    "idCard": {
+      "title": "ID Card",
+      "description": "Valid ID card or Passport",
+      "selectFile": "Select your ID card (JPG, PNG, PDF)",
+      "uploadButton": "📤 Upload ID card",
+      "uploading": "Uploading...",
+      "instructionsTitle": "📸 Instructions:",
+      "instruction1": "Photo or scan of both sides of your ID/Passport",
+      "instruction2": "Clear and readable image",
+      "instruction3": "Format: JPG, PNG or PDF (max 5MB)"
+    },
+    "rcPro": {
+      "title": "Professional Civil Liability (RC Pro)",
+      "description": "Valid RC Pro certificate",
+      "selectFile": "Select your RC Pro (JPG, PNG, PDF)",
+      "uploadButton": "📤 Upload RC Pro certificate",
+      "uploading": "Uploading...",
+      "instructionsTitle": "🛡️ Instructions",
+      "instruction1": "Valid RC Pro certificate",
+      "instruction2": "Clear and readable document",
+      "instruction3": "Name and SIRET visible",
+      "instruction4": "Format: PDF, JPG or PNG"
+    },
+    "decennale": {
+      "title": "Ten-Year Liability Insurance",
+      "description": "Mandatory insurance for your trades",
+      "selectFile": "Select your ten-year insurance certificate (JPG, PNG, PDF)",
+      "uploadButton": "📤 Upload ten-year insurance certificate",
+      "uploading": "Uploading...",
+      "mandatoryTitle": "⚠️ Mandatory document",
+      "mandatoryDescription": "Your trades require mandatory ten-year liability insurance. Without this document, your profile cannot be activated.",
+      "instruction1": "Valid ten-year insurance certificate",
+      "instruction2": "Covering your declared trades",
+      "instruction3": "Clear and readable document",
+      "instruction4": "Format: PDF, JPG or PNG"
+    },
+    "messages": {
+      "uploadSuccess": "✅ Document uploaded! It will be verified by our team within 24-48h.",
+      "rejectedTitle": "Document rejected by our team",
+      "rejectedReason": "Reason:",
+      "rejectedReasonNotSpecified": "Not specified",
+      "rejectedAction": "📤 Please upload a new document that meets the requirements.",
+      "rejectedShort": "Document rejected",
+      "uploadNewDocument": "Please upload a new compliant document.",
+      "fileSelected": "📎 {filename} ({size} MB)"
+    }
   }
 }

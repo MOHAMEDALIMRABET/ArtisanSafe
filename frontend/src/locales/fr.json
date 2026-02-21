@@ -675,5 +675,70 @@
     "close": "Fermer",
     "yes": "Oui",
     "no": "Non"
+  },
+  "documents": {
+    "pageTitle": "Documents Justificatifs",
+    "pageDescription": "Uploadez vos documents pour finaliser la vérification de votre profil",
+    "backToDashboard": "Retour au tableau de bord",
+    "siretWarning": "Attention : Complétez d'abord la vérification SIRET avant d'uploader vos documents",
+    "goToVerification": "→ Aller aux vérifications",
+    "status": {
+      "verified": "Vérifié",
+      "rejected": "Rejeté",
+      "pending": "En cours de vérification"
+    },
+    "kbis": {
+      "title": "Extrait Kbis",
+      "description": "Moins de 3 mois",
+      "selectFile": "Sélectionner le fichier Kbis (PDF, JPG, PNG)",
+      "uploadButton": "📤 Uploader le Kbis",
+      "uploading": "Traitement en cours..."
+    },
+    "idCard": {
+      "title": "Pièce d'Identité",
+      "description": "CNI ou Passeport en cours de validité",
+      "selectFile": "Sélectionner votre pièce d'identité (JPG, PNG, PDF)",
+      "uploadButton": "📤 Uploader la pièce d'identité",
+      "uploading": "Envoi en cours...",
+      "instructionsTitle": "📸 Instructions :",
+      "instruction1": "Photo ou scan recto-verso de votre CNI/Passeport",
+      "instruction2": "Image claire et lisible",
+      "instruction3": "Format : JPG, PNG ou PDF (max 5MB)"
+    },
+    "rcPro": {
+      "title": "Responsabilité Civile Professionnelle (RC Pro)",
+      "description": "Attestation RC Pro en cours de validité",
+      "selectFile": "Sélectionner votre RC Pro (JPG, PNG, PDF)",
+      "uploadButton": "📤 Uploader l'attestation RC Pro",
+      "uploading": "Envoi en cours...",
+      "instructionsTitle": "🛡️ Instructions",
+      "instruction1": "Attestation RC Pro en cours de validité",
+      "instruction2": "Document clair et lisible",
+      "instruction3": "Nom et SIRET visibles",
+      "instruction4": "Format : PDF, JPG ou PNG"
+    },
+    "decennale": {
+      "title": "Garantie Décennale",
+      "description": "Assurance obligatoire pour vos métiers",
+      "selectFile": "Sélectionner votre attestation décennale (JPG, PNG, PDF)",
+      "uploadButton": "📤 Uploader l'attestation décennale",
+      "uploading": "Envoi en cours...",
+      "mandatoryTitle": "⚠️ Document obligatoire",
+      "mandatoryDescription": "Vos métiers nécessitent une garantie décennale obligatoire. Sans ce document, votre profil ne pourra pas être activé.",
+      "instruction1": "Attestation décennale en cours de validité",
+      "instruction2": "Couvrant vos métiers déclarés",
+      "instruction3": "Document clair et lisible",
+      "instruction4": "Format : PDF, JPG ou PNG"
+    },
+    "messages": {
+      "uploadSuccess": "✅ Document uploadé ! Il sera vérifié par notre équipe sous 24-48h.",
+      "rejectedTitle": "Document rejeté par notre équipe",
+      "rejectedReason": "Raison :",
+      "rejectedReasonNotSpecified": "Non spécifiée",
+      "rejectedAction": "📤 Veuillez uploader un nouveau document conforme aux exigences.",
+      "rejectedShort": "Document refusé",
+      "uploadNewDocument": "Veuillez uploader un nouveau document conforme.",
+      "fileSelected": "📎 {filename} ({size} MB)"
+    }
   }
 }
