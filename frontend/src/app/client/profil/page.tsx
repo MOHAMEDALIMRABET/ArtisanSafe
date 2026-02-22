@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getUserById, updateUser } from '@/lib/firebase/user-service';
 import type { User } from '@/types/firestore';
 
 export default function ProfilClientPage() {
   const router = useRouter();
   const { user: authUser, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -42,7 +44,7 @@ export default function ProfilClientPage() {
 
       const user = await getUserById(authUser.uid);
       if (!user) {
-        setError('Profil introuvable');
+        setError(t('clientProfile.errors.profileNotFound'));
         return;
       }
 
@@ -58,7 +60,7 @@ export default function ProfilClientPage() {
       setTelephone(user.telephone || '');
     } catch (err: any) {
       console.error('Erreur chargement profil:', err);
-      setError(err.message || 'Erreur lors du chargement du profil');
+      setError(err.message || t('clientProfile.errors.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -71,19 +73,19 @@ export default function ProfilClientPage() {
 
     // Validation
     if (!nom.trim() || !prenom.trim()) {
-      setError('Le nom et le prénom sont obligatoires');
+      setError(t('clientProfile.errors.nameRequired'));
       return;
     }
 
     if (!telephone.trim()) {
-      setError('Le téléphone est obligatoire');
+      setError(t('clientProfile.errors.phoneRequired'));
       return;
     }
 
     // Validation téléphone (format français)
     const phoneRegex = /^(?:(?:\+|00)33|0)[1-9](?:[0-9]{8})$/;
     if (!phoneRegex.test(telephone.replace(/[\s.-]/g, ''))) {
-      setError('Format de téléphone invalide (ex: 06 12 34 56 78)');
+      setError(t('clientProfile.errors.phoneInvalid'));
       return;
     }
 
@@ -99,7 +101,7 @@ export default function ProfilClientPage() {
         telephone: telephone.trim(),
       });
 
-      setSuccess('✅ Profil mis à jour avec succès !');
+      setSuccess(t('clientProfile.success.profileUpdated'));
       
       // Recharger le profil
       await loadUserProfile();
@@ -108,7 +110,7 @@ export default function ProfilClientPage() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       console.error('Erreur mise à jour profil:', err);
-      setError(err.message || 'Erreur lors de la mise à jour du profil');
+      setError(err.message || t('clientProfile.errors.updateError'));
     } finally {
       setIsSaving(false);
     }
@@ -119,7 +121,7 @@ export default function ProfilClientPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
-          <p className="text-[#6C757D]">Chargement du profil...</p>
+          <p className="text-[#6C757D]">{t('clientProfile.loading')}</p>
         </div>
       </div>
     );
@@ -131,8 +133,8 @@ export default function ProfilClientPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Titre */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Mon profil</h1>
-          <p className="text-[#6C757D]">Gérez vos informations personnelles</p>
+          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">{t('clientProfile.pageTitle')}</h1>
+          <p className="text-[#6C757D]">{t('clientProfile.pageDescription')}</p>
         </div>
 
         {/* Messages */}
@@ -154,7 +156,7 @@ export default function ProfilClientPage() {
             {/* Nom */}
             <div>
               <label htmlFor="nom" className="block text-sm font-medium text-[#2C3E50] mb-2">
-                Nom <span className="text-red-500">*</span>
+                {t('clientProfile.form.lastName')} <span className="text-red-500">{t('clientProfile.form.required')}</span>
               </label>
               <input
                 type="text"
@@ -169,7 +171,7 @@ export default function ProfilClientPage() {
             {/* Prénom */}
             <div>
               <label htmlFor="prenom" className="block text-sm font-medium text-[#2C3E50] mb-2">
-                Prénom <span className="text-red-500">*</span>
+                {t('clientProfile.form.firstName')} <span className="text-red-500">{t('clientProfile.form.required')}</span>
               </label>
               <input
                 type="text"
@@ -184,7 +186,7 @@ export default function ProfilClientPage() {
             {/* Email (non modifiable) */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-[#2C3E50] mb-2">
-                Email
+                {t('clientProfile.form.email')}
               </label>
               <input
                 type="email"
@@ -194,21 +196,21 @@ export default function ProfilClientPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
               />
               <p className="mt-1 text-xs text-[#6C757D]">
-                L'email ne peut pas être modifié
+                {t('clientProfile.form.emailDisabledNote')}
               </p>
             </div>
 
             {/* Téléphone */}
             <div>
               <label htmlFor="telephone" className="block text-sm font-medium text-[#2C3E50] mb-2">
-                Téléphone <span className="text-red-500">*</span>
+                {t('clientProfile.form.phone')} <span className="text-red-500">{t('clientProfile.form.required')}</span>
               </label>
               <input
                 type="tel"
                 id="telephone"
                 value={telephone}
                 onChange={(e) => setTelephone(e.target.value)}
-                placeholder="06 12 34 56 78"
+                placeholder={t('clientProfile.form.phonePlaceholder')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                 required
               />
@@ -216,21 +218,21 @@ export default function ProfilClientPage() {
 
             {/* Informations compte */}
             <div className="pt-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-[#2C3E50] mb-4">Informations du compte</h3>
+              <h3 className="text-lg font-semibold text-[#2C3E50] mb-4">{t('clientProfile.accountInfo.title')}</h3>
               <div className="space-y-2 text-sm">
                 <p className="text-[#6C757D]">
-                  <span className="font-medium">Type de compte :</span> Client
+                  <span className="font-medium">{t('clientProfile.accountInfo.accountType')}</span> {t('clientProfile.accountInfo.accountTypeClient')}
                 </p>
                 <p className="text-[#6C757D]">
-                  <span className="font-medium">Statut :</span>{' '}
+                  <span className="font-medium">{t('clientProfile.accountInfo.status')}</span>{' '}
                   {userData?.statut === 'verifie' ? (
-                    <span className="text-green-600">✓ Vérifié</span>
+                    <span className="text-green-600">{t('clientProfile.accountInfo.statusVerified')}</span>
                   ) : (
-                    <span className="text-orange-600">En attente de vérification</span>
+                    <span className="text-orange-600">{t('clientProfile.accountInfo.statusPending')}</span>
                   )}
                 </p>
                 <p className="text-[#6C757D]">
-                  <span className="font-medium">Membre depuis :</span>{' '}
+                  <span className="font-medium">{t('clientProfile.accountInfo.memberSince')}</span>{' '}
                   {userData?.dateCreation?.toDate?.().toLocaleDateString('fr-FR') || 'N/A'}
                 </p>
               </div>
@@ -243,13 +245,13 @@ export default function ProfilClientPage() {
                 disabled={isSaving}
                 className="flex-1 bg-[#FF6B00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                {isSaving ? t('clientProfile.buttons.saving') : t('clientProfile.buttons.save')}
               </button>
               <Link
                 href="/client/demandes"
                 className="flex-1 bg-gray-200 text-[#2C3E50] px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition text-center"
               >
-                Annuler
+                {t('clientProfile.buttons.cancel')}
               </Link>
             </div>
           </form>

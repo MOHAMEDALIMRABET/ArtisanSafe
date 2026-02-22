@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { authService } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
@@ -11,6 +12,7 @@ import Link from 'next/link';
 
 export default function AvisArtisanPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [avis, setAvis] = useState<Avis[]>([]);
@@ -126,14 +128,14 @@ export default function AvisArtisanPage() {
     setSubmitting(true);
     try {
       await addReponseArtisan(avisId, artisan.userId, reponseTexte);
-      alert('✅ Votre réponse a été publiée avec succès !');
+      alert(t('artisanReviews.alerts.responsePublished'));
       setReponseEnCours(null);
       setReponseTexte('');
       
       // Recharger les avis
       await loadData();
     } catch (error: any) {
-      alert(`❌ Erreur : ${error.message}`);
+      alert(t('artisanReviews.alerts.error').replace('{message}', error.message));
     } finally {
       setSubmitting(false);
     }
@@ -170,7 +172,7 @@ export default function AvisArtisanPage() {
       <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
+          <p className="mt-4 text-gray-600">{t('artisanReviews.loading')}</p>
         </div>
       </div>
     );
@@ -188,15 +190,15 @@ export default function AvisArtisanPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Retour au tableau de bord
+            {t('artisanReviews.backToDashboard')}
           </Link>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Avis Clients</h1>
+          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">{t('artisanReviews.pageTitle')}</h1>
           <p className="text-gray-600">
-            Consultez les retours de vos clients et répondez-y pour améliorer votre réputation
+            {t('artisanReviews.pageDescription')}
           </p>
         </div>
 
@@ -205,7 +207,7 @@ export default function AvisArtisanPage() {
           <div className="grid md:grid-cols-2 gap-8">
             {/* Note globale */}
             <div>
-              <h2 className="text-lg font-semibold text-[#2C3E50] mb-4">Note globale</h2>
+              <h2 className="text-lg font-semibold text-[#2C3E50] mb-4">{t('artisanReviews.stats.globalRating')}</h2>
               <div className="flex items-center gap-6">
                 <div className="text-6xl font-bold text-[#FF6B00]">
                   {stats.moyenne.toFixed(1)}
@@ -213,7 +215,7 @@ export default function AvisArtisanPage() {
                 <div>
                   {renderStars(Math.round(stats.moyenne))}
                   <p className="text-sm text-gray-600 mt-1">
-                    {stats.total} avis au total
+                    {t('artisanReviews.stats.totalReviews').replace('{total}', String(stats.total))}
                   </p>
                 </div>
               </div>
@@ -221,7 +223,7 @@ export default function AvisArtisanPage() {
 
             {/* Répartition */}
             <div>
-              <h2 className="text-lg font-semibold text-[#2C3E50] mb-4">Répartition des notes</h2>
+              <h2 className="text-lg font-semibold text-[#2C3E50] mb-4">{t('artisanReviews.stats.distribution')}</h2>
               <div className="space-y-2">
                 {calculerRepartition().map(({ note, count, percentage }) => (
                   <div key={note} className="flex items-center gap-3">
@@ -248,50 +250,50 @@ export default function AvisArtisanPage() {
             {/* Filtre par note */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Filtrer par note
+                {t('artisanReviews.filters.filterByRating')}
               </label>
               <select
                 value={filtreNote || ''}
                 onChange={(e) => setFiltreNote(e.target.value ? parseInt(e.target.value) : null)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
               >
-                <option value="">Toutes les notes</option>
-                <option value="5">5 étoiles</option>
-                <option value="4">4 étoiles</option>
-                <option value="3">3 étoiles</option>
-                <option value="2">2 étoiles</option>
-                <option value="1">1 étoile</option>
+                <option value="">{t('artisanReviews.filters.allRatings')}</option>
+                <option value="5">{t('artisanReviews.filters.fiveStars')}</option>
+                <option value="4">{t('artisanReviews.filters.fourStars')}</option>
+                <option value="3">{t('artisanReviews.filters.threeStars')}</option>
+                <option value="2">{t('artisanReviews.filters.twoStars')}</option>
+                <option value="1">{t('artisanReviews.filters.oneStar')}</option>
               </select>
             </div>
 
             {/* Tri */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trier par
+                {t('artisanReviews.filters.sortBy')}
               </label>
               <select
                 value={tri}
                 onChange={(e) => setTri(e.target.value as any)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
               >
-                <option value="recent">Plus récents</option>
-                <option value="ancien">Plus anciens</option>
-                <option value="note-haute">Note la plus élevée</option>
-                <option value="note-basse">Note la plus basse</option>
+                <option value="recent">{t('artisanReviews.filters.mostRecent')}</option>
+                <option value="ancien">{t('artisanReviews.filters.oldest')}</option>
+                <option value="note-haute">{t('artisanReviews.filters.highestRating')}</option>
+                <option value="note-basse">{t('artisanReviews.filters.lowestRating')}</option>
               </select>
             </div>
 
             {/* Recherche */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rechercher
+                {t('artisanReviews.filters.search')}
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={recherche}
                   onChange={(e) => setRecherche(e.target.value)}
-                  placeholder="Mot-clé dans les avis..."
+                  placeholder={t('artisanReviews.filters.searchPlaceholder')}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                 />
                 <svg
@@ -310,7 +312,9 @@ export default function AvisArtisanPage() {
           {(filtreNote !== null || recherche.trim()) && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <p className="text-sm text-gray-600">
-                {avisFiltres.length} résultat{avisFiltres.length !== 1 ? 's' : ''} trouvé{avisFiltres.length !== 1 ? 's' : ''}
+                {t('artisanReviews.filters.resultsFound')
+                  .replace('{count}', String(avisFiltres.length))
+                  .replace('{plural}', avisFiltres.length !== 1 ? t('artisanReviews.filters.resultPlural') : t('artisanReviews.filters.resultSingular'))}
               </p>
             </div>
           )}
@@ -324,12 +328,12 @@ export default function AvisArtisanPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                {avis.length === 0 ? 'Aucun avis pour le moment' : 'Aucun résultat'}
+                {avis.length === 0 ? t('artisanReviews.empty.noReviews') : t('artisanReviews.empty.noResults')}
               </h3>
               <p className="text-gray-500">
                 {avis.length === 0
-                  ? 'Les avis de vos clients apparaîtront ici après la fin de leurs interventions.'
-                  : 'Essayez de modifier vos filtres de recherche.'}
+                  ? t('artisanReviews.empty.noReviewsMessage')
+                  : t('artisanReviews.empty.noResultsMessage')}
               </p>
             </div>
           ) : (
@@ -344,12 +348,12 @@ export default function AvisArtisanPage() {
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-[#2C3E50]">Client</span>
+                      <span className="font-semibold text-[#2C3E50]">{t('artisanReviews.review.client')}</span>
                       <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
-                        Vérifié
+                        {t('artisanReviews.review.verified')}
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -411,7 +415,7 @@ export default function AvisArtisanPage() {
                       <img
                         key={idx}
                         src={photo}
-                        alt={`Photo ${idx + 1}`}
+                        alt={t('artisanReviews.review.photo').replace('{number}', String(idx + 1))}
                         className="h-28 w-28 object-cover rounded-lg border-2 border-gray-200 hover:border-[#FF6B00] transition-colors cursor-pointer flex-shrink-0"
                       />
                     ))}
@@ -425,7 +429,7 @@ export default function AvisArtisanPage() {
                       <svg className="w-5 h-5 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                       </svg>
-                      <span className="font-semibold text-[#2C3E50]">Votre réponse</span>
+                      <span className="font-semibold text-[#2C3E50]">{t('artisanReviews.review.yourResponse')}</span>
                       <span className="text-sm text-gray-500">
                         • {formatDate(avisItem.reponseArtisan.date)}
                       </span>
@@ -439,14 +443,14 @@ export default function AvisArtisanPage() {
                     {reponseEnCours === avisItem.id ? (
                       <div className="border-t pt-4 mt-4">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Votre réponse (minimum 10 caractères) :
+                          {t('artisanReviews.review.responseLabel')}
                         </label>
                         <textarea
                           value={reponseTexte}
                           onChange={(e) => setReponseTexte(e.target.value)}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                           rows={4}
-                          placeholder="Merci pour votre retour ! ..."
+                          placeholder={t('artisanReviews.review.responsePlaceholder')}
                         />
                         <div className="flex gap-2 mt-2">
                           <button
@@ -454,7 +458,7 @@ export default function AvisArtisanPage() {
                             disabled={submitting || reponseTexte.trim().length < 10}
                             className="bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {submitting ? 'Publication...' : 'Publier la réponse'}
+                            {submitting ? t('artisanReviews.review.publishing') : t('artisanReviews.review.publishResponse')}
                           </button>
                           <button
                             onClick={() => {
@@ -463,7 +467,7 @@ export default function AvisArtisanPage() {
                             }}
                             className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
                           >
-                            Annuler
+                            {t('artisanReviews.review.cancel')}
                           </button>
                         </div>
                       </div>
@@ -475,7 +479,7 @@ export default function AvisArtisanPage() {
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                         </svg>
-                        Répondre à cet avis
+                        {t('artisanReviews.review.replyToReview')}
                       </button>
                     )}
                   </>

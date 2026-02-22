@@ -893,5 +893,185 @@
       "completed": "Les travaux ont été terminés et validés par les deux parties. Cette conversation est maintenant close. Vous pouvez consulter l'historique mais ne pouvez plus envoyer de messages."
     },
     "conversationClosed": "Conversation close"
+  },
+  "clientProfile": {
+    "pageTitle": "Mon profil",
+    "pageDescription": "Gérez vos informations personnelles",
+    "loading": "Chargement du profil...",
+    "form": {
+      "lastName": "Nom",
+      "firstName": "Prénom",
+      "email": "Email",
+      "phone": "Téléphone",
+      "phonePlaceholder": "06 12 34 56 78",
+      "required": "*",
+      "emailDisabledNote": "L'email ne peut pas être modifié"
+    },
+    "accountInfo": {
+      "title": "Informations du compte",
+      "accountType": "Type de compte :",
+      "accountTypeClient": "Client",
+      "status": "Statut :",
+      "statusVerified": "✓ Vérifié",
+      "statusPending": "En attente de vérification",
+      "memberSince": "Membre depuis :"
+    },
+    "buttons": {
+      "save": "Enregistrer les modifications",
+      "saving": "Enregistrement...",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "profileNotFound": "Profil introuvable",
+      "loadError": "Erreur lors du chargement du profil",
+      "nameRequired": "Le nom et le prénom sont obligatoires",
+      "phoneRequired": "Le téléphone est obligatoire",
+      "phoneInvalid": "Format de téléphone invalide (ex: 06 12 34 56 78)",
+      "updateError": "Erreur lors de la mise à jour du profil"
+    },
+    "success": {
+      "profileUpdated": "✅ Profil mis à jour avec succès !"
+    }
+  },
+  "clientRequests": {
+    "pageTitle": "Mes Demandes",
+    "pageSubtitle": "Suivez vos projets en temps réel",
+    "backToDashboard": "Retour au tableau de bord",
+    "newRequest": "Nouvelle demande",
+    "helpExpiration": "Aide : Expiration",
+    "success": {
+      "requestPublished": "✅ Votre demande a été publiée ! Les artisans qualifiés de votre région peuvent maintenant la consulter et vous envoyer des devis."
+    },
+    "sections": {
+      "all": "Toutes",
+      "sent": "🎯 Envoyés",
+      "published": "📢 Publiées",
+      "processing": "⏳ En traitement",
+      "processed": "✅ Traitées"
+    },
+    "sectionDescriptions": {
+      "sent": "Demandes directes envoyées à un artisan spécifique, en attente de devis",
+      "published": "Demandes publiques visibles par tous les artisans, en attente de propositions",
+      "processing": "Demandes avec au moins un devis reçu, en attente de votre décision",
+      "processed": "Demandes finalisées : payées, refusées, expirées, travaux en cours ou terminés"
+    },
+    "subFilters": {
+      "all": "Tout",
+      "signedQuotes": "✅ Devis signés",
+      "workInProgress": "🚧 Travaux en cours",
+      "completed": "🎉 Terminés",
+      "refused": "❌ Refusées",
+      "expired": "⏰ Expirées"
+    },
+    "empty": {
+      "title": "Aucune demande pour le moment",
+      "description": "Commencez par rechercher un artisan pour recevoir des devis personnalisés",
+      "searchButton": "Rechercher un artisan"
+    },
+    "details": {
+      "title": "📋 Détails complets de la demande",
+      "description": "Description :",
+      "category": "Catégorie",
+      "createdOn": "Créée le",
+      "startDate": "Début:",
+      "delay": "Délai :",
+      "days": "jour(s)",
+      "photos": "📸 Photos du projet",
+      "location": "📍 Localisation",
+      "city": "Ville :",
+      "postalCode": "Code postal :",
+      "address": "Adresse :",
+      "desiredDates": "📅 Dates souhaitées",
+      "date": "Date",
+      "noDateSpecified": "Aucune date spécifiée",
+      "flexibleDates": "✅ Dates flexibles jusqu'à {days} jours",
+      "urgent": "🚨 Demande urgente"
+    },
+    "status": {
+      "draft": "📝 Brouillon",
+      "published": "📢 Publiée",
+      "sent": "📧 Envoyée",
+      "inProgress": "⏳ En cours",
+      "cancelled": "❌ Annulée",
+      "expired": "⏰ Expirée",
+      "quoteSigned": "✅ Devis signé",
+      "workInProgress": "🚧 Travaux en cours",
+      "workCompleted": "✅ Travaux terminés",
+      "quoteRefused": "❌ Devis refusé"
+    },
+    "craftsman": {
+      "label": "Artisan",
+      "notAssigned": "Artisan non assigné"
+    },
+    "buttons": {
+      "completeDraft": "Compléter ce brouillon",
+      "retrySearch": "Relancer cette recherche",
+      "delete": "Supprimer",
+      "viewQuote": "📋 Voir devis payé",
+      "contactCraftsman": "💬 Contacter artisan",
+      "searchAnother": "🔍 Chercher un autre artisan"
+    },
+    "messages": {
+      "quoteAcceptedPaid": "✅ Devis accepté et payé - Contrat en cours",
+      "quoteSigned": "Vous avez signé et payé le devis de l'artisan."
+    },
+    "tooltips": {
+      "completeDraft": "Compléter et publier ce brouillon",
+      "retrySearch": "Relancer une recherche avec les mêmes critères",
+      "deleteRequest": "Supprimer cette demande",
+      "understandExpiration": "Comprendre l'expiration des demandes"
+    }
+  },
+  "artisanReviews": {
+    "pageTitle": "Avis Clients",
+    "pageDescription": "Consultez les retours de vos clients et répondez-y pour améliorer votre réputation",
+    "backToDashboard": "Retour au tableau de bord",
+    "loading": "Chargement...",
+    "stats": {
+      "globalRating": "Note globale",
+      "totalReviews": "{total} avis au total",
+      "distribution": "Répartition des notes"
+    },
+    "filters": {
+      "filterByRating": "Filtrer par note",
+      "allRatings": "Toutes les notes",
+      "fiveStars": "5 étoiles",
+      "fourStars": "4 étoiles",
+      "threeStars": "3 étoiles",
+      "twoStars": "2 étoiles",
+      "oneStar": "1 étoile",
+      "sortBy": "Trier par",
+      "mostRecent": "Plus récents",
+      "oldest": "Plus anciens",
+      "highestRating": "Note la plus élevée",
+      "lowestRating": "Note la plus basse",
+      "search": "Rechercher",
+      "searchPlaceholder": "Mot-clé dans les avis...",
+      "resultsFound": "{count} résultat{plural} trouvé{plural}",
+      "resultSingular": "",
+      "resultPlural": "s"
+    },
+    "empty": {
+      "noReviews": "Aucun avis pour le moment",
+      "noResults": "Aucun résultat",
+      "noReviewsMessage": "Les avis de vos clients apparaîtront ici après la fin de leurs interventions.",
+      "noResultsMessage": "Essayez de modifier vos filtres de recherche."
+    },
+    "review": {
+      "client": "Client",
+      "verified": "Vérifié",
+      "photo": "Photo {number}",
+      "yourResponse": "Votre réponse",
+      "responseLabel": "Votre réponse (minimum 10 caractères) :",
+      "responsePlaceholder": "Merci pour votre retour ! ...",
+      "publishResponse": "Publier la réponse",
+      "publishing": "Publication...",
+      "cancel": "Annuler",
+      "replyToReview": "Répondre à cet avis"
+    },
+    "alerts": {
+      "responsePublished": "✅ Votre réponse a été publiée avec succès !",
+      "error": "❌ Erreur : {message}"
+    }
   }
 }

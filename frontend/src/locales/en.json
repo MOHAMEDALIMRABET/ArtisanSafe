@@ -885,5 +885,185 @@
       "completed": "The work has been completed and validated by both parties. This conversation is now closed. You can view the history but can no longer send messages."
     },
     "conversationClosed": "Conversation closed"
+  },
+  "clientProfile": {
+    "pageTitle": "My Profile",
+    "pageDescription": "Manage your personal information",
+    "loading": "Loading profile...",
+    "form": {
+      "lastName": "Last Name",
+      "firstName": "First Name",
+      "email": "Email",
+      "phone": "Phone",
+      "phonePlaceholder": "06 12 34 56 78",
+      "required": "*",
+      "emailDisabledNote": "Email cannot be changed"
+    },
+    "accountInfo": {
+      "title": "Account Information",
+      "accountType": "Account type:",
+      "accountTypeClient": "Client",
+      "status": "Status:",
+      "statusVerified": "✓ Verified",
+      "statusPending": "Pending verification",
+      "memberSince": "Member since:"
+    },
+    "buttons": {
+      "save": "Save changes",
+      "saving": "Saving...",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "profileNotFound": "Profile not found",
+      "loadError": "Error loading profile",
+      "nameRequired": "Last name and first name are required",
+      "phoneRequired": "Phone is required",
+      "phoneInvalid": "Invalid phone format (ex: 06 12 34 56 78)",
+      "updateError": "Error updating profile"
+    },
+    "success": {
+      "profileUpdated": "✅ Profile updated successfully!"
+    }
+  },
+  "clientRequests": {
+    "pageTitle": "My Requests",
+    "pageSubtitle": "Track your projects in real time",
+    "backToDashboard": "Back to Dashboard",
+    "newRequest": "New Request",
+    "helpExpiration": "Help: Expiration",
+    "success": {
+      "requestPublished": "✅ Your request has been published! Qualified craftspeople in your area can now view it and send you quotes."
+    },
+    "sections": {
+      "all": "All",
+      "sent": "🎯 Sent",
+      "published": "📢 Published",
+      "processing": "⏳ In Progress",
+      "processed": "✅ Processed"
+    },
+    "sectionDescriptions": {
+      "sent": "Direct requests sent to a specific craftsperson, awaiting quote",
+      "published": "Public requests visible to all craftspeople, awaiting proposals",
+      "processing": "Requests with at least one quote received, awaiting your decision",
+      "processed": "Finalized requests: paid, refused, expired, work in progress or completed"
+    },
+    "subFilters": {
+      "all": "All",
+      "signedQuotes": "✅ Signed Quotes",
+      "workInProgress": "🚧 Work in Progress",
+      "completed": "🎉 Completed",
+      "refused": "❌ Refused",
+      "expired": "⏰ Expired"
+    },
+    "empty": {
+      "title": "No requests yet",
+      "description": "Start by searching for a craftsperson to receive personalized quotes",
+      "searchButton": "Search for a Craftsperson"
+    },
+    "details": {
+      "title": "📋 Complete Request Details",
+      "description": "Description:",
+      "category": "Category",
+      "createdOn": "Created on",
+      "startDate": "Start:",
+      "delay": "Deadline:",
+      "days": "day(s)",
+      "photos": "📸 Project Photos",
+      "location": "📍 Location",
+      "city": "City:",
+      "postalCode": "Postal code:",
+      "address": "Address:",
+      "desiredDates": "📅 Desired Dates",
+      "date": "Date",
+      "noDateSpecified": "No date specified",
+      "flexibleDates": "✅ Flexible dates up to {days} days",
+      "urgent": "🚨 Urgent request"
+    },
+    "status": {
+      "draft": "📝 Draft",
+      "published": "📢 Published",
+      "sent": "📧 Sent",
+      "inProgress": "⏳ In Progress",
+      "cancelled": "❌ Cancelled",
+      "expired": "⏰ Expired",
+      "quoteSigned": "✅ Quote Signed",
+      "workInProgress": "🚧 Work in Progress",
+      "workCompleted": "✅ Work Completed",
+      "quoteRefused": "❌ Quote Refused"
+    },
+    "craftsman": {
+      "label": "Craftsperson",
+      "notAssigned": "Craftsperson not assigned"
+    },
+    "buttons": {
+      "completeDraft": "Complete this draft",
+      "retrySearch": "Retry this search",
+      "delete": "Delete",
+      "viewQuote": "📋 View paid quote",
+      "contactCraftsman": "💬 Contact craftsperson",
+      "searchAnother": "🔍 Search for another craftsperson"
+    },
+    "messages": {
+      "quoteAcceptedPaid": "✅ Quote accepted and paid - Contract in progress",
+      "quoteSigned": "You have signed and paid the craftsperson's quote."
+    },
+    "tooltips": {
+      "completeDraft": "Complete and publish this draft",
+      "retrySearch": "Retry a search with the same criteria",
+      "deleteRequest": "Delete this request",
+      "understandExpiration": "Understand request expiration"
+    }
+  },
+  "artisanReviews": {
+    "pageTitle": "Client Reviews",
+    "pageDescription": "View your clients' feedback and respond to improve your reputation",
+    "backToDashboard": "Back to Dashboard",
+    "loading": "Loading...",
+    "stats": {
+      "globalRating": "Overall Rating",
+      "totalReviews": "{total} reviews in total",
+      "distribution": "Rating Distribution"
+    },
+    "filters": {
+      "filterByRating": "Filter by Rating",
+      "allRatings": "All Ratings",
+      "fiveStars": "5 stars",
+      "fourStars": "4 stars",
+      "threeStars": "3 stars",
+      "twoStars": "2 stars",
+      "oneStar": "1 star",
+      "sortBy": "Sort By",
+      "mostRecent": "Most Recent",
+      "oldest": "Oldest",
+      "highestRating": "Highest Rating",
+      "lowestRating": "Lowest Rating",
+      "search": "Search",
+      "searchPlaceholder": "Keyword in reviews...",
+      "resultsFound": "{count} result{plural} found",
+      "resultSingular": "",
+      "resultPlural": "s"
+    },
+    "empty": {
+      "noReviews": "No reviews yet",
+      "noResults": "No results",
+      "noReviewsMessage": "Your clients' reviews will appear here after their service is completed.",
+      "noResultsMessage": "Try modifying your search filters."
+    },
+    "review": {
+      "client": "Client",
+      "verified": "Verified",
+      "photo": "Photo {number}",
+      "yourResponse": "Your Response",
+      "responseLabel": "Your response (minimum 10 characters):",
+      "responsePlaceholder": "Thank you for your feedback! ...",
+      "publishResponse": "Publish Response",
+      "publishing": "Publishing...",
+      "cancel": "Cancel",
+      "replyToReview": "Reply to this review"
+    },
+    "alerts": {
+      "responsePublished": "✅ Your response has been published successfully!",
+      "error": "❌ Error: {message}"
+    }
   }
 }
