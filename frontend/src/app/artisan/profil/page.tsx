@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { authService } from '@/lib/auth-service';
 import { getArtisanByUserId, updateArtisan } from '@/lib/firebase/artisan-service';
 import { Button, Input, Logo } from '@/components/ui';
@@ -19,6 +20,7 @@ interface VilleSuggestion {
 
 export default function ProfilArtisanPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -58,7 +60,7 @@ export default function ProfilArtisanPage() {
 
       const artisanData = await getArtisanByUserId(currentUser.uid);
       if (!artisanData) {
-        setError('Profil artisan introuvable');
+        setError(t('profile.messages.profileNotFound'));
         setIsLoading(false);
         return;
       }
@@ -93,7 +95,7 @@ export default function ProfilArtisanPage() {
       setIsLoading(false);
     } catch (err) {
       console.error('Erreur chargement profil:', err);
-      setError('Impossible de charger le profil');
+      setError(t('profile.messages.loadError'));
       setIsLoading(false);
     }
   }
@@ -159,22 +161,22 @@ export default function ProfilArtisanPage() {
     }
 
     if (!raisonSociale.trim()) {
-      setError('La raison sociale est obligatoire');
+      setError(t('profile.messages.businessNameRequired'));
       return;
     }
 
     if (!adresse.trim()) {
-      setError('L\'adresse de l\'entreprise est obligatoire');
+      setError(t('profile.messages.addressRequired'));
       return;
     }
 
     if (metiers.length === 0) {
-      setError('Veuillez sélectionner au moins un métier');
+      setError(t('profile.messages.tradesRequired'));
       return;
     }
 
     if (!ville.trim()) {
-      setError('La ville est obligatoire');
+      setError(t('profile.messages.cityRequired'));
       return;
     }
 
@@ -207,7 +209,7 @@ export default function ProfilArtisanPage() {
         presentation: presentation.trim() || undefined
       });
 
-      setSuccess('✨ Votre profil a été mis à jour avec succès !');
+      setSuccess(t('profile.messages.updateSuccess'));
       
       // Recharger le profil
       await loadArtisanProfile();
@@ -215,7 +217,7 @@ export default function ProfilArtisanPage() {
       setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       console.error('Erreur mise à jour:', err);
-      setError('Une erreur est survenue lors de la mise à jour');
+      setError(t('profile.messages.updateError'));
     } finally {
       setIsSaving(false);
     }
@@ -226,7 +228,7 @@ export default function ProfilArtisanPage() {
       <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement du profil...</p>
+          <p className="text-gray-600">{t('profile.loading')}</p>
         </div>
       </div>
     );
@@ -244,12 +246,12 @@ export default function ProfilArtisanPage() {
             <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Retour au tableau de bord
+            {t('profile.backToDashboard')}
           </button>
           
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">Mon Profil Professionnel</h1>
+          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">{t('profile.pageTitle')}</h1>
           <p className="text-gray-600">
-            Complétez votre profil pour recevoir des demandes de clients
+            {t('profile.pageDescription')}
           </p>
         </div>
 
@@ -265,8 +267,8 @@ export default function ProfilArtisanPage() {
           <div className="fixed top-20 right-6 z-50 p-4 bg-green-500 text-white rounded-lg shadow-2xl flex items-center gap-3 animate-slideDown max-w-md">
             <span className="text-3xl">✅</span>
             <div className="flex-1">
-              <p className="font-bold text-lg">Succès !</p>
-              <p className="text-sm">Votre profil a été mis à jour avec succès</p>
+              <p className="font-bold text-lg">{t('profile.messages.updateSuccessTitle')}</p>
+              <p className="text-sm">{t('profile.messages.updateSuccessMessage')}</p>
             </div>
             <button
               onClick={() => setSuccess('')}
@@ -281,11 +283,11 @@ export default function ProfilArtisanPage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
           {/* Informations entreprise */}
           <div className="border-b border-gray-200 pb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Informations Entreprise</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{t('profile.companyInfo.title')}</h2>
             
             <div className="space-y-4">
               <Input
-                label="SIRET"
+                label={t('profile.companyInfo.siret')}
                 type="text"
                 value={siret}
                 onChange={(e) => {
@@ -294,23 +296,23 @@ export default function ProfilArtisanPage() {
                   // Limiter à 14 chiffres maximum
                   setSiret(value.slice(0, 14));
                 }}
-                placeholder="12345678901234"
+                placeholder={t('profile.companyInfo.siretPlaceholder')}
                 required
-                helper="14 chiffres obligatoires"
+                helper={t('profile.companyInfo.siretHelper')}
                 maxLength={14}
               />
               
               <Input
-                label="Raison Sociale"
+                label={t('profile.companyInfo.businessName')}
                 type="text"
                 value={raisonSociale}
                 onChange={(e) => setRaisonSociale(e.target.value)}
-                placeholder="Mon Entreprise SARL"
+                placeholder={t('profile.companyInfo.businessNamePlaceholder')}
                 required
               />
               
               <AddressAutocomplete
-                label="Adresse de l'entreprise"
+                label={t('profile.companyInfo.address')}
                 value={adresse}
                 onChange={(value) => setAdresse(value)}
                 onAddressSelect={(data) => {
@@ -318,9 +320,9 @@ export default function ProfilArtisanPage() {
                   setVille(data.ville || ville);
                   setCodePostal(data.codePostal || codePostal);
                 }}
-                placeholder="123 rue de la République, 75001 Paris"
+                placeholder={t('profile.companyInfo.addressPlaceholder')}
                 required
-                helper="Commencez à taper puis sélectionnez une adresse dans la liste"
+                helper={t('profile.companyInfo.addressHelper')}
               />
             </div>
           </div>
@@ -328,7 +330,7 @@ export default function ProfilArtisanPage() {
           {/* Métiers */}
           <div className="border-b border-gray-200 pb-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Métiers <span className="text-sm text-gray-500 font-normal">(Sélectionner au moins 1)</span>
+              {t('profile.trades.title')} <span className="text-sm text-gray-500 font-normal">{t('profile.trades.selectAtLeastOne')}</span>
             </h2>
 
             {/* Avertissement blocage si décennale en cours */}
@@ -337,13 +339,12 @@ export default function ProfilArtisanPage() {
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">🔒</span>
                   <div className="flex-1">
-                    <h4 className="text-red-900 font-semibold mb-1">Modification des métiers temporairement bloquée</h4>
+                    <h4 className="text-red-900 font-semibold mb-1">{t('profile.trades.lockedTitle')}</h4>
                     <p className="text-sm text-red-800">
-                      Votre <strong>attestation de garantie décennale</strong> est actuellement en cours de vérification par notre équipe.
-                      Vous ne pouvez pas modifier vos métiers pendant cette période pour éviter toute incohérence.
+                      {t('profile.trades.lockedMessage')}
                     </p>
                     <p className="text-xs text-red-700 mt-2">
-                      💡 Vous pourrez modifier vos métiers une fois que votre document aura été validé ou rejeté.
+                      {t('profile.trades.lockedHelper')}
                     </p>
                   </div>
                 </div>
@@ -376,13 +377,12 @@ export default function ProfilArtisanPage() {
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">⚠️</span>
                   <div className="flex-1">
-                    <h4 className="text-yellow-900 font-semibold mb-1">Garantie Décennale Obligatoire</h4>
+                    <h4 className="text-yellow-900 font-semibold mb-1">{t('profile.trades.decennaleMandatoryTitle')}</h4>
                     <p className="text-sm text-yellow-800">
-                      Les métiers que vous avez sélectionnés nécessitent une <strong>assurance garantie décennale</strong>.
-                      Vous devrez fournir votre attestation dans la section <strong>Documents</strong> pour être vérifié sur la plateforme.
+                      {t('profile.trades.decennaleMandatoryMessage')}
                     </p>
                     <p className="text-xs text-yellow-700 mt-2">
-                      Métiers concernés : Maçonnerie, Toiture, Charpente, Menuiserie, Isolation, Plomberie, Électricité, Carrelage, Chauffage, Climatisation
+                      {t('profile.trades.decennaleConcernedTrades')}
                     </p>
                   </div>
                 </div>
@@ -392,13 +392,13 @@ export default function ProfilArtisanPage() {
 
           {/* Zone d'intervention */}
           <div className="border-b border-gray-200 pb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Zone d'Intervention</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{t('profile.serviceArea.title')}</h2>
             
             <div className="grid md:grid-cols-2 gap-4">
               {/* Ville principale avec autocomplétion */}
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ville principale <span className="text-red-500">*</span>
+                  {t('profile.serviceArea.mainCity')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -410,7 +410,7 @@ export default function ProfilArtisanPage() {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  placeholder="Paris, Lyon, Marseille..."
+                  placeholder={t('profile.serviceArea.mainCityPlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                   required
                 />
@@ -437,7 +437,7 @@ export default function ProfilArtisanPage() {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rayon d'intervention (km)
+                  {t('profile.serviceArea.radius')}
                 </label>
                 <input
                   type="range"
@@ -449,9 +449,9 @@ export default function ProfilArtisanPage() {
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>5 km</span>
+                  <span>{t('profile.serviceArea.radiusMin')}</span>
                   <span className="font-bold text-[#FF6B00]">{rayonKm} km</span>
-                  <span>100 km</span>
+                  <span>{t('profile.serviceArea.radiusMax')}</span>
                 </div>
               </div>
             </div>
@@ -459,22 +459,22 @@ export default function ProfilArtisanPage() {
 
           {/* Présentation */}
           <div>
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Présentation</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{t('profile.presentation.title')}</h2>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Décrivez votre activité
+                {t('profile.presentation.label')}
               </label>
               <textarea
                 value={presentation}
                 onChange={(e) => setPresentation(e.target.value)}
-                placeholder="Expert en plomberie depuis 15 ans, spécialisé dans..."
+                placeholder={t('profile.presentation.placeholder')}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
                 maxLength={500}
               />
               <p className="text-xs text-gray-500 mt-1">
-                {presentation.length}/500 caractères
+                {t('profile.presentation.characters').replace('{count}', String(presentation.length))}
               </p>
             </div>
           </div>
@@ -486,7 +486,7 @@ export default function ProfilArtisanPage() {
               className="flex-1 bg-[#FF6B00] hover:bg-[#E56100]"
               isLoading={isSaving}
             >
-              {isSaving ? 'Enregistrement...' : 'Enregistrer le profil'}
+              {isSaving ? t('profile.actions.saving') : t('profile.actions.save')}
             </Button>
             
             <Link href="/dashboard" className="flex-1">
@@ -494,7 +494,7 @@ export default function ProfilArtisanPage() {
                 type="button"
                 className="w-full px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Annuler
+                {t('profile.actions.cancel')}
               </button>
             </Link>
           </div>

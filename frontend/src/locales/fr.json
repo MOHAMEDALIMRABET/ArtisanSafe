@@ -740,5 +740,64 @@
       "uploadNewDocument": "Veuillez uploader un nouveau document conforme.",
       "fileSelected": "📎 {filename} ({size} MB)"
     }
+  },
+  "profile": {
+    "pageTitle": "Mon Profil Professionnel",
+    "pageDescription": "Complétez votre profil pour recevoir des demandes de clients",
+    "backToDashboard": "Retour au tableau de bord",
+    "loading": "Chargement du profil...",
+    "companyInfo": {
+      "title": "Informations Entreprise",
+      "siret": "SIRET",
+      "siretHelper": "14 chiffres obligatoires",
+      "siretPlaceholder": "12345678901234",
+      "businessName": "Raison Sociale",
+      "businessNamePlaceholder": "Mon Entreprise SARL",
+      "address": "Adresse de l'entreprise",
+      "addressPlaceholder": "123 rue de la République, 75001 Paris",
+      "addressHelper": "Commencez à taper puis sélectionnez une adresse dans la liste"
+    },
+    "trades": {
+      "title": "Métiers",
+      "selectAtLeastOne": "(Sélectionner au moins 1)",
+      "lockedTitle": "Modification des métiers temporairement bloquée",
+      "lockedMessage": "Votre attestation de garantie décennale est actuellement en cours de vérification par notre équipe. Vous ne pouvez pas modifier vos métiers pendant cette période pour éviter toute incohérence.",
+      "lockedHelper": "💡 Vous pourrez modifier vos métiers une fois que votre document aura été validé ou rejeté.",
+      "decennaleMandatoryTitle": "Garantie Décennale Obligatoire",
+      "decennaleMandatoryMessage": "Les métiers que vous avez sélectionnés nécessitent une assurance garantie décennale. Vous devrez fournir votre attestation dans la section Documents pour être vérifié sur la plateforme.",
+      "decennaleConcernedTrades": "Métiers concernés : Maçonnerie, Toiture, Charpente, Menuiserie, Isolation, Plomberie, Électricité, Carrelage, Chauffage, Climatisation"
+    },
+    "serviceArea": {
+      "title": "Zone d'Intervention",
+      "mainCity": "Ville principale",
+      "mainCityPlaceholder": "Paris, Lyon, Marseille...",
+      "radius": "Rayon d'intervention (km)",
+      "radiusMin": "5 km",
+      "radiusMax": "100 km"
+    },
+    "presentation": {
+      "title": "Présentation",
+      "label": "Décrivez votre activité",
+      "placeholder": "Expert en plomberie depuis 15 ans, spécialisé dans...",
+      "characters": "{count}/500 caractères"
+    },
+    "actions": {
+      "save": "Enregistrer le profil",
+      "saving": "Enregistrement...",
+      "cancel": "Annuler"
+    },
+    "messages": {
+      "profileNotFound": "Profil artisan introuvable",
+      "loadError": "Impossible de charger le profil",
+      "businessNameRequired": "La raison sociale est obligatoire",
+      "addressRequired": "L'adresse de l'entreprise est obligatoire",
+      "tradesRequired": "Veuillez sélectionner au moins un métier",
+      "cityRequired": "La ville est obligatoire",
+      "postalCodeRequired": "Le code postal est requis",
+      "updateSuccess": "✨ Votre profil a été mis à jour avec succès !",
+      "updateSuccessTitle": "Succès !",
+      "updateSuccessMessage": "Votre profil a été mis à jour avec succès",
+      "updateError": "Une erreur est survenue lors de la mise à jour"
+    }
   }
 }

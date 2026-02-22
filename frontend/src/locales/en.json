@@ -732,5 +732,64 @@
       "uploadNewDocument": "Please upload a new compliant document.",
       "fileSelected": "📎 {filename} ({size} MB)"
     }
+  },
+  "profile": {
+    "pageTitle": "My Professional Profile",
+    "pageDescription": "Complete your profile to receive client requests",
+    "backToDashboard": "Back to dashboard",
+    "loading": "Loading profile...",
+    "companyInfo": {
+      "title": "Company Information",
+      "siret": "SIRET",
+      "siretHelper": "14 digits required",
+      "siretPlaceholder": "12345678901234",
+      "businessName": "Company Name",
+      "businessNamePlaceholder": "My Company LLC",
+      "address": "Company Address",
+      "addressPlaceholder": "123 Republic Street, 75001 Paris",
+      "addressHelper": "Start typing and select an address from the list"
+    },
+    "trades": {
+      "title": "Trades",
+      "selectAtLeastOne": "(Select at least 1)",
+      "lockedTitle": "Trade modification temporarily locked",
+      "lockedMessage": "Your ten-year liability insurance certificate is currently being verified by our team. You cannot modify your trades during this period to avoid any inconsistencies.",
+      "lockedHelper": "💡 You will be able to modify your trades once your document has been validated or rejected.",
+      "decennaleMandatoryTitle": "Mandatory Ten-Year Liability Insurance",
+      "decennaleMandatoryMessage": "The trades you have selected require ten-year liability insurance. You will need to provide your certificate in the Documents section to be verified on the platform.",
+      "decennaleConcernedTrades": "Concerned trades: Masonry, Roofing, Carpentry, Joinery, Insulation, Plumbing, Electricity, Tiling, Heating, Air Conditioning"
+    },
+    "serviceArea": {
+      "title": "Service Area",
+      "mainCity": "Main city",
+      "mainCityPlaceholder": "Paris, Lyon, Marseille...",
+      "radius": "Service radius (km)",
+      "radiusMin": "5 km",
+      "radiusMax": "100 km"
+    },
+    "presentation": {
+      "title": "Presentation",
+      "label": "Describe your activity",
+      "placeholder": "Plumbing expert for 15 years, specialized in...",
+      "characters": "{count}/500 characters"
+    },
+    "actions": {
+      "save": "Save profile",
+      "saving": "Saving...",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "profileNotFound": "Tradesperson profile not found",
+      "loadError": "Unable to load profile",
+      "businessNameRequired": "Company name is required",
+      "addressRequired": "Company address is required",
+      "tradesRequired": "Please select at least one trade",
+      "cityRequired": "City is required",
+      "postalCodeRequired": "Postal code is required",
+      "updateSuccess": "✨ Your profile has been successfully updated!",
+      "updateSuccessTitle": "Success!",
+      "updateSuccessMessage": "Your profile has been successfully updated",
+      "updateError": "An error occurred during the update"
+    }
   }
 }
