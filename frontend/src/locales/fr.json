@@ -36,7 +36,8 @@
     "logout": "Se déconnecter",
     "moreNotifications": "notification(s) de plus",
     "wait": "Attendre",
-    "verifiedProfile": "Profil Vérifié"
+    "verifiedProfile": "Profil Vérifié",
+    "notSpecified": "Non spécifié"
   },
   "nav": {
     "home": "Accueil",
@@ -799,5 +800,98 @@
       "updateSuccessMessage": "Votre profil a été mis à jour avec succès",
       "updateError": "Une erreur est survenue lors de la mise à jour"
     }
+  },
+  "requests": {
+    "pageTitle": "Demandes Clients",
+    "pageDescription": "Gérez les demandes de clients qui correspondent à vos compétences",
+    "backToDashboard": "← Retour au tableau de bord",
+    "loading": "Chargement des demandes...",
+    "requestCount": "{count} demande{s}",
+    "detailTitle": "Détail de la demande",
+    "backToAll": "Retour à toutes les demandes",
+    "tabs": {
+      "myRequests": "Mes demandes",
+      "publicRequests": "Demandes publiées",
+      "newCount": "{count} nouvelles",
+      "publicCount": "{count} publiques",
+      "myRequestsCount": "{count} demande{s}",
+      "publicCountFull": "{count} nouvelle{s} opportunité{s}"
+    },
+    "filters": {
+      "all": "Toutes",
+      "new": "Nouvelles",
+      "inProgress": "En traitement",
+      "contracts": "Contrats",
+      "processed": "Traitées",
+      "allTypes": "Toutes",
+      "direct": "Directe",
+      "public": "Publique"
+    },
+    "empty": {
+      "title": "Aucune demande pour le moment",
+      "description": "Les demandes qui correspondent à vos compétences apparaîtront ici",
+      "noRequests": "Aucune demande"
+    },
+    "card": {
+      "requester": "Demandeur :",
+      "budget": "Budget",
+      "location": "Localisation",
+      "urgency": "Urgence",
+      "trade": "Métier",
+      "deadline": "Délai souhaité",
+      "createQuote": "Créer un devis",
+      "viewQuote": "Voir le devis",
+      "viewQuotes": "Voir les {count} devis",
+      "contactClient": "Contacter le client",
+      "workInProgress": "Travaux en cours",
+      "declareStart": "Déclarer début travaux",
+      "declareEnd": "Déclarer fin travaux",
+      "workCompleted": "✅ Travaux terminés",
+      "paidQuote": "💰 Devis payé",
+      "refusedDefinitive": "Refus définitif",
+      "refusedRevision": "Refus pour révision"
+    },
+    "status": {
+      "public": "Publique",
+      "direct": "Directe",
+      "new": "Nouvelle",
+      "quoteSent": "Devis envoyé",
+      "quoteAccepted": "Devis accepté",
+      "quoteRefused": "Devis refusé",
+      "workInProgress": "En cours",
+      "completed": "Terminée"
+    }
+  },
+  "messaging": {
+    "pageTitle": "Messages",
+    "loading": "Chargement...",
+    "noConversation": "Sélectionnez une conversation",
+    "noConversationDesc": "Choisissez un contact dans la liste pour commencer à discuter",
+    "noConversations": "Aucune conversation",
+    "noConversationsDesc": "Vous n'avez pas encore de conversations",
+    "noMessages": "Aucun message",
+    "typePlaceholder": "Écrivez votre message...",
+    "send": "Envoyer",
+    "sending": "Envoi...",
+    "validationWarning": "⚠️ Message bloqué",
+    "yesterday": "Hier",
+    "today": "Aujourd'hui",
+    "quoteInfo": {
+      "accepted": "💰 Devis accepté",
+      "refused": "❌ Devis refusé",
+      "refusedDefinitive": "❌ Devis refusé définitivement",
+      "refusedRevision": "🔄 Devis refusé - révision demandée",
+      "infoText": "Numéro {number} • {amount}€ TTC"
+    },
+    "conversationInactive": {
+      "title": "Conversation close",
+      "refusedDefinitive": "Cette conversation est suspendue car le devis a été refusé définitivement. Vous ne pouvez plus envoyer de messages.",
+      "refusedRevision": "Cette conversation est temporairement suspendue car le client a demandé des révisions. Attendez qu'il vous recontacte.",
+      "sendDisabled": "Conversation close - Envoi de messages désactivé",
+      "cancelled": "Le devis a été annulé. Vous ne pouvez plus envoyer de messages.",
+      "expired": "Le devis a expiré. Vous ne pouvez plus envoyer de messages.",
+      "completed": "Les travaux ont été terminés et validés par les deux parties. Cette conversation est maintenant close. Vous pouvez consulter l'historique mais ne pouvez plus envoyer de messages."
+    },
+    "conversationClosed": "Conversation close"
   }
 }

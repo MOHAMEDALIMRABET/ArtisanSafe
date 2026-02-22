@@ -8,6 +8,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   collection, 
   query, 
@@ -123,6 +124,7 @@ export default function MessagesPage() {
   const devisIdParam = searchParams?.get('devisId'); // Paramètre optionnel depuis les pages devis
   const demandeIdParam = searchParams?.get('demandeId'); // Paramètre optionnel depuis les pages demandes
   const { user, loading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -514,7 +516,7 @@ export default function MessagesPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
+          <p className="mt-4 text-gray-600">{t('messaging.loading')}</p>
         </div>
       </div>
     );
@@ -527,27 +529,27 @@ export default function MessagesPage() {
   return (
     <div className="min-h-screen bg-[#F5F7FA] pt-20">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-[#2C3E50] mb-6">💬 Messagerie</h1>
+        <h1 className="text-3xl font-bold text-[#2C3E50] mb-6">💬 {t('messaging.pageTitle')}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
           {/* Liste des conversations */}
           <div className="lg:col-span-1 bg-white rounded-lg shadow-md overflow-hidden">
             <div className="bg-[#2C3E50] text-white p-4">
-              <h2 className="font-semibold">Conversations</h2>
+              <h2 className="font-semibold">{t('messaging.conversations')}</h2>
             </div>
             
             <div className="overflow-y-auto h-full">
               {loading ? (
                 <div className="p-4 text-center text-gray-500">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF6B00] mx-auto mb-2"></div>
-                  Chargement...
+                  {t('messaging.loading')}
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
                   <svg className="w-16 h-16 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
-                  <p>Aucune conversation</p>
+                  <p>{t('messaging.noConversations')}</p>
                 </div>
               ) : (
                 conversations.map((conv) => {
@@ -596,13 +598,13 @@ export default function MessagesPage() {
                         <span className="text-2xl mr-3">🚫</span>
                         <div>
                           <h3 className="font-semibold text-gray-700 mb-1">
-                            Conversation close
+                            {t('messaging.conversationInactive.title')}
                           </h3>
                           <p className="text-sm text-gray-600">
-                            {devisStatus === 'annule' && 'Le devis a été annulé. Vous ne pouvez plus envoyer de messages.'}
-                            {devisStatus === 'refuse' && 'Le client a refusé définitivement de travailler avec cet artisan. Vous ne pouvez plus envoyer de messages.'}
-                            {devisStatus === 'expire' && 'Le devis a expiré. Vous ne pouvez plus envoyer de messages.'}
-                            {(devisStatus === 'termine_valide' || devisStatus === 'termine_auto_valide') && 'Les travaux ont été terminés et validés par les deux parties. Cette conversation est maintenant close. Vous pouvez consulter l\'historique mais ne pouvez plus envoyer de messages.'}
+                            {devisStatus === 'annule' && t('messaging.conversationInactive.cancelled')}
+                            {devisStatus === 'refuse' && t('messaging.conversationInactive.refusedDefinitive')}
+                            {devisStatus === 'expire' && t('messaging.conversationInactive.expired')}
+                            {(devisStatus === 'termine_valide' || devisStatus === 'termine_auto_valide') && t('messaging.conversationInactive.completed')}
                           </p>
                           {devisInfo?.numeroDevis && (
                             <p className="text-xs text-gray-500 mt-1">
@@ -633,7 +635,7 @@ export default function MessagesPage() {
                         >
                           <p className="break-words">{msg.content}</p>
                           <p className={`text-xs mt-1 ${isOwn ? 'text-orange-100' : 'text-gray-500'}`}>
-                            {msg.createdAt?.toDate().toLocaleTimeString('fr-FR', {
+                            {msg.createdAt?.toDate().toLocaleTimeString(language === 'en' ? 'en-US' : 'fr-FR', {
                               hour: '2-digit',
                               minute: '2-digit',
                             })}
@@ -662,7 +664,7 @@ export default function MessagesPage() {
                   {isConversationInactive && (
                     <div className="mb-2 text-center">
                       <p className="text-sm text-gray-500 italic">
-                        ❌ Conversation close - Envoi de messages désactivé
+                        ❌ {t('messaging.conversationInactive.sendDisabled')}
                       </p>
                     </div>
                   )}
@@ -673,8 +675,8 @@ export default function MessagesPage() {
                       onChange={(e) => handleMessageChange(e.target.value)}
                       placeholder={
                         isConversationInactive 
-                          ? "Conversation close" 
-                          : "Écrivez votre message..."
+                          ? t('messaging.conversationClosed')
+                          : t('messaging.typePlaceholder')
                       }
                       className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent ${
                         isConversationInactive 
@@ -688,7 +690,7 @@ export default function MessagesPage() {
                       disabled={sending || !messageContent.trim() || !!validationWarning || isConversationInactive}
                       className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#E56100] transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {sending ? '⏳' : '📤'} Envoyer
+                      {sending ? '⏳' : '📤'} {sending ? t('messaging.sending') : t('messaging.send')}
                     </button>
                   </div>
                 </form>
@@ -699,8 +701,8 @@ export default function MessagesPage() {
                   <svg className="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
-                  <p className="text-lg font-medium">Sélectionnez une conversation</p>
-                  <p className="text-sm text-gray-400 mt-2">ou créez-en une nouvelle</p>
+                  <p className="text-lg font-medium">{t('messaging.noConversation')}</p>
+                  <p className="text-sm text-gray-400 mt-2">{t('messaging.noConversationDesc')}</p>
                 </div>
               </div>
             )}

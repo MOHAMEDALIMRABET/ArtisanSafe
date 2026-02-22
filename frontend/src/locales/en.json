@@ -36,7 +36,8 @@
     "logout": "Logout",
     "moreNotifications": "more notification(s)",
     "wait": "Wait",
-    "verifiedProfile": "Verified Profile"
+    "verifiedProfile": "Verified Profile",
+    "notSpecified": "Not specified"
   },
   "nav": {
     "home": "Home",
@@ -791,5 +792,98 @@
       "updateSuccessMessage": "Your profile has been successfully updated",
       "updateError": "An error occurred during the update"
     }
+  },
+  "requests": {
+    "pageTitle": "Client Requests",
+    "pageDescription": "Manage client requests that match your skills",
+    "backToDashboard": "← Back to dashboard",
+    "loading": "Loading requests...",
+    "requestCount": "{count} request{s}",
+    "detailTitle": "Request detail",
+    "backToAll": "Back to all requests",
+    "tabs": {
+      "myRequests": "My requests",
+      "publicRequests": "Published requests",
+      "newCount": "{count} new",
+      "publicCount": "{count} public",
+      "myRequestsCount": "{count} request{s}",
+      "publicCountFull": "{count} new opportunit{ies}"
+    },
+    "filters": {
+      "all": "All",
+      "new": "New",
+      "inProgress": "In progress",
+      "contracts": "Contracts",
+      "processed": "Processed",
+      "allTypes": "All types",
+      "direct": "Direct",
+      "public": "Public"
+    },
+    "empty": {
+      "title": "No requests at the moment",
+      "description": "Requests matching your skills will appear here",
+      "noRequests": "No requests"
+    },
+    "card": {
+      "requester": "Requester:",
+      "budget": "Budget",
+      "location": "Location",
+      "urgency": "Urgency",
+      "trade": "Trade",
+      "deadline": "Desired deadline",
+      "createQuote": "Create quote",
+      "viewQuote": "View quote",
+      "viewQuotes": "View {count} quotes",
+      "contactClient": "Contact client",
+      "workInProgress": "Work in progress",
+      "declareStart": "Declare work start",
+      "declareEnd": "Declare work completion",
+      "workCompleted": "✅ Work completed",
+      "paidQuote": "💰 Paid quote",
+      "refusedDefinitive": "Final refusal",
+      "refusedRevision": "Refused for revision"
+    },
+    "status": {
+      "public": "Public",
+      "direct": "Direct",
+      "new": "New",
+      "quoteSent": "Quote sent",
+      "quoteAccepted": "Quote accepted",
+      "quoteRefused": "Quote refused",
+      "workInProgress": "In progress",
+      "completed": "Completed"
+    }
+  },
+  "messaging": {
+    "pageTitle": "Messages",
+    "loading": "Loading...",
+    "noConversation": "Select a conversation",
+    "noConversationDesc": "Choose a contact from the list to start chatting",
+    "noConversations": "No conversations",
+    "noConversationsDesc": "You don't have any conversations yet",
+    "noMessages": "No messages",
+    "typePlaceholder": "Type your message...",
+    "send": "Send",
+    "sending": "Sending...",
+    "validationWarning": "⚠️ Message blocked",
+    "yesterday": "Yesterday",
+    "today": "Today",
+    "quoteInfo": {
+      "accepted": "💰 Quote accepted",
+      "refused": "❌ Quote refused",
+      "refusedDefinitive": "❌ Quote refused permanently",
+      "refusedRevision": "🔄 Quote refused - revision requested",
+      "infoText": "Number {number} • {amount}€ incl. VAT"
+    },
+    "conversationInactive": {
+      "title": "Conversation closed",
+      "refusedDefinitive": "This conversation is suspended because the quote was permanently refused. You can no longer send messages.",
+      "refusedRevision": "This conversation is temporarily suspended because the client requested revisions. Wait for them to contact you again.",
+      "sendDisabled": "Conversation closed - Sending messages disabled",
+      "cancelled": "The quote has been cancelled. You can no longer send messages.",
+      "expired": "The quote has expired. You can no longer send messages.",
+      "completed": "The work has been completed and validated by both parties. This conversation is now closed. You can view the history but can no longer send messages."
+    },
+    "conversationClosed": "Conversation closed"
   }
 }

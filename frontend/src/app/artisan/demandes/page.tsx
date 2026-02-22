@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanById } from '@/lib/firebase/artisan-service';
 import { getDemandesForArtisan, getDemandesPubliquesForArtisan, removeArtisanFromDemande } from '@/lib/firebase/demande-service';
@@ -19,6 +20,7 @@ export default function ArtisanDemandesPage() {
   const searchParams = useSearchParams();
   const highlightedDemandeId = searchParams?.get('demandeId');
   const { user: authUser, loading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [demandesPubliques, setDemandesPubliques] = useState<Demande[]>([]);
@@ -475,7 +477,7 @@ export default function ArtisanDemandesPage() {
       <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement des demandes...</p>
+          <p className="text-gray-600">{t('requests.loading')}</p>
         </div>
       </div>
     );
@@ -489,14 +491,14 @@ export default function ArtisanDemandesPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">
-                📬 Demandes Clients
+                📬 {t('requests.pageTitle')}
               </h1>
               <p className="text-gray-600">
                 {highlightedDemandeId ? (
-                  'Détail de la demande'
+                  t('requests.detailTitle')
                 ) : (
                   <>
-                    {demandesFiltrees.length} demande{demandesFiltrees.length > 1 ? 's' : ''} 
+                    {t('requests.requestCount').replace('{count}', demandesFiltrees.length.toString()).replace('{s}', demandesFiltrees.length > 1 ? 's' : '')} 
                     {filter !== 'toutes' && ` (${filter})`}
                   </>
                 )}
@@ -510,7 +512,7 @@ export default function ArtisanDemandesPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Retour à toutes les demandes
+                {t('requests.backToAll')}
               </button>
             )}
           </div>
@@ -530,10 +532,10 @@ export default function ArtisanDemandesPage() {
               <div className="flex items-center justify-center gap-3">
                 <span className="text-2xl">📋</span>
                 <div className="text-left">
-                  <div>Mes demandes</div>
+                  <div>{t('requests.tabs.myRequests')}</div>
                   <div className={`text-sm font-normal ${
                     sectionActive === 'mes_demandes' ? 'text-white opacity-90' : 'text-gray-500'
-                  }`}>{demandes.filter(d => d.statut !== 'expiree').length} demande{demandes.filter(d => d.statut !== 'expiree').length > 1 ? 's' : ''}</div>
+                  }`}>{t('requests.tabs.myRequestsCount').replace('{count}', demandes.filter(d => d.statut !== 'expiree').length.toString()).replace('{s}', demandes.filter(d => d.statut !== 'expiree').length > 1 ? 's' : '')}</div>
                 </div>
               </div>
             </button>
@@ -549,10 +551,10 @@ export default function ArtisanDemandesPage() {
               <div className="flex items-center justify-center gap-3">
                 <span className="text-2xl">📢</span>
                 <div className="text-left">
-                  <div>Demandes publiées</div>
+                  <div>{t('requests.tabs.publicRequests')}</div>
                   <div className={`text-sm font-normal ${
                     sectionActive === 'demandes_publiques' ? 'text-white opacity-90' : 'text-gray-500'
-                  }`}>{demandesPubliques.length} nouvelle{demandesPubliques.length > 1 ? 's' : ''} opportunité{demandesPubliques.length > 1 ? 's' : ''}</div>
+                  }`}>{t('requests.tabs.publicCountFull').replace('{count}', demandesPubliques.length.toString()).replace('{s}', demandesPubliques.length > 1 ? 's' : '').replace('{ies}', demandesPubliques.length > 1 ? 'ies' : 'y')}</div>
                 </div>
               </div>
             </button>
@@ -573,7 +575,7 @@ export default function ArtisanDemandesPage() {
               }`}>{demandes.filter(d => d.statut !== 'expiree').length}</div>
               <div className={`text-sm ${
                 filter === 'toutes' ? 'text-white' : 'text-gray-600'
-              }`}>Toutes</div>
+              }`}>{t('requests.filters.all')}</div>
             </button>
             
             <button
@@ -587,7 +589,7 @@ export default function ArtisanDemandesPage() {
               }`}>{getDemandesNouvelles(demandes).length}</div>
               <div className={`text-sm ${
                 filter === 'nouvelles' ? 'text-white' : 'text-gray-600'
-              }`}>📬 Nouvelles demandes</div>
+              }`}>📬 {t('requests.filters.new')}</div>
             </button>
             
             <button
@@ -641,10 +643,10 @@ export default function ArtisanDemandesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
             <h3 className="text-xl font-bold text-gray-700 mb-2">
-              Aucune demande {filter !== 'toutes' && filter}
+              {t('requests.empty.noRequests')}
             </h3>
             <p className="text-gray-600">
-              Les demandes des clients apparaîtront ici.
+              {t('requests.empty.description')}
             </p>
           </div>
         ) : (
@@ -670,7 +672,7 @@ export default function ArtisanDemandesPage() {
                     toggleExpandDemande(demande.id);
                   }}
                   className="absolute top-5 right-5 p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
-                  title={isExpanded ? "Masquer les détails" : "Voir le détail"}
+                  title={isExpanded ? t('requests.card.hideDetails') : t('requests.card.viewDetails')}
                 >
                   <svg 
                     className={`w-5 h-5 text-gray-400 group-hover:text-[#FF6B00] transition-all duration-200 ${
@@ -692,7 +694,7 @@ export default function ArtisanDemandesPage() {
                     return (
                       <div className="mb-4 bg-[#F5F7FA] p-4 rounded-lg border border-gray-200">
                         <div className="flex items-center gap-3">
-                          <p className="text-sm font-bold text-gray-700">Demandeur :</p>
+                          <p className="text-sm font-bold text-gray-700">{t('requests.card.requester')}</p>
                           <div className="w-8 h-8 bg-[#2C3E50] text-white rounded-full flex items-center justify-center font-bold text-sm">
                             {client.prenom?.[0]?.toUpperCase() || 'C'}{client.nom?.[0]?.toUpperCase() || ''}
                           </div>
@@ -715,17 +717,17 @@ export default function ArtisanDemandesPage() {
                     <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <span className="text-[#FF6B00]">🏷️</span>
-                        <span className="font-semibold">Catégorie :</span>
+                        <span className="font-semibold">{t('requests.card.category')}</span>
                         <span>{demande.categorie}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span className="text-red-500">📅</span>
-                        <span>Créée le {demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}</span>
+                        <span>{t('requests.card.createdOn')} {demande.dateCreation?.toDate().toLocaleDateString(language === 'en' ? 'en-US' : 'fr-FR')}</span>
                       </div>
                       {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
                         <div className="flex items-center gap-1">
                           <span className="text-red-500">📅</span>
-                          <span>Début souhaité le {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                          <span>{t('requests.card.desiredStart')} {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString(language === 'en' ? 'en-US' : 'fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                         </div>
                       )}
                       {(() => {
@@ -736,8 +738,8 @@ export default function ArtisanDemandesPage() {
                           return (
                             <div className="flex items-center gap-1">
                               <span className="text-green-600">⏱️</span>
-                              <span className="font-semibold">Délai :</span>
-                              <span>{devisPaye.delaiRealisation} jour(s)</span>
+                              <span className="font-semibold">{t('requests.card.deadline')}</span>
+                              <span>{devisPaye.delaiRealisation} {t('requests.card.days')}</span>
                             </div>
                           );
                         }
@@ -750,7 +752,7 @@ export default function ArtisanDemandesPage() {
                   <div className="flex flex-col items-end gap-2">
                     {demandesAvecDevisPayeIds.has(demande.id) && (
                       <span className="bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-bold border-2 border-green-300">
-                        ✅ Devis signé
+                        ✅ {t('requests.status.quoteSigned')}
                       </span>
                     )}
                   </div>
@@ -758,7 +760,7 @@ export default function ArtisanDemandesPage() {
 
                 {/* Description (toujours visible, tronquée si collapsed) */}
                 <div className="mb-4">
-                  <p className="text-sm font-bold text-gray-700 mb-2">Description :</p>
+                  <p className="text-sm font-bold text-gray-700 mb-2">{t('requests.card.description')}</p>
                   <p className={`text-gray-700 leading-relaxed ${!isExpanded ? 'line-clamp-2' : ''}`}>
                     {demande.description}
                   </p>
@@ -777,13 +779,13 @@ export default function ArtisanDemandesPage() {
                   return (
                     <div className="mb-4">
                       <p className="text-sm font-semibold text-gray-700 mb-2">
-                        📸 Photos du projet ({validPhotos.length})
+                        📸 {t('requests.card.projectPhotos').replace('{count}', validPhotos.length.toString())}
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {validPhotos.map((url: string, idx: number) => {
                           // Récupérer le nom original depuis les métadonnées ou utiliser le nom technique
                           const originalName = photoMetadata.get(url);
-                          const displayName = originalName || `Photo ${idx + 1}`;
+                          const displayName = originalName || `${t('requests.card.photo')} ${idx + 1}`;
                           
                           return (
                             <div
@@ -843,14 +845,14 @@ export default function ArtisanDemandesPage() {
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                       <p className="text-sm font-bold text-[#2C3E50] mb-3 flex items-center gap-2">
                         <span>📍</span>
-                        Localisation
+                        {t('requests.card.location')}
                       </p>
                       <div className="space-y-1">
                         <p className="text-[#2C3E50]">
-                          <span className="font-semibold">Ville :</span> {demande.localisation?.ville || 'Non spécifié'}
+                          <span className="font-semibold">{t('requests.card.city')}</span> {demande.localisation?.ville || t('common.notSpecified')}
                         </p>
                         <p className="text-[#2C3E50]">
-                          <span className="font-semibold">Code postal :</span> {demande.localisation?.codePostal || 'N/A'}
+                          <span className="font-semibold">{t('requests.card.postalCode')}</span> {demande.localisation?.codePostal || 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -860,10 +862,10 @@ export default function ArtisanDemandesPage() {
                       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                         <p className="text-sm font-bold text-green-900 mb-3 flex items-center gap-2">
                           <span>📅</span>
-                          Date souhaitée
+                          {t('requests.card.desiredDate')}
                         </p>
                         <p className="text-green-800">
-                          {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { 
+                          {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString(language === 'en' ? 'en-US' : 'fr-FR', { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
@@ -872,7 +874,7 @@ export default function ArtisanDemandesPage() {
                         </p>
                         {demande.datesSouhaitees.flexible && (
                           <span className="inline-block mt-2 bg-green-200 text-green-800 px-2 py-1 rounded text-xs font-semibold">
-                            Flexible
+                            {t('requests.card.flexible')}
                           </span>
                         )}
                       </div>
@@ -884,7 +886,7 @@ export default function ArtisanDemandesPage() {
                   <div className="mb-6 bg-red-50 p-4 rounded-lg border-2 border-red-300">
                     <p className="text-red-700 font-bold flex items-center gap-2">
                       <span>🚨</span>
-                      Demande urgente
+                      {t('requests.card.urgent')}
                     </p>
                   </div>
                 )}
@@ -905,9 +907,9 @@ export default function ArtisanDemandesPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div className="flex-1">
-                            <p className="font-bold text-green-700 mb-1">✅ Devis accepté et payé - Contrat en cours</p>
+                            <p className="font-bold text-green-700 mb-1">✅ {t('requests.status.quoteAcceptedPaid')}</p>
                             <p className="text-sm text-green-600">
-                              Cette demande vous a été attribuée.
+                              {t('requests.status.assignedToYou')}
                             </p>
                           </div>
                         </div>
@@ -924,7 +926,7 @@ export default function ArtisanDemandesPage() {
                             }}
                             className="flex-1 bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
                           >
-                            🚧 Commencer travaux
+                            🚧 {t('requests.actions.startWork')}
                           </button>
                         )}
 
@@ -939,7 +941,7 @@ export default function ArtisanDemandesPage() {
                             }}
                             className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
                           >
-                            🏁 Fin des travaux
+                            🏁 {t('requests.actions.finishWork')}
                           </button>
                         )}
 
@@ -954,7 +956,7 @@ export default function ArtisanDemandesPage() {
                           }}
                           className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
                         >
-                          📋 Voir devis payé
+                          📋 {t('requests.actions.viewPaidQuote')}
                         </button>
                         <button
                           onClick={(e) => {
@@ -963,7 +965,7 @@ export default function ArtisanDemandesPage() {
                           }}
                           className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
                         >
-                          💬 Contacter client
+                          💬 {t('requests.actions.contactClient')}
                         </button>
                       </div>
                     </div>
@@ -984,9 +986,9 @@ export default function ArtisanDemandesPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                             </svg>
                             <div className="flex-1">
-                              <p className="font-bold text-gray-700 mb-1">⛔ Demande fermée - Refus définitif</p>
+                              <p className="font-bold text-gray-700 mb-1">⛔ {t('requests.status.requestClosed')}</p>
                               <p className="text-sm text-gray-600">
-                                Le client a refusé définitivement votre devis. Vous ne pouvez plus envoyer de proposition pour cette demande.
+                                {t('requests.status.refusedDefinitive')}
                               </p>
                             </div>
                           </div>
@@ -1012,7 +1014,7 @@ export default function ArtisanDemandesPage() {
                           }}
                           className="flex-1 bg-orange-500 text-white hover:bg-orange-600 rounded-lg px-4 py-2.5 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
                         >
-                          🔄 Créer un devis révisé
+                          🔄 {t('requests.actions.createRevisedQuote')}
                         </button>
                         <button
                           onClick={(e) => {
@@ -1021,7 +1023,7 @@ export default function ArtisanDemandesPage() {
                           }}
                           className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200"
                         >
-                          💬 Contacter client
+                          💬 {t('requests.actions.contactClient')}
                         </button>
                         <button
                           onClick={(e) => {
@@ -1031,7 +1033,7 @@ export default function ArtisanDemandesPage() {
                           disabled={refusingDemandeId === demande.id}
                           className="px-4 py-2.5 border-2 border-red-300 text-red-700 hover:bg-red-50 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {refusingDemandeId === demande.id ? '⏳ Refus...' : '❌ Refuser'}
+                          {refusingDemandeId === demande.id ? `⏳ ${t('requests.actions.refusing')}` : `❌ ${t('requests.actions.refuse')}`}
                         </button>
                       </div>
                     );
@@ -1054,17 +1056,17 @@ export default function ArtisanDemandesPage() {
                           }}
                           className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
                         >
-                          📝 Envoyer un devis
+                          📝 {t('requests.actions.sendQuote')}
                         </button>
                       )}
                       {(demande.statut as string) === 'attribuee' && (
                         <div className="flex-1 bg-gray-100 text-gray-600 px-4 py-2.5 rounded-lg font-medium border-2 border-gray-300 text-center">
-                          ✅ Demande déjà attribuée
+                          ✅ {t('requests.status.alreadyAssigned')}
                         </div>
                       )}
                       {(demande.statut as string) === 'quota_atteint' && (
                         <div className="flex-1 bg-orange-50 text-orange-700 px-4 py-2.5 rounded-lg font-medium border-2 border-orange-300 text-center">
-                          🔒 Quota atteint - Demande fermée
+                          🔒 {t('requests.status.quotaReached')}
                         </div>
                       )}
                       <button
@@ -1074,7 +1076,7 @@ export default function ArtisanDemandesPage() {
                         }}
                         className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200"
                       >
-                        💬 Contacter client
+                        💬 {t('requests.actions.contactClient')}
                       </button>
                       <button
                         onClick={(e) => {
@@ -1084,7 +1086,7 @@ export default function ArtisanDemandesPage() {
                         disabled={refusingDemandeId === demande.id}
                         className="px-4 py-2.5 border-2 border-red-300 text-red-700 hover:bg-red-50 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {refusingDemandeId === demande.id ? '⏳ Refus...' : '❌ Refuser'}
+                        {refusingDemandeId === demande.id ? `⏳ ${t('requests.actions.refusing')}` : `❌ ${t('requests.actions.refuse')}`}
                       </button>
                     </div>
                   );
