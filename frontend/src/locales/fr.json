@@ -1229,5 +1229,151 @@
       "needHelp": "Besoin d'aide ?",
       "contactSupport": "Contactez notre support"
     }
+  },
+  "clientDisputes": {
+    "pageTitle": "Mes Litiges",
+    "pageDescription": "Gérez vos litiges et suivez leur résolution",
+    "declareDispute": "Déclarer un litige",
+    "loading": "Chargement...",
+    "filters": {
+      "all": "Tous",
+      "inProgress": "En cours",
+      "resolved": "Résolus"
+    },
+    "statuses": {
+      "ouvert": "Ouvert",
+      "en_mediation": "En médiation",
+      "proposition_resolution": "Proposition",
+      "resolu_accord": "Résolu (accord)",
+      "resolu_admin": "Résolu (admin)",
+      "abandonne": "Abandonné",
+      "escalade": "Escaladé"
+    },
+    "types": {
+      "non_conformite": "Non-conformité",
+      "retard": "Retard",
+      "abandon_chantier": "Abandon chantier",
+      "facture_excessive": "Facture excessive",
+      "malfacon": "Malfaçon",
+      "non_respect_delais": "Non-respect délais",
+      "autre": "Autre"
+    },
+    "mediatorAssigned": "👤 Médiateur assigné",
+    "viewButton": "Voir",
+    "empty": {
+      "title": "Aucun litige trouvé",
+      "showAll": "Voir tous les litiges"
+    },
+    "details": {
+      "opened": "📅 Ouvert",
+      "contested": "💰 Montant contesté :",
+      "actions": "📝 {count} action(s)",
+      "resolved": "✅ Résolu"
+    }
+  },
+  "artisanDisputes": {
+    "pageTitle": "Litiges",
+    "pageDescription": "Gérez les litiges concernant vos prestations",
+    "loading": "Chargement...",
+    "filters": {
+      "all": "Tous",
+      "inProgress": "En cours",
+      "resolved": "Résolus"
+    },
+    "statuses": {
+      "ouvert": "Ouvert",
+      "en_mediation": "En médiation",
+      "proposition_resolution": "Proposition",
+      "resolu_accord": "Résolu (accord)",
+      "resolu_admin": "Résolu (admin)",
+      "abandonne": "Abandonné",
+      "escalade": "Escaladé"
+    },
+    "types": {
+      "non_conformite": "Non-conformité",
+      "retard": "Retard",
+      "abandon_chantier": "Abandon chantier",
+      "facture_excessive": "Facture excessive",
+      "malfacon": "Malfaçon",
+      "non_respect_delais": "Non-respect délais",
+      "autre": "Autre"
+    },
+    "priorities": {
+      "basse": "Basse",
+      "moyenne": "Moyenne",
+      "haute": "Haute",
+      "urgente": "Urgente"
+    },
+    "mediatorAssigned": "👤 Médiateur assigné",
+    "youDeclared": "📢 Vous avez déclaré ce litige",
+    "viewButton": "Voir",
+    "empty": {
+      "title": "Aucun litige trouvé",
+      "showAll": "Voir tous les litiges"
+    },
+    "details": {
+      "openedOn": "Ouvert le",
+      "contested": "Montant contesté",
+      "actions": "Actions",
+      "resolvedOn": "Résolu le",
+      "unknownDate": "Date inconnue"
+    }
+  },
+  "clientExpressRequests": {
+    "pageTitle": "🚀 Mes demandes Express",
+    "pageSubtitle": "Petits travaux rapides (≤ 150€) - Intervention sous 48h",
+    "newRequest": "➕ Nouvelle demande Express",
+    "loading": "Chargement de vos demandes Express...",
+    "breadcrumb": {
+      "dashboard": "Dashboard",
+      "current": "Mes demandes Express"
+    },
+    "statuses": {
+      "en_attente_proposition": "⏳ En attente proposition",
+      "proposition_recue": "📨 Proposition reçue",
+      "acceptee": "✅ Acceptée",
+      "payee": "💳 Payée",
+      "en_cours": "🔧 En cours",
+      "terminee": "✔️ Terminée",
+      "annulee": "❌ Annulée",
+      "expiree": "⏱️ Expirée"
+    },
+    "urgency": {
+      "normal": "🕒 Normal",
+      "rapide": "🚀 Rapide",
+      "urgent": "🚨 Urgent"
+    },
+    "filters": {
+      "all": "Toutes",
+      "waiting": "En attente",
+      "proposals": "Propositions",
+      "inProgress": "En cours",
+      "completed": "Terminées"
+    },
+    "empty": {
+      "all": "📭 Aucune demande Express pour le moment",
+      "filtered": "📭 Aucune demande avec le statut",
+      "createFirst": "➕ Créer ma première demande Express"
+    },
+    "card": {
+      "budgetProposed": "💰 {amount}€",
+      "expires": "⏱️ Expire le",
+      "createdOn": "🕒 Créée le",
+      "viewDetails": "👁️ Voir détails",
+      "proposalWaiting": "📨 Proposition en attente",
+      "interventionInProgress": "🔧 Intervention en cours"
+    },
+    "howItWorks": {
+      "title": "ℹ️ Comment ça marche ?",
+      "step1": "Créez une demande Express (budget max 150€)",
+      "step2": "Un artisan vous propose un prix fixe sous 48h",
+      "step3": "Acceptez la proposition et payez en ligne (paiement sécurisé)",
+      "step4": "L'artisan intervient rapidement",
+      "step5": "Validez les travaux, l'argent est libéré"
+    },
+    "links": {
+      "backToDashboard": "← Retour au dashboard",
+      "standardRequests": "📋 Voir mes demandes Standard"
+    }
   }
 }

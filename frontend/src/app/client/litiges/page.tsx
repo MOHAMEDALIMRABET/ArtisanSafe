@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getLitigesByUser } from '@/lib/firebase/litige-service';
 import { Litige, LitigeType } from '@/types/litige';
 import { AlertTriangle, Eye, Plus, Filter } from 'lucide-react';
@@ -18,6 +19,7 @@ import Link from 'next/link';
 export default function ClientLitigesPage() {
   const router = useRouter();
   const { user, role, loading: authLoading } = useAuthStatus();
+  const { t } = useLanguage();
   const [litiges, setLitiges] = useState<Litige[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'tous' | 'ouverts' | 'resolus'>('tous');
@@ -57,38 +59,28 @@ export default function ClientLitigesPage() {
   });
 
   const getStatusBadge = (statut: string) => {
-    const styles: Record<string, { bg: string; text: string; label: string }> = {
-      ouvert: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Ouvert' },
-      en_mediation: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'En médiation' },
-      proposition_resolution: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Proposition' },
-      resolu_accord: { bg: 'bg-green-100', text: 'text-green-800', label: 'Résolu (accord)' },
-      resolu_admin: { bg: 'bg-green-100', text: 'text-green-800', label: 'Résolu (admin)' },
-      abandonne: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Abandonné' },
-      escalade: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Escaladé' },
+    const styles: Record<string, { bg: string; text: string }> = {
+      ouvert: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+      en_mediation: { bg: 'bg-blue-100', text: 'text-blue-800' },
+      proposition_resolution: { bg: 'bg-purple-100', text: 'text-purple-800' },
+      resolu_accord: { bg: 'bg-green-100', text: 'text-green-800' },
+      resolu_admin: { bg: 'bg-green-100', text: 'text-green-800' },
+      abandonne: { bg: 'bg-gray-100', text: 'text-gray-800' },
+      escalade: { bg: 'bg-orange-100', text: 'text-orange-800' },
     };
 
     const style = styles[statut] || styles.ouvert;
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>
-        {style.label}
+        {t(`clientDisputes.statuses.${statut}`)}
       </span>
     );
   };
 
   const getTypeBadge = (type: LitigeType) => {
-    const labels: Record<LitigeType, string> = {
-      non_conformite: 'Non-conformité',
-      retard: 'Retard',
-      abandon_chantier: 'Abandon chantier',
-      facture_excessive: 'Facture excessive',
-      malfacon: 'Malfaçon',
-      non_respect_delais: 'Non-respect délais',
-      autre: 'Autre',
-    };
-
     return (
       <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">
-        {labels[type]}
+        {t(`clientDisputes.types.${type}`)}
       </span>
     );
   };
@@ -97,7 +89,7 @@ export default function ClientLitigesPage() {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="text-center">
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600">{t('clientDisputes.loading')}</p>
         </div>
       </div>
     );
@@ -109,15 +101,15 @@ export default function ClientLitigesPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#2C3E50]">Mes Litiges</h1>
-            <p className="text-gray-600 mt-2">Gérez vos litiges et suivez leur résolution</p>
+            <h1 className="text-3xl font-bold text-[#2C3E50]">{t('clientDisputes.pageTitle')}</h1>
+            <p className="text-gray-600 mt-2">{t('clientDisputes.pageDescription')}</p>
           </div>
           <Link
             href="/client/litiges/nouveau"
             className="flex items-center gap-2 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition"
           >
             <Plus className="w-5 h-5" />
-            Déclarer un litige
+            {t('clientDisputes.declareDispute')}
           </Link>
         </div>
 
@@ -131,7 +123,7 @@ export default function ClientLitigesPage() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Tous ({litiges.length})
+            {t('clientDisputes.filters.all')} ({litiges.length})
           </button>
           <button
             onClick={() => setFilter('ouverts')}
@@ -141,7 +133,7 @@ export default function ClientLitigesPage() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            En cours (
+            {t('clientDisputes.filters.inProgress')} (
             {
               litiges.filter(
                 (l) =>
@@ -160,7 +152,7 @@ export default function ClientLitigesPage() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Résolus (
+            {t('clientDisputes.filters.resolved')} (
             {litiges.filter((l) => l.statut === 'resolu_accord' || l.statut === 'resolu_admin').length}
             )
           </button>
@@ -171,13 +163,13 @@ export default function ClientLitigesPage() {
       {filteredLitiges.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <AlertTriangle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Aucun litige trouvé</p>
+          <p className="text-gray-600 text-lg">{t('clientDisputes.empty.title')}</p>
           {filter !== 'tous' && (
             <button
               onClick={() => setFilter('tous')}
               className="mt-4 text-[#FF6B00] hover:underline"
             >
-              Voir tous les litiges
+              {t('clientDisputes.empty.showAll')}
             </button>
           )}
         </div>
@@ -195,7 +187,7 @@ export default function ClientLitigesPage() {
                     {getTypeBadge(litige.type)}
                     {litige.adminAssigne && (
                       <span className="px-2 py-1 rounded text-xs bg-purple-100 text-purple-700">
-                        👤 Médiateur assigné
+                        {t('clientDisputes.mediatorAssigned')}
                       </span>
                     )}
                   </div>
@@ -207,14 +199,14 @@ export default function ClientLitigesPage() {
                   className="flex items-center gap-2 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition"
                 >
                   <Eye className="w-4 h-4" />
-                  Voir
+                  {t('clientDisputes.viewButton')}
                 </Link>
               </div>
 
               <div className="flex items-center justify-between text-sm text-gray-500">
                 <div className="flex items-center gap-4">
                   <span>
-                    📅 Ouvert{' '}
+                    {t('clientDisputes.details.opened')}{' '}
                     {litige.dateOuverture
                       ? formatDistanceToNow(litige.dateOuverture.toDate(), {
                           addSuffix: true,
@@ -222,14 +214,14 @@ export default function ClientLitigesPage() {
                         })
                       : 'Date inconnue'}
                   </span>
-                  {litige.montantConteste > 0 && (
-                    <span>💰 Montant contesté : {litige.montantConteste}€</span>
+                  {litige.montantConteste && litige.montantConteste > 0 && (
+                    <span>{t('clientDisputes.details.contested')} {litige.montantConteste}€</span>
                   )}
-                  <span>📝 {litige.historique.length} action(s)</span>
+                  <span>{t('clientDisputes.details.actions').replace('{count}', String(litige.historique.length))}</span>
                 </div>
                 {litige.dateResolution && (
                   <span className="text-green-600 font-medium">
-                    ✅ Résolu{' '}
+                    {t('clientDisputes.details.resolved')}{' '}
                     {formatDistanceToNow(litige.dateResolution.toDate(), {
                       addSuffix: true,
                       locale: fr,

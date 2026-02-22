@@ -1221,5 +1221,151 @@
       "needHelp": "Need help?",
       "contactSupport": "Contact our support"
     }
+  },
+  "clientDisputes": {
+    "pageTitle": "My Disputes",
+    "pageDescription": "Manage your disputes and track their resolution",
+    "declareDispute": "Declare a dispute",
+    "loading": "Loading...",
+    "filters": {
+      "all": "All",
+      "inProgress": "In progress",
+      "resolved": "Resolved"
+    },
+    "statuses": {
+      "ouvert": "Open",
+      "en_mediation": "In mediation",
+      "proposition_resolution": "Proposal",
+      "resolu_accord": "Resolved (agreement)",
+      "resolu_admin": "Resolved (admin)",
+      "abandonne": "Abandoned",
+      "escalade": "Escalated"
+    },
+    "types": {
+      "non_conformite": "Non-compliance",
+      "retard": "Delay",
+      "abandon_chantier": "Site abandonment",
+      "facture_excessive": "Excessive invoice",
+      "malfacon": "Defective work",
+      "non_respect_delais": "Deadline violation",
+      "autre": "Other"
+    },
+    "mediatorAssigned": "👤 Mediator assigned",
+    "viewButton": "View",
+    "empty": {
+      "title": "No disputes found",
+      "showAll": "View all disputes"
+    },
+    "details": {
+      "opened": "📅 Opened",
+      "contested": "💰 Contested amount:",
+      "actions": "📝 {count} action(s)",
+      "resolved": "✅ Resolved"
+    }
+  },
+  "artisanDisputes": {
+    "pageTitle": "Disputes",
+    "pageDescription": "Manage disputes related to your services",
+    "loading": "Loading...",
+    "filters": {
+      "all": "All",
+      "inProgress": "In progress",
+      "resolved": "Resolved"
+    },
+    "statuses": {
+      "ouvert": "Open",
+      "en_mediation": "In mediation",
+      "proposition_resolution": "Proposal",
+      "resolu_accord": "Resolved (agreement)",
+      "resolu_admin": "Resolved (admin)",
+      "abandonne": "Abandoned",
+      "escalade": "Escalated"
+    },
+    "types": {
+      "non_conformite": "Non-compliance",
+      "retard": "Delay",
+      "abandon_chantier": "Site abandonment",
+      "facture_excessive": "Excessive invoice",
+      "malfacon": "Defective work",
+      "non_respect_delais": "Deadline violation",
+      "autre": "Other"
+    },
+    "priorities": {
+      "basse": "Low",
+      "moyenne": "Medium",
+      "haute": "High",
+      "urgente": "Urgent"
+    },
+    "mediatorAssigned": "👤 Mediator assigned",
+    "youDeclared": "📢 You declared this dispute",
+    "viewButton": "View",
+    "empty": {
+      "title": "No disputes found",
+      "showAll": "View all disputes"
+    },
+    "details": {
+      "openedOn": "Opened on",
+      "contested": "Contested amount",
+      "actions": "Actions",
+      "resolvedOn": "Resolved on",
+      "unknownDate": "Unknown date"
+    }
+  },
+  "clientExpressRequests": {
+    "pageTitle": "🚀 My Express Requests",
+    "pageSubtitle": "Small quick jobs (≤ €150) - Service within 48h",
+    "newRequest": "➕ New Express Request",
+    "loading": "Loading your Express requests...",
+    "breadcrumb": {
+      "dashboard": "Dashboard",
+      "current": "My Express Requests"
+    },
+    "statuses": {
+      "en_attente_proposition": "⏳ Awaiting proposal",
+      "proposition_recue": "📨 Proposal received",
+      "acceptee": "✅ Accepted",
+      "payee": "💳 Paid",
+      "en_cours": "🔧 In progress",
+      "terminee": "✔️ Completed",
+      "annulee": "❌ Cancelled",
+      "expiree": "⏱️ Expired"
+    },
+    "urgency": {
+      "normal": "🕒 Normal",
+      "rapide": "🚀 Fast",
+      "urgent": "🚨 Urgent"
+    },
+    "filters": {
+      "all": "All",
+      "waiting": "Waiting",
+      "proposals": "Proposals",
+      "inProgress": "In progress",
+      "completed": "Completed"
+    },
+    "empty": {
+      "all": "📭 No Express requests at the moment",
+      "filtered": "📭 No requests with status",
+      "createFirst": "➕ Create my first Express request"
+    },
+    "card": {
+      "budgetProposed": "💰 €{amount}",
+      "expires": "⏱️ Expires on",
+      "createdOn": "🕒 Created on",
+      "viewDetails": "👁️ View details",
+      "proposalWaiting": "📨 Proposal pending",
+      "interventionInProgress": "🔧 Work in progress"
+    },
+    "howItWorks": {
+      "title": "ℹ️ How does it work?",
+      "step1": "Create an Express request (max budget €150)",
+      "step2": "A tradesperson proposes a fixed price within 48h",
+      "step3": "Accept the proposal and pay online (secure payment)",
+      "step4": "The tradesperson intervenes quickly",
+      "step5": "Validate the work, payment is released"
+    },
+    "links": {
+      "backToDashboard": "← Back to dashboard",
+      "standardRequests": "📋 View my Standard requests"
+    }
   }
 }

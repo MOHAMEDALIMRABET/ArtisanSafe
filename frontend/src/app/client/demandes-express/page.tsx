@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getDemandesExpressByClient } from '@/lib/firebase/demande-express-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { Card } from '@/components/ui/Card';
@@ -15,6 +16,7 @@ import { fr } from 'date-fns/locale';
 export default function MesDemandesExpressPage() {
   const router = useRouter();
   const { user: firebaseUser, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [userData, setUserData] = useState<User | null>(null);
   const [demandes, setDemandes] = useState<DemandeExpress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,34 +61,34 @@ export default function MesDemandesExpressPage() {
   });
 
   const getStatutBadge = (statut: DemandeExpressStatut) => {
-    const badges: Record<DemandeExpressStatut, { label: string; className: string }> = {
-      en_attente_proposition: { label: '⏳ En attente proposition', className: 'bg-yellow-100 text-yellow-800' },
-      proposition_recue: { label: '📨 Proposition reçue', className: 'bg-blue-100 text-blue-800' },
-      acceptee: { label: '✅ Acceptée', className: 'bg-green-100 text-green-800' },
-      payee: { label: '💳 Payée', className: 'bg-purple-100 text-purple-800' },
-      en_cours: { label: '🔧 En cours', className: 'bg-indigo-100 text-indigo-800' },
-      terminee: { label: '✔️ Terminée', className: 'bg-green-200 text-green-900' },
-      annulee: { label: '❌ Annulée', className: 'bg-red-100 text-red-800' },
-      expiree: { label: '⏱️ Expirée', className: 'bg-gray-200 text-gray-700' },
+    const classes: Record<DemandeExpressStatut, string> = {
+      en_attente_proposition: 'bg-yellow-100 text-yellow-800',
+      proposition_recue: 'bg-blue-100 text-blue-800',
+      acceptee: 'bg-green-100 text-green-800',
+      payee: 'bg-purple-100 text-purple-800',
+      en_cours: 'bg-indigo-100 text-indigo-800',
+      terminee: 'bg-green-200 text-green-900',
+      annulee: 'bg-red-100 text-red-800',
+      expiree: 'bg-gray-200 text-gray-700',
     };
-    const badge = badges[statut] || { label: statut, className: 'bg-gray-100 text-gray-800' };
+    const className = classes[statut] || 'bg-gray-100 text-gray-800';
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${badge.className}`}>
-        {badge.label}
+      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${className}`}>
+        {t(`clientExpressRequests.statuses.${statut}`)}
       </span>
     );
   };
 
   const getUrgenceBadge = (urgence: 'normal' | 'rapide' | 'urgent') => {
-    const badges = {
-      normal: { label: '🕒 Normal', className: 'bg-gray-100 text-gray-700' },
-      rapide: { label: '🚀 Rapide', className: 'bg-orange-100 text-orange-700' },
-      urgent: { label: '🚨 Urgent', className: 'bg-red-100 text-red-700' },
+    const classes = {
+      normal: 'bg-gray-100 text-gray-700',
+      rapide: 'bg-orange-100 text-orange-700',
+      urgent: 'bg-red-100 text-red-700',
     };
-    const badge = badges[urgence];
+    const className = classes[urgence];
     return (
-      <span className={`px-2 py-1 rounded text-xs font-semibold ${badge.className}`}>
-        {badge.label}
+      <span className={`px-2 py-1 rounded text-xs font-semibold ${className}`}>
+        {t(`clientExpressRequests.urgency.${urgence}`)}
       </span>
     );
   };
@@ -96,7 +98,7 @@ export default function MesDemandesExpressPage() {
       <div className="min-h-screen bg-gradient-to-b from-[#F8F9FA] to-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#FF6B00] mx-auto mb-4"></div>
-          <p className="text-lg text-[#6C757D]">Chargement de vos demandes Express...</p>
+          <p className="text-lg text-[#6C757D]">{t('clientExpressRequests.loading')}</p>
         </div>
       </div>
     );
@@ -109,19 +111,19 @@ export default function MesDemandesExpressPage() {
         <div className="mb-8">
           <nav className="text-sm mb-4">
             <Link href="/client/dashboard" className="text-[#2C3E50] hover:text-[#FF6B00]">
-              Dashboard
+              {t('clientExpressRequests.breadcrumb.dashboard')}
             </Link>
             <span className="mx-2 text-[#6C757D]">/</span>
-            <span className="text-[#6C757D]">Mes demandes Express</span>
+            <span className="text-[#6C757D]">{t('clientExpressRequests.breadcrumb.current')}</span>
           </nav>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">
-                🚀 Mes demandes Express
+                {t('clientExpressRequests.pageTitle')}
               </h1>
               <p className="text-[#6C757D]">
-                Petits travaux rapides (≤ 150€) - Intervention sous 48h
+                {t('clientExpressRequests.pageSubtitle')}
               </p>
             </div>
 
@@ -129,7 +131,7 @@ export default function MesDemandesExpressPage() {
               onClick={() => router.push('/petits-travaux-express/recherche')}
               className="whitespace-nowrap"
             >
-              ➕ Nouvelle demande Express
+              {t('clientExpressRequests.newRequest')}
             </Button>
           </div>
         </div>
@@ -144,7 +146,7 @@ export default function MesDemandesExpressPage() {
                 : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
-            Toutes ({demandes.length})
+            {t('clientExpressRequests.filters.all')} ({demandes.length})
           </button>
           <button
             onClick={() => setFiltreStatut('en_attente_proposition')}
@@ -154,7 +156,7 @@ export default function MesDemandesExpressPage() {
                 : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
-            En attente ({demandes.filter(d => d.statut === 'en_attente_proposition').length})
+            {t('clientExpressRequests.filters.waiting')} ({demandes.filter(d => d.statut === 'en_attente_proposition').length})
           </button>
           <button
             onClick={() => setFiltreStatut('proposition_recue')}
@@ -164,7 +166,7 @@ export default function MesDemandesExpressPage() {
                 : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
-            Propositions ({demandes.filter(d => d.statut === 'proposition_recue').length})
+            {t('clientExpressRequests.filters.proposals')} ({demandes.filter(d => d.statut === 'proposition_recue').length})
           </button>
           <button
             onClick={() => setFiltreStatut('en_cours')}
@@ -174,7 +176,7 @@ export default function MesDemandesExpressPage() {
                 : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
-            En cours ({demandes.filter(d => d.statut === 'en_cours').length})
+            {t('clientExpressRequests.filters.inProgress')} ({demandes.filter(d => d.statut === 'en_cours').length})
           </button>
           <button
             onClick={() => setFiltreStatut('terminee')}
@@ -184,7 +186,7 @@ export default function MesDemandesExpressPage() {
                 : 'bg-white text-[#2C3E50] hover:bg-[#F5F7FA]'
             }`}
           >
-            Terminées ({demandes.filter(d => d.statut === 'terminee').length})
+            {t('clientExpressRequests.filters.completed')} ({demandes.filter(d => d.statut === 'terminee').length})
           </button>
         </div>
 
@@ -193,11 +195,11 @@ export default function MesDemandesExpressPage() {
           <Card className="text-center py-12">
             <p className="text-xl text-[#6C757D] mb-6">
               {filtreStatut === 'toutes'
-                ? '📭 Aucune demande Express pour le moment'
-                : `📭 Aucune demande avec le statut "${filtreStatut}"`}
+                ? t('clientExpressRequests.empty.all')
+                : `${t('clientExpressRequests.empty.filtered')} "${filtreStatut}"`}
             </p>
             <Button onClick={() => router.push('/petits-travaux-express/recherche')}>
-              ➕ Créer ma première demande Express
+              {t('clientExpressRequests.empty.createFirst')}
             </Button>
           </Card>
         ) : (
@@ -211,7 +213,7 @@ export default function MesDemandesExpressPage() {
                       {getUrgenceBadge(demande.urgence)}
                       {demande.budgetPropose && (
                         <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-                          💰 {demande.budgetPropose}€
+                          {t('clientExpressRequests.card.budgetProposed').replace('{amount}', String(demande.budgetPropose))}
                         </span>
                       )}
                     </div>
@@ -228,13 +230,13 @@ export default function MesDemandesExpressPage() {
                     <div className="flex flex-wrap gap-4 text-sm text-[#6C757D]">
                       <span>📍 {demande.ville} ({demande.codePostal})</span>
                       <span>📅 {demande.date}</span>
-                      <span>🕒 Créée le {format(demande.createdAt.toDate(), 'dd MMMM yyyy', { locale: fr })}</span>
+                      <span>{t('clientExpressRequests.card.createdOn')} {format(demande.createdAt.toDate(), 'dd MMMM yyyy', { locale: fr })}</span>
                     </div>
 
                     {demande.expiresAt && demande.statut === 'en_attente_proposition' && (
                       <div className="mt-3 flex items-center gap-2 text-sm">
                         <span className="text-orange-600 font-semibold">
-                          ⏱️ Expire le {format(demande.expiresAt.toDate(), 'dd MMMM à HH:mm', { locale: fr })}
+                          {t('clientExpressRequests.card.expires')} {format(demande.expiresAt.toDate(), 'dd MMMM à HH:mm', { locale: fr })}
                         </span>
                       </div>
                     )}
@@ -245,18 +247,18 @@ export default function MesDemandesExpressPage() {
                       onClick={() => router.push(`/client/demandes-express/${demande.id}`)}
                       className="whitespace-nowrap"
                     >
-                      👁️ Voir détails
+                      {t('clientExpressRequests.card.viewDetails')}
                     </Button>
 
                     {demande.statut === 'proposition_recue' && (
                       <span className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-center text-sm font-semibold">
-                        📨 Proposition en attente
+                        {t('clientExpressRequests.card.proposalWaiting')}
                       </span>
                     )}
 
                     {demande.statut === 'en_cours' && (
                       <span className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-center text-sm font-semibold">
-                        🔧 Intervention en cours
+                        {t('clientExpressRequests.card.interventionInProgress')}
                       </span>
                     )}
                   </div>
@@ -268,13 +270,13 @@ export default function MesDemandesExpressPage() {
 
         {/* Aide */}
         <div className="mt-8 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-          <h3 className="font-bold text-[#2C3E50] mb-3">ℹ️ Comment ça marche ?</h3>
+          <h3 className="font-bold text-[#2C3E50] mb-3">{t('clientExpressRequests.howItWorks.title')}</h3>
           <ul className="space-y-2 text-sm text-[#6C757D]">
-            <li><strong>1.</strong> Créez une demande Express (budget max 150€)</li>
-            <li><strong>2.</strong> Un artisan vous propose un prix fixe sous 48h</li>
-            <li><strong>3.</strong> Acceptez la proposition et payez en ligne (paiement sécurisé)</li>
-            <li><strong>4.</strong> L'artisan intervient rapidement</li>
-            <li><strong>5.</strong> Validez les travaux, l'argent est libéré</li>
+            <li><strong>1.</strong> {t('clientExpressRequests.howItWorks.step1')}</li>
+            <li><strong>2.</strong> {t('clientExpressRequests.howItWorks.step2')}</li>
+            <li><strong>3.</strong> {t('clientExpressRequests.howItWorks.step3')}</li>
+            <li><strong>4.</strong> {t('clientExpressRequests.howItWorks.step4')}</li>
+            <li><strong>5.</strong> {t('clientExpressRequests.howItWorks.step5')}</li>
           </ul>
         </div>
 
@@ -284,13 +286,13 @@ export default function MesDemandesExpressPage() {
             href="/client/dashboard"
             className="text-[#2C3E50] hover:text-[#FF6B00] font-semibold"
           >
-            ← Retour au dashboard
+            {t('clientExpressRequests.links.backToDashboard')}
           </Link>
           <Link
             href="/client/demandes"
             className="text-[#2C3E50] hover:text-[#FF6B00] font-semibold"
           >
-            📋 Voir mes demandes Standard
+            {t('clientExpressRequests.links.standardRequests')}
           </Link>
         </div>
       </div>
