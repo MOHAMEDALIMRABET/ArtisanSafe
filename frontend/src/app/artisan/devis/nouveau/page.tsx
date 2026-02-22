@@ -5,7 +5,7 @@
  * Layout split : formulaire à gauche, prévisualisation à droite
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -112,34 +112,18 @@ export default function NouveauDevisPage() {
   // Signature électronique artisan
   const [showSignatureArtisan, setShowSignatureArtisan] = useState(false);
   const [signatureArtisanDataURL, setSignatureArtisanDataURL] = useState<string | null>(null);
-  // Action en attente de signature : 'generer' | 'envoyer' | null
-  const [pendingAction, setPendingAction] = useState<'generer' | 'envoyer' | null>(null);
+  // Ref miroir (accessible sans closure périmée dans les fonctions async)
+  const signatureArtisanRef = useRef<string | null>(null);
+  // Ref pour l'action en attente
+  const pendingActionRef = useRef<'generer' | 'envoyer' | null>(null);
 
   // Auto-masquer l'erreur après 5 secondes
   useEffect(() => {
     if (erreurValidation) {
-      const timer = setTimeout(() => {
-        setErreurValidation(null);
-      }, 5000);
+      const timer = setTimeout(() => setErreurValidation(null), 5000);
       return () => clearTimeout(timer);
     }
   }, [erreurValidation]);
-
-  // Déclencher l'action en attente après signature
-  useEffect(() => {
-    if (signatureArtisanDataURL && pendingAction) {
-      const action = pendingAction;
-      setPendingAction(null);
-      if (action === 'generer') {
-        sauvegarderBrouillon();
-      } else if (action === 'envoyer') {
-        envoyerDevis();
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signatureArtisanDataURL]);
-
-
   // Informations client/artisan (pré-remplies)
   const [clientInfo, setClientInfo] = useState<Devis['client'] | null>(null);
   const [artisanInfo, setArtisanInfo] = useState<Devis['artisan'] | null>(null);
@@ -813,8 +797,8 @@ export default function NouveauDevisPage() {
     }
 
     // Signature artisan obligatoire : ouvrir le modal si pas encore signé
-    if (!signatureArtisanDataURL) {
-      setPendingAction('generer');
+    if (!signatureArtisanRef.current) {
+      pendingActionRef.current = 'generer';
       setShowSignatureArtisan(true);
       return;
     }
@@ -855,9 +839,9 @@ export default function NouveauDevisPage() {
           new Date(Date.now() + dateValidite * 24 * 60 * 60 * 1000)
         ),
         conditions,
-        ...(signatureArtisanDataURL && {
+        ...(signatureArtisanRef.current && {
           signatureArtisan: {
-            url: signatureArtisanDataURL,
+            url: signatureArtisanRef.current,
             date: Timestamp.now(),
           }
         }),
@@ -971,9 +955,10 @@ export default function NouveauDevisPage() {
       return;
     }
 
-    // Vérification signature artisan obligatoire
-    if (!signatureArtisanDataURL) {
-      alert('✍️ Veuillez apposer votre signature avant d\'envoyer le devis.\n\nCliquez sur "Apposer ma signature" dans la prévisualisation.');
+    // Signature artisan obligatoire : ouvrir le modal si pas encore signé
+    if (!signatureArtisanRef.current) {
+      pendingActionRef.current = 'envoyer';
+      setShowSignatureArtisan(true);
       return;
     }
     
@@ -1059,9 +1044,9 @@ export default function NouveauDevisPage() {
           new Date(Date.now() + dateValidite * 24 * 60 * 60 * 1000)
         ),
         conditions,
-        ...(signatureArtisanDataURL && {
+        ...(signatureArtisanRef.current && {
           signatureArtisan: {
-            url: signatureArtisanDataURL,
+            url: signatureArtisanRef.current,
             date: Timestamp.now(),
           }
         }),
@@ -2042,18 +2027,25 @@ export default function NouveauDevisPage() {
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
           <h3 className="text-lg font-bold text-[#2C3E50] mb-1">✍️ Signature électronique requise</h3>
           <p className="text-sm text-gray-500 mb-4">
-            {pendingAction === 'envoyer'
+            {pendingActionRef.current === 'envoyer'
               ? 'Signez pour confirmer et envoyer ce devis au client. Si vous annulez, le devis ne sera pas envoyé.'
               : 'Signez pour confirmer et générer ce devis. Si vous annulez, le devis ne sera pas généré.'}
           </p>
           <SignatureCanvas
             onSave={(dataURL) => {
+              // Mettre à jour le ref ET l'état (le ref est lu immédiatement par les fonctions async)
+              signatureArtisanRef.current = dataURL;
               setSignatureArtisanDataURL(dataURL);
               setShowSignatureArtisan(false);
+              // Exécuter l'action en attente avec la signature fraîche
+              const action = pendingActionRef.current;
+              pendingActionRef.current = null;
+              if (action === 'generer') sauvegarderBrouillon();
+              else if (action === 'envoyer') envoyerDevis();
             }}
             onCancel={() => {
               setShowSignatureArtisan(false);
-              setPendingAction(null); // annuler = pas de signature, pas d'action
+              pendingActionRef.current = null; // annuler = pas de signature, pas d'action
             }}
           />
         </div>

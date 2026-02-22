@@ -173,8 +173,13 @@ export async function createDevis(
   
   const maintenant = Timestamp.now();
   
+  // Nettoyer les champs undefined (Firestore les rejette)
+  const cleanDevisData: any = Object.fromEntries(
+    Object.entries(devisData).filter(([, v]) => v !== undefined)
+  );
+
   const newDevis = {
-    ...devisData,
+    ...cleanDevisData,
     numeroDevis,
     statut: devisData.statut || 'brouillon' as DevisStatut,
     dateCreation: maintenant,
@@ -291,23 +296,36 @@ export async function updateDevis(
   const devisDoc = await getDoc(devisRef);
   const devisActuel = devisDoc.data() as Devis;
   
+  // Supprimer les champs undefined pour éviter l'erreur Firestore
+  const cleanUpdates: any = Object.fromEntries(
+    Object.entries(updates).filter(([, v]) => v !== undefined)
+  );
+
   const updateData: any = {
-    ...updates,
+    ...cleanUpdates,
     dateModification: Timestamp.now(),
   };
   
   // Si le statut change, ajouter à l'historique
   if (updates.statut) {
+    const commentaires: Record<string, string> = {
+      envoye: 'Devis envoyé au client',
+      accepte: 'Devis accepté par le client',
+      refuse: 'Devis refusé par le client',
+      expire: 'Devis expiré',
+      genere: 'Devis généré',
+      brouillon: 'Brouillon sauvegardé',
+    };
+    const entree: any = {
+      statut: updates.statut,
+      date: Timestamp.now(),
+    };
+    const commentaire = commentaires[updates.statut];
+    if (commentaire) entree.commentaire = commentaire;
+
     updateData.historiqueStatuts = [
       ...(devisActuel.historiqueStatuts || []),
-      {
-        statut: updates.statut,
-        date: Timestamp.now(),
-        commentaire: updates.statut === 'envoye' ? 'Devis envoyé au client' :
-                     updates.statut === 'accepte' ? 'Devis accepté par le client' :
-                     updates.statut === 'refuse' ? 'Devis refusé par le client' :
-                     updates.statut === 'expire' ? 'Devis expiré' : undefined,
-      }
+      entree,
     ];
     
     // Ajouter la date selon le statut

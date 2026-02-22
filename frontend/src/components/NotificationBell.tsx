@@ -152,6 +152,45 @@ export default function NotificationBell() {
             )}
           </div>
 
+          {/* Raccourcis groupés (si notifications non lues par catégorie) */}
+          {(() => {
+            const devisRecuCount = notifications.filter(n => !n.lue && (n.type === 'devis_recu' || n.type === 'nouveau_devis')).length;
+            const devisReponseCount = notifications.filter(n => !n.lue && (n.type === 'devis_accepte' || n.type === 'devis_refuse' || n.type === 'devis_revision')).length;
+            if (devisRecuCount === 0 && devisReponseCount === 0) return null;
+            return (
+              <div className="border-b border-gray-200 bg-orange-50 px-4 py-2 flex flex-wrap gap-2">
+                {devisRecuCount > 0 && (
+                  <button
+                    onClick={() => { router.push('/client/devis'); setIsOpen(false); }}
+                    className="flex items-center gap-1.5 bg-[#FF6B00] text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-[#E56100] transition"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Mes Devis
+                    <span className="bg-white text-[#FF6B00] font-black rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      {devisRecuCount}
+                    </span>
+                  </button>
+                )}
+                {devisReponseCount > 0 && (
+                  <button
+                    onClick={() => { router.push('/artisan/devis'); setIsOpen(false); }}
+                    className="flex items-center gap-1.5 bg-[#FF6B00] text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-[#E56100] transition"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Mes Devis
+                    <span className="bg-white text-[#FF6B00] font-black rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      {devisReponseCount}
+                    </span>
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Liste des notifications */}
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
