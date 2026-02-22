@@ -1178,9 +1178,24 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-semibold text-gray-700 mb-2">Signature artisan :</p>
-                    <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50">
-                      <p className="text-xs text-gray-400 text-center">Espace réservé<br/>au cachet</p>
-                    </div>
+                    {devis.signatureArtisan?.url ? (
+                      <div>
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-2 inline-block">
+                          <img
+                            src={devis.signatureArtisan.url}
+                            alt="Signature artisan"
+                            className="h-16 w-auto"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Signée le {devis.signatureArtisan.date?.toDate().toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50">
+                        <p className="text-xs text-gray-400 text-center">Espace réservé<br/>au cachet</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

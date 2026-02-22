@@ -19,6 +19,7 @@ import type { Devis, LigneDevis, TVARate, calculerLigne, calculerTotaux } from '
 import { Timestamp, query, collection, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { validateMessage } from '@/lib/antiBypassValidator';
+import { SignatureCanvas } from '@/components/SignatureCanvas';
 
 /**
  * Masque un numéro de téléphone en ne montrant que les 2 premiers chiffres
@@ -108,6 +109,12 @@ export default function NouveauDevisPage() {
   // Validation anti-contournement
   const [erreurValidation, setErreurValidation] = useState<string | null>(null);
 
+  // Signature électronique artisan
+  const [showSignatureArtisan, setShowSignatureArtisan] = useState(false);
+  const [signatureArtisanDataURL, setSignatureArtisanDataURL] = useState<string | null>(null);
+  // Action en attente de signature : 'generer' | 'envoyer' | null
+  const [pendingAction, setPendingAction] = useState<'generer' | 'envoyer' | null>(null);
+
   // Auto-masquer l'erreur après 5 secondes
   useEffect(() => {
     if (erreurValidation) {
@@ -117,6 +124,20 @@ export default function NouveauDevisPage() {
       return () => clearTimeout(timer);
     }
   }, [erreurValidation]);
+
+  // Déclencher l'action en attente après signature
+  useEffect(() => {
+    if (signatureArtisanDataURL && pendingAction) {
+      const action = pendingAction;
+      setPendingAction(null);
+      if (action === 'generer') {
+        sauvegarderBrouillon();
+      } else if (action === 'envoyer') {
+        envoyerDevis();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signatureArtisanDataURL]);
 
 
   // Informations client/artisan (pré-remplies)
@@ -791,6 +812,13 @@ export default function NouveauDevisPage() {
       return;
     }
 
+    // Signature artisan obligatoire : ouvrir le modal si pas encore signé
+    if (!signatureArtisanDataURL) {
+      setPendingAction('generer');
+      setShowSignatureArtisan(true);
+      return;
+    }
+
     setSavingBrouillon(true);
     try {
       const devisData: any = {
@@ -827,6 +855,12 @@ export default function NouveauDevisPage() {
           new Date(Date.now() + dateValidite * 24 * 60 * 60 * 1000)
         ),
         conditions,
+        ...(signatureArtisanDataURL && {
+          signatureArtisan: {
+            url: signatureArtisanDataURL,
+            date: Timestamp.now(),
+          }
+        }),
       };
       
       // 🚨 SYSTÈME DE VARIANTES PROGRESSIF (SANS TRANSFORMATION RÉTROACTIVE)
@@ -936,6 +970,12 @@ export default function NouveauDevisPage() {
       alert(t('alerts.validation.enterDate'));
       return;
     }
+
+    // Vérification signature artisan obligatoire
+    if (!signatureArtisanDataURL) {
+      alert('✍️ Veuillez apposer votre signature avant d\'envoyer le devis.\n\nCliquez sur "Apposer ma signature" dans la prévisualisation.');
+      return;
+    }
     
     // Vérifier que la date de début est dans les préférences du client (si demande existe)
     if (demande?.datesSouhaitees?.dates?.[0]) {
@@ -1019,6 +1059,12 @@ export default function NouveauDevisPage() {
           new Date(Date.now() + dateValidite * 24 * 60 * 60 * 1000)
         ),
         conditions,
+        ...(signatureArtisanDataURL && {
+          signatureArtisan: {
+            url: signatureArtisanDataURL,
+            date: Timestamp.now(),
+          }
+        }),
       };
       
       // 🚨 SYSTÈME DE VARIANTES PROGRESSIF (SANS TRANSFORMATION RÉTROACTIVE)
@@ -1140,7 +1186,8 @@ export default function NouveauDevisPage() {
   const totaux = calculerTotauxGlobaux();
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] flex">
+    <>
+      <div className="min-h-screen bg-[#F5F7FA] flex">
       {/* PARTIE GAUCHE : FORMULAIRE */}
       <div className="w-1/2 overflow-y-auto p-8">
         <div className="max-w-2xl">
@@ -1966,9 +2013,53 @@ export default function NouveauDevisPage() {
               </div>
             </div>
           </div>
+
+          {/* Signature artisan - indicateur visuel uniquement (déclenchée par les boutons) */}
+          <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
+            <div className="text-right">
+              <p className="text-xs text-gray-500 mb-2">Signature de l'artisan :</p>
+              {signatureArtisanDataURL ? (
+                <div>
+                  <img
+                    src={signatureArtisanDataURL}
+                    alt="Signature artisan"
+                    className="h-16 border border-gray-200 rounded bg-white mb-1 ml-auto"
+                  />
+                  <p className="text-xs text-[#28A745]">✅ Signé</p>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic">Signature apposée lors de l'envoi</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
+    {/* Modal signature artisan */}
+    {showSignatureArtisan && (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
+          <h3 className="text-lg font-bold text-[#2C3E50] mb-1">✍️ Signature électronique requise</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            {pendingAction === 'envoyer'
+              ? 'Signez pour confirmer et envoyer ce devis au client. Si vous annulez, le devis ne sera pas envoyé.'
+              : 'Signez pour confirmer et générer ce devis. Si vous annulez, le devis ne sera pas généré.'}
+          </p>
+          <SignatureCanvas
+            onSave={(dataURL) => {
+              setSignatureArtisanDataURL(dataURL);
+              setShowSignatureArtisan(false);
+            }}
+            onCancel={() => {
+              setShowSignatureArtisan(false);
+              setPendingAction(null); // annuler = pas de signature, pas d'action
+            }}
+          />
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

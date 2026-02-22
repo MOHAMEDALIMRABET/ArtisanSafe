@@ -94,6 +94,12 @@ export interface Devis {
     date: Timestamp;             // Date de la signature
     ip?: string;                 // IP du client (optionnel, pour traçabilité)
   };
+
+  // Signature électronique de l'artisan (lors de la création/envoi du devis)
+  signatureArtisan?: {
+    url: string;                 // DataURL ou URL Firebase Storage de la signature
+    date: Timestamp;             // Date de la signature
+  };
   
   // Paiement avec escrow (séquestre) - après signature
   paiement?: {

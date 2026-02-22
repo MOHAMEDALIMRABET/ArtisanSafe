@@ -680,9 +680,24 @@ export default function VoirDevisPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-semibold text-gray-700 mb-2">Signature artisan :</p>
-                  <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50">
-                    <p className="text-xs text-gray-400 text-center">Espace réservé<br/>au cachet</p>
-                  </div>
+                  {devis.signatureArtisan?.url ? (
+                    <div>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-2 inline-block">
+                        <img
+                          src={devis.signatureArtisan.url}
+                          alt="Signature artisan"
+                          className="h-16 w-auto"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Signée le {devis.signatureArtisan.date?.toDate().toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50">
+                      <p className="text-xs text-gray-400 text-center">Espace réservé<br/>au cachet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -734,6 +749,23 @@ export default function VoirDevisPage() {
                       🔒 Signature électronique conforme au règlement eIDAS (UE n°910/2014)
                     </p>
                   </div>
+
+                  {/* Signature artisan */}
+                  {devis.signatureArtisan?.url && (
+                    <div className="mt-3 bg-white border-2 border-orange-200 rounded-lg p-4">
+                      <p className="text-sm font-semibold text-gray-700 mb-3">Votre signature (artisan) :</p>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 inline-block">
+                        <img
+                          src={devis.signatureArtisan.url}
+                          alt="Signature artisan"
+                          className="h-16 w-auto"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        📅 Signée le {devis.signatureArtisan.date?.toDate().toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                  )}
 
                   <div className="mt-4 bg-orange-50 border-l-4 border-[#FF6B00] p-4 rounded">
                     <div className="flex items-start gap-3">
