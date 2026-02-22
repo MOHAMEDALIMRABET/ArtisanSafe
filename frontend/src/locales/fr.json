@@ -1073,5 +1073,91 @@
       "responsePublished": "✅ Votre réponse a été publiée avec succès !",
       "error": "❌ Erreur : {message}"
     }
+  },
+  "artisanWallet": {
+    "pageTitle": "Mon Wallet",
+    "pageDescription": "Gérez vos gains et paiements",
+    "backToDashboard": "Retour au tableau de bord",
+    "loading": "Chargement...",
+    "balance": {
+      "available": "Solde disponible",
+      "noTransactions": "Aucune transaction enregistrée",
+      "transactionsCount": "{count} transaction{plural} enregistrée{plural}",
+      "transactionSingular": "",
+      "transactionPlural": "s",
+      "autoTransfer": "💡 Transfert automatique",
+      "managedByStripe": "Géré par Stripe Connect",
+      "fundsTransferredAuto": "Les fonds sont transférés automatiquement"
+    },
+    "stats": {
+      "totalEarned": "Total encaissé",
+      "sinceStart": "Depuis le début",
+      "inEscrow": "En séquestre",
+      "workInProgress": "Travaux en cours",
+      "transferred": "Transféré",
+      "toYourBank": "Vers votre banque"
+    },
+    "transactions": {
+      "title": "Historique des transactions",
+      "empty": "Aucune transaction pour le moment",
+      "emptyMessage": "Vos transactions apparaîtront ici une fois que vous aurez reçu des paiements.",
+      "statuses": {
+        "pending": "En attente",
+        "completed": "Complété",
+        "failed": "Échoué",
+        "cancelled": "Annulé"
+      }
+    },
+    "bankConfig": {
+      "title": "Configuration du compte bancaire",
+      "configProcessButton": "💡 Processus de configuration",
+      "processTitle": "💡 Processus de configuration",
+      "processStep1": "✅ Remplissez le formulaire dans ArtisanDispo (2 minutes)",
+      "processStep2": "✅ Vos données sont transmises de manière sécurisée à Stripe",
+      "processStep3": "✅ Vérification automatique par Stripe (24-48h)",
+      "processStep4": "✅ Recevez vos paiements automatiquement",
+      "securityNote": "🔒 Sécurité maximale : Vos coordonnées bancaires ne sont jamais stockées dans notre base de données",
+      "notConfigured": {
+        "title": "🏦 Configurez votre compte bancaire",
+        "description": "Pour recevoir vos paiements automatiquement après validation des travaux, ajoutez votre IBAN.",
+        "hint": "💡 Cliquez sur \"Processus de configuration\" pour en savoir plus",
+        "button": "Configurer mon compte bancaire"
+      },
+      "pending": {
+        "title": "⏳ Vérification en cours",
+        "description": "Stripe vérifie vos informations bancaires. Cela prend généralement 24 à 48 heures.",
+        "emailNotice": "Vous recevrez un email dès que votre compte sera vérifié et actif."
+      },
+      "active": {
+        "title": "✅ Compte bancaire vérifié",
+        "description": "Votre IBAN est vérifié. Les paiements seront transférés automatiquement vers votre compte bancaire après validation des travaux.",
+        "ibanLabel": "IBAN enregistré",
+        "autoTransferInfo": "💡 Transferts automatiques : Les fonds sont transférés par Stripe sous 2 jours ouvrés après validation",
+        "modifyIban": "🔒 Modifier votre IBAN ? Pour des raisons de sécurité, vous devez contacter le support.",
+        "contactSupport": "📨 Contacter le support"
+      },
+      "rejected": {
+        "title": "❌ Vérification échouée",
+        "description": "Stripe n'a pas pu vérifier vos informations bancaires. Veuillez réessayer avec des informations valides.",
+        "button": "Reconfigurer mon compte",
+        "note": "✅ Reconfiguration autorisée car votre compte précédent a été rejeté"
+      },
+      "restricted": {
+        "title": "⚠️ Compte restreint",
+        "description": "Votre compte Stripe a été temporairement restreint. Veuillez vérifier votre email pour plus d'informations.",
+        "contactMessage": "💬 Contactez le support pour résoudre ce problème : support@artisandispo.fr"
+      },
+      "limited": {
+        "title": "⚠️ Compte limité",
+        "description": "Votre compte nécessite des informations supplémentaires. Contactez le support pour plus de détails."
+      },
+      "howItWorks": "Comment ça marche ?"
+    },
+    "onboarding": {
+      "successTitle": "✅ Compte bancaire configuré !",
+      "successMessage": "Vos informations bancaires ont été transmises à Stripe. Vous pourrez recevoir des paiements une fois la vérification terminée (24-48h).",
+      "errorAlreadyConfigured": "⚠️ Compte déjà configuré",
+      "errorAlreadyConfiguredMessage": "Vous avez déjà un compte Stripe Connect actif. Si vous rencontrez des problèmes, contactez le support."
+    }
   }
 }

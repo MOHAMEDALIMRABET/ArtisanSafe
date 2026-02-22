@@ -16,6 +16,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { getWalletSummary } from '@/lib/firebase/wallet-service';
@@ -24,6 +25,7 @@ import type { User, Artisan, WalletTransaction, StripeOnboardingStatus } from '@
 export default function WalletPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const { user: firebaseUser, loading: authLoading } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
@@ -212,9 +214,9 @@ export default function WalletPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <div>
-                <h4 className="font-semibold text-green-900">✅ Compte bancaire configuré !</h4>
+                <h4 className="font-semibold text-green-900">{t('artisanWallet.onboarding.successTitle')}</h4>
                 <p className="text-sm text-green-800">
-                  Vos informations bancaires ont été transmises à Stripe. Vous pourrez recevoir des paiements une fois la vérification terminée (24-48h).
+                  {t('artisanWallet.onboarding.successMessage')}
                 </p>
               </div>
             </div>
@@ -225,11 +227,11 @@ export default function WalletPage() {
         <div className="bg-gradient-to-br from-[#FF6B00] to-[#E56100] rounded-xl shadow-lg p-8 text-white mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm opacity-90 mb-2">Solde disponible</p>
+              <p className="text-sm opacity-90 mb-2">{t('artisanWallet.balance.available')}</p>
               {walletLoading ? (
                 <div className="flex items-center gap-3">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-                  <p className="text-2xl">Chargement...</p>
+                  <p className="text-2xl">{t('artisanWallet.loading')}</p>
                 </div>
               ) : (
                 <>
@@ -238,18 +240,20 @@ export default function WalletPage() {
                   </p>
                   <p className="text-sm opacity-75 mt-2">
                     {transactions.length === 0
-                      ? 'Aucune transaction enregistrée'
-                      : `${transactions.length} transaction${transactions.length > 1 ? 's' : ''} enregistrée${transactions.length > 1 ? 's' : ''}`}
+                      ? t('artisanWallet.balance.noTransactions')
+                      : t('artisanWallet.balance.transactionsCount')
+                          .replace('{count}', String(transactions.length))
+                          .replace('{plural}', transactions.length > 1 ? t('artisanWallet.balance.transactionPlural') : t('artisanWallet.balance.transactionSingular'))}
                   </p>
                 </>
               )}
             </div>
             <div className="text-right">
               <div className="bg-white/10 backdrop-blur-sm border border-white/20 px-6 py-3 rounded-lg">
-                <p className="text-xs opacity-75 mb-1">💡 Transfert automatique</p>
-                <p className="text-sm font-semibold">Géré par Stripe Connect</p>
+                <p className="text-xs opacity-75 mb-1">{t('artisanWallet.balance.autoTransfer')}</p>
+                <p className="text-sm font-semibold">{t('artisanWallet.balance.managedByStripe')}</p>
               </div>
-              <p className="text-xs opacity-75 mt-2">Les fonds sont transférés automatiquement</p>
+              <p className="text-xs opacity-75 mt-2">{t('artisanWallet.balance.fundsTransferredAuto')}</p>
             </div>
           </div>
         </div>
@@ -262,7 +266,7 @@ export default function WalletPage() {
               <svg className="w-6 h-6 text-[#28A745]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h3 className="text-[#6C757D] font-medium">Total encaissé</h3>
+              <h3 className="text-[#6C757D] font-medium">{t('artisanWallet.stats.totalEarned')}</h3>
             </div>
             {walletLoading ? (
               <div className="animate-pulse h-10 bg-gray-200 rounded w-32"></div>
@@ -271,7 +275,7 @@ export default function WalletPage() {
                 {totalEncaisse.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
               </p>
             )}
-            <p className="text-sm text-[#6C757D] mt-1">Depuis le début</p>
+            <p className="text-sm text-[#6C757D] mt-1">{t('artisanWallet.stats.sinceStart')}</p>
           </div>
 
           {/* En attente */}
@@ -280,7 +284,7 @@ export default function WalletPage() {
               <svg className="w-6 h-6 text-[#FFC107]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h3 className="text-[#6C757D] font-medium">En séquestre</h3>
+              <h3 className="text-[#6C757D] font-medium">{t('artisanWallet.stats.inEscrow')}</h3>
             </div>
             {walletLoading ? (
               <div className="animate-pulse h-10 bg-gray-200 rounded w-32"></div>
@@ -289,7 +293,7 @@ export default function WalletPage() {
                 {soldeEnAttente.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
               </p>
             )}
-            <p className="text-sm text-[#6C757D] mt-1">Travaux en cours</p>
+            <p className="text-sm text-[#6C757D] mt-1">{t('artisanWallet.stats.workInProgress')}</p>
           </div>
 
           {/* Transféré */}
@@ -298,7 +302,7 @@ export default function WalletPage() {
               <svg className="w-6 h-6 text-[#17A2B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
-              <h3 className="text-[#6C757D] font-medium">Transféré</h3>
+              <h3 className="text-[#6C757D] font-medium">{t('artisanWallet.stats.transferred')}</h3>
             </div>
             {walletLoading ? (
               <div className="animate-pulse h-10 bg-gray-200 rounded w-32"></div>
@@ -307,7 +311,7 @@ export default function WalletPage() {
                 {totalRetire.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
               </p>
             )}
-            <p className="text-sm text-[#6C757D] mt-1">Vers compte bancaire</p>
+            <p className="text-sm text-[#6C757D] mt-1">{t('artisanWallet.stats.toYourBank')}</p>
           </div>
         </div>
 
@@ -319,7 +323,7 @@ export default function WalletPage() {
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                Historique des transactions
+                {t('artisanWallet.transactions.title')}
               </h2>
               
               <button
@@ -329,7 +333,7 @@ export default function WalletPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                💡 Comment ça marche ?
+                {t('artisanWallet.bankConfig.howItWorks')}
               </button>
             </div>
           </div>
@@ -370,9 +374,9 @@ export default function WalletPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">Aucune transaction</h3>
+                <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">{t('artisanWallet.transactions.empty')}</h3>
                 <p className="text-[#6C757D] max-w-md mx-auto">
-                  Vos transactions apparaîtront ici une fois que vous aurez reçu des paiements de clients.
+                  {t('artisanWallet.transactions.emptyMessage')}
                 </p>
                 <p className="text-sm text-[#95A5A6] mt-4">
                   💡 Cliquez sur <span className="font-semibold text-[#FF6B00]">"Comment ça marche ?"</span> pour en savoir plus
@@ -408,10 +412,10 @@ export default function WalletPage() {
                   }
 
                   const statusLabel = {
-                    pending: 'En attente',
-                    completed: 'Complété',
-                    failed: 'Échoué',
-                    cancelled: 'Annulé',
+                    pending: t('artisanWallet.transactions.statuses.pending'),
+                    completed: t('artisanWallet.transactions.statuses.completed'),
+                    failed: t('artisanWallet.transactions.statuses.failed'),
+                    cancelled: t('artisanWallet.transactions.statuses.cancelled'),
                   }[transaction.statut];
 
                   const statusColor = {
@@ -475,7 +479,7 @@ export default function WalletPage() {
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
-                Configuration du compte bancaire
+                {t('artisanWallet.bankConfig.title')}
               </h3>
               
               <button
@@ -485,7 +489,7 @@ export default function WalletPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                💡 Processus de configuration
+                {t('artisanWallet.bankConfig.configProcessButton')}
               </button>
             </div>
           </div>
@@ -498,15 +502,15 @@ export default function WalletPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <h4 className="font-semibold text-blue-900 mb-2">💡 Processus de configuration</h4>
+                  <h4 className="font-semibold text-blue-900 mb-2">{t('artisanWallet.bankConfig.processTitle')}</h4>
                   <ul className="text-sm text-blue-800 space-y-1.5">
-                    <li>✅ Remplissez le formulaire dans ArtisanDispo (2 minutes)</li>
-                    <li>✅ Vos données sont transmises de manière sécurisée à Stripe</li>
-                    <li>✅ Vérification automatique par Stripe (24-48h)</li>
-                    <li>✅ Recevez vos paiements automatiquement</li>
+                    <li>{t('artisanWallet.bankConfig.processStep1')}</li>
+                    <li>{t('artisanWallet.bankConfig.processStep2')}</li>
+                    <li>{t('artisanWallet.bankConfig.processStep3')}</li>
+                    <li>{t('artisanWallet.bankConfig.processStep4')}</li>
                   </ul>
                   <p className="text-xs text-blue-700 mt-3 bg-blue-100 rounded px-3 py-2 inline-block">
-                    🔒 <strong>Sécurité maximale</strong> : Vos coordonnées bancaires ne sont jamais stockées dans notre base de données
+                    {t('artisanWallet.bankConfig.securityNote')}
                   </p>
                 </div>
               </div>
@@ -517,7 +521,7 @@ export default function WalletPage() {
             {walletLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
-                <p className="mt-4 text-[#6C757D]">Chargement...</p>
+                <p className="mt-4 text-[#6C757D]">{t('artisanWallet.loading')}</p>
               </div>
             ) : stripeOnboardingStatus === 'not_started' || stripeOnboardingStatus === 'pending' ? (
               /* Compte pas encore configuré */
@@ -529,13 +533,13 @@ export default function WalletPage() {
                 </div>
 
                 <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">
-                  🏦 Configurez votre compte bancaire
+                  {t('artisanWallet.bankConfig.notConfigured.title')}
                 </h3>
                 <p className="text-[#6C757D] mb-4 max-w-md mx-auto">
-                  Pour recevoir vos paiements automatiquement après validation des travaux, ajoutez votre IBAN.
+                  {t('artisanWallet.bankConfig.notConfigured.description')}
                 </p>
                 <p className="text-sm text-[#95A5A6] mb-6">
-                  💡 Cliquez sur <span className="font-semibold text-[#FF6B00]">"Processus de configuration"</span> pour en savoir plus
+                  {t('artisanWallet.bankConfig.notConfigured.hint')}
                 </p>
 
                 <button
@@ -545,7 +549,7 @@ export default function WalletPage() {
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  Configurer mon compte bancaire
+                  {t('artisanWallet.bankConfig.notConfigured.button')}
                 </button>
               </div>
             ) : stripeOnboardingStatus === 'documents_required' || stripeOnboardingStatus === 'under_review' ? (
@@ -558,15 +562,15 @@ export default function WalletPage() {
                 </div>
 
                 <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">
-                  ⏳ Vérification en cours
+                  {t('artisanWallet.bankConfig.pending.title')}
                 </h3>
                 <p className="text-[#6C757D] mb-6 max-w-md mx-auto">
-                  Stripe vérifie vos informations bancaires. Cela prend généralement 24 à 48 heures.
+                  {t('artisanWallet.bankConfig.pending.description')}
                 </p>
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
                   <p className="text-yellow-800 text-sm">
-                    Vous recevrez un email dès que votre compte sera vérifié et actif.
+                    {t('artisanWallet.bankConfig.pending.emailNotice')}
                   </p>
                 </div>
               </div>
@@ -581,17 +585,17 @@ export default function WalletPage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold text-green-900 mb-2">
-                      ✅ Compte bancaire vérifié
+                      {t('artisanWallet.bankConfig.active.title')}
                     </h3>
                     <p className="text-green-800 mb-4">
-                      Votre IBAN est vérifié. Les paiements seront transférés automatiquement vers votre compte bancaire après validation des travaux.
+                      {t('artisanWallet.bankConfig.active.description')}
                     </p>
 
                     {ibanLast4 && (
                       <div className="bg-white rounded-lg p-4 border border-green-200">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm text-[#6C757D] mb-1">IBAN enregistré</p>
+                            <p className="text-sm text-[#6C757D] mb-1">{t('artisanWallet.bankConfig.active.ibanLabel')}</p>
                             <p className="font-mono text-[#2C3E50] font-semibold">
                               FR** **** **** **** **** **** {ibanLast4}
                             </p>
@@ -605,13 +609,13 @@ export default function WalletPage() {
 
                     <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <p className="text-sm text-blue-800">
-                        💡 <strong>Transferts automatiques</strong> : Les fonds sont transférés par Stripe sous 2 jours ouvrés après validation
+                        {t('artisanWallet.bankConfig.active.autoTransferInfo')}
                       </p>
                     </div>
                     
                     <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
                       <p className="text-sm text-[#6C757D] mb-2">
-                        🔒 <strong>Modifier votre IBAN ?</strong> Pour des raisons de sécurité, vous devez contacter le support.
+                        {t('artisanWallet.bankConfig.active.modifyIban')}
                       </p>
                       <button
                         onClick={() => router.push('/artisan/contact-support?sujet=modification_iban')}
@@ -620,7 +624,7 @@ export default function WalletPage() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                         </svg>
-                        📨 Contacter le support
+                        {t('artisanWallet.bankConfig.active.contactSupport')}
                       </button>
                     </div>
                   </div>
@@ -636,10 +640,10 @@ export default function WalletPage() {
                 </div>
 
                 <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">
-                  ❌ Vérification échouée
+                  {t('artisanWallet.bankConfig.rejected.title')}
                 </h3>
                 <p className="text-[#6C757D] mb-6 max-w-md mx-auto">
-                  Stripe n'a pas pu vérifier vos informations bancaires. Veuillez réessayer avec des informations valides.
+                  {t('artisanWallet.bankConfig.rejected.description')}
                 </p>
 
                 <button
@@ -649,11 +653,11 @@ export default function WalletPage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  Reconfigurer mon compte
+                  {t('artisanWallet.bankConfig.rejected.button')}
                 </button>
                 
                 <p className="text-xs text-[#95A5A6] mt-4">
-                  ✅ Reconfiguration autorisée car votre compte précédent a été rejeté
+                  {t('artisanWallet.bankConfig.rejected.note')}
                 </p>
               </div>
             ) : stripeOnboardingStatus === 'restricted' ? (
@@ -666,18 +670,15 @@ export default function WalletPage() {
                 </div>
 
                 <h3 className="text-xl font-semibold text-[#2C3E50] mb-2">
-                  ⚠️ Compte restreint
+                  {t('artisanWallet.bankConfig.restricted.title')}
                 </h3>
                 <p className="text-[#6C757D] mb-6 max-w-md mx-auto">
-                  Votre compte Stripe a été temporairement restreint. Veuillez vérifier votre email pour plus d'informations.
+                  {t('artisanWallet.bankConfig.restricted.description')}
                 </p>
 
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 max-w-md mx-auto">
                   <p className="text-orange-800 text-sm">
-                    💬 Contactez le support pour résoudre ce problème :{' '}
-                    <a href="mailto:support@artisandispo.fr" className="underline hover:text-orange-900 font-semibold">
-                      support@artisandispo.fr
-                    </a>
+                    {t('artisanWallet.bankConfig.restricted.contactMessage')}
                   </p>
                 </div>
               </div>
@@ -690,10 +691,10 @@ export default function WalletPage() {
                   </svg>
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold text-orange-900 mb-2">
-                      ⚠️ Compte limité
+                      {t('artisanWallet.bankConfig.limited.title')}
                     </h3>
                     <p className="text-orange-800">
-                      Votre compte nécessite des informations supplémentaires. Contactez le support pour plus de détails.
+                      {t('artisanWallet.bankConfig.limited.description')}
                     </p>
                   </div>
                 </div>

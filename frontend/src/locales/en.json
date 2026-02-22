@@ -1065,5 +1065,91 @@
       "responsePublished": "✅ Your response has been published successfully!",
       "error": "❌ Error: {message}"
     }
+  },
+  "artisanWallet": {
+    "pageTitle": "My Wallet",
+    "pageDescription": "Manage your earnings and payments",
+    "backToDashboard": "Back to Dashboard",
+    "loading": "Loading...",
+    "balance": {
+      "available": "Available Balance",
+      "noTransactions": "No transactions recorded",
+      "transactionsCount": "{count} transaction{plural} recorded",
+      "transactionSingular": "",
+      "transactionPlural": "s",
+      "autoTransfer": "💡 Automatic Transfer",
+      "managedByStripe": "Managed by Stripe Connect",
+      "fundsTransferredAuto": "Funds are transferred automatically"
+    },
+    "stats": {
+      "totalEarned": "Total Earned",
+      "sinceStart": "Since the beginning",
+      "inEscrow": "In Escrow",
+      "workInProgress": "Work in Progress",
+      "transferred": "Transferred",
+      "toYourBank": "To Your Bank"
+    },
+    "transactions": {
+      "title": "Transaction History",
+      "empty": "No transactions yet",
+      "emptyMessage": "Your transactions will appear here once you receive payments.",
+      "statuses": {
+        "pending": "Pending",
+        "completed": "Completed",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      }
+    },
+    "bankConfig": {
+      "title": "Bank Account Configuration",
+      "configProcessButton": "💡 Configuration Process",
+      "processTitle": "💡 Configuration Process",
+      "processStep1": "✅ Fill out the form in ArtisanDispo (2 minutes)",
+      "processStep2": "✅ Your data is securely transmitted to Stripe",
+      "processStep3": "✅ Automatic verification by Stripe (24-48h)",
+      "processStep4": "✅ Receive your payments automatically",
+      "securityNote": "🔒 Maximum security: Your banking details are never stored in our database",
+      "notConfigured": {
+        "title": "🏦 Configure Your Bank Account",
+        "description": "To receive your payments automatically after work validation, add your IBAN.",
+        "hint": "💡 Click on \"Configuration Process\" to learn more",
+        "button": "Configure My Bank Account"
+      },
+      "pending": {
+        "title": "⏳ Verification in Progress",
+        "description": "Stripe is verifying your banking information. This usually takes 24 to 48 hours.",
+        "emailNotice": "You will receive an email as soon as your account is verified and active."
+      },
+      "active": {
+        "title": "✅ Bank Account Verified",
+        "description": "Your IBAN is verified. Payments will be automatically transferred to your bank account after work validation.",
+        "ibanLabel": "Registered IBAN",
+        "autoTransferInfo": "💡 Automatic transfers: Funds are transferred by Stripe within 2 business days after validation",
+        "modifyIban": "🔒 Modify your IBAN? For security reasons, you must contact support.",
+        "contactSupport": "📨 Contact Support"
+      },
+      "rejected": {
+        "title": "❌ Verification Failed",
+        "description": "Stripe could not verify your banking information. Please try again with valid information.",
+        "button": "Reconfigure My Account",
+        "note": "✅ Reconfiguration allowed because your previous account was rejected"
+      },
+      "restricted": {
+        "title": "⚠️ Account Restricted",
+        "description": "Your Stripe account has been temporarily restricted. Please check your email for more information.",
+        "contactMessage": "💬 Contact support to resolve this issue: support@artisandispo.fr"
+      },
+      "limited": {
+        "title": "⚠️ Account Limited",
+        "description": "Your account requires additional information. Contact support for more details."
+      },
+      "howItWorks": "How does it work?"
+    },
+    "onboarding": {
+      "successTitle": "✅ Bank Account Configured!",
+      "successMessage": "Your banking information has been transmitted to Stripe. You will be able to receive payments once verification is complete (24-48h).",
+      "errorAlreadyConfigured": "⚠️ Account Already Configured",
+      "errorAlreadyConfiguredMessage": "You already have an active Stripe Connect account. If you encounter problems, contact support."
+    }
   }
 }
