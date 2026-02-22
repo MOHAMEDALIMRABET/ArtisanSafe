@@ -425,14 +425,70 @@ export default function ClientDevisPage() {
                       </>
                     )}
 
-                    {/* Devis payé / en cours / terminés : Badge statut + Voir le détail uniquement */}
-                    {(isDevisPaye(d.statut)) && (
+                    {/* Devis payé (en attente démarrage) ou en cours : Signaler + Voir le détail */}
+                    {(d.statut === 'paye' || d.statut === 'en_cours') && (
+                      <>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?action=contester&returnFilter=${filter}`);
+                          }}
+                          className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-center font-medium cursor-pointer"
+                        >
+                          ⚠️ Signaler un problème
+                        </div>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?returnFilter=${filter}`);
+                          }}
+                          className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
+                        >
+                          📄 {t('quotes.viewDetails')}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Travaux terminés : Valider + Contester + Voir le détail */}
+                    {d.statut === 'travaux_termines' && (
+                      <>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?action=valider&returnFilter=${filter}`);
+                          }}
+                          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-center font-medium cursor-pointer"
+                        >
+                          ✅ Valider les travaux
+                        </div>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?action=contester&returnFilter=${filter}`);
+                          }}
+                          className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-center font-medium cursor-pointer"
+                        >
+                          ⚠️ Contester
+                        </div>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?returnFilter=${filter}`);
+                          }}
+                          className="px-4 py-2 border-2 border-[#2C3E50] text-[#2C3E50] rounded-lg hover:bg-[#2C3E50] hover:text-white transition text-center font-medium cursor-pointer"
+                        >
+                          📄 {t('quotes.viewDetails')}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Autres statuts payés (litige, termine_valide, termine_auto_valide) : Voir le détail uniquement */}
+                    {isDevisPaye(d.statut) && !['paye', 'en_cours', 'travaux_termines'].includes(d.statut) && (
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
                           const targetUrl = `/client/devis/${d.id}?returnFilter=${filter}`;
-                          console.log('🔗 Navigation vers:', targetUrl);
                           router.push(targetUrl);
                         }}
                         className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"

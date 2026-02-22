@@ -156,6 +156,26 @@ export default function ClientDevisDetailPage() {
       window.history.replaceState({}, '', url.toString());
       
       setShowRefusalModal(true);
+    } else if (action === 'contester' && (devis.statut === 'paye' || devis.statut === 'en_cours')) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('action');
+      window.history.replaceState({}, '', url.toString());
+
+      setShowLitigeModal(true);
+    } else if (action === 'valider' && devis.statut === 'travaux_termines') {
+      // Retirer le paramètre action de l'URL pour éviter la boucle
+      const url = new URL(window.location.href);
+      url.searchParams.delete('action');
+      window.history.replaceState({}, '', url.toString());
+      
+      handleValiderTravaux();
+    } else if (action === 'contester' && devis.statut === 'travaux_termines') {
+      // Retirer le paramètre action de l'URL pour éviter la boucle
+      const url = new URL(window.location.href);
+      url.searchParams.delete('action');
+      window.history.replaceState({}, '', url.toString());
+      
+      setShowLitigeModal(true);
     }
   }, [action, devis?.statut]); // Ne dépend que de action et statut, pas des fonctions
 
@@ -1174,13 +1194,20 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                 </div>
               </div>
               
-              <div className="bg-white rounded-lg p-4 border border-yellow-200">
+              <div className="bg-white rounded-lg p-4 border border-yellow-200 mb-4">
                 <p className="text-sm text-gray-700">
                   💰 <strong>Paiement sécurisé</strong> : Votre paiement de <strong>{devis.totaux.totalTTC.toFixed(2)}€</strong> est bloqué en sécurité.
                   <br />
                   <span className="text-xs text-gray-600">Il sera libéré à l'artisan uniquement après validation des travaux.</span>
                 </p>
               </div>
+
+              <button
+                onClick={() => setShowLitigeModal(true)}
+                className="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+              >
+                ⚠️ Signaler un problème
+              </button>
             </div>
           )}
 
@@ -1201,13 +1228,20 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                 </div>
               </div>
               
-              <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <div className="bg-white rounded-lg p-4 border border-blue-200 mb-4">
                 <p className="text-sm text-gray-700">
                   L'artisan <strong>{devis.artisan.raisonSociale}</strong> réalise actuellement les travaux.
                   <br />
                   Vous pourrez valider une fois qu'il aura déclaré avoir terminé.
                 </p>
               </div>
+
+              <button
+                onClick={() => setShowLitigeModal(true)}
+                className="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+              >
+                ⚠️ Signaler un problème
+              </button>
             </div>
           )}
 

@@ -973,7 +973,7 @@ export default function ArtisanDemandesPage() {
                 })()}
 
                 {/* Boutons d'action normaux (TOUJOURS VISIBLES) */}
-                {!demandesAvecDevisPayeIds.has(demande.id) && demande.statut === 'publiee' && (() => {
+                {!demandesAvecDevisPayeIds.has(demande.id) && demande.statut !== 'annulee' && !demandesTermineesIds.has(demande.id) && (() => {
                   const refusStatut = demandesRefusStatut.get(demande.id);
                   
                   // Si refus définitif : bloquer complètement
