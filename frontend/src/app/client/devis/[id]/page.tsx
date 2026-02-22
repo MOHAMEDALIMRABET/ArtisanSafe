@@ -987,7 +987,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             {devis.dateDebutPrevue && (
               <div className="mb-8 bg-gray-50 border-l-4 border-[#2C3E50] p-4 rounded">
                 <p className="text-[#2C3E50] font-semibold">
-                  📅 Date de début prévue des travaux : {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
+                  📅 Date de début des travaux prévue : {devis.dateDebutPrevue.toDate().toLocaleDateString('fr-FR', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -997,11 +997,21 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
               </div>
             )}
 
-            {/* Délai de réalisation */}
-            {devis.delaiRealisation && (
-              <div className="mb-8">
-                <p className="text-sm font-semibold text-gray-700">Délai de réalisation :</p>
-                <p className="text-gray-600">{devis.delaiRealisation} jour(s)</p>
+            {/* Date de fin des travaux prévue */}
+            {devis.dateDebutPrevue && devis.delaiRealisation && (
+              <div className="mb-8 bg-gray-50 border-l-4 border-[#FF6B00] p-4 rounded">
+                <p className="text-[#2C3E50] font-semibold">
+                  📅 Date de fin des travaux prévue : {(() => {
+                    const debut = devis.dateDebutPrevue.toDate();
+                    debut.setDate(debut.getDate() + Number(devis.delaiRealisation));
+                    return debut.toLocaleDateString('fr-FR', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                  })()}
+                </p>
               </div>
             )}
 
@@ -1063,7 +1073,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                     )}
 
                     {/* Autres lignes */}
-                    {devis.lignes.map((ligne, index) => (
+                    {devis.lignes.filter(ligne => ligne.description?.trim() || ligne.prixUnitaireHT > 0).map((ligne, index) => (
                       <tr key={index}>
                         <td className="border border-gray-300 px-4 py-2 break-words">
                           {ligne.description}
