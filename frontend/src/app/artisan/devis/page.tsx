@@ -829,7 +829,7 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'genere' ? 'text-white' : 'text-gray-600'}`}>{devisGeneres.length}</div>
-              <div className={`text-sm ${filter === 'genere' ? 'text-white' : 'text-gray-600'}`}>{t('quotes.generated')}</div>
+              <div className={`text-sm ${filter === 'genere' ? 'text-white' : 'text-gray-600'}`}>📄 {t('quotes.generated')}</div>
               {compterReponsesRecentes('genere') > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('genere')}
@@ -843,10 +843,24 @@ export default function MesDevisPage() {
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'envoye' ? 'text-white' : 'text-purple-600'}`}>{devisEnvoyes.length}</div>
-              <div className={`text-sm ${filter === 'envoye' ? 'text-white' : 'text-gray-600'}`}>{t('quotes.sentPlural')}</div>
+              <div className={`text-sm ${filter === 'envoye' ? 'text-white' : 'text-gray-600'}`}>📤 {t('quotes.sentPlural')}</div>
               {compterReponsesRecentes('envoye') > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('envoye')}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => handleFilterChange('revision')}
+              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
+                filter === 'revision' ? 'bg-orange-600 text-white ring-4 ring-orange-600 ring-opacity-50' : 'bg-white border-2 border-orange-400'
+              }`}
+            >
+              <div className={`text-2xl font-bold ${filter === 'revision' ? 'text-white' : 'text-orange-600'}`}>{devisRevisionDemandee.length}</div>
+              <div className={`text-sm ${filter === 'revision' ? 'text-white' : 'text-orange-700'} font-semibold`}>🔄 {t('quotes.revisions')}</div>
+              {compterReponsesRecentes('revision') > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
+                  {compterReponsesRecentes('revision')}
                 </span>
               )}
             </button>
@@ -879,27 +893,13 @@ export default function MesDevisPage() {
               )}
             </button>
             <button
-              onClick={() => handleFilterChange('revision')}
-              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
-                filter === 'revision' ? 'bg-orange-600 text-white ring-4 ring-orange-600 ring-opacity-50' : 'bg-white border-2 border-orange-400'
-              }`}
-            >
-              <div className={`text-2xl font-bold ${filter === 'revision' ? 'text-white' : 'text-orange-600'}`}>{devisRevisionDemandee.length}</div>
-              <div className={`text-sm ${filter === 'revision' ? 'text-white' : 'text-orange-700'} font-semibold`}>🔄 {t('quotes.revisions')}</div>
-              {compterReponsesRecentes('revision') > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
-                  {compterReponsesRecentes('revision')}
-                </span>
-              )}
-            </button>
-            <button
               onClick={() => handleFilterChange('refuse')}
               className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg relative ${
                 filter === 'refuse' ? 'bg-red-600 text-white ring-4 ring-red-600 ring-opacity-50' : 'bg-white'
               }`}
             >
               <div className={`text-2xl font-bold ${filter === 'refuse' ? 'text-white' : 'text-red-600'}`}>{devisRefuses.length}</div>
-              <div className={`text-sm ${filter === 'refuse' ? 'text-white' : 'text-gray-600'}`}>{t('quotes.refusedPlural')}</div>
+              <div className={`text-sm ${filter === 'refuse' ? 'text-white' : 'text-gray-600'}`}>❌ {t('quotes.refusedPlural')}</div>
               {compterReponsesRecentes('refuse') > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center badge-reponse-client" title={t('quotes.recentClientResponses')}>
                   {compterReponsesRecentes('refuse')}
@@ -1129,7 +1129,7 @@ export default function MesDevisPage() {
                           </div>
                         ) : d.statut === 'paye' ? (
                           // 🔨 ACTION RAPIDE : Déclarer le début des travaux + Lien Voir
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-row flex-wrap gap-2 items-center">
                             <button
                               onClick={() => handleDeclarerDebutRapide(d.id, d.numeroDevis)}
                               disabled={actionEnCours === d.id}
@@ -1149,14 +1149,14 @@ export default function MesDevisPage() {
                             </button>
                             <button
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
-                              className="text-[#FF6B00] hover:underline text-xs"
+                              className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
                             >
                               {t('quotes.viewDetails')}
                             </button>
                           </div>
                         ) : d.statut === 'en_cours' ? (
                           // 🏁 ACTION RAPIDE : Déclarer la fin des travaux + Lien Voir
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-row flex-wrap gap-2 items-center">
                             <button
                               onClick={() => handleDeclarerFinRapide(d.id, d.numeroDevis)}
                               disabled={actionEnCours === d.id}
@@ -1176,40 +1176,40 @@ export default function MesDevisPage() {
                             </button>
                             <button
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
-                              className="text-[#FF6B00] hover:underline text-xs"
+                              className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
                             >
                               {t('quotes.viewDetails')}
                             </button>
                           </div>
                         ) : d.statut === 'travaux_termines' ? (
                           // ⏳ EN ATTENTE VALIDATION CLIENT + Lien Voir
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-row flex-wrap gap-2 items-center">
                             <span className="text-xs text-purple-600 font-semibold">⏳ {t('quotes.waitingValidation')}</span>
                             <button
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
-                              className="text-[#FF6B00] hover:underline text-xs"
+                              className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
                             >
                               {t('quotes.viewDetails')}
                             </button>
                           </div>
                         ) : ['termine_valide', 'termine_auto_valide'].includes(d.statut) ? (
                           // ✅ TRAVAUX VALIDÉS - PAIEMENT LIBÉRÉ + Lien Voir
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-row flex-wrap gap-2 items-center">
                             <span className="text-xs text-green-600 font-semibold">✅ {t('quotes.validated')}</span>
                             <button
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
-                              className="text-[#FF6B00] hover:underline text-xs"
+                              className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
                             >
                               {t('quotes.viewDetails')}
                             </button>
                           </div>
                         ) : d.statut === 'litige' ? (
                           // ⚠️ LITIGE EN COURS
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-row flex-wrap gap-2 items-center">
                             <span className="text-xs text-red-600 font-semibold">⚠️ {t('quotes.dispute')}</span>
                             <button
                               onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
-                              className="text-[#FF6B00] hover:underline text-xs"
+                              className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
                             >
                               {t('quotes.viewDetails')}
                             </button>

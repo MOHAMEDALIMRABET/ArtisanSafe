@@ -69,10 +69,20 @@ export async function createAvis(data: {
     });
 
     // Mettre à jour la notation de l'artisan
-    await updateNotation(data.artisanId, data.note);
+    // ⚠️ Try/catch séparé : si la mise à jour notation échoue (règles Firestore),
+    // l'avis est quand même créé - la notation sera recalculée à la prochaine occasion
+    try {
+      await updateNotation(data.artisanId, data.note);
+    } catch (notationError) {
+      console.warn('⚠️ Mise à jour notation artisan échouée (non bloquant):', notationError);
+    }
 
     // Mettre à jour les stats de l'artisan
-    await updateNoteGlobale(data.artisanId, data.note);
+    try {
+      await updateNoteGlobale(data.artisanId, data.note);
+    } catch (statsError) {
+      console.warn('⚠️ Mise à jour stats artisan échouée (non bloquant):', statsError);
+    }
 
     console.log('✅ Avis créé avec succès:', avisRef.id);
     return avisRef.id;
@@ -283,44 +293,38 @@ export async function calculateAverageRating(artisanId: string): Promise<{
  */
 export async function getContratsTerminesSansAvis(clientId: string): Promise<Devis[]> {
   try {
-    // Récupérer les devis terminés et validés (devis signé = contrat juridique)
+    // 1. Récupérer les devis terminés et validés
     const devisRef = collection(db, 'devis');
     const q = query(
       devisRef,
       where('clientId', '==', clientId),
       where('statut', 'in', ['termine_valide', 'termine_auto_valide'])
     );
-
     const snapshot = await getDocs(q);
     const contrats = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     } as Devis));
 
-    // Constante : Délai maximum 30 jours pour laisser un avis
-    const DELAI_MAX_AVIS = 30 * 24 * 60 * 60 * 1000; // 30 jours en ms
+    if (contrats.length === 0) return [];
 
-    // Filtrer ceux qui n'ont pas encore d'avis ET < 30 jours
-    const contratsAvecAvis = await Promise.all(
-      contrats.map(async (contrat) => {
-        const avisExistant = await getAvisByContratId(contrat.id);
-        
-        // Vérifier la date de validation (travaux.dateValidationClient)
-        const dateValidation = contrat.travaux?.dateValidationClient?.toMillis() || 0;
-        const maintenant = Date.now();
-        const delaiEcoule = maintenant - dateValidation;
-        const estDansLesDelais = delaiEcoule <= DELAI_MAX_AVIS;
-        
-        return {
-          ...contrat,
-          hasAvis: !!avisExistant,
-          estDansLesDelais,
-        };
-      })
+    // 2. Récupérer TOUS les avis du client en une seule requête
+    // where('clientId', '==', clientId) suffit pour passer les règles Firestore
+    const avisSnapshot = await getDocs(
+      query(collection(db, 'avis'), where('clientId', '==', clientId))
+    );
+    // Construire un Set des contratId déjà notés
+    const contratIdsAvecAvis = new Set(
+      avisSnapshot.docs.map(d => d.data().contratId as string)
     );
 
-    // Retourner uniquement les contrats sans avis ET dans les 30 jours
-    return contratsAvecAvis.filter(c => !c.hasAvis && c.estDansLesDelais);
+    // 3. Filtrer : pas d'avis ET dans les 30 jours
+    const DELAI_MAX_AVIS = 30 * 24 * 60 * 60 * 1000;
+    return contrats.filter(contrat => {
+      if (contratIdsAvecAvis.has(contrat.id)) return false;
+      const dateValidation = contrat.travaux?.dateValidationClient?.toMillis() || 0;
+      return (Date.now() - dateValidation) <= DELAI_MAX_AVIS;
+    });
   } catch (error) {
     console.error('❌ Erreur récupération contrats sans avis:', error);
     return [];

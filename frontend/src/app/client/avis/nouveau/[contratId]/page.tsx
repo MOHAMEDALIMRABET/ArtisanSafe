@@ -7,7 +7,7 @@ import { getUserById } from '@/lib/firebase/user-service';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDevisById } from '@/lib/firebase/devis-service';
 import { getArtisanById } from '@/lib/firebase/artisan-service';
-import { createAvis } from '@/lib/firebase/avis-service';
+import { createAvis, getAvisByContratId } from '@/lib/firebase/avis-service';
 import type { User, Artisan } from '@/types/firestore';
 import type { Devis } from '@/types/devis';
 import Link from 'next/link';
@@ -88,6 +88,14 @@ export default function NouvelAvisPage() {
       if (contratData.statut !== 'termine_valide' && contratData.statut !== 'termine_auto_valide') {
         alert(t('alerts.review.workNotCompleted'));
         router.push('/dashboard');
+        return;
+      }
+
+      // Vérifier qu'un avis n'a pas déjà été donné pour ce travail
+      const avisExistant = await getAvisByContratId(contratId);
+      if (avisExistant) {
+        alert('✅ Vous avez déjà donné un avis pour cette intervention. Un seul avis est possible par travaux terminés.');
+        router.push('/client/avis');
         return;
       }
 
