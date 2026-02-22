@@ -482,8 +482,32 @@ export default function ClientDevisPage() {
                       </>
                     )}
 
-                    {/* Autres statuts payés (litige, termine_valide, termine_auto_valide) : Voir le détail uniquement */}
-                    {isDevisPaye(d.statut) && !['paye', 'en_cours', 'travaux_termines'].includes(d.statut) && (
+                    {/* Travaux validés : bouton avis + Voir le détail */}
+                    {['termine_valide', 'termine_auto_valide'].includes(d.statut) && (
+                      <>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/avis/nouveau/${d.id}`);
+                          }}
+                          className="flex-1 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition text-center font-medium cursor-pointer"
+                        >
+                          ⭐ Donner mon avis
+                        </div>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/client/devis/${d.id}?returnFilter=${filter}`);
+                          }}
+                          className="flex-1 bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-[#1A3A5C] transition text-center font-medium cursor-pointer"
+                        >
+                          📄 {t('quotes.viewDetails')}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Autres statuts payés (litige) : Voir le détail uniquement */}
+                    {isDevisPaye(d.statut) && !['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(d.statut) && (
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
