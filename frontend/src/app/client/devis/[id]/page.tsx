@@ -265,36 +265,86 @@ export default function ClientDevisDetailPage() {
       setProcessing(true);
       setShowSignatureModal(false);
 
-      console.log('✅ Signature enregistrée en mémoire (pas encore uploadée)');
+      // 1. Uploader la signature immédiatement
+      const signatureRef = ref(storage, `signatures/${devisId}_${Date.now()}.png`);
+      await uploadString(signatureRef, dataURL, 'data_url');
+      const signatureURL = await getDownloadURL(signatureRef);
 
-      // 1. Garder la signature en mémoire (PAS d'upload maintenant)
-      setSignatureDataURL(dataURL);
+      console.log('✅ Signature uploadée:', signatureURL);
 
-      // 2. Calculer date limite paiement (24h)
-      const now = new Date();
-      const dateLimite = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24h
-
-      // 3. Mettre à jour le devis : statut en_attente_paiement (SANS signature)
+      // 2. Mettre à jour le devis → statut "accepte" + signature
       await updateDoc(doc(db, 'devis', devisId), {
-        statut: 'en_attente_paiement',
+        statut: 'accepte',
         dateAcceptation: Timestamp.now(),
         dateDerniereNotification: Timestamp.now(),
         vuParArtisan: false,
-        // PAS de signatureClient ici (sera ajouté après paiement)
-        dateLimitePaiement: Timestamp.fromDate(dateLimite),
-        paiement: {
-          montant: devis.totaux.totalTTC,
-          statut: 'en_attente',
+        signatureClient: {
+          url: signatureURL,
+          date: Timestamp.now(),
+          ip: '',
         },
       });
 
-      console.log('✅ Devis mis à jour : statut en_attente_paiement (signature en attente paiement)');
+      console.log('✅ Devis accepté et signé par le client');
 
-      // 4. Recharger le devis pour afficher le formulaire de paiement
+      // 3. Fermer la demande : marquer comme attribuée
+      if (devis.demandeId) {
+        try {
+          await updateDoc(doc(db, 'demandes', devis.demandeId), {
+            statut: 'attribuee',
+            devisAccepteId: devisId,
+            artisanAttributaireId: devis.artisanId,
+            dateAttribution: Timestamp.now(),
+          });
+          console.log('✅ Demande fermée : statut → attribuee');
+        } catch (error) {
+          console.error('Erreur mise à jour demande:', error);
+        }
+      }
+
+      // 4. Annuler automatiquement toutes les autres variantes
+      if (devis.demandeId) {
+        try {
+          const { marquerDevisOriginalCommeRemplace } = await import('@/lib/firebase/devis-service');
+          await marquerDevisOriginalCommeRemplace(devisId, devis.numeroDevis, devis.demandeId);
+
+          const autresDevisQuery = query(
+            collection(db, 'devis'),
+            where('demandeId', '==', devis.demandeId)
+          );
+          const autresDevisSnapshot = await getDocs(autresDevisQuery);
+          const batch = writeBatch(db);
+          autresDevisSnapshot.docs.forEach(devisDoc => {
+            const statut = devisDoc.data().statut;
+            if (devisDoc.id !== devisId && !['accepte', 'annule', 'refuse', 'remplace'].includes(statut)) {
+              batch.update(devisDoc.ref, {
+                statut: 'annule',
+                typeRefus: 'automatique',
+                motifRefus: 'Autre devis de cette demande accepté par le client',
+                dateRefus: Timestamp.now(),
+              });
+            }
+          });
+          await batch.commit();
+          console.log('✅ Autres variantes annulées automatiquement');
+        } catch (error) {
+          console.error('Erreur annulation variantes:', error);
+        }
+      }
+
+      // 5. Notifier l'artisan
+      try {
+        const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
+        await notifyArtisanDevisAccepte(devis.artisanId, devisId, clientNom, devis.numeroDevis);
+        console.log('✅ Artisan notifié de l\'acceptation');
+      } catch (error) {
+        console.error('Erreur notification artisan:', error);
+      }
+
+      alert(`✅ Devis signé et accepté !\n\nVotre signature a été enregistrée.\nL'artisan a été notifié et va vous contacter pour planifier les travaux.`);
+
+      // 6. Recharger
       await loadDevis();
-      
-      // 5. Afficher le formulaire de paiement
-      setShowPaymentModal(true);
     } catch (error) {
       console.error('Erreur après signature:', error);
       alert(t('alerts.signature.saveError'));
