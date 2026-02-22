@@ -1667,7 +1667,9 @@
       "expired": "⏰ Expired",
       "quotaReached": "🚫 Quota reached",
       "publicRequest": "📢 Public request",
-      "directRequest": "🎯 Direct request"
+      "directRequest": "🎯 Direct request",
+      "expiredTooltip": "Request automatically closed. Click 'Help: Expiration' to learn more",
+      "artisanFound": "🤝 Artisan found"
     },
     
     "artisan": {
@@ -1863,6 +1865,22 @@
       "closeButton": "Close",
       "deleteConfirm": "Delete \"{title}\"?",
       "deleteContractError": "Cannot delete a contract period.\\n\\nThis period is automatically generated from a signed quote and cannot be modified or deleted manually."
+    },
+    
+    "errors": {
+      "profileIncomplete": "You must first complete your artisan profile.",
+      "noPastDates": "You cannot select past dates",
+      "contractEditError": "🔒 This event is linked to a signed contract and cannot be modified.\\n\\nContracts automatically create unavailabilities for their dates.",
+      "contractModifyError": "🔒 Cannot modify a contract period.\\n\\nThis period is automatically generated from a signed quote and cannot be manually modified."
+    },
+    
+    "prompts": {
+      "eventTitle": "Unavailability title:"
+    },
+    
+    "defaults": {
+      "available": "Available",
+      "unavailable": "Busy"
     },
     
     "actions": {

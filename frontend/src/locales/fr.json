@@ -1665,7 +1665,9 @@
       "expired": "⏰ Expirée",
       "quotaReached": "🚫 Quota atteint",
       "publicRequest": "📢 Demande publique",
-      "directRequest": "🎯 Demande directe"
+      "directRequest": "🎯 Demande directe",
+      "expiredTooltip": "Demande fermée automatiquement. Cliquez sur 'Aide : Expiration' pour en savoir plus",
+      "artisanFound": "🤝 Artisan trouvé"
     },
     
     "artisan": {
@@ -1724,7 +1726,7 @@
     },
     
     "success": {
-      "published": "Votre demande a été publiée ! Les artisans qualifiés de votre région peuvent maintenant la consulter et vous envoyer des devis."
+      "published": "✅ Votre demande a été publiée ! Les artisans qualifiés de votre région peuvent maintenant la consulter et vous envoyer des devis."
     },
     
     "dialogs": {
@@ -1861,6 +1863,22 @@
       "closeButton": "Fermer",
       "deleteConfirm": "Supprimer \"{title}\" ?",
       "deleteContractError": "Impossible de supprimer une période de contrat.\\n\\nCette période est automatiquement générée à partir d'un devis signé et ne peut pas être modifiée ou supprimée manuellement."
+    },
+    
+    "errors": {
+      "profileIncomplete": "Vous devez d'abord compléter votre profil artisan.",
+      "noPastDates": "Vous ne pouvez pas sélectionner des dates passées",
+      "contractEditError": "🔒 Cet événement est lié à un contrat signé et ne peut pas être modifié.\\n\\nLes contrats créent automatiquement des indisponibilités pour leurs dates.",
+      "contractModifyError": "🔒 Impossible de modifier une période de contrat.\\n\\nCette période est automatiquement générée à partir d'un devis signé et ne peut pas être modifiée manuellement."
+    },
+    
+    "prompts": {
+      "eventTitle": "Titre de l'indisponibilité :"
+    },
+    
+    "defaults": {
+      "available": "Disponible",
+      "unavailable": "Occupé"
     },
     
     "actions": {

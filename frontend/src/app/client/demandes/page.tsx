@@ -91,7 +91,7 @@ export default function MesDemandesPage() {
     const success = searchParams.get('success');
     const demandeId = searchParams.get('demandeId');
     if (success === 'demande_publiee' && demandeId) {
-      setSuccessMessage('✅ Votre demande a été publiée ! Les artisans qualifiés de votre région peuvent maintenant la consulter et vous envoyer des devis.');
+      setSuccessMessage(t('clientDemandes.success.published'));
       setFiltreSection('publiees'); // Basculer automatiquement sur l'onglet "Demandes publiées"
       
       // Masquer le message après 8 secondes
@@ -334,7 +334,7 @@ export default function MesDemandesPage() {
     if (demandeType === 'publique' && statut === 'publiee') {
       return (
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
-          📢 Publiée
+          {t('clientDemandes.badges.published')}
         </span>
       );
     }
@@ -351,23 +351,23 @@ export default function MesDemandesPage() {
       quota_atteint: 'bg-orange-100 text-orange-800',
     };
 
-    const labels = {
-      publiee: '📢 Publiée',
-      matchee: '🤝 Artisan trouvé',
-      attribuee: '✅ Attribuée',
-      en_cours: '⏳ En cours',
-      terminee: '✅ Terminée',
-      annulee: '❌ Refusée',
-      expiree: '⏰ Expirée',
-      quota_atteint: '🔒 Quota atteint',
+    const labelKeys = {
+      publiee: 'published',
+      matchee: 'artisanFound',
+      attribuee: 'assigned',
+      en_cours: 'inProgress',
+      terminee: 'completed',
+      annulee: 'cancelled',
+      expiree: 'expired',
+      quota_atteint: 'quotaReached',
     };
     
     return (
       <span 
         className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[statut as keyof typeof badges] || 'bg-gray-200 text-gray-800'}`}
-        title={statut === 'expiree' ? 'Demande fermée automatiquement. Cliquez sur "Aide : Expiration" pour en savoir plus' : undefined}
+        title={statut === 'expiree' ? t('clientDemandes.badges.expiredTooltip') : undefined}
       >
-        {labels[statut as keyof typeof labels] || statut}
+        {t(`clientDemandes.badges.${labelKeys[statut as keyof typeof labelKeys]}` as any) || statut}
       </span>
     );
   }

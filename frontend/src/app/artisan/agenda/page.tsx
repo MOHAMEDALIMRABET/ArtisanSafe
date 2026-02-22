@@ -101,7 +101,7 @@ export default function AgendaPage() {
       const artisanData = await getArtisanByUserId(currentUser.uid);
       
       if (!artisanData || !artisanData.id) {
-        alert('Vous devez d\'abord compléter votre profil artisan.');
+        alert(t('artisanAgenda.errors.profileIncomplete'));
         router.push('/artisan/profil');
         return;
       }
@@ -145,7 +145,7 @@ export default function AgendaPage() {
 
         return {
           id: dispo.id || String(Date.now()),
-          title: dispo.titre || (dispo.disponible ? 'Disponible' : 'Occupé'),
+          title: dispo.titre || (dispo.disponible ? t('artisanAgenda.defaults.available') : t('artisanAgenda.defaults.unavailable')),
           start,
           end,
           disponible: dispo.disponible,
@@ -215,7 +215,7 @@ export default function AgendaPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (start < today) {
-      alert('Vous ne pouvez pas sélectionner des dates passées');
+      alert(t('artisanAgenda.errors.noPastDates'));
       return;
     }
     
@@ -238,7 +238,7 @@ export default function AgendaPage() {
     // Calculer le nombre de jours dans la sélection
     const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     
-    const title = window.prompt('Titre de l\'indisponibilité :', 'Occupé');
+    const title = window.prompt(t('artisanAgenda.prompts.eventTitle'), t('artisanAgenda.defaults.unavailable'));
     if (!title) return;
     
     // Créer un événement pour chaque jour de la plage (journée complète)
@@ -271,7 +271,7 @@ export default function AgendaPage() {
   const handleSelectEvent = (event: CalendarEvent) => {
     // Empêcher la modification des événements de contrat
     if (event.id.startsWith('contrat_')) {
-      alert('🔒 Cet événement est lié à un contrat signé et ne peut pas être modifié.\n\nLes contrats créent automatiquement des indisponibilités pour leurs dates.');
+      alert(t('artisanAgenda.errors.contractEditError'));
       return;
     }
     
@@ -287,7 +287,7 @@ export default function AgendaPage() {
 
     // Empêcher la modification des périodes de contrat
     if (editingEvent.isContrat) {
-      alert('🔒 Impossible de modifier une période de contrat.\n\nCette période est automatiquement générée à partir d\'un devis signé et ne peut pas être modifiée manuellement.');
+      alert(t('artisanAgenda.errors.contractModifyError'));
       return;
     }
 
@@ -771,22 +771,22 @@ export default function AgendaPage() {
         {/* Instructions - Tooltip au survol */}
         <div className="mb-6 relative group">
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-help">
-            <h2 className="font-semibold text-[#2C3E50]">💡 Comment utiliser l'agenda ?</h2>
+            <h2 className="font-semibold text-[#2C3E50]">{t('artisanAgenda.instructions.title')}</h2>
           </div>
           
           {/* Tooltip qui s'affiche au survol */}
           <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-gray-300 rounded-lg p-5 shadow-2xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
             <ul className="text-sm text-gray-800 space-y-2">
-              <li>• <strong>Sélection rapide</strong> : Cliquez sur "Sélection rapide par dates" pour marquer vos indisponibilités sur plusieurs mois</li>
-              <li>• <strong>Vue Agenda</strong> : Pratique pour lister vos indisponibilités</li>
-              <li>• <strong>Vue Calendrier</strong> : Cliquez et faites glisser pour sélectionner plusieurs jours consécutifs - Idéale pour gérer vos indisponibilités
+              <li>• <strong>{t('artisanAgenda.quickSelection')}</strong> : {t('artisanAgenda.instructions.quickSelection')}</li>
+              <li>• <strong>{t('artisanAgenda.calendar.agenda')}</strong> : {t('artisanAgenda.instructions.agendaView')}</li>
+              <li>• <strong>{t('artisanAgenda.calendar.month')}</strong> : {t('artisanAgenda.instructions.calendarView')}
                 <ul className="ml-6 mt-1 space-y-1">
-                  <li>◦ <strong>Cliquez sur un jour</strong> dans le calendrier pour marquer une indisponibilité</li>
-                  <li>◦ <strong>Cliquez sur un événement</strong> pour le renommer ou le supprimer (sauf les contrats 🔒)</li>
-                  <li>◦ <strong>Rouge</strong> = Indisponible (Occupé) | Les jours sans couleur = Disponible</li>
+                  <li>◦ {t('artisanAgenda.instructions.clickDay')}</li>
+                  <li>◦ {t('artisanAgenda.instructions.clickEvent')}</li>
+                  <li>◦ {t('artisanAgenda.instructions.colors')}</li>
                 </ul>
               </li>
-              <li>• <strong>🔒 Contrats signés</strong> : Créent automatiquement des indisponibilités (non supprimables)</li>
+              <li>• <strong>🔒 {t('artisanAgenda.legend.contract')}</strong> : {t('artisanAgenda.instructions.contracts')}</li>
             </ul>
           </div>
         </div>
@@ -799,7 +799,7 @@ export default function AgendaPage() {
               <div className="flex items-end gap-4 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    📅 Date de début
+                    {t('artisanAgenda.dateFilters.startDateLabel')}
                   </label>
                   <input
                     type="date"
@@ -812,7 +812,7 @@ export default function AgendaPage() {
                 
                 <div className="flex-1 min-w-[200px]">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    📅 Date de fin
+                    {t('artisanAgenda.dateFilters.endDateLabel')}
                   </label>
                   <input
                     type="date"
@@ -832,7 +832,7 @@ export default function AgendaPage() {
                     }}
                     className="px-4 py-2 border-2 border-[#FF6B00] text-[#FF6B00] rounded-lg hover:bg-orange-50 font-medium transition-colors"
                   >
-                    ↺ Réinitialiser
+                    {t('artisanAgenda.dateFilters.resetButton')}
                   </button>
                 </div>
               </div>
@@ -862,18 +862,18 @@ export default function AgendaPage() {
             onSelectEvent={handleSelectEvent}
             eventPropGetter={eventStyleGetter}
             messages={{
-              month: 'Calendrier',
-              previous: 'Précédent',
-              next: 'Suivant',
-              today: "Aujourd'hui",
-              agenda: 'Agenda',
-              date: 'Date',
-              event: 'Événement',
-              allDay: 'Journée',
-              noEventsInRange: 'Aucune indisponibilité dans cette période',
-              showMore: (total) => `+ ${total} de plus`,
+              month: t('artisanAgenda.calendar.month'),
+              previous: t('artisanAgenda.calendar.previous'),
+              next: t('artisanAgenda.calendar.next'),
+              today: t('artisanAgenda.calendar.today'),
+              agenda: t('artisanAgenda.calendar.agenda'),
+              date: t('artisanAgenda.calendar.date'),
+              event: t('artisanAgenda.calendar.event'),
+              allDay: t('artisanAgenda.calendar.allDay'),
+              noEventsInRange: t('artisanAgenda.calendar.noEventsInRange'),
+              showMore: (total) => t('artisanAgenda.calendar.showMore').replace('{total}', String(total)),
             }}
-            culture="fr"
+            culture={language === 'fr' ? 'fr' : 'en'}
             components={{
               toolbar: (props) => {
                 const isCalendarView = props.view === 'month';
@@ -885,19 +885,19 @@ export default function AgendaPage() {
                           type="button" 
                           onClick={() => props.onNavigate('TODAY')}
                         >
-                          Aujourd'hui
+                          {t('artisanAgenda.calendar.today')}
                         </button>
                         <button 
                           type="button" 
                           onClick={() => props.onNavigate('PREV')}
                         >
-                          Précédent
+                          {t('artisanAgenda.calendar.previous')}
                         </button>
                         <button 
                           type="button" 
                           onClick={() => props.onNavigate('NEXT')}
                         >
-                          Suivant
+                          {t('artisanAgenda.calendar.next')}
                         </button>
                       </span>
                     )}
@@ -908,14 +908,14 @@ export default function AgendaPage() {
                         className={props.view === 'month' ? 'rbc-active' : ''}
                         onClick={() => props.onView('month')}
                       >
-                        Calendrier
+                        {t('artisanAgenda.calendar.month')}
                       </button>
                       <button
                         type="button"
                         className={props.view === 'agenda' ? 'rbc-active' : ''}
                         onClick={() => props.onView('agenda')}
                       >
-                        Agenda
+                        {t('artisanAgenda.calendar.agenda')}
                       </button>
                     </span>
                   </div>
