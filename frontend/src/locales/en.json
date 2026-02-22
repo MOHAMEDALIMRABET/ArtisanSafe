@@ -1367,5 +1367,249 @@
       "backToDashboard": "← Back to dashboard",
       "standardRequests": "📋 View my Standard requests"
     }
+  },
+  "clientReviews": {
+    "pageTitle": "My Reviews",
+    "pageDescription": "View the reviews you have given",
+    "backToDashboard": "Back to dashboard",
+    "loading": "Loading...",
+    "filters": {
+      "filterByRating": "Filter by rating",
+      "allRatings": "All ratings",
+      "stars5": "5 stars",
+      "stars4": "4 stars",
+      "stars3": "3 stars",
+      "stars2": "2 stars",
+      "stars1": "1 star",
+      "sortBy": "Sort by",
+      "mostRecent": "Most recent",
+      "oldest": "Oldest",
+      "highestRating": "Highest rating",
+      "lowestRating": "Lowest rating",
+      "search": "Search",
+      "searchPlaceholder": "Keyword in reviews..."
+    },
+    "results": {
+      "found": "{count} result found",
+      "foundPlural": "{count} results found"
+    },
+    "empty": {
+      "noReviews": "No reviews given yet",
+      "noReviewsDescription": "After your completed projects, you will be able to give your feedback to the tradespeople who carried out the work.",
+      "noResults": "No results",
+      "noResultsDescription": "Try changing your search filters."
+    },
+    "card": {
+      "artisan": "Tradesperson",
+      "professional": "Professional",
+      "artisanResponse": "Tradesperson's response",
+      "photoAlt": "Photo {number}"
+    }
+  },
+  "artisanSupport": {
+    "pageTitle": "💬 Contact Support",
+    "pageSubtitle": "Our team will respond within <strong>24-48 hours</strong>",
+    "backButton": "Back",
+    "loading": "Loading...",
+    "success": {
+      "title": "✅ Ticket created successfully",
+      "description": "Your request has been registered. You will receive an email notification as soon as an administrator responds."
+    },
+    "form": {
+      "title": "📝 New request",
+      "categoryLabel": "Category",
+      "categories": {
+        "modification_iban": "💳 IBAN Modification",
+        "compte_restreint": "⚠️ Restricted Account",
+        "verification_documents": "📄 Document Verification",
+        "probleme_technique": "🔧 Technical Issue",
+        "question_generale": "❓ General Question",
+        "autre": "📌 Other"
+      },
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "E.g.: Updating my IBAN after changing banks",
+      "subjectCounter": "{count}/150 characters",
+      "messageLabel": "Detailed message",
+      "messagePlaceholder": "Describe your request in detail...",
+      "messageCounter": "{count}/2000 characters",
+      "ibanInfo": "💡 <strong>To change your IBAN:</strong> Please specify your old and new IBAN in the message. A bank certificate (RIB) may be requested.",
+      "submitButton": "📨 Send request",
+      "submitting": "Sending...",
+      "cancelButton": "Cancel",
+      "required": "*"
+    },
+    "myTickets": {
+      "title": "📋 My requests",
+      "loading": "Loading...",
+      "empty": "No ongoing requests",
+      "newResponse": "New response",
+      "viewAll": "View all my tickets ({count})"
+    },
+    "info": {
+      "title": "Useful information",
+      "response": "Response within 24-48h (business days)",
+      "notification": "Email notification for each response",
+      "tracking": "Complete tracking of your request"
+    }
+  },
+
+  "artisanStripe": {
+    "pageTitle": "Bank Account Setup",
+    "pageDescription": "Add your bank details to receive your payments",
+    "backButton": "Back",
+    "loading": "Loading...",
+    
+    "stepper": {
+      "step1": "Information",
+      "step2": "Bank details"
+    },
+    
+    "step1": {
+      "title": "Personal information",
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
+      "dateOfBirthLabel": "Date of birth",
+      "addressLabel": "Address",
+      "addressPlaceholder": "Street number and name",
+      "postalCodeLabel": "Postal code",
+      "cityLabel": "City",
+      "required": "*",
+      "continueButton": "Continue →",
+      
+      "errors": {
+        "firstNameRequired": "First name required",
+        "lastNameRequired": "Last name required",
+        "dateOfBirthRequired": "Date of birth required",
+        "addressRequired": "Address required",
+        "cityRequired": "City required",
+        "postalCodeRequired": "Postal code required"
+      }
+    },
+    
+    "step2": {
+      "title": "Bank details",
+      
+      "securityNotice": {
+        "title": "🔒 Maximum security",
+        "description": "Your bank details are transmitted directly to Stripe (PCI-DSS Level 1) and are never stored in our database."
+      },
+      
+      "ibanLabel": "IBAN",
+      "ibanPlaceholder": "FR76 XXXX XXXX XXXX XXXX XXXX XXX",
+      "ibanHint": "French IBAN (27 characters)",
+      
+      "bicLabel": "BIC (optional)",
+      "bicPlaceholder": "BNPAFRPPXXX",
+      
+      "accountHolderLabel": "Account holder name",
+      "accountHolderPlaceholder": "First name Last name or Company name",
+      
+      "required": "*",
+      "backButton": "← Back",
+      "submitButton": "Finalize setup",
+      "submitting": "Setup in progress...",
+      
+      "errors": {
+        "ibanRequired": "IBAN required",
+        "ibanInvalid": "Invalid IBAN format (FR76 + 23 characters)",
+        "accountHolderRequired": "Account holder name required"
+      }
+    }
+  },
+
+  "artisanVerification": {
+    "pageTitle": "Profile Verification",
+    "pageDescription": "Complete these steps to receive the \"Verified Profile\" badge",
+    "backToDashboard": "Back to dashboard",
+    "loadingError": "Unable to load data",
+    
+    "badges": {
+      "verified": "Verified",
+      "rejected": "Rejected",
+      "pending": "Under review"
+    },
+    
+    "siret": {
+      "title": "SIRET Verification",
+      "description": "Automatic validation via the SIRENE database",
+      "currentLabel": "Current SIRET:",
+      "companyNameLabel": "Declared company name:",
+      "checksTitle": "Checks performed:",
+      "checks": {
+        "format": "Valid format (14 digits)",
+        "status": "Company status",
+        "legalInfo": "Company legal information",
+        "matching": "Company name / SIRET matching"
+      },
+      "updateButton": "Update SIRET",
+      "verifyButton": "Verify SIRET",
+      "verifying": "Verification in progress...",
+      "updateSuccess": "SIRET updated. Click \"Verify SIRET\" to validate.",
+      "updateError": "Error updating SIRET.",
+      "missingCompanyName": "Company name missing in your profile. Please complete your profile.",
+      "invalidFormat": "Check that your SIRET is correct and that your company is active.",
+      "successTitle": "SIRET successfully verified!",
+      "successDescription": "Your company is active in the SIRENE database.",
+      "sireneDataTitle": "Information returned by SIRENE:",
+      "sireneLabels": {
+        "siret": "SIRET:",
+        "companyName": "Company name:",
+        "address": "Address:",
+        "activity": "Activity (APE):"
+      },
+      "notSpecified": "Not specified"
+    },
+    
+    "phone": {
+      "title": "Phone validation",
+      "description": "Number verified by SMS"
+    },
+    
+    "kbis": {
+      "title": "KBIS",
+      "verified": "Kbis extract verified",
+      "rejected": "Document rejected",
+      "pending": "Document under review",
+      "notUploaded": "Document not uploaded",
+      "rejectionReason": "Rejection reason:",
+      "uploadButton": "📤 Upload KBIS",
+      "reuploadButton": "📤 Re-upload KBIS"
+    },
+    
+    "rcPro": {
+      "title": "Professional Liability Insurance",
+      "verified": "Certificate verified",
+      "rejected": "Document rejected",
+      "pending": "Document under review",
+      "notUploaded": "Document not uploaded",
+      "rejectionReason": "Rejection reason:",
+      "uploadButton": "📤 Upload RC Pro certificate",
+      "reuploadButton": "📤 Re-upload RC Pro certificate"
+    },
+    
+    "idCard": {
+      "title": "Identity Document",
+      "verified": "ID Card or Passport verified",
+      "rejected": "Document rejected",
+      "pending": "Document under review",
+      "notUploaded": "Document not uploaded",
+      "rejectionReason": "Rejection reason:",
+      "uploadButton": "📤 Upload identity document",
+      "reuploadButton": "📤 Re-upload identity document"
+    },
+    
+    "decennale": {
+      "titleRequired": "Ten-year liability insurance certificate",
+      "required": "(mandatory)",
+      "description": "For structural work trades (masonry, roofing, carpentry, etc.), the law requires ten-year insurance covering the work for 10 years after completion. Providing the certificate is essential to be verified on the platform.",
+      "validated": "✔️ Ten-year insurance validated",
+      "rejected": "❌ Ten-year insurance rejected",
+      "pending": "⏳ Ten-year insurance awaiting validation",
+      "notUploaded": "⚠️ No certificate uploaded",
+      "rejectionReason": "Reason:",
+      
+      "infoTitle": "Ten-year liability insurance",
+      "infoDescription": "If your trade requires ten-year insurance (masonry, roofing, carpentry, joinery, insulation, plumbing, electrical, tiling, heating, air conditioning), it will be requested after entering your profile in the <strong>My Profile</strong> section."
+    }
   }
 }

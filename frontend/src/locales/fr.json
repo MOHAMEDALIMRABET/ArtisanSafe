@@ -1375,5 +1375,249 @@
       "backToDashboard": "← Retour au dashboard",
       "standardRequests": "📋 Voir mes demandes Standard"
     }
+  },
+  "clientReviews": {
+    "pageTitle": "Mes Avis",
+    "pageDescription": "Consultez les avis que vous avez donnés",
+    "backToDashboard": "Retour au tableau de bord",
+    "loading": "Chargement...",
+    "filters": {
+      "filterByRating": "Filtrer par note",
+      "allRatings": "Toutes les notes",
+      "stars5": "5 étoiles",
+      "stars4": "4 étoiles",
+      "stars3": "3 étoiles",
+      "stars2": "2 étoiles",
+      "stars1": "1 étoile",
+      "sortBy": "Trier par",
+      "mostRecent": "Plus récents",
+      "oldest": "Plus anciens",
+      "highestRating": "Note la plus élevée",
+      "lowestRating": "Note la plus basse",
+      "search": "Rechercher",
+      "searchPlaceholder": "Mot-clé dans les avis..."
+    },
+    "results": {
+      "found": "{count} résultat trouvé",
+      "foundPlural": "{count} résultats trouvés"
+    },
+    "empty": {
+      "noReviews": "Aucun avis donné pour le moment",
+      "noReviewsDescription": "Après vos projets terminés, vous pourrez donner votre avis aux artisans qui ont réalisé les travaux.",
+      "noResults": "Aucun résultat",
+      "noResultsDescription": "Essayez de modifier vos filtres de recherche."
+    },
+    "card": {
+      "artisan": "Artisan",
+      "professional": "Professionnel",
+      "artisanResponse": "Réponse de l'artisan",
+      "photoAlt": "Photo {number}"
+    }
+  },
+  "artisanSupport": {
+    "pageTitle": "💬 Contacter le Support",
+    "pageSubtitle": "Notre équipe vous répondra sous <strong>24-48 heures</strong>",
+    "backButton": "Retour",
+    "loading": "Chargement...",
+    "success": {
+      "title": "✅ Ticket créé avec succès",
+      "description": "Votre demande a été enregistrée. Vous recevrez une notification par email dès qu'un administrateur vous répondra."
+    },
+    "form": {
+      "title": "📝 Nouvelle demande",
+      "categoryLabel": "Catégorie",
+      "categories": {
+        "modification_iban": "💳 Modification IBAN",
+        "compte_restreint": "⚠️ Compte Restreint",
+        "verification_documents": "📄 Vérification Documents",
+        "probleme_technique": "🔧 Problème Technique",
+        "question_generale": "❓ Question Générale",
+        "autre": "📌 Autre"
+      },
+      "subjectLabel": "Sujet",
+      "subjectPlaceholder": "Ex: Modification de mon IBAN après changement de banque",
+      "subjectCounter": "{count}/150 caractères",
+      "messageLabel": "Message détaillé",
+      "messagePlaceholder": "Décrivez votre demande en détail...",
+      "messageCounter": "{count}/2000 caractères",
+      "ibanInfo": "💡 <strong>Pour modifier votre IBAN :</strong> Veuillez préciser votre ancien et nouveau IBAN dans le message. Un justificatif bancaire (RIB) pourra vous être demandé.",
+      "submitButton": "📨 Envoyer la demande",
+      "submitting": "Envoi en cours...",
+      "cancelButton": "Annuler",
+      "required": "*"
+    },
+    "myTickets": {
+      "title": "📋 Mes demandes",
+      "loading": "Chargement...",
+      "empty": "Aucune demande en cours",
+      "newResponse": "Nouvelle réponse",
+      "viewAll": "Voir tous mes tickets ({count})"
+    },
+    "info": {
+      "title": "Info utile",
+      "response": "Réponse sous 24-48h (jours ouvrés)",
+      "notification": "Notification email à chaque réponse",
+      "tracking": "Suivi complet de votre demande"
+    }
+  },
+
+  "artisanStripe": {
+    "pageTitle": "Configuration du compte bancaire",
+    "pageDescription": "Ajoutez vos coordonnées bancaires pour recevoir vos paiements",
+    "backButton": "Retour",
+    "loading": "Chargement...",
+    
+    "stepper": {
+      "step1": "Informations",
+      "step2": "Coordonnées bancaires"
+    },
+    
+    "step1": {
+      "title": "Informations personnelles",
+      "firstNameLabel": "Prénom",
+      "lastNameLabel": "Nom",
+      "dateOfBirthLabel": "Date de naissance",
+      "addressLabel": "Adresse",
+      "addressPlaceholder": "Numéro et nom de rue",
+      "postalCodeLabel": "Code postal",
+      "cityLabel": "Ville",
+      "required": "*",
+      "continueButton": "Continuer →",
+      
+      "errors": {
+        "firstNameRequired": "Prénom requis",
+        "lastNameRequired": "Nom requis",
+        "dateOfBirthRequired": "Date de naissance requise",
+        "addressRequired": "Adresse requise",
+        "cityRequired": "Ville requise",
+        "postalCodeRequired": "Code postal requis"
+      }
+    },
+    
+    "step2": {
+      "title": "Coordonnées bancaires",
+      
+      "securityNotice": {
+        "title": "🔒 Sécurité maximale",
+        "description": "Vos coordonnées bancaires sont transmises directement à Stripe (PCI-DSS Level 1) et ne sont jamais stockées dans notre base de données."
+      },
+      
+      "ibanLabel": "IBAN",
+      "ibanPlaceholder": "FR76 XXXX XXXX XXXX XXXX XXXX XXX",
+      "ibanHint": "IBAN français (27 caractères)",
+      
+      "bicLabel": "BIC (optionnel)",
+      "bicPlaceholder": "BNPAFRPPXXX",
+      
+      "accountHolderLabel": "Nom du titulaire du compte",
+      "accountHolderPlaceholder": "Prénom Nom ou Raison sociale",
+      
+      "required": "*",
+      "backButton": "← Retour",
+      "submitButton": "Finaliser la configuration",
+      "submitting": "Configuration en cours...",
+      
+      "errors": {
+        "ibanRequired": "IBAN requis",
+        "ibanInvalid": "Format IBAN invalide (FR76 + 23 caractères)",
+        "accountHolderRequired": "Nom du titulaire requis"
+      }
+    }
+  },
+
+  "artisanVerification": {
+    "pageTitle": "Vérification du Profil",
+    "pageDescription": "Complétez ces étapes pour recevoir le badge \"Profil Vérifié\"",
+    "backToDashboard": "Retour au tableau de bord",
+    "loadingError": "Impossible de charger les données",
+    
+    "badges": {
+      "verified": "Vérifié",
+      "rejected": "Rejeté",
+      "pending": "En cours de vérification"
+    },
+    
+    "siret": {
+      "title": "Vérification SIRET",
+      "description": "Validation automatique via la base SIRENE",
+      "currentLabel": "SIRET actuel :",
+      "companyNameLabel": "Raison sociale déclarée :",
+      "checksTitle": "Vérifications effectuées :",
+      "checks": {
+        "format": "Format valide (14 chiffres)",
+        "status": "Statut de l'entreprise",
+        "legalInfo": "Informations légales de l'entreprise",
+        "matching": "Adéquation raison sociale / SIRET"
+      },
+      "updateButton": "Mettre à jour le SIRET",
+      "verifyButton": "Vérifier le SIRET",
+      "verifying": "Vérification en cours...",
+      "updateSuccess": "SIRET mis à jour. Cliquez sur \"Vérifier le SIRET\" pour valider.",
+      "updateError": "Erreur lors de la mise à jour du SIRET.",
+      "missingCompanyName": "Raison sociale manquante dans votre profil. Veuillez compléter votre profil.",
+      "invalidFormat": "Vérifiez que votre SIRET est correct et que votre entreprise est active.",
+      "successTitle": "SIRET vérifié avec succès !",
+      "successDescription": "Votre entreprise est active dans la base SIRENE.",
+      "sireneDataTitle": "Informations retournées par SIRENE :",
+      "sireneLabels": {
+        "siret": "SIRET :",
+        "companyName": "Raison sociale :",
+        "address": "Adresse :",
+        "activity": "Activité (APE) :"
+      },
+      "notSpecified": "Non renseigné"
+    },
+    
+    "phone": {
+      "title": "Validation téléphone",
+      "description": "Numéro vérifié par SMS"
+    },
+    
+    "kbis": {
+      "title": "KBIS",
+      "verified": "Extrait Kbis vérifié",
+      "rejected": "Document rejeté",
+      "pending": "Document en cours de vérification",
+      "notUploaded": "Document non uploadé",
+      "rejectionReason": "Raison du rejet :",
+      "uploadButton": "📤 Uploader le KBIS",
+      "reuploadButton": "📤 Re-uploader le KBIS"
+    },
+    
+    "rcPro": {
+      "title": "Garantie Responsabilité Civile Professionnelle",
+      "verified": "Attestation vérifiée",
+      "rejected": "Document rejeté",
+      "pending": "Document en cours de vérification",
+      "notUploaded": "Document non uploadé",
+      "rejectionReason": "Raison du rejet :",
+      "uploadButton": "📤 Uploader l'attestation RC Pro",
+      "reuploadButton": "📤 Re-uploader l'attestation RC Pro"
+    },
+    
+    "idCard": {
+      "title": "Pièce d'identité",
+      "verified": "CNI ou Passeport vérifié",
+      "rejected": "Document rejeté",
+      "pending": "Document en cours de vérification",
+      "notUploaded": "Document non uploadé",
+      "rejectionReason": "Raison du rejet :",
+      "uploadButton": "📤 Uploader la pièce d'identité",
+      "reuploadButton": "📤 Re-uploader la pièce d'identité"
+    },
+    
+    "decennale": {
+      "titleRequired": "Attestation d'assurance décennale",
+      "required": "(obligatoire)",
+      "description": "Pour les métiers du gros œuvre et structure (maçonnerie, toiture, charpente, etc.), la loi impose une assurance décennale couvrant les travaux pendant 10 ans après réception. Fournir l'attestation est indispensable pour être vérifié sur la plateforme.",
+      "validated": "✔️ Décennale validée",
+      "rejected": "❌ Décennale rejetée",
+      "pending": "⏳ Décennale en attente de validation",
+      "notUploaded": "⚠️ Aucune attestation déposée",
+      "rejectionReason": "Raison :",
+      
+      "infoTitle": "Assurance décennale",
+      "infoDescription": "Si votre métier nécessite une assurance décennale (maçonnerie, toiture, charpente, menuiserie, isolation, plomberie, électricité, carrelage, chauffage, climatisation), elle sera demandée après la saisie de votre profil dans la section <strong>Mon Profil</strong>."
+    }
   }
 }

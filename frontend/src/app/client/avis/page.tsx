@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getAvisByClientId } from '@/lib/firebase/avis-service';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { User, Avis } from '@/types/firestore';
 import Link from 'next/link';
 
 export default function AvisClientPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [avis, setAvis] = useState<Avis[]>([]);
   const [avisFiltres, setAvisFiltres] = useState<Avis[]>([]);
@@ -144,7 +146,7 @@ export default function AvisClientPage() {
       <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
+          <p className="mt-4 text-gray-600">{t('clientReviews.loading')}</p>
         </div>
       </div>
     );
@@ -162,10 +164,10 @@ export default function AvisClientPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Retour au tableau de bord
+            {t('clientReviews.backToDashboard')}
           </button>
-          <h1 className="text-3xl font-bold">Mes Avis</h1>
-          <p className="text-gray-300 mt-2">Consultez les avis que vous avez donnés</p>
+          <h1 className="text-3xl font-bold">{t('clientReviews.pageTitle')}</h1>
+          <p className="text-gray-300 mt-2">{t('clientReviews.pageDescription')}</p>
         </div>
       </div>
 
@@ -177,50 +179,50 @@ export default function AvisClientPage() {
             {/* Filtre par note */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Filtrer par note
+                {t('clientReviews.filters.filterByRating')}
               </label>
               <select
                 value={filtreNote || ''}
                 onChange={(e) => setFiltreNote(e.target.value ? parseInt(e.target.value) : null)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
               >
-                <option value="">Toutes les notes</option>
-                <option value="5">5 étoiles</option>
-                <option value="4">4 étoiles</option>
-                <option value="3">3 étoiles</option>
-                <option value="2">2 étoiles</option>
-                <option value="1">1 étoile</option>
+                <option value="">{t('clientReviews.filters.allRatings')}</option>
+                <option value="5">{t('clientReviews.filters.stars5')}</option>
+                <option value="4">{t('clientReviews.filters.stars4')}</option>
+                <option value="3">{t('clientReviews.filters.stars3')}</option>
+                <option value="2">{t('clientReviews.filters.stars2')}</option>
+                <option value="1">{t('clientReviews.filters.stars1')}</option>
               </select>
             </div>
 
             {/* Tri */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trier par
+                {t('clientReviews.filters.sortBy')}
               </label>
               <select
                 value={tri}
                 onChange={(e) => setTri(e.target.value as any)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
               >
-                <option value="recent">Plus récents</option>
-                <option value="ancien">Plus anciens</option>
-                <option value="note-haute">Note la plus élevée</option>
-                <option value="note-basse">Note la plus basse</option>
+                <option value="recent">{t('clientReviews.filters.mostRecent')}</option>
+                <option value="ancien">{t('clientReviews.filters.oldest')}</option>
+                <option value="note-haute">{t('clientReviews.filters.highestRating')}</option>
+                <option value="note-basse">{t('clientReviews.filters.lowestRating')}</option>
               </select>
             </div>
 
             {/* Recherche */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rechercher
+                {t('clientReviews.filters.search')}
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={recherche}
                   onChange={(e) => setRecherche(e.target.value)}
-                  placeholder="Mot-clé dans les avis..."
+                  placeholder={t('clientReviews.filters.searchPlaceholder')}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                 />
                 <svg
@@ -239,7 +241,9 @@ export default function AvisClientPage() {
           {(filtreNote !== null || recherche.trim()) && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-600">
-                  {avisFiltres.length} résultat{avisFiltres.length !== 1 ? 's' : ''} trouvé{avisFiltres.length !== 1 ? 's' : ''}
+                  {avisFiltres.length !== 1
+                    ? t('clientReviews.results.foundPlural').replace('{count}', String(avisFiltres.length))
+                    : t('clientReviews.results.found').replace('{count}', String(avisFiltres.length))}
                 </p>
               </div>
             )}
@@ -253,12 +257,12 @@ export default function AvisClientPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                {avis.length === 0 ? 'Aucun avis donné pour le moment' : 'Aucun résultat'}
+                {avis.length === 0 ? t('clientReviews.empty.noReviews') : t('clientReviews.empty.noResults')}
               </h3>
               <p className="text-gray-500">
                 {avis.length === 0
-                  ? 'Après vos projets terminés, vous pourrez donner votre avis aux artisans qui ont réalisé les travaux.'
-                  : 'Essayez de modifier vos filtres de recherche.'}
+                  ? t('clientReviews.empty.noReviewsDescription')
+                  : t('clientReviews.empty.noResultsDescription')}
               </p>
             </div>
           ) : (
@@ -273,12 +277,12 @@ export default function AvisClientPage() {
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-[#2C3E50]">Artisan</span>
+                      <span className="font-semibold text-[#2C3E50]">{t('clientReviews.card.artisan')}</span>
                       <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
-                        Professionnel
+                        {t('clientReviews.card.professional')}
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -340,7 +344,7 @@ export default function AvisClientPage() {
                       <img
                         key={idx}
                         src={photo}
-                        alt={`Photo ${idx + 1}`}
+                        alt={t('clientReviews.card.photoAlt').replace('{number}', String(idx + 1))}
                         className="h-28 w-28 object-cover rounded-lg border-2 border-gray-200 hover:border-[#FF6B00] transition-colors cursor-pointer flex-shrink-0"
                       />
                     ))}
@@ -354,7 +358,7 @@ export default function AvisClientPage() {
                       <svg className="w-5 h-5 text-[#FF6B00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                       </svg>
-                      <span className="font-semibold text-[#2C3E50]">Réponse de l'artisan</span>
+                      <span className="font-semibold text-[#2C3E50]">{t('clientReviews.card.artisanResponse')}</span>
                       <span className="text-sm text-gray-500">
                         • {formatDate(avisItem.reponseArtisan.date)}
                       </span>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getArtisanByUserId, updateArtisan } from '@/lib/firebase/artisan-service';
 import { verifySiret, updateSiretVerification } from '@/lib/firebase/verification-service';
 import { artisanDoitDecennale } from '@/lib/decennale-helper';
@@ -10,6 +11,7 @@ import type { Artisan } from '@/types/firestore';
 
 export default function VerificationPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false); // Changé à false pour affichage immédiat
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   
@@ -198,12 +200,12 @@ export default function VerificationPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Impossible de charger les données</p>
+          <p className="text-gray-600 mb-4">{t('artisanVerification.loadingError')}</p>
           <button
             onClick={() => router.back()}
             className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg hover:bg-[#E56100]"
           >
-            Retour au tableau de bord
+            {t('artisanVerification.backToDashboard')}
           </button>
         </div>
       </div>
@@ -224,12 +226,12 @@ export default function VerificationPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Retour au tableau de bord
+            {t('artisanVerification.backToDashboard')}
           </button>
           
-          <h1 className="text-3xl font-bold text-gray-900">Vérification du Profil</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('artisanVerification.pageTitle')}</h1>
           <p className="text-gray-600 mt-2">
-            Complétez ces étapes pour recevoir le badge "Profil Vérifié"
+            {t('artisanVerification.pageDescription')}
           </p>
         </div>
 
@@ -250,14 +252,14 @@ export default function VerificationPage() {
                   )}
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Vérification SIRET</h3>
-                  <p className="text-sm text-gray-600">Validation automatique via la base SIRENE</p>
+                  <h3 className="font-bold text-lg">{t('artisanVerification.siret.title')}</h3>
+                  <p className="text-sm text-gray-600">{t('artisanVerification.siret.description')}</p>
                 </div>
               </div>
               
               {siretVerified && (
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  Vérifié
+                  {t('artisanVerification.badges.verified')}
                 </span>
               )}
             </div>
@@ -266,7 +268,7 @@ export default function VerificationPage() {
               <div>
                 <div className="bg-orange-50 border-l-4 border-[#FF6B00] p-4 mb-4">
                   <label className="block text-sm text-[#2C3E50] mb-2 font-semibold">
-                    <strong>SIRET actuel :</strong>
+                    <strong>{t('artisanVerification.siret.currentLabel')}</strong>
                   </label>
                   <input
                     type="text"
@@ -304,19 +306,19 @@ export default function VerificationPage() {
                     className="bg-[#2C3E50] text-white px-4 py-2 rounded mb-2 hover:bg-[#1A3A5C] disabled:opacity-50"
                     disabled={siretStatus === 'verifying'}
                   >
-                    Mettre à jour le SIRET
+                    {t('artisanVerification.siret.updateButton')}
                   </button>
                   <p className="text-xs text-[#2C3E50] mb-3">
-                    <strong>Raison sociale déclarée :</strong> {artisan.raisonSociale}
+                    <strong>{t('artisanVerification.siret.companyNameLabel')}</strong> {artisan.raisonSociale}
                   </p>
                   <p className="text-sm text-[#2C3E50] font-semibold mb-2">
-                    Vérifications effectuées :
+                    {t('artisanVerification.siret.checksTitle')}
                   </p>
                   <ul className="text-sm text-[#2C3E50] list-disc list-inside ml-2 space-y-1">
-                    <li>Format valide (14 chiffres)</li>
-                    <li>Statut de l'entreprise</li>
-                    <li>Informations légales de l'entreprise</li>
-                    <li>Adéquation raison sociale / SIRET</li>
+                    <li>{t('artisanVerification.siret.checks.format')}</li>
+                    <li>{t('artisanVerification.siret.checks.status')}</li>
+                    <li>{t('artisanVerification.siret.checks.legalInfo')}</li>
+                    <li>{t('artisanVerification.siret.checks.matching')}</li>
                   </ul>
                 </div>
 
@@ -328,25 +330,25 @@ export default function VerificationPage() {
 
                 {siretStatus === 'success' && (
                   <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
-                    <p className="text-sm text-green-700 font-semibold mb-3">✅ SIRET vérifié avec succès !</p>
+                    <p className="text-sm text-green-700 font-semibold mb-3">✅ {t('artisanVerification.siret.successTitle')}</p>
                     <p className="text-xs text-green-600 mb-3">
-                      Votre entreprise est active dans la base SIRENE.
+                      {t('artisanVerification.siret.successDescription')}
                     </p>
                     {sireneData && (
                       <div className="mt-3 pt-3 border-t border-green-200">
-                        <p className="text-xs font-semibold text-green-800 mb-2">📊 Informations retournées par SIRENE :</p>
+                        <p className="text-xs font-semibold text-green-800 mb-2">📊 {t('artisanVerification.siret.sireneDataTitle')}</p>
                         <div className="space-y-1">
                           <p className="text-xs text-green-700">
-                            <strong>SIRET :</strong> {sireneData.siret}
+                            <strong>{t('artisanVerification.siret.sireneLabels.siret')}</strong> {sireneData.siret}
                           </p>
                           <p className="text-xs text-green-700">
-                            <strong>Raison sociale :</strong> {sireneData.raisonSociale || 'Non renseigné'}
+                            <strong>{t('artisanVerification.siret.sireneLabels.companyName')}</strong> {sireneData.raisonSociale || t('artisanVerification.siret.notSpecified')}
                           </p>
                           <p className="text-xs text-green-700">
-                            <strong>Adresse :</strong> {sireneData.adresse || 'Non renseigné'}
+                            <strong>{t('artisanVerification.siret.sireneLabels.address')}</strong> {sireneData.adresse || t('artisanVerification.siret.notSpecified')}
                           </p>
                           <p className="text-xs text-green-700">
-                            <strong>Activité (APE) :</strong> {sireneData.activite || 'Non renseigné'}
+                            <strong>{t('artisanVerification.siret.sireneLabels.activity')}</strong> {sireneData.activite || t('artisanVerification.siret.notSpecified')}
                           </p>
                         </div>
                       </div>
@@ -365,9 +367,9 @@ export default function VerificationPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Vérification en cours...
+                      {t('artisanVerification.siret.verifying')}
                     </span>
-                  ) : 'Vérifier le SIRET'}
+                  ) : t('artisanVerification.siret.verifyButton')}
                 </button>
               </div>
             )}
@@ -381,13 +383,13 @@ export default function VerificationPage() {
                   <span className="text-2xl">✅</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Validation téléphone</h3>
-                  <p className="text-sm text-gray-600">Numéro vérifié par SMS</p>
+                  <h3 className="font-bold text-lg">{t('artisanVerification.phone.title')}</h3>
+                  <p className="text-sm text-gray-600">{t('artisanVerification.phone.description')}</p>
                 </div>
               </div>
               
               <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                Vérifié
+                {t('artisanVerification.badges.verified')}
               </span>
             </div>
           </div>
@@ -416,32 +418,32 @@ export default function VerificationPage() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">KBIS</h3>
+                  <h3 className="font-bold text-lg">{t('artisanVerification.kbis.title')}</h3>
                   <p className="text-sm text-gray-600">
                     {artisan?.verificationDocuments?.kbis?.verified 
-                      ? 'Extrait Kbis vérifié' 
+                      ? t('artisanVerification.kbis.verified')
                       : artisan?.verificationDocuments?.kbis?.rejected 
-                        ? 'Document rejeté'
+                        ? t('artisanVerification.kbis.rejected')
                         : artisan?.verificationDocuments?.kbis?.url 
-                          ? 'Document en cours de vérification' 
-                          : 'Document non uploadé'}
+                          ? t('artisanVerification.kbis.pending')
+                          : t('artisanVerification.kbis.notUploaded')}
                   </p>
                 </div>
               </div>
               
               {artisan?.verificationDocuments?.kbis?.verified && (
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  Vérifié
+                  {t('artisanVerification.badges.verified')}
                 </span>
               )}
               {artisan?.verificationDocuments?.kbis?.rejected && (
                 <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  Rejeté
+                  {t('artisanVerification.badges.rejected')}
                 </span>
               )}
               {artisan?.verificationDocuments?.kbis?.url && !artisan?.verificationDocuments?.kbis?.verified && !artisan?.verificationDocuments?.kbis?.rejected && (
                 <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  En cours de vérification
+                  {t('artisanVerification.badges.pending')}
                 </span>
               )}
             </div>
@@ -449,7 +451,7 @@ export default function VerificationPage() {
             {artisan?.verificationDocuments?.kbis?.rejected && (
               <div className="bg-red-50 border-l-4 border-red-400 p-3 mb-4">
                 <p className="text-sm text-red-700">
-                  <strong>Raison du rejet :</strong> {artisan.verificationDocuments.kbis.rejectionReason || 'Non spécifiée'}
+                  <strong>{t('artisanVerification.kbis.rejectionReason')}</strong> {artisan.verificationDocuments.kbis.rejectionReason || t('artisanVerification.siret.notSpecified')}
                 </p>
               </div>
             )}
@@ -459,7 +461,7 @@ export default function VerificationPage() {
                 onClick={() => router.push('/artisan/documents')}
                 className="mt-2 w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
               >
-                📤 Uploader le KBIS
+                {t('artisanVerification.kbis.uploadButton')}
               </button>
             )}
             {artisan?.verificationDocuments?.kbis?.rejected && (
@@ -467,7 +469,7 @@ export default function VerificationPage() {
                 onClick={() => router.push('/artisan/documents')}
                 className="w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
               >
-                📤 Re-uploader le KBIS
+                {t('artisanVerification.kbis.reuploadButton')}
               </button>
             )}
           </div>
@@ -497,38 +499,38 @@ export default function VerificationPage() {
                             </span>
                           </div>
                           <div>
-                            <h3 className="font-bold text-lg">Garantie Responsabilité Civile Professionnelle</h3>
+                            <h3 className="font-bold text-lg">{t('artisanVerification.rcPro.title')}</h3>
                             <p className="text-sm text-gray-600">
                               {artisan?.verificationDocuments?.rcPro?.verified 
-                                ? 'Attestation vérifiée' 
+                                ? t('artisanVerification.rcPro.verified')
                                 : artisan?.verificationDocuments?.rcPro?.rejected 
-                                  ? 'Document rejeté'
+                                  ? t('artisanVerification.rcPro.rejected')
                                   : artisan?.verificationDocuments?.rcPro?.url 
-                                    ? 'Document en cours de vérification' 
-                                    : 'Document non uploadé'}
+                                    ? t('artisanVerification.rcPro.pending')
+                                    : t('artisanVerification.rcPro.notUploaded')}
                             </p>
                           </div>
                         </div>
                         {artisan?.verificationDocuments?.rcPro?.verified && (
                           <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                            Vérifié
+                            {t('artisanVerification.badges.verified')}
                           </span>
                         )}
                         {artisan?.verificationDocuments?.rcPro?.rejected && (
                           <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                            Rejeté
+                            {t('artisanVerification.badges.rejected')}
                           </span>
                         )}
                         {artisan?.verificationDocuments?.rcPro?.url && !artisan?.verificationDocuments?.rcPro?.verified && !artisan?.verificationDocuments?.rcPro?.rejected && (
                           <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-                            En cours de vérification
+                            {t('artisanVerification.badges.pending')}
                           </span>
                         )}
                       </div>
                       {artisan?.verificationDocuments?.rcPro?.rejected && (
                         <div className="bg-red-50 border-l-4 border-red-400 p-3 mb-4">
                           <p className="text-sm text-red-700">
-                            <strong>Raison du rejet :</strong> {artisan.verificationDocuments.rcPro.rejectionReason || 'Non spécifiée'}
+                            <strong>{t('artisanVerification.rcPro.rejectionReason')}</strong> {artisan.verificationDocuments.rcPro.rejectionReason || t('artisanVerification.siret.notSpecified')}
                           </p>
                         </div>
                       )}
@@ -537,7 +539,7 @@ export default function VerificationPage() {
                           onClick={() => router.push('/artisan/documents')}
                           className="mt-2 w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
                         >
-                          📤 Uploader l'attestation RC Pro
+                          {t('artisanVerification.rcPro.uploadButton')}
                         </button>
                       )}
                       {artisan?.verificationDocuments?.rcPro?.rejected && (
@@ -545,7 +547,7 @@ export default function VerificationPage() {
                           onClick={() => router.push('/artisan/documents')}
                           className="w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
                         >
-                          📤 Re-uploader l'attestation RC Pro
+                          {t('artisanVerification.rcPro.reuploadButton')}
                         </button>
                       )}
                     </div>
@@ -572,32 +574,32 @@ export default function VerificationPage() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Pièce d'identité</h3>
+                  <h3 className="font-bold text-lg">{t('artisanVerification.idCard.title')}</h3>
                   <p className="text-sm text-gray-600">
                     {artisan?.verificationDocuments?.idCard?.verified 
-                      ? 'CNI ou Passeport vérifié' 
+                      ? t('artisanVerification.idCard.verified')
                       : artisan?.verificationDocuments?.idCard?.rejected 
-                        ? 'Document rejeté'
+                        ? t('artisanVerification.idCard.rejected')
                         : artisan?.verificationDocuments?.idCard?.url 
-                          ? 'Document en cours de vérification' 
-                          : 'Document non uploadé'}
+                          ? t('artisanVerification.idCard.pending')
+                          : t('artisanVerification.idCard.notUploaded')}
                   </p>
                 </div>
               </div>
               
               {artisan?.verificationDocuments?.idCard?.verified && (
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  Vérifié
+                  {t('artisanVerification.badges.verified')}
                 </span>
               )}
               {artisan?.verificationDocuments?.idCard?.rejected && (
                 <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  Rejeté
+                  {t('artisanVerification.badges.rejected')}
                 </span>
               )}
               {artisan?.verificationDocuments?.idCard?.url && !artisan?.verificationDocuments?.idCard?.verified && !artisan?.verificationDocuments?.idCard?.rejected && (
                 <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  En cours de vérification
+                  {t('artisanVerification.badges.pending')}
                 </span>
               )}
             </div>
@@ -605,7 +607,7 @@ export default function VerificationPage() {
             {artisan?.verificationDocuments?.idCard?.rejected && (
               <div className="bg-red-50 border-l-4 border-red-400 p-3 mb-4">
                 <p className="text-sm text-red-700">
-                  <strong>Raison du rejet :</strong> {artisan.verificationDocuments.idCard.rejectionReason || 'Non spécifiée'}
+                  <strong>{t('artisanVerification.idCard.rejectionReason')}</strong> {artisan.verificationDocuments.idCard.rejectionReason || t('artisanVerification.siret.notSpecified')}
                 </p>
               </div>
             )}
@@ -615,7 +617,7 @@ export default function VerificationPage() {
                 onClick={() => router.push('/artisan/documents')}
                 className="mt-2 w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
               >
-                📤 Uploader la pièce d'identité
+                {t('artisanVerification.idCard.uploadButton')}
               </button>
             )}
             {artisan?.verificationDocuments?.idCard?.rejected && (
@@ -623,7 +625,7 @@ export default function VerificationPage() {
                 onClick={() => router.push('/artisan/documents')}
                 className="w-full bg-[#FF6B00] text-white py-2 rounded-lg hover:bg-[#E56100] font-semibold"
               >
-                📤 Re-uploader la pièce d'identité
+                {t('artisanVerification.idCard.reuploadButton')}
               </button>
             )}
           </div>
@@ -639,33 +641,33 @@ export default function VerificationPage() {
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-3xl">🛡️</span>
                   <h3 className="font-bold text-lg text-[#FF6B00]">
-                    Attestation d'assurance décennale <span className="text-[#FFC107]">(obligatoire)</span>
+                    {t('artisanVerification.decennale.titleRequired')} <span className="text-[#FFC107]">{t('artisanVerification.decennale.required')}</span>
                   </h3>
                 </div>
                 <p className="text-[#6C757D] mb-4">
-                  Pour les métiers du gros œuvre et structure (maçonnerie, toiture, charpente, etc.), la loi impose une assurance décennale couvrant les travaux pendant 10 ans après réception. Fournir l'attestation est indispensable pour être vérifié sur la plateforme.
+                  {t('artisanVerification.decennale.description')}
                 </p>
 
                 {/* Statut du document */}
                 <div className="mb-4">
                   {artisan.verificationDocuments?.decennale?.verified ? (
                     <div className="p-3 bg-[#28A745] bg-opacity-10 border border-[#28A745] rounded">
-                      <span className="text-[#28A745] font-semibold">✔️ Décennale validée</span>
+                      <span className="text-[#28A745] font-semibold">{t('artisanVerification.decennale.validated')}</span>
                     </div>
                   ) : artisan.verificationDocuments?.decennale?.rejected ? (
                     <div className="p-3 bg-[#DC3545] bg-opacity-10 border border-[#DC3545] rounded">
-                      <span className="text-[#DC3545] font-semibold">❌ Décennale rejetée</span>
+                      <span className="text-[#DC3545] font-semibold">{t('artisanVerification.decennale.rejected')}</span>
                       <p className="text-sm mt-2">
-                        <strong>Raison :</strong> {artisan.verificationDocuments.decennale.rejectionReason || 'Non spécifiée'}
+                        <strong>{t('artisanVerification.decennale.rejectionReason')}</strong> {artisan.verificationDocuments.decennale.rejectionReason || t('artisanVerification.siret.notSpecified')}
                       </p>
                     </div>
                   ) : artisan.verificationDocuments?.decennale?.url ? (
                     <div className="p-3 bg-[#FFC107] bg-opacity-10 border border-[#FFC107] rounded">
-                      <span className="text-[#FFC107] font-semibold">⏳ Décennale en attente de validation</span>
+                      <span className="text-[#FFC107] font-semibold">{t('artisanVerification.decennale.pending')}</span>
                     </div>
                   ) : (
                     <div className="p-3 bg-[#FF6B00] bg-opacity-10 border border-[#FF6B00] rounded">
-                      <span className="text-[#FF6B00] font-semibold">⚠️ Aucune attestation déposée</span>
+                      <span className="text-[#FF6B00] font-semibold">{t('artisanVerification.decennale.notUploaded')}</span>
                     </div>
                   )}
                 </div>
@@ -679,11 +681,9 @@ export default function VerificationPage() {
               <section className="mt-8 p-6 border border-[#E9ECEF] rounded-lg bg-[#F5F7FA]">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">ℹ️</span>
-                  <h3 className="font-bold text-lg text-[#2C3E50]">Assurance décennale</h3>
+                  <h3 className="font-bold text-lg text-[#2C3E50]">{t('artisanVerification.decennale.infoTitle')}</h3>
                 </div>
-                <p className="text-[#6C757D]">
-                  Si votre métier nécessite une assurance décennale (maçonnerie, toiture, charpente, menuiserie, isolation, plomberie, électricité, carrelage, chauffage, climatisation), elle sera demandée après la saisie de votre profil dans la section <strong>Mon Profil</strong>.
-                </p>
+                <p className="text-[#6C757D]" dangerouslySetInnerHTML={{ __html: t('artisanVerification.decennale.infoDescription') }} />
               </section>
             )}
 
