@@ -786,11 +786,7 @@ export default function NouveauDevisPage() {
       return;
     }
     
-    if (lignes.length === 0) {
-      alert(t('alerts.validation.addPrestation'));
-      return;
-    }
-    if (lignes.some(l => !l.description.trim() || l.prixUnitaireHT <= 0)) {
+    if (lignes.filter(l => l.description.trim()).some(l => l.prixUnitaireHT <= 0)) {
       alert(t('alerts.validation.completeLines'));
       return;
     }
@@ -965,11 +961,7 @@ export default function NouveauDevisPage() {
       }
     }
     
-    if (lignes.length === 0) {
-      alert(t('alerts.validation.addPrestation'));
-      return;
-    }
-    if (lignes.some(l => !l.description.trim() || l.prixUnitaireHT <= 0)) {
+    if (lignes.filter(l => l.description.trim()).some(l => l.prixUnitaireHT <= 0)) {
       alert(t('alerts.validation.completeLines'));
       return;
     }
@@ -1321,7 +1313,7 @@ export default function NouveauDevisPage() {
 
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-[#2C3E50] mb-1">
-                    Validité (jours)
+                    Validité de devis (jours)
                   </label>
                   <input
                     type="number"
@@ -1537,7 +1529,10 @@ export default function NouveauDevisPage() {
                       type="checkbox"
                       id="ajouterMatierePremiere"
                       checked={ajouterMatierePremiere}
-                      onChange={(e) => setAjouterMatierePremiere(e.target.checked)}
+                      onChange={(e) => {
+                        setAjouterMatierePremiere(e.target.checked);
+                        if (e.target.checked) setMatierePremiereQuantite(1);
+                      }}
                       className="w-4 h-4 text-[#FF6B00] focus:ring-[#FF6B00] border-gray-300 rounded"
                     />
                     <label htmlFor="ajouterMatierePremiere" className="text-sm font-medium text-[#2C3E50] cursor-pointer">
@@ -1555,23 +1550,9 @@ export default function NouveauDevisPage() {
                       <label className="block text-xs text-[#6C757D] mb-1">Quantité</label>
                       <input
                         type="number"
-                        value={matierePremiereQuantite || ''}
-                        onChange={(e) => {
-                          if (e.target.value === '') {
-                            setMatierePremiereQuantite(0);
-                            return;
-                          }
-                          const num = parseFloat(e.target.value);
-                          setMatierePremiereQuantite(isNaN(num) ? 0 : num);
-                        }}
-                        onBlur={(e) => {
-                          if (e.target.value === '' || parseFloat(e.target.value) < 0) {
-                            setMatierePremiereQuantite(0);
-                          }
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                        min="0"
-                        step="0.01"
+                        value={1}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100 text-gray-500 cursor-not-allowed"
                       />
                     </div>
 
@@ -1850,7 +1831,7 @@ export default function NouveauDevisPage() {
             {dateDebutPrevue && (
               <div className="bg-gray-50 border-l-4 border-[#2C3E50] p-4 mb-4">
                 <p className="text-sm">
-                  <span className="font-semibold">📅 Date de début prévue :</span>{' '}
+                  <span className="font-semibold">📅 Date de début des travaux prévue :</span>{' '}
                   {new Date(dateDebutPrevue).toLocaleDateString('fr-FR', { 
                     weekday: 'long', 
                     year: 'numeric', 
@@ -1864,7 +1845,7 @@ export default function NouveauDevisPage() {
             {delaiRealisation && dateDebutPrevue && (
               <div className="bg-[#FFF3E0] border-l-4 border-[#FF6B00] p-4 mb-6">
                 <p className="text-sm">
-                  <span className="font-semibold">Date de fin des travaux prévue :</span>{' '}
+                  <span className="font-semibold">📅 Date de fin des travaux prévue :</span>{' '}
                   {(() => {
                     const debut = new Date(dateDebutPrevue);
                     debut.setDate(debut.getDate() + Number(delaiRealisation));
@@ -1941,7 +1922,7 @@ export default function NouveauDevisPage() {
                   </tr>
                 )}
 
-                {lignes.map((ligne) => (
+                {lignes.filter(ligne => ligne.description.trim() || ligne.prixUnitaireHT > 0).map((ligne) => (
                   <tr key={ligne.id} className="border-t border-gray-200">
                     <td className="px-4 py-3 text-sm break-words">
                       {ligne.description || <span className="text-gray-400 italic">Description...</span>}
