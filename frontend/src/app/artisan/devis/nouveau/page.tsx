@@ -1256,35 +1256,19 @@ export default function NouveauDevisPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#2C3E50] mb-1">
-                    Délai de réalisation (en jours) *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={delaiRealisation}
-                    onChange={(e) => setDelaiRealisation(e.target.value ? parseInt(e.target.value) : '')}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
-                    placeholder="Ex: 15"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Nombre de jours nécessaires pour réaliser les travaux</p>
-                </div>
-
-                <div>
+              <div className="grid grid-cols-5 gap-4">
+                <div className="col-span-3">
                   <label className="block text-sm font-medium text-[#2C3E50] mb-1">
                     Date de début prévue *
+                    {demande?.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
+                      <span className="font-normal text-[#6C757D]">
+                        {' '}: {demande.datesSouhaitees.dates[0].toDate().toLocaleDateString('fr-FR')}
+                        {demande.datesSouhaitees.flexible && demande.datesSouhaitees.flexibiliteDays && (
+                          <span> (±{demande.datesSouhaitees.flexibiliteDays} jours)</span>
+                        )}
+                      </span>
+                    )}
                   </label>
-                  {demande?.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
-                    <p className="text-xs text-[#6C757D] mb-1">
-                      📅 Client souhaite : {demande.datesSouhaitees.dates[0].toDate().toLocaleDateString('fr-FR')}
-                      {demande.datesSouhaitees.flexible && demande.datesSouhaitees.flexibiliteDays && (
-                        <span> (±{demande.datesSouhaitees.flexibiliteDays} jours)</span>
-                      )}
-                    </p>
-                  )}
                   <input
                     type="date"
                     value={dateDebutPrevue}
@@ -1319,7 +1303,23 @@ export default function NouveauDevisPage() {
                   })()}
                 </div>
 
-                <div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-[#2C3E50] mb-1">
+                    Délai de réalisation (en jours) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={delaiRealisation}
+                    onChange={(e) => setDelaiRealisation(e.target.value ? parseInt(e.target.value) : '')}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
+                    placeholder="Ex: 15"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Nombre de jours nécessaires pour réaliser les travaux</p>
+                </div>
+
+                <div className="col-span-2">
                   <label className="block text-sm font-medium text-[#2C3E50] mb-1">
                     Validité (jours)
                   </label>
@@ -1861,10 +1861,20 @@ export default function NouveauDevisPage() {
               </div>
             )}
 
-            {delaiRealisation && (
+            {delaiRealisation && dateDebutPrevue && (
               <div className="bg-[#FFF3E0] border-l-4 border-[#FF6B00] p-4 mb-6">
                 <p className="text-sm">
-                  <span className="font-semibold">Délai de réalisation :</span> {delaiRealisation} jour{delaiRealisation > 1 ? 's' : ''}
+                  <span className="font-semibold">Date de fin des travaux prévue :</span>{' '}
+                  {(() => {
+                    const debut = new Date(dateDebutPrevue);
+                    debut.setDate(debut.getDate() + Number(delaiRealisation));
+                    return debut.toLocaleDateString('fr-FR', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                  })()}
                 </p>
               </div>
             )}
