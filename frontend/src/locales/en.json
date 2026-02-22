@@ -1151,5 +1151,75 @@
       "errorAlreadyConfigured": "⚠️ Account Already Configured",
       "errorAlreadyConfiguredMessage": "You already have an active Stripe Connect account. If you encounter problems, contact support."
     }
+  },
+  "artisanExpressRequests": {
+    "pageTitle": "🚀 My Express Requests",
+    "requestsCount": "{count} request{plural} received",
+    "requestSingular": "",
+    "requestPlural": "s",
+    "receivedSingular": "",
+    "receivedPlural": "",
+    "breadcrumbDashboard": "Dashboard",
+    "breadcrumbExpressRequests": "Express Requests",
+    "loading": "Loading...",
+    "accessDenied": "Access reserved for artisans",
+    "loadError": "Error loading requests",
+    "statuses": {
+      "en_attente_proposition": "Waiting for your proposal",
+      "proposition_recue": "Proposal sent",
+      "acceptee": "Proposal accepted",
+      "payee": "Paid - Ready to work",
+      "en_cours": "Work in progress",
+      "terminee": "Completed",
+      "annulee": "Cancelled",
+      "expiree": "Expired"
+    },
+    "urgentBadge": "🚨 Urgent",
+    "empty": {
+      "title": "No requests yet",
+      "message": "Client requests will appear here"
+    },
+    "actions": {
+      "makeProposal": "Make a proposal →",
+      "viewDetails": "View details →"
+    }
+  },
+  "clientPaymentSuccess": {
+    "loading": "Verifying payment...",
+    "success": {
+      "title": "🎉 Payment successful!",
+      "messageSuccess": "Your payment has been processed successfully!",
+      "messageProcessing": "Your payment is being processed.",
+      "nextStepsTitle": "📋 Next steps",
+      "step1": "Your money is secured in an escrow account",
+      "step2": "The artisan has been notified and can now proceed",
+      "step3": "You will receive a notification at the end of the work",
+      "step4": "Payment will be released to the artisan after your confirmation",
+      "dashboardButton": "📊 My dashboard",
+      "viewRequestButton": "📝 View my request",
+      "paymentDetailsTitle": "💳 Payment details",
+      "emailConfirmation": "You will receive a confirmation email from Stripe with all the details of your transaction.",
+      "guaranteesTitle": "✅ Guarantees",
+      "guarantee1": "🔒 100% secure transaction by Stripe",
+      "guarantee2": "💰 Money held until work confirmation",
+      "guarantee3": "🛡️ Buyer protection included",
+      "guarantee4": "📞 Support available 7/7"
+    },
+    "error": {
+      "title": "❌ Payment failed",
+      "messageMissing": "Missing payment information",
+      "messageNotFound": "Payment not found",
+      "messageFailed": "Payment failed. Please try again.",
+      "messageUnknown": "An error occurred.",
+      "whatToDoTitle": "💡 What to do?",
+      "tip1": "• Check your credit card information",
+      "tip2": "• Make sure you have sufficient funds",
+      "tip3": "• Contact your bank if the problem persists",
+      "tip4": "• Try with another card",
+      "dashboardButton": "← Dashboard",
+      "retryButton": "🔄 Retry",
+      "needHelp": "Need help?",
+      "contactSupport": "Contact our support"
+    }
   }
 }

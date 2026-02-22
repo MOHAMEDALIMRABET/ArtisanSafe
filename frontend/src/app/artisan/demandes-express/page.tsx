@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getDemandesExpressByArtisan } from '@/lib/firebase/demande-express-service';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserById } from '@/lib/firebase/user-service';
@@ -10,6 +11,7 @@ import type { DemandeExpress, User } from '@/types/firestore';
 
 export default function DemandesExpressArtisanPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { user: firebaseUser } = useAuth();
   const [userData, setUserData] = useState<User | null>(null);
   const [demandes, setDemandes] = useState<DemandeExpress[]>([]);
@@ -31,7 +33,7 @@ export default function DemandesExpressArtisanPage() {
       setUserData(user);
 
       if (user?.role !== 'artisan') {
-        alert('Accès réservé aux artisans');
+        alert(t('artisanExpressRequests.accessDenied'));
         router.push('/');
         return;
       }
@@ -39,7 +41,7 @@ export default function DemandesExpressArtisanPage() {
       const demandesList = await getDemandesExpressByArtisan(firebaseUser.uid);
       setDemandes(demandesList);
     } catch (error) {
-      console.error('Erreur chargement demandes:', error);
+      console.error(t('artisanExpressRequests.loadError'), error);
     } finally {
       setLoading(false);
     }
@@ -61,14 +63,14 @@ export default function DemandesExpressArtisanPage() {
 
   const getStatutLabel = (statut: DemandeExpress['statut']) => {
     const labels = {
-      en_attente_proposition: 'En attente de votre proposition',
-      proposition_recue: 'Proposition envoyée',
-      acceptee: 'Proposition acceptée',
-      payee: 'Payée - Prêt à intervenir',
-      en_cours: 'Intervention en cours',
-      terminee: 'Terminée',
-      annulee: 'Annulée',
-      expiree: 'Expirée',
+      en_attente_proposition: t('artisanExpressRequests.statuses.en_attente_proposition'),
+      proposition_recue: t('artisanExpressRequests.statuses.proposition_recue'),
+      acceptee: t('artisanExpressRequests.statuses.acceptee'),
+      payee: t('artisanExpressRequests.statuses.payee'),
+      en_cours: t('artisanExpressRequests.statuses.en_cours'),
+      terminee: t('artisanExpressRequests.statuses.terminee'),
+      annulee: t('artisanExpressRequests.statuses.annulee'),
+      expiree: t('artisanExpressRequests.statuses.expiree'),
     };
     return labels[statut];
   };
@@ -78,7 +80,7 @@ export default function DemandesExpressArtisanPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
-          <p className="text-[#6C757D]">Chargement...</p>
+          <p className="text-[#6C757D]">{t('artisanExpressRequests.loading')}</p>
         </div>
       </div>
     );
@@ -91,17 +93,20 @@ export default function DemandesExpressArtisanPage() {
         <div className="container mx-auto px-4 py-6">
           <nav className="flex items-center gap-2 text-sm mb-4">
             <Link href="/artisan/dashboard" className="text-[#2C3E50] hover:text-[#FF6B00]">
-              Dashboard
+              {t('artisanExpressRequests.breadcrumbDashboard')}
             </Link>
             <span className="text-[#6C757D]">&gt;</span>
-            <span className="text-[#2C3E50] font-semibold">Demandes express</span>
+            <span className="text-[#2C3E50] font-semibold">{t('artisanExpressRequests.breadcrumbExpressRequests')}</span>
           </nav>
 
           <h1 className="text-2xl md:text-3xl font-bold text-[#2C3E50]">
-            🚀 Mes demandes express
+            {t('artisanExpressRequests.pageTitle')}
           </h1>
           <p className="text-[#6C757D] mt-2">
-            {demandes.length} demande{demandes.length > 1 ? 's' : ''} reçue{demandes.length > 1 ? 's' : ''}
+            {t('artisanExpressRequests.requestsCount')
+              .replace('{count}', String(demandes.length))
+              .replace('{plural}', demandes.length > 1 ? t('artisanExpressRequests.requestPlural') : t('artisanExpressRequests.requestSingular'))
+              .replace('{plural}', demandes.length > 1 ? t('artisanExpressRequests.receivedPlural') : t('artisanExpressRequests.receivedSingular'))}
           </p>
         </div>
       </div>
@@ -113,10 +118,10 @@ export default function DemandesExpressArtisanPage() {
             <div className="bg-white rounded-xl shadow-lg p-12 text-center">
               <div className="text-6xl mb-4">📭</div>
               <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
-                Aucune demande pour le moment
+                {t('artisanExpressRequests.empty.title')}
               </h2>
               <p className="text-[#6C757D]">
-                Les demandes des clients apparaîtront ici
+                {t('artisanExpressRequests.empty.message')}
               </p>
             </div>
           ) : (
@@ -136,7 +141,7 @@ export default function DemandesExpressArtisanPage() {
                           </span>
                           {demande.urgence === 'urgent' && (
                             <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">
-                              🚨 Urgent
+                              {t('artisanExpressRequests.urgentBadge')}
                             </span>
                           )}
                         </div>
@@ -180,17 +185,17 @@ export default function DemandesExpressArtisanPage() {
                       <div className="flex flex-col gap-2">
                         {demande.statut === 'en_attente_proposition' && (
                           <span className="px-4 py-2 bg-[#FF6B00] text-white rounded-lg font-semibold text-center whitespace-nowrap">
-                            Faire une proposition →
+                            {t('artisanExpressRequests.actions.makeProposal')}
                           </span>
                         )}
                         {demande.statut === 'payee' && (
                           <span className="px-4 py-2 bg-green-500 text-white rounded-lg font-semibold text-center whitespace-nowrap">
-                            Voir détails →
+                            {t('artisanExpressRequests.actions.viewDetails')}
                           </span>
                         )}
                         {demande.statut !== 'en_attente_proposition' && demande.statut !== 'payee' && (
                           <span className="px-4 py-2 border-2 border-[#E9ECEF] text-[#2C3E50] rounded-lg font-semibold text-center whitespace-nowrap">
-                            Voir détails →
+                            {t('artisanExpressRequests.actions.viewDetails')}
                           </span>
                         )}
                       </div>

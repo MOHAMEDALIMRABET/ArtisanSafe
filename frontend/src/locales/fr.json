@@ -1159,5 +1159,75 @@
       "errorAlreadyConfigured": "⚠️ Compte déjà configuré",
       "errorAlreadyConfiguredMessage": "Vous avez déjà un compte Stripe Connect actif. Si vous rencontrez des problèmes, contactez le support."
     }
+  },
+  "artisanExpressRequests": {
+    "pageTitle": "🚀 Mes demandes express",
+    "requestsCount": "{count} demande{plural} reçue{plural}",
+    "requestSingular": "",
+    "requestPlural": "s",
+    "receivedSingular": "",
+    "receivedPlural": "s",
+    "breadcrumbDashboard": "Dashboard",
+    "breadcrumbExpressRequests": "Demandes express",
+    "loading": "Chargement...",
+    "accessDenied": "Accès réservé aux artisans",
+    "loadError": "Erreur chargement demandes",
+    "statuses": {
+      "en_attente_proposition": "En attente de votre proposition",
+      "proposition_recue": "Proposition envoyée",
+      "acceptee": "Proposition acceptée",
+      "payee": "Payée - Prêt à intervenir",
+      "en_cours": "Intervention en cours",
+      "terminee": "Terminée",
+      "annulee": "Annulée",
+      "expiree": "Expirée"
+    },
+    "urgentBadge": "🚨 Urgent",
+    "empty": {
+      "title": "Aucune demande pour le moment",
+      "message": "Les demandes des clients apparaîtront ici"
+    },
+    "actions": {
+      "makeProposal": "Faire une proposition →",
+      "viewDetails": "Voir détails →"
+    }
+  },
+  "clientPaymentSuccess": {
+    "loading": "Vérification du paiement...",
+    "success": {
+      "title": "🎉 Paiement réussi !",
+      "messageSuccess": "Votre paiement a été traité avec succès !",
+      "messageProcessing": "Votre paiement est en cours de traitement.",
+      "nextStepsTitle": "📋 Prochaines étapes",
+      "step1": "Votre argent est sécurisé sur un compte séquestre",
+      "step2": "L'artisan a été notifié et peut maintenant intervenir",
+      "step3": "Vous recevrez une notification à la fin de l'intervention",
+      "step4": "Le paiement sera libéré à l'artisan après votre confirmation",
+      "dashboardButton": "📊 Mon dashboard",
+      "viewRequestButton": "📝 Voir ma demande",
+      "paymentDetailsTitle": "💳 Détails du paiement",
+      "emailConfirmation": "Vous recevrez un email de confirmation de Stripe avec tous les détails de votre transaction.",
+      "guaranteesTitle": "✅ Garanties",
+      "guarantee1": "🔒 Transaction 100% sécurisée par Stripe",
+      "guarantee2": "💰 Argent bloqué jusqu'à confirmation des travaux",
+      "guarantee3": "🛡️ Protection acheteur incluse",
+      "guarantee4": "📞 Support disponible 7j/7"
+    },
+    "error": {
+      "title": "❌ Échec du paiement",
+      "messageMissing": "Informations de paiement manquantes",
+      "messageNotFound": "Paiement introuvable",
+      "messageFailed": "Le paiement a échoué. Veuillez réessayer.",
+      "messageUnknown": "Une erreur est survenue.",
+      "whatToDoTitle": "💡 Que faire ?",
+      "tip1": "• Vérifiez les informations de votre carte bancaire",
+      "tip2": "• Assurez-vous d'avoir suffisamment de fonds",
+      "tip3": "• Contactez votre banque si le problème persiste",
+      "tip4": "• Essayez avec une autre carte",
+      "dashboardButton": "← Dashboard",
+      "retryButton": "🔄 Réessayer",
+      "needHelp": "Besoin d'aide ?",
+      "contactSupport": "Contactez notre support"
+    }
   }
 }
