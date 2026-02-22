@@ -764,6 +764,44 @@ export default function NouveauDevisPage() {
   };
 
   /**
+   * Calcule la prochaine lettre de variante via une requête Firestore fraîche.
+   * Évite tout problème d'état périmé (variantesExistantes) lors de la génération/envoi.
+   */
+  const calculerVarianteInfo = async (demandeIdParam: string) => {
+    if (!user) return null;
+    const snap = await getDocs(query(
+      collection(db, 'devis'),
+      where('demandeId', '==', demandeIdParam),
+      where('artisanId', '==', user.uid)
+    ));
+    const devisActifs = snap.docs
+      .map(d => ({ id: d.id, ...(d.data() as any) }))
+      .filter((d: any) => d.statut !== 'annule' && d.statut !== 'remplace');
+
+    if (devisActifs.length === 0) return null;
+
+    const premierDevis = devisActifs[0] as any;
+    const varianteGroupe = premierDevis.varianteGroupe || `VG-${demandeIdParam}-${Date.now()}`;
+    const lettresUtilisees = devisActifs
+      .map((v: any) => v.varianteLettreReference || '')
+      .filter(Boolean);
+    const lettres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let prochaineLettreReference = 'A';
+    for (let i = 0; i < lettres.length; i++) {
+      if (!lettresUtilisees.includes(lettres[i])) {
+        prochaineLettreReference = lettres[i];
+        break;
+      }
+    }
+    return {
+      varianteGroupe,
+      varianteLettreReference: prochaineLettreReference,
+      premierDevisId: premierDevis.id as string,
+      premierDevisHasGroupe: !!premierDevis.varianteGroupe,
+    };
+  };
+
+  /**
    * Sauvegarder le devis en brouillon
    */
   const sauvegarderBrouillon = async () => {
@@ -848,59 +886,23 @@ export default function NouveauDevisPage() {
       };
       
       // 🚨 SYSTÈME DE VARIANTES PROGRESSIF (SANS TRANSFORMATION RÉTROACTIVE)
-      // Premier devis : DV-2026-00004 (SANS lettre, jamais modifié)
-      // Première variante : DV-2026-00004-A
-      // Deuxième variante : DV-2026-00004-B
-      
-      if (!modeEdition && demandeId && variantesExistantes.length > 0) {
-        const premierDevis = variantesExistantes[0];
-        
-        // Créer varianteGroupe pour lier tous les devis de cette demande
-        const varianteGroupe = premierDevis.varianteGroupe || `VG-${demandeId}-${Date.now()}`;
-        
-        if (!premierDevis.varianteGroupe) {
-          // Le premier devis n'a pas encore de varianteGroupe
-          // → Lui ajouter varianteGroupe SANS modifier son numéro ni ajouter de lettre
-          console.log('🔗 Ajout varianteGroupe au premier devis (SANS transformation)');
-          
-          await updateDevis(premierDevis.id, {
-            varianteGroupe: varianteGroupe,
-            // PAS de varianteLettreReference : le premier reste sans lettre
-            // PAS de numeroDevis : garde son numéro original
-          });
-          
-          console.log('📋 Premier devis conservé (brouillon):', {
-            numero: premierDevis.numeroDevis,  // Reste DV-2026-00004 (sans -A)
-            varianteGroupe: varianteGroupe
-          });
-        }
-        
-        // Créer la nouvelle variante avec une lettre
-        const lettresUtilisees = variantesExistantes
-          .map(v => v.varianteLettreReference || '')
-          .filter(Boolean);
-        
-        const lettres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        let prochaineLettreReference = 'A';
-        for (let i = 0; i < lettres.length; i++) {
-          if (!lettresUtilisees.includes(lettres[i])) {
-            prochaineLettreReference = lettres[i];
-            break;
+      // Requête Firestore fraîche pour éviter les états périmés
+      if (!modeEdition && demandeId) {
+        const varianteInfo = await calculerVarianteInfo(demandeId);
+        if (varianteInfo) {
+          if (!varianteInfo.premierDevisHasGroupe) {
+            console.log('🔗 Ajout varianteGroupe au premier devis (brouillon)');
+            await updateDevis(varianteInfo.premierDevisId, { varianteGroupe: varianteInfo.varianteGroupe });
           }
+          devisData.varianteGroupe = varianteInfo.varianteGroupe;
+          devisData.varianteLettreReference = varianteInfo.varianteLettreReference;
+          console.log('📋 Variante assignée (brouillon):', {
+            lettre: varianteInfo.varianteLettreReference,
+            groupe: varianteInfo.varianteGroupe,
+          });
+        } else {
+          console.log('📋 Premier devis pour cette demande (brouillon) → SANS lettre');
         }
-        
-        devisData.varianteGroupe = varianteGroupe;
-        devisData.varianteLettreReference = prochaineLettreReference;
-        
-        console.log('📋 Création variante (brouillon):', { 
-          varianteGroupe, 
-          lettre: prochaineLettreReference,
-          devisExistants: variantesExistantes.length 
-        });
-      } else if (!modeEdition && demandeId) {
-        // Aucun devis existant → créer le premier SANS variante
-        console.log('📋 Premier devis pour cette demande (brouillon) → SANS lettre de variante');
-        // NE PAS ajouter varianteGroupe ni varianteLettreReference
       }
 
       if (modeEdition && devisBrouillonId) {
@@ -1053,60 +1055,23 @@ export default function NouveauDevisPage() {
       };
       
       // 🚨 SYSTÈME DE VARIANTES PROGRESSIF (SANS TRANSFORMATION RÉTROACTIVE)
-      // Premier devis : DV-2026-00004 (SANS lettre, jamais modifié)
-      // Première variante : DV-2026-00004-A
-      // Deuxième variante : DV-2026-00004-B
-      
-      if (variantesExistantes.length > 0) {
-        // Il existe déjà au moins un devis pour cette demande
-        const premierDevis = variantesExistantes[0];
-        
-        // Créer varianteGroupe pour lier tous les devis de cette demande
-        const varianteGroupe = premierDevis.varianteGroupe || `VG-${demandeId}-${Date.now()}`;
-        
-        if (!premierDevis.varianteGroupe) {
-          // Le premier devis n'a pas encore de varianteGroupe
-          // → Lui ajouter varianteGroupe SANS modifier son numéro ni ajouter de lettre
-          console.log('🔗 Ajout varianteGroupe au premier devis (SANS transformation)');
-          
-          await updateDevis(premierDevis.id, {
-            varianteGroupe: varianteGroupe,
-            // PAS de varianteLettreReference : le premier reste sans lettre
-            // PAS de numeroDevis : garde son numéro original
-          });
-          
-          console.log('📋 Premier devis conservé:', {
-            numero: premierDevis.numeroDevis,  // Reste DV-2026-00004 (sans -A)
-            varianteGroupe: varianteGroupe
-          });
-        }
-        
-        // Créer la nouvelle variante avec une lettre
-        const lettresUtilisees = variantesExistantes
-          .map(v => v.varianteLettreReference || '')
-          .filter(Boolean);
-        
-        const lettres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        let prochaineLettreReference = 'A';
-        for (let i = 0; i < lettres.length; i++) {
-          if (!lettresUtilisees.includes(lettres[i])) {
-            prochaineLettreReference = lettres[i];
-            break;
+      // Requête Firestore fraîche pour éviter les états périmés
+      if (!modeEdition && demandeId) {
+        const varianteInfo = await calculerVarianteInfo(demandeId);
+        if (varianteInfo) {
+          if (!varianteInfo.premierDevisHasGroupe) {
+            console.log('🔗 Ajout varianteGroupe au premier devis (envoi)');
+            await updateDevis(varianteInfo.premierDevisId, { varianteGroupe: varianteInfo.varianteGroupe });
           }
+          devisData.varianteGroupe = varianteInfo.varianteGroupe;
+          devisData.varianteLettreReference = varianteInfo.varianteLettreReference;
+          console.log('📋 Variante assignée (envoi):', {
+            lettre: varianteInfo.varianteLettreReference,
+            groupe: varianteInfo.varianteGroupe,
+          });
+        } else {
+          console.log('📋 Premier devis pour cette demande (envoi) → SANS lettre');
         }
-        
-        devisData.varianteGroupe = varianteGroupe;
-        devisData.varianteLettreReference = prochaineLettreReference;
-        
-        console.log('📋 Création variante:', { 
-          varianteGroupe, 
-          lettre: prochaineLettreReference,
-          devisExistants: variantesExistantes.length 
-        });
-      } else {
-        // Aucun devis existant → créer le premier SANS variante
-        console.log('📋 Premier devis pour cette demande → SANS lettre de variante');
-        // NE PAS ajouter varianteGroupe ni varianteLettreReference
       }
 
       if (modeEdition && devisBrouillonId) {
