@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { createLitige } from '@/lib/firebase/litige-service';
 import { LitigeType, LITIGE_TYPE_LABELS } from '@/types/litige';
 
@@ -30,6 +31,7 @@ export default function CreerLitigeModal({
   declarantRole,
   onSuccess,
 }: CreerLitigeModalProps) {
+  const { t } = useLanguage();
   const [type, setType] = useState<LitigeType>('non_conformite');
   const [motif, setMotif] = useState('');
   const [description, setDescription] = useState('');
@@ -72,7 +74,7 @@ export default function CreerLitigeModal({
       });
 
       // Succès
-      alert('✅ Litige déclaré avec succès. Notre équipe va examiner votre demande.');
+      alert(t('alerts.dispute.createdSuccess'));
       onSuccess?.();
       handleClose();
     } catch (err) {

@@ -563,7 +563,7 @@ export default function MesDemandesPage() {
               </Button>
               <button
                 onClick={() => setShowExpirationHelp(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-10 text-white rounded-lg hover:bg-opacity-20 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 border-2 border-white text-white rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors"
                 title={t('clientDemandes.expirationHelp.subtitle')}
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

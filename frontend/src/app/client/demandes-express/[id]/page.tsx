@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   getDemandeExpressById,
   getPropositionsByDemande,
@@ -21,6 +22,7 @@ export default function DemandeExpressDetailClientPage() {
   const params = useParams();
   const demandeId = params.id as string;
   const { user: firebaseUser } = useAuth();
+  const { t } = useLanguage();
 
   const [userData, setUserData] = useState<User | null>(null);
   const [demande, setDemande] = useState<DemandeExpress | null>(null);
@@ -49,20 +51,20 @@ export default function DemandeExpressDetailClientPage() {
       setUserData(user);
 
       if (user?.role !== 'client') {
-        alert('Accès réservé aux clients');
+        alert(t('alerts.express.clientOnly'));
         router.push('/');
         return;
       }
 
       const demandeData = await getDemandeExpressById(demandeId);
       if (!demandeData) {
-        alert('Demande introuvable');
+        alert(t('alerts.demande.notFound'));
         router.push('/client/dashboard');
         return;
       }
 
       if (demandeData.clientId !== firebaseUser.uid) {
-        alert('Vous n\'êtes pas autorisé à voir cette demande');
+        alert(t('alerts.demande.accessDenied'));
         router.push('/client/dashboard');
         return;
       }
@@ -80,7 +82,7 @@ export default function DemandeExpressDetailClientPage() {
       }
     } catch (error) {
       console.error('Erreur chargement demande:', error);
-      alert('Erreur lors du chargement');
+      alert(t('alerts.demande.loadError'));
     } finally {
       setLoading(false);
     }
@@ -92,12 +94,12 @@ export default function DemandeExpressDetailClientPage() {
     setSubmitting(true);
     try {
       await acceptPropositionExpress(proposition.id);
-      alert('✅ Proposition acceptée ! Vous allez être redirigé vers le paiement...');
+      alert(t('alerts.express.proposalAccepted'));
       // TODO: Rediriger vers page paiement Stripe
       router.push(`/client/paiement-express/${proposition.id}`);
     } catch (error: any) {
       console.error('Erreur acceptation:', error);
-      alert(error.message || 'Erreur lors de l\'acceptation');
+      alert(error.message || t('alerts.express.acceptError'));
     } finally {
       setSubmitting(false);
     }
@@ -105,19 +107,19 @@ export default function DemandeExpressDetailClientPage() {
 
   async function handleRefuser() {
     if (!proposition || !motifRefus.trim()) {
-      alert('Veuillez indiquer un motif de refus');
+      alert(t('alerts.express.refusalReasonRequired'));
       return;
     }
 
     setSubmitting(true);
     try {
       await refusePropositionExpress(proposition.id, motifRefus.trim());
-      alert('Proposition refusée. L\'artisan a été notifié.');
+      alert(t('alerts.express.proposalRejected'));
       setShowRefusModal(false);
       await loadData();
     } catch (error: any) {
       console.error('Erreur refus:', error);
-      alert(error.message || 'Erreur lors du refus');
+      alert(error.message || t('alerts.express.refuseError'));
     } finally {
       setSubmitting(false);
     }
@@ -129,11 +131,11 @@ export default function DemandeExpressDetailClientPage() {
     setSubmitting(true);
     try {
       await cancelDemandeExpress(demandeId, firebaseUser!.uid);
-      alert('Demande annulée.');
+      alert(t('alerts.express.requestCancelled'));
       router.push('/client/dashboard');
     } catch (error: any) {
       console.error('Erreur annulation:', error);
-      alert(error.message || 'Erreur lors de l\'annulation');
+      alert(error.message || t('alerts.express.cancelError'));
     } finally {
       setSubmitting(false);
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { createDemande } from '@/lib/firebase/demande-service';
 import { matchAndNotifyArtisansForPublicDemande } from '@/lib/firebase/matching-service';
 import { uploadMultiplePhotos } from '@/lib/firebase/storage-service';
@@ -47,6 +48,7 @@ const RAYONS = [
 export default function NouvelleDemandePubliquePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [villeSuggestions, setVilleSuggestions] = useState<VilleSuggestion[]>([]);
@@ -233,7 +235,7 @@ export default function NouvelleDemandePubliquePage() {
     
     // Validation: max 5 photos, taille < 5MB chacune
     if (photos.length + files.length > 5) {
-      alert('Maximum 5 photos autorisées');
+      alert(t('alerts.demande.maxPhotos'));
       return;
     }
 
@@ -265,22 +267,22 @@ export default function NouvelleDemandePubliquePage() {
 
     // Validation
     if (!formData.ville || !formData.codePostal) {
-      alert('⚠️ Veuillez renseigner la ville et le code postal');
+      alert(t('alerts.publicDemand.cityAndPostalRequired'));
       return;
     }
 
     if (!formData.titre || formData.titre.length < 10) {
-      alert('⚠️ Le titre doit contenir au moins 10 caractères');
+      alert(t('alerts.publicDemand.titleRequired'));
       return;
     }
 
     if (!formData.description || formData.description.length < 50) {
-      alert('⚠️ La description doit contenir au moins 50 caractères pour aider les artisans à comprendre votre besoin');
+      alert(t('alerts.publicDemand.descriptionRequired'));
       return;
     }
 
     if (!formData.dateDebut) {
-      alert('⚠️ Veuillez indiquer une date de début souhaitée');
+      alert(t('alerts.publicDemand.startDateRequired'));
       return;
     }
 
@@ -390,7 +392,7 @@ export default function NouvelleDemandePubliquePage() {
       
     } catch (error) {
       console.error('❌ Erreur création demande publique:', error);
-      alert('❌ Erreur lors de la publication de la demande. Veuillez réessayer.');
+      alert(t('alerts.publicDemand.publishError'));
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,134 @@
 {
+  "alerts": {
+    "devis": {
+      "notFound": "Devis introuvable",
+      "loadError": "Erreur lors du chargement du devis",
+      "createSuccess": "✅ Nouveau devis créé avec succès !",
+      "createError": "❌ Erreur lors de la création du nouveau devis",
+      "workStartDeclared": "✅ Début des travaux déclaré ! Le client a été notifié.",
+      "workStartError": "❌ Erreur : {message}",
+      "workEndDeclared": "✅ Fin des travaux déclarée ! Le client a 7 jours pour valider.",
+      "workEndError": "❌ Erreur : {message}",
+      "draftUpdated": "✅ Brouillon mis à jour avec succès",
+      "draftGenerated": "✅ Devis généré",
+      "sendSuccess": "✅ Devis envoyé au client !",
+      "sendError": "❌ Erreur lors de l'envoi du devis. Veuillez réessayer.",
+      "saveSuccess": "✅ Modifications sauvegardées",
+      "saveError": "Erreur lors de la sauvegarde",
+      "deleteSuccess": "✅ Devis supprimé avec succès",
+      "deleteError": "❌ Erreur lors de la suppression. Veuillez réessayer.",
+      "declarationError": "❌ Erreur lors de la déclaration. Veuillez réessayer.",
+      "workStartSuccess": "✅ Début des travaux déclaré avec succès !",
+      "workEndSuccess": "✅ Fin des travaux déclarée avec succès !\n\nLe client a maintenant 7 jours pour valider.",
+      "unauthorized": "Vous n'êtes pas autorisé à modifier ce devis",
+      "onlyDraftEditable": "Seuls les devis générés peuvent être modifiés"
+    },
+    "demande": {
+      "notFound": "Demande introuvable",
+      "accessDenied": "Vous n'êtes pas autorisé à accéder à cette demande",
+      "loadError": "Erreur lors du chargement des données",
+      "profileNotFound": "Votre profil artisan n'a pas été trouvé. Veuillez compléter votre inscription.",
+      "missingCriteria": "❌ Critères de recherche manquants. Veuillez recommencer votre recherche.",
+      "fillAllFields": "⚠️ Veuillez remplir tous les champs obligatoires (titre et description)",
+      "titleTooShort": "⚠️ Le titre doit contenir au moins 10 caractères",
+      "descriptionTooShort": "⚠️ La description doit contenir au moins 50 caractères pour aider l'artisan à comprendre votre besoin",
+      "maxPhotos": "Maximum 5 photos autorisées",
+      "photoTooLarge": "La photo {name} dépasse 5MB",
+      "invalidFileType": "Le fichier {name} n'est pas une image",
+      "enterCity": "Veuillez saisir une ville",
+      "enterDescription": "⚠️ Veuillez décrire votre besoin",
+      "publishError": "Impossible de publier la demande. Veuillez réessayer.",
+      "deleteSuccess": "Demande supprimée avec succès",
+      "deleteError": "Erreur lors de la suppression. Veuillez réessayer."
+    },
+    "message": {
+      "conversationClosed": "❌ Impossible d'envoyer un message.\\n\\nCette conversation est close car le devis a été annulé, refusé ou a expiré.",
+      "validationError": "Le message contient des informations interdites",
+      "sendError": "Erreur lors de l'envoi du message"
+    },
+    "validation": {
+      "enterTitle": "Veuillez saisir un titre pour le devis",
+      "enterPrice": "Veuillez indiquer un prix valide pour la main d'œuvre",
+      "enterQuantity": "Veuillez indiquer une quantité valide pour la main d'œuvre (nombre de jours)",
+      "addPrestation": "Veuillez ajouter au moins une prestation",
+      "completeLines": "Toutes les lignes doivent avoir une description et un prix",
+      "minOneLine": "Vous devez avoir au moins une ligne de prestation",
+      "enterDate": "Veuillez indiquer la date de début prévue des travaux",
+      "noDemande": "Impossible de sauvegarder : aucune demande associée",
+      "noSendDemande": "Impossible d'envoyer : aucune demande associée",
+      "selectCategory": "Veuillez sélectionner une catégorie",
+      "enterLocation": "Veuillez renseigner votre localisation",
+      "selectDate": "Veuillez sélectionner au moins une date",
+      "cityNotFound": "Ville introuvable",
+      "searchError": "Erreur lors de la recherche. Veuillez réessayer."
+    },
+    "express": {
+      "clientOnly": "Seuls les clients peuvent créer des demandes",
+      "mustBeLogged": "Vous devez être connecté",
+      "fillRequired": "Veuillez remplir tous les champs obligatoires",
+      "budgetExceeded": "Le budget ne peut pas dépasser 150€ pour un travail express",
+      "createSuccess": "Demande créée avec succès ! L'artisan va recevoir une notification.",
+      "proposalAccepted": "✅ Proposition acceptée ! Vous allez être redirigé vers le paiement...",
+      "refusalReasonRequired": "Veuillez indiquer un motif de refus",
+      "proposalRejected": "Proposition refusée. L'artisan a été notifié.",
+      "requestCancelled": "Demande annulée.",
+      "notFound": "Proposition introuvable",
+      "accessDenied": "Accès non autorisé",
+      "loadError": "Erreur lors du chargement",
+      "acceptError": "Erreur lors de l'acceptation",
+      "refuseError": "Erreur lors du refus",
+      "cancelError": "Erreur lors de l'annulation"
+    },
+    "signature": {
+      "required": "⚠️ Veuillez signer avant de valider.",
+      "saveError": "❌ Erreur lors de l'enregistrement de la signature. Veuillez réessayer."
+    },
+    "payment": {
+      "saveError": "❌ Erreur lors de l'enregistrement du paiement. Veuillez contacter le support."
+    },
+    "refusal": {
+      "reasonRequired": "⚠️ Le motif du refus est obligatoire pour demander une nouvelle option.\\n\\nCela permet à l'artisan de comprendre vos attentes et de vous proposer une offre mieux adaptée.",
+      "variantRejected": "❌ Cette variante a été refusée.\\n\\nL'artisan pourra toujours vous proposer d'autres options.",
+      "revisionRecorded": "🔄 Demande de révision enregistrée.\\n\\nL'artisan pourra vous envoyer une nouvelle proposition améliorée.",
+      "refusalError": "Erreur lors du refus. Veuillez réessayer."
+    },
+    "work": {
+      "validatedSuccess": "✅ Travaux validés !\\n\\nL'artisan sera payé sous 24-48h.\\n\\nMerci d'avoir utilisé ArtisanDispo !",
+      "declareProblem": "Veuillez décrire le problème rencontré",
+      "disputeRecorded": "⚠️ Litige signalé.\\n\\nNot équipe va examiner votre demande et vous contacter sous 24-48h.\\n\\nLe paiement reste bloqué jusqu'à résolution."
+    },
+    "dispute": {
+      "notFound": "Litige introuvable",
+      "accessDenied": "Accès non autorisé",
+      "loadError": "Erreur lors du chargement du litige",
+      "commentError": "Erreur lors de l'ajout du commentaire",
+      "acceptSuccess": "Proposition acceptée",
+      "acceptError": "Erreur lors de l'acceptation",
+      "refusalError": "Erreur lors du refus",
+      "proposalRejected": "Proposition refusée",
+      "declaredSuccess": "✅ Litige déclaré avec succès. Notre équipe de médiation va examiner votre demande.",
+      "createdSuccess": "✅ Litige déclaré avec succès. Notre équipe va examiner votre demande."
+    },
+    "review": {
+     "contractNotFound": "Contrat introuvable",
+      "unauthorized": "Vous n'êtes pas autorisé à accéder à ce contrat",
+      "workNotCompleted": "Ce contrat n'est pas encore terminé",
+      "ratingRequired": "Veuillez donner une note",
+      "commentTooShort": "Le commentaire doit contenir au moins 10 caractères",
+      "publishSuccess": "✅ Avis publié avec succès !",
+      "publishError": "Erreur lors de la publication de l'avis"
+    },
+    "draft": {
+      "loadError": "Erreur lors du chargement du brouillon"
+    },
+    "publicDemand": {
+      "cityAndPostalRequired": "⚠️ Veuillez renseigner la ville et le code postal",
+      "titleRequired": "⚠️ Le titre doit contenir au moins 10 caractères",
+      "descriptionRequired": "⚠️ La description doit contenir au moins 50 caractères pour aider les artisans à comprendre votre besoin",
+      "startDateRequired": "⚠️ Veuillez indiquer une date de début souhaitée",
+      "publishError": "❌ Erreur lors de la publication de la demande. Veuillez réessayer."
+    }
+  },
   "common": {
     "welcome": "Bienvenue",
     "loading": "Chargement...",
@@ -838,7 +968,21 @@
       "workCompleted": "✅ Travaux terminés",
       "paidQuote": "💰 Devis payé",
       "refusedDefinitive": "Refus définitif",
-      "refusedRevision": "Refus pour révision"
+      "refusedRevision": "Refus pour révision",
+      "hideDetails": "Masquer les détails",
+      "viewDetails": "Voir le détail",
+      "category": "Catégorie",
+      "createdOn": "Créée le",
+      "desiredStart": "Début souhaité :",
+      "days": "jour(s)",
+      "description": "Description",
+      "projectPhotos": "📸 Photos du projet ({count})",
+      "photo": "Photo",
+      "city": "Ville :",
+      "postalCode": "Code postal :",
+      "desiredDate": "📅 Date souhaitée",
+      "flexible": "Dates flexibles",
+      "urgent": "⚠️ Demande urgente"
     },
     "status": {
       "public": "Publique",
@@ -848,7 +992,24 @@
       "quoteAccepted": "Devis accepté",
       "quoteRefused": "Devis refusé",
       "workInProgress": "En cours",
-      "completed": "Terminée"
+      "completed": "Terminée",
+      "quoteSigned": "Devis signé",
+      "quoteAcceptedPaid": "Devis accepté et payé",
+      "assignedToYou": "Cette demande vous est attribuée",
+      "requestClosed": "Demande fermée",
+      "refusedDefinitive": "Le client a refusé définitivement votre devis. Vous ne pouvez plus créer de nouveau devis pour cette demande.",
+      "alreadyAssigned": "Attribué à un autre artisan",
+      "quotaReached": "Quota de devis atteint"
+    },
+    "actions": {
+      "contactClient": "Contacter le client",
+      "createRevisedQuote": "Créer un devis révisé",
+      "finishWork": "Déclarer fin des travaux",
+      "refuse": "Refuser cette demande",
+      "refusing": "Refus en cours...",
+      "sendQuote": "Créer un devis",
+      "startWork": "Démarrer les travaux",
+      "viewPaidQuote": "Voir le devis payé"
     }
   },
   "messaging": {
@@ -1894,5 +2055,12 @@
       "unavailable": "Indisponible",
       "contract": "Période de contrat (devis signé)"
     }
+  },
+  "search": {
+    "title": "Trouvez votre artisan",
+    "subtitle": "Décrivez votre projet, nous trouvons les artisans disponibles",
+    "howItWorks": "💡 Comment ça marche ?",
+    "toggleHowItWorks": "Afficher/masquer comment ça marche",
+    "backToDashboard": "Retour au tableau de bord"
   }
 }

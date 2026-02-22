@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { createDemandeExpress } from '@/lib/firebase/demande-express-service';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getUserById } from '@/lib/firebase/user-service';
 import type { Categorie, User } from '@/types/firestore';
 
@@ -53,6 +54,7 @@ export default function NouvelleDemandeExpressPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user: firebaseUser } = useAuth();
+  const { t } = useLanguage();
   const [userData, setUserData] = useState<User | null>(null);
 
   // Paramètres URL
@@ -89,7 +91,7 @@ export default function NouvelleDemandeExpressPage() {
         setUserData(data);
         
         if (data?.role !== 'client') {
-          alert('Seuls les clients peuvent créer des demandes');
+          alert(t('alerts.express.clientOnly'));
           router.push('/');
         }
       } catch (error) {
@@ -102,18 +104,18 @@ export default function NouvelleDemandeExpressPage() {
     e.preventDefault();
     
     if (!firebaseUser || !userData) {
-      alert('Vous devez être connecté');
+      alert(t('alerts.express.mustBeLogged'));
       return;
     }
 
     if (!categorie || !description || !ville || !codePostal) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      alert(t('alerts.express.fillRequired'));
       return;
     }
 
     const budget = budgetPropose ? parseFloat(budgetPropose) : undefined;
     if (budget && budget > 150) {
-      alert('Le budget ne peut pas dépasser 150€ pour un travail express');
+      alert(t('alerts.express.budgetExceeded'));
       return;
     }
 
@@ -150,7 +152,7 @@ export default function NouvelleDemandeExpressPage() {
         typeProjet: 'express',
       });
 
-      alert('Demande créée avec succès ! L\'artisan va recevoir une notification.');
+      alert(t('alerts.express.createSuccess'));
       router.push(`/client/demandes-express/${demandeId}`);
     } catch (error: any) {
       console.error('Erreur création demande:', error);

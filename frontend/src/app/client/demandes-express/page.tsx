@@ -41,7 +41,7 @@ export default function MesDemandesExpressPage() {
       setUserData(user);
 
       if (user?.role !== 'client') {
-        alert('Accès réservé aux clients');
+        alert(t('alerts.express.clientOnly'));
         router.push('/');
         return;
       }

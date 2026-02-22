@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { matchArtisans } from '@/lib/firebase/matching-service';
 import type { MatchingResult, MatchingCriteria, User } from '@/types/firestore';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -16,6 +17,7 @@ function ResultatsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user: firebaseUser } = useAuth(); // User Firebase Auth (uid, email)
+  const { t } = useLanguage();
   const [userData, setUserData] = useState<User | null>(null); // Données complètes Firestore
   const [results, setResults] = useState<MatchingResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -255,15 +257,6 @@ function ResultatsContent() {
             <h1 className="text-3xl font-bold text-[#2C3E50]">Trouvez votre artisan</h1>
             <p className="text-[#6C757D] text-sm mt-2">Décrivez votre projet, nous trouvons les artisans disponibles</p>
           </div>
-          
-          {/* Message de bienvenue */}
-          {userData && (
-            <div className="bg-[#1A3A5C] rounded-lg px-4 py-3">
-              <p className="text-white">
-                👋 Bienvenue <span className="font-semibold text-[#FF6B00]">{userData.prenom} {userData.nom}</span>
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
@@ -443,7 +436,7 @@ function ResultatsContent() {
                     console.log('📍 Critères:', { categorie: categorieInput, ville: villeInput, codePostal: codePostalInput, date: dateInput, flexibilite: flexibiliteInput, rayonMax: rayonMaxInput });
 
                     if (!villeInput.trim()) {
-                      alert('Veuillez saisir une ville');
+                      alert(t('alerts.validation.enterCity'));
                       return;
                     }
 
@@ -829,7 +822,7 @@ function ResultatsContent() {
                       
                       // Validation: max 5 photos, taille < 5MB chacune
                       if (publishPhotos.length + files.length > 5) {
-                        alert('Maximum 5 photos autorisées');
+                        alert(t('alerts.demande.maxPhotos'));
                         return;
                       }
 
@@ -924,7 +917,7 @@ function ResultatsContent() {
                   onClick={async () => {
                     try {
                       if (!publishDescription.trim()) {
-                        alert('⚠️ Veuillez décrire votre besoin');
+                        alert(t('alerts.validation.enterDescription'));
                         return;
                       }
 
@@ -942,7 +935,7 @@ function ResultatsContent() {
                       const rayonMax = rayonMaxParam ? parseInt(rayonMaxParam) : 10;
 
                       if (!categorie || !ville || !datesStr) {
-                        alert('Critères de recherche manquants');
+                        alert(t('alerts.validation.missingCriteria'));
                         setIsPublishing(false);
                         return;
                       }
@@ -1005,7 +998,7 @@ function ResultatsContent() {
                       router.push(`/client/demandes?success=demande_publiee&demandeId=${demande.id}`);
                     } catch (error) {
                       console.error('❌ Erreur création demande publique:', error);
-                      alert('Impossible de publier la demande. Veuillez réessayer.');
+                      alert(t('alerts.validation.publishError'));
                       setIsPublishing(false);
                     }
                   }}

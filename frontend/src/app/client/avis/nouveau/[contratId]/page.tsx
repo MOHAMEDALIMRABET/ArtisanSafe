@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getDevisById } from '@/lib/firebase/devis-service';
 import { getArtisanById } from '@/lib/firebase/artisan-service';
 import { createAvis } from '@/lib/firebase/avis-service';
@@ -33,6 +34,7 @@ export default function NouvelAvisPage() {
   const router = useRouter();
   const params = useParams();
   const contratId = params.contratId as string; // En réalité, c'est un devisId (devis signé = contrat)
+  const { t } = useLanguage();
 
   const [user, setUser] = useState<User | null>(null);
   const [contrat, setContrat] = useState<Devis | null>(null); // Devis signé = contrat juridique
@@ -70,21 +72,21 @@ export default function NouvelAvisPage() {
       // Charger le devis (un devis signé = contrat juridique)
       const contratData = await getDevisById(contratId);
       if (!contratData) {
-        alert('Contrat introuvable');
+        alert(t('alerts.review.contractNotFound'));
         router.push('/dashboard');
         return;
       }
 
       // Vérifier que c'est bien le contrat du client
       if (contratData.clientId !== currentUser.uid) {
-        alert('Vous n\'êtes pas autorisé à accéder à ce contrat');
+        alert(t('alerts.review.unauthorized'));
         router.push('/dashboard');
         return;
       }
 
       // Vérifier que le contrat est terminé
       if (contratData.statut !== 'termine_valide' && contratData.statut !== 'termine_auto_valide') {
-        alert('Ce contrat n\'est pas encore terminé');
+        alert(t('alerts.review.workNotCompleted'));
         router.push('/dashboard');
         return;
       }
@@ -108,12 +110,12 @@ export default function NouvelAvisPage() {
     e.preventDefault();
 
     if (note === 0) {
-      alert('Veuillez donner une note');
+      alert(t('alerts.review.ratingRequired'));
       return;
     }
 
     if (!commentaire.trim() || commentaire.trim().length < 10) {
-      alert('Le commentaire doit contenir au moins 10 caractères');
+      alert(t('alerts.review.commentTooShort'));
       return;
     }
 
@@ -132,11 +134,11 @@ export default function NouvelAvisPage() {
         points_amelioration: pointsAmelioration,
       });
 
-      alert('✅ Avis publié avec succès !');
+      alert(t('alerts.review.publishSuccess'));
       router.push('/client/avis');
     } catch (error: any) {
       console.error('Erreur création avis:', error);
-      alert(error.message || 'Erreur lors de la publication de l\'avis');
+      alert(error.message || t('alerts.review.publishError'));
     } finally {
       setSubmitting(false);
     }

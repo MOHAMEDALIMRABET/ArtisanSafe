@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { doc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase/config';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
@@ -105,6 +106,7 @@ export default function ClientDevisDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [devis, setDevis] = useState<Devis | null>(null);
   const [demande, setDemande] = useState<Demande | null>(null);
   const [autresVariantes, setAutresVariantes] = useState<Devis[]>([]);
@@ -275,7 +277,7 @@ export default function ClientDevisDetailPage() {
       setShowPaymentModal(true);
     } catch (error) {
       console.error('Erreur après signature:', error);
-      alert('❌ Erreur lors de l\'enregistrement de la signature. Veuillez réessayer.');
+      alert(t('alerts.signature.saveError'));
       setShowSignatureModal(true);
     } finally {
       setProcessing(false);
@@ -404,7 +406,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
       await loadDevis();
     } catch (error) {
       console.error('Erreur traitement paiement:', error);
-      alert('❌ Erreur lors de l\'enregistrement du paiement. Veuillez contacter le support.');
+      alert(t('alerts.payment.saveError'));
       setShowPaymentModal(true);
     } finally {
       setProcessing(false);
@@ -416,7 +418,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
     // Validation : motif obligatoire pour révision
     if (refusalType === 'revision' && !refusalReason.trim()) {
-      alert('⚠️ Le motif du refus est obligatoire pour demander une nouvelle option.\n\nCela permet à l\'artisan de comprendre vos attentes et de vous proposer une offre mieux adaptée.');
+      alert(t('alerts.refusal.reasonRequired'));
       return;
     }
 
@@ -500,7 +502,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
           refusalReason
         );
         
-        alert('❌ Cette variante a été refusée.\n\nL\'artisan pourra toujours vous proposer d\'autres options.');
+        alert(t('alerts.refusal.variantRejected'));
       }
       
       // CAS 3 : DEMANDER UNE RÉVISION
@@ -524,13 +526,13 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
           refusalReason
         );
         
-        alert('🔄 Demande de révision enregistrée.\n\nL\'artisan pourra vous envoyer une nouvelle proposition améliorée.');
+        alert(t('alerts.refusal.revisionRecorded'));
       }
       
       router.push('/client/devis');
     } catch (error) {
       console.error('Erreur refus devis:', error);
-      alert('Erreur lors du refus. Veuillez réessayer.');
+      alert(t('alerts.refusal.refusalError'));
     } finally {
       setProcessing(false);
       setShowRefusalModal(false);
@@ -555,7 +557,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
       //   body: JSON.stringify({ contratId: devis.id, validePar: 'client' })
       // });
       
-      alert('✅ Travaux validés !\n\nL\'artisan sera payé sous 24-48h.\n\nMerci d\'avoir utilisé ArtisanDispo !');
+      alert(t('alerts.work.validatedSuccess'));
       await loadDevis(); // Recharger le devis
     } catch (error: any) {
       console.error('Erreur validation:', error);
@@ -567,7 +569,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
 
   const handleSignalerLitige = async () => {
     if (!devis || !user || !motifLitige.trim()) {
-      alert('Veuillez décrire le problème rencontré');
+      alert(t('alerts.work.declareProblem'));
       return;
     }
     

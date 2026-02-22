@@ -9,6 +9,7 @@
  */
 
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Timestamp } from 'firebase/firestore';
 
 interface PaymentFormProps {
@@ -36,6 +37,7 @@ export function PaymentForm({
   onCancel,
   dateLimitePaiement 
 }: PaymentFormProps) {
+  const { t } = useLanguage();
   const [processing, setProcessing] = useState(false);
   const [cardNumber, setCardNumber] = useState('');
   const [cardName, setCardName] = useState('');
@@ -147,7 +149,7 @@ export function PaymentForm({
       onSuccess(paymentData);
     } catch (error) {
       console.error('Erreur paiement:', error);
-      alert('❌ Erreur lors du paiement. Veuillez réessayer.');
+      alert(t('alerts.payment.saveError'));
       setProcessing(false);
     }
   };

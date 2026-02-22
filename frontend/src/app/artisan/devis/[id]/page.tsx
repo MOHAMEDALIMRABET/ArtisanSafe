@@ -16,6 +16,7 @@ import {
   declarerFinTravaux 
 } from '@/lib/firebase/devis-service';
 import { Logo } from '@/components/ui';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
 import Head from 'next/head';
@@ -49,6 +50,7 @@ export default function VoirDevisPage() {
   const params = useParams();
   const devisId = params?.id as string;
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [devis, setDevis] = useState<Devis | null>(null);
   const [demande, setDemande] = useState<Demande | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,12 +83,12 @@ export default function VoirDevisPage() {
           }
         }
       } else {
-        alert('Devis introuvable');
+        alert(t('alerts.devis.notFound'));
         router.push('/artisan/devis');
       }
     } catch (error) {
       console.error('Erreur chargement devis:', error);
-      alert('Erreur lors du chargement du devis');
+      alert(t('alerts.devis.loadError'));
     } finally {
       setLoading(false);
     }
@@ -117,11 +119,11 @@ export default function VoirDevisPage() {
     try {
       setDuplicationEnCours(true);
       const nouveauDevisId = await dupliquerDevis(devis.id);
-      alert('✅ Nouveau devis créé avec succès !');
+      alert(t('alerts.devis.createSuccess'));
       router.push(`/artisan/devis/nouveau?demandeId=${devis.demandeId}&editId=${nouveauDevisId}`);
     } catch (error) {
       console.error('Erreur duplication devis:', error);
-      alert('❌ Erreur lors de la création du nouveau devis');
+      alert(t('alerts.devis.createError'));
     } finally {
       setDuplicationEnCours(false);
     }
@@ -136,7 +138,7 @@ export default function VoirDevisPage() {
       setDeclarationEnCours(true);
       await declarerDebutTravaux(devis.id, user.uid);
       
-      alert('✅ Début des travaux déclaré ! Le client a été notifié.');
+      alert(t('alerts.devis.workStartDeclared'));
       await loadDevis(); // Recharger le devis pour voir le nouveau statut
     } catch (error: any) {
       console.error('Erreur déclaration début:', error);
@@ -155,7 +157,7 @@ export default function VoirDevisPage() {
       setDeclarationEnCours(true);
       await declarerFinTravaux(devis.id, user.uid);
       
-      alert('✅ Fin des travaux déclarée ! Le client a 7 jours pour valider.');
+      alert(t('alerts.devis.workEndDeclared'));
       await loadDevis(); // Recharger le devis
     } catch (error: any) {
       console.error('Erreur déclaration fin:', error);

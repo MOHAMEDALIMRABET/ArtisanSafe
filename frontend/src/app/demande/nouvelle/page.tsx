@@ -3,6 +3,7 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { createDemande, publierDemande, addArtisansMatches, getDemandeById, updateDemande } from '@/lib/firebase/demande-service';
 import { notifyArtisanNouvelDemande, sendBulkNotifications } from '@/lib/firebase/notification-service';
 import { uploadMultiplePhotos } from '@/lib/firebase/storage-service';
@@ -17,6 +18,7 @@ function NouvelleDemandeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [artisan, setArtisan] = useState<Artisan | null>(null);
@@ -90,7 +92,7 @@ function NouvelleDemandeContent() {
           }
         } catch (error) {
           console.error('❌ Erreur chargement brouillon:', error);
-          alert('Erreur lors du chargement du brouillon');
+          alert(t('alerts.draft.loadError'));
         }
       }
     }
@@ -108,7 +110,7 @@ function NouvelleDemandeContent() {
     
     // Validation: max 5 photos, taille < 5MB chacune
     if (photos.length + files.length > 5) {
-      alert('Maximum 5 photos autorisées');
+      alert(t('alerts.demande.maxPhotos'));
       return;
     }
 
@@ -137,17 +139,17 @@ function NouvelleDemandeContent() {
     // L'utilisateur est automatiquement redirigé vers /connexion s'il n'est pas connecté
 
     if (!formData.titre || !formData.description) {
-      alert('⚠️ Veuillez remplir tous les champs obligatoires (titre et description)');
+      alert(t('alerts.demande.fillAllFields'));
       return;
     }
 
     if (formData.titre.length < 10) {
-      alert('⚠️ Le titre doit contenir au moins 10 caractères');
+      alert(t('alerts.publicDemand.titleRequired'));
       return;
     }
 
     if (formData.description.length < 50) {
-      alert('⚠️ La description doit contenir au moins 50 caractères pour aider l\'artisan à comprendre votre besoin');
+      alert(t('alerts.publicDemand.descriptionRequired'));
       return;
     }
 
@@ -159,7 +161,7 @@ function NouvelleDemandeContent() {
       // Récupérer les critères de recherche depuis sessionStorage
       const searchCriteria = sessionStorage.getItem('searchCriteria');
       if (!searchCriteria) {
-        alert('❌ Critères de recherche manquants. Veuillez recommencer votre recherche.');
+        alert(t('alerts.demande.missingCriteria'));
         router.push('/recherche');
         return;
       }

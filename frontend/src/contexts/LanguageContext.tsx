@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil, formatTime as formatTimeUtil } from '@/lib/i18n-utils';
 
 type Language = 'fr' | 'en';
 
@@ -8,6 +9,9 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
+  formatDate: (date: Date | { toDate: () => Date } | string, options?: Intl.DateTimeFormatOptions) => string;
+  formatDateTime: (date: Date | { toDate: () => Date } | string) => string;
+  formatTime: (date: Date | { toDate: () => Date } | string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -71,8 +75,21 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     return typeof value === 'string' ? value : key;
   };
 
+  // Fonctions de formatage avec la langue active
+  const formatDate = (date: Date | { toDate: () => Date } | string, options?: Intl.DateTimeFormatOptions) => {
+    return formatDateUtil(date, language, options);
+  };
+
+  const formatDateTime = (date: Date | { toDate: () => Date } | string) => {
+    return formatDateTimeUtil(date, language);
+  };
+
+  const formatTime = (date: Date | { toDate: () => Date } | string) => {
+    return formatTimeUtil(date, language);
+  };
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, formatDate, formatDateTime, formatTime }}>
       {children}
     </LanguageContext.Provider>
   );

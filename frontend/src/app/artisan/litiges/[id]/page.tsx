@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   getLitigeById,
   addLitigeComment,
@@ -24,6 +25,7 @@ export default function ArtisanLitigeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, role, loading: authLoading } = useAuthStatus();
+  const { t } = useLanguage();
   const [litige, setLitige] = useState<Litige | null>(null);
   const [loading, setLoading] = useState(true);
   const [commentaire, setCommentaire] = useState('');
@@ -49,14 +51,14 @@ export default function ArtisanLitigeDetailPage() {
       const data = await getLitigeById(litigeId);
       
       if (!data) {
-        alert('Litige introuvable');
+        alert(t('alerts.dispute.notFound'));
         router.push('/artisan/litiges');
         return;
       }
 
       // Vérifier que l'utilisateur est bien l'artisan
       if (data.artisanId !== user?.uid) {
-        alert('Accès non autorisé');
+        alert(t('alerts.dispute.accessDenied'));
         router.push('/artisan/litiges');
         return;
       }
@@ -64,7 +66,7 @@ export default function ArtisanLitigeDetailPage() {
       setLitige(data);
     } catch (error) {
       console.error('Erreur chargement litige:', error);
-      alert('Erreur lors du chargement du litige');
+      alert(t('alerts.dispute.loadError'));
     } finally {
       setLoading(false);
     }
@@ -80,7 +82,7 @@ export default function ArtisanLitigeDetailPage() {
       await loadLitige(); // Recharger pour voir le nouveau commentaire
     } catch (error) {
       console.error('Erreur ajout commentaire:', error);
-      alert('Erreur lors de l\'ajout du commentaire');
+      alert(t('alerts.dispute.commentError'));
     } finally {
       setSubmitting(false);
     }
@@ -98,10 +100,10 @@ export default function ArtisanLitigeDetailPage() {
       setSubmitting(true);
       await acceptLitigeResolution(litigeId, user.uid, 'artisan');
       await loadLitige();
-      alert('Proposition acceptée');
+      alert(t('alerts.dispute.acceptSuccess'));
     } catch (error) {
       console.error('Erreur acceptation:', error);
-      alert('Erreur lors de l\'acceptation');
+      alert(t('alerts.dispute.acceptError'));
     } finally {
       setSubmitting(false);
     }
@@ -109,7 +111,7 @@ export default function ArtisanLitigeDetailPage() {
 
   async function handleRejectResolution() {
     if (!user || !motifRefus.trim()) {
-      alert('Veuillez indiquer un motif de refus');
+      alert(t('alerts.refusal.refusalReasonRequired'));
       return;
     }
 
@@ -119,10 +121,10 @@ export default function ArtisanLitigeDetailPage() {
       setMotifRefus('');
       setShowRefusForm(false);
       await loadLitige();
-      alert('Proposition refusée');
+      alert(t('alerts.dispute.proposalRejected'));
     } catch (error) {
       console.error('Erreur refus:', error);
-      alert('Erreur lors du refus');
+      alert(t('alerts.dispute.refusalError'));
     } finally {
       setSubmitting(false);
     }

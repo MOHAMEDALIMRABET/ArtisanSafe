@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { matchArtisans } from '@/lib/firebase/matching-service';
 import { createDemande } from '@/lib/firebase/demande-service';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getUserById } from '@/lib/firebase/user-service';
 import type { MatchingResult, User, Categorie } from '@/types/firestore';
 
@@ -61,6 +62,7 @@ export default function RechercheExpressPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user: firebaseUser } = useAuth();
+  const { t } = useLanguage();
   const [userData, setUserData] = useState<User | null>(null);
 
   // Paramètres URL
@@ -151,7 +153,7 @@ export default function RechercheExpressPage() {
     e.preventDefault();
     
     if (!categorie || !ville || !codePostal) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      alert(t('alerts.validation.fillRequired'));
       return;
     }
 
@@ -167,7 +169,7 @@ export default function RechercheExpressPage() {
       const geoData = await geoResponse.json();
       
       if (geoData.length === 0) {
-        alert('Ville introuvable');
+        alert(t('alerts.validation.cityNotFound'));
         setLoading(false);
         return;
       }
@@ -199,7 +201,7 @@ export default function RechercheExpressPage() {
       setResults(matchResults);
     } catch (error) {
       console.error('Erreur matching:', error);
-      alert('Erreur lors de la recherche. Veuillez réessayer.');
+      alert(t('alerts.validation.searchError'));
     } finally {
       setLoading(false);
     }

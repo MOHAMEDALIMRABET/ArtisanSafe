@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { METIERS_AVEC_ICONES } from '@/lib/constants/metiers';
 import { authService } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Categorie, User } from '@/types/firestore';
 
 type Urgence = 'faible' | 'normale' | 'urgent';
@@ -37,6 +38,7 @@ export default function RecherchePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
+  const { t } = useLanguage();
   const [dashboardUrl, setDashboardUrl] = useState('/');
   const [villeSuggestions, setVilleSuggestions] = useState<VilleSuggestion[]>([]);
   const fromDashboard = searchParams.get('from') === 'dashboard';
@@ -160,17 +162,17 @@ export default function RecherchePage() {
     // Validation basique
     if (!criteria.categorie) {
       console.error('❌ Catégorie manquante');
-      alert('Veuillez sélectionner une catégorie');
+      alert(t('alerts.validation.selectCategory'));
       return;
     }
     if (!criteria.localisation.ville || !criteria.localisation.codePostal) {
       console.error('❌ Localisation manquante');
-      alert('Veuillez renseigner votre localisation');
+      alert(t('alerts.validation.enterLocation'));
       return;
     }
     if (criteria.datesSouhaitees.dates[0] === '') {
       console.error('❌ Date manquante');
-      alert('Veuillez sélectionner au moins une date');
+      alert(t('alerts.validation.selectDate'));
       return;
     }
 
@@ -274,7 +276,7 @@ export default function RecherchePage() {
               <button
                 type="button"
                 onClick={() => setShowHowItWorks(!showHowItWorks)}
-                className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-10 text-white rounded-lg hover:bg-opacity-20 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 border-2 border-white text-white rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors"
                 title="Afficher/masquer comment ça marche"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

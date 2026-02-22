@@ -1,4 +1,134 @@
 {
+  "alerts": {
+    "devis": {
+      "notFound": "Quote not found",
+      "loadError": "Error loading quote",
+      "createSuccess": "✅ New quote created successfully!",
+      "createError": "❌ Error creating new quote",
+      "workStartDeclared": "✅ Work start declared! Client has been notified.",
+      "workStartError": "❌ Error: {message}",
+      "workEndDeclared": "✅ Work completion declared! Client has 7 days to validate.",
+      "workEndError": "❌ Error: {message}",
+      "draftUpdated": "✅ Draft updated successfully",
+      "draftGenerated": "✅ Quote generated",
+      "sendSuccess": "✅ Quote sent to client!",
+      "sendError": "❌ Error sending quote. Please try again.",
+      "saveSuccess": "✅ Changes saved",
+      "saveError": "Error saving",
+      "deleteSuccess": "✅ Quote deleted successfully",
+      "deleteError": "❌ Error deleting. Please try again.",
+      "declarationError": "❌ Declaration error. Please try again.",
+      "workStartSuccess": "✅ Work start declared successfully!",
+      "workEndSuccess": "✅ Work completion declared successfully!\n\nClient now has 7 days to validate.",
+      "unauthorized": "You are not authorized to edit this quote",
+      "onlyDraftEditable": "Only draft quotes can be edited"
+    },
+    "demande": {
+      "notFound": "Request not found",
+      "accessDenied": "You are not authorized to access this request",
+      "loadError": "Error loading data",
+      "profileNotFound": "Your craftsman profile was not found. Please complete your registration.",
+      "missingCriteria": "❌ Missing search criteria. Please start your search again.",
+      "fillAllFields": "⚠️ Please fill in all required fields (title and description)",
+      "titleTooShort": "⚠️ Title must be at least 10 characters",
+      "descriptionTooShort": "⚠️ Description must be at least 50 characters to help the craftsman understand your needs",
+      "maxPhotos": "Maximum 5 photos allowed",
+      "photoTooLarge": "Photo {name} exceeds 5MB",
+      "invalidFileType": "File {name} is not an image",
+      "enterCity": "Please enter a city",
+      "enterDescription": "⚠️ Please describe your needs",
+      "publishError": "Unable to publish request. Please try again.",
+      "deleteSuccess": "Request deleted successfully",
+      "deleteError": "Error deleting. Please try again."
+    },
+    "message": {
+      "conversationClosed": "❌ Cannot send message.\\n\\nThis conversation is closed because the quote has been canceled, rejected or expired.",
+      "validationError": "Message contains prohibited information",
+      "sendError": "Error sending message"
+    },
+    "validation": {
+      "enterTitle": "Please enter a quote title",
+      "enterPrice": "Please enter a valid price for labor",
+      "enterQuantity": "Please enter a valid quantity for labor (number of days)",
+      "addPrestation": "Please add at least one service",
+      "completeLines": "All lines must have a description and price",
+      "minOneLine": "You must have at least one service line",
+      "enterDate": "Please enter the planned work start date",
+      "noDemande": "Cannot save: no associated request",
+      "noSendDemande": "Cannot send: no associated request",
+      "selectCategory": "Please select a category",
+      "enterLocation": "Please enter your location",
+      "selectDate": "Please select at least one date",
+      "cityNotFound": "City not found",
+      "searchError": "Search error. Please try again."
+    },
+    "express": {
+      "clientOnly": "Only clients can create requests",
+      "mustBeLogged": "You must be logged in",
+      "fillRequired": "Please fill in all required fields",
+      "budgetExceeded": "Budget cannot exceed €150 for express work",
+      "createSuccess": "Request created successfully! Craftsman will receive a notification.",
+      "proposalAccepted": "✅ Proposal accepted! Redirecting to payment...",
+      "refusalReasonRequired": "Please provide a reason for refusal",
+      "proposalRejected": "Proposal rejected. Craftsman has been notified.",
+      "requestCancelled": "Request cancelled.",
+      "notFound": "Proposal not found",
+      "accessDenied": "Access denied",
+      "loadError": "Loading error",
+      "acceptError": "Error accepting proposal",
+      "refuseError": "Error refusing proposal",
+      "cancelError": "Error cancelling request"
+    },
+    "signature": {
+      "required": "⚠️ Please sign before validating.",
+      "saveError": "❌ Error saving signature. Please try again."
+    },
+    "payment": {
+      "saveError": "❌ Error saving payment. Please contact support."
+    },
+    "refusal": {
+      "reasonRequired": "⚠️ Refusal reason is required to request a new option.\\n\\nThis helps the craftsman understand your expectations and propose a better offer.",
+      "variantRejected": "❌ This variant has been rejected.\\n\\nThe craftsman can still propose other options.",
+      "revisionRecorded": "🔄 Revision request recorded.\\n\\nThe craftsman can send you an improved proposal.",
+      "refusalError": "Error refusing. Please try again."
+    },
+    "work": {
+      "validatedSuccess": "✅ Work validated!\\n\\nCraftsman will be paid within 24-48h.\\n\\nThank you for using ArtisanDispo!",
+      "declareProblem": "Please describe the problem",
+      "disputeRecorded": "⚠️ Dispute reported.\\n\\nOur team will review your request and contact you within 24-48h.\\n\\nPayment remains blocked until resolution."
+    },
+    "dispute": {
+      "notFound": "Dispute not found",
+      "accessDenied": "Access denied",
+      "loadError": "Error loading dispute",
+      "commentError": "Error adding comment",
+      "acceptSuccess": "Proposal accepted",
+      "acceptError": "Error accepting",
+      "refusalError": "Error refusing",
+      "proposalRejected": "Proposal rejected",
+      "declaredSuccess": "✅ Dispute declared successfully. Our mediation team will review your request.",
+      "createdSuccess": "✅ Dispute declared successfully. Our team will review your request."
+    },
+    "review": {
+      "contractNotFound": "Contract not found",
+      "unauthorized": "You are not authorized to access this contract",
+      "workNotCompleted": "This contract is not yet completed",
+      "ratingRequired": "Please provide a rating",
+      "commentTooShort": "Comment must be at least 10 characters",
+      "publishSuccess": "✅ Review published successfully!",
+      "publishError": "Error publishing review"
+    },
+    "draft": {
+      "loadError": "Error loading draft"
+    },
+    "publicDemand": {
+      "cityAndPostalRequired": "⚠️ Please enter city and postal code",
+      "titleRequired": "⚠️ Title must be at least 10 characters",
+      "descriptionRequired": "⚠️ Description must be at least 50 characters to help craftsmen understand your needs",
+      "startDateRequired": "⚠️ Please enter a desired start date",
+      "publishError": "❌ Error publishing request. Please try again."
+    }
+  },
   "common": {
     "welcome": "Welcome",
     "loading": "Loading...",
@@ -167,7 +297,6 @@
     "renovation": "Renovation",
     "locationPlaceholder": "Paris, Lyon...",
     "department": "Dept.",
-    "searchDate": "Desired date",
     "datePlaceholder": "As soon as possible",
     "flexibility": "Flexibility",
     "flexibilityOption0": "±0 day",
@@ -733,7 +862,7 @@
       "fileSelected": "📎 {filename} ({size} MB)"
     }
   },
-  "profile": {
+  "artisanProfile": {
     "pageTitle": "My Professional Profile",
     "pageDescription": "Complete your profile to receive client requests",
     "backToDashboard": "Back to dashboard",
@@ -792,7 +921,7 @@
       "updateError": "An error occurred during the update"
     }
   },
-  "requests": {
+  "artisanRequests": {
     "pageTitle": "Client Requests",
     "pageDescription": "Manage client requests that match your skills",
     "backToDashboard": "← Back to dashboard",
@@ -840,7 +969,21 @@
       "workCompleted": "✅ Work completed",
       "paidQuote": "💰 Paid quote",
       "refusedDefinitive": "Final refusal",
-      "refusedRevision": "Refused for revision"
+      "refusedRevision": "Refused for revision",
+      "hideDetails": "Hide details",
+      "viewDetails": "View details",
+      "category": "Category",
+      "createdOn": "Created on",
+      "desiredStart": "Desired start:",
+      "days": "day(s)",
+      "description": "Description",
+      "projectPhotos": "📸 Project photos ({count})",
+      "photo": "Photo",
+      "city": "City:",
+      "postalCode": "Postal code:",
+      "desiredDate": "📅 Desired date",
+      "flexible": "Flexible dates",
+      "urgent": "⚠️ Urgent request"
     },
     "status": {
       "public": "Public",
@@ -850,7 +993,24 @@
       "quoteAccepted": "Quote accepted",
       "quoteRefused": "Quote refused",
       "workInProgress": "In progress",
-      "completed": "Completed"
+      "completed": "Completed",
+      "quoteSigned": "Quote signed",
+      "quoteAcceptedPaid": "Quote accepted and paid",
+      "assignedToYou": "This request is assigned to you",
+      "requestClosed": "Request closed",
+      "refusedDefinitive": "The client has definitively refused your quote. You can no longer create a new quote for this request.",
+      "alreadyAssigned": "Assigned to another artisan",
+      "quotaReached": "Quote quota reached"
+    },
+    "actions": {
+      "contactClient": "Contact client",
+      "createRevisedQuote": "Create revised quote",
+      "finishWork": "Declare work completion",
+      "refuse": "Refuse this request",
+      "refusing": "Refusing...",
+      "sendQuote": "Create quote",
+      "startWork": "Start work",
+      "viewPaidQuote": "View paid quote"
     }
   },
   "messaging": {
@@ -1896,5 +2056,12 @@
       "unavailable": "Unavailable",
       "contract": "Contract period (signed quote)"
     }
+  },
+  "search": {
+    "title": "Find your tradesperson",
+    "subtitle": "Describe your project, we'll find available tradespeople",
+    "howItWorks": "💡 How It Works?",
+    "toggleHowItWorks": "Show/hide how it works",
+    "backToDashboard": "Back to dashboard"
   }
 }

@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getDevisById, updateDevis } from '@/lib/firebase/devis-service';
 import type { Devis, LigneDevis, TVARate, calculerLigne, calculerTotaux } from '@/types/devis';
 import { Timestamp } from 'firebase/firestore';
@@ -17,6 +18,7 @@ export default function EditDevisPage() {
   const params = useParams();
   const devisId = params.id as string;
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   // États
   const [loading, setLoading] = useState(true);
@@ -44,21 +46,21 @@ export default function EditDevisPage() {
         const devisData = await getDevisById(devisId);
         
         if (!devisData) {
-          alert('Devis introuvable');
+          alert(t('alerts.devis.notFound'));
           router.push('/artisan/devis');
           return;
         }
 
         // Vérifier que c'est bien un devis généré
         if (devisData.statut !== 'genere') {
-          alert('Seuls les devis générés peuvent être modifiés');
+          alert(t('alerts.devis.onlyDraftEditable'));
           router.push('/artisan/devis');
           return;
         }
 
         // Vérifier que c'est bien le devis de l'artisan connecté
         if (devisData.artisanId !== user.uid) {
-          alert('Vous n\'êtes pas autorisé à modifier ce devis');
+          alert(t('alerts.devis.unauthorized'));
           router.push('/artisan/devis');
           return;
         }
@@ -93,7 +95,7 @@ export default function EditDevisPage() {
 
       } catch (error) {
         console.error('Erreur chargement devis:', error);
-        alert('Erreur lors du chargement du devis');
+        alert(t('alerts.devis.loadError'));
         router.push('/artisan/devis');
       } finally {
         setLoading(false);
@@ -181,7 +183,7 @@ export default function EditDevisPage() {
    */
   const supprimerLigne = (index: number) => {
     if (lignes.length === 1) {
-      alert('Vous devez avoir au moins une ligne de prestation');
+      alert(t('alerts.validation.minOneLine'));
       return;
     }
     const nouvellesLignes = lignes.filter((_, i) => i !== index);
@@ -209,11 +211,11 @@ export default function EditDevisPage() {
         conditions,
       });
       
-      alert('✅ Modifications sauvegardées');
+      alert(t('alerts.devis.saveSuccess'));
       router.push('/artisan/devis');
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde');
+      alert(t('alerts.devis.saveError'));
     } finally {
       setSaving(false);
     }
@@ -227,19 +229,19 @@ export default function EditDevisPage() {
     
     // Validation
     if (!titre.trim()) {
-      alert('Veuillez saisir un titre');
+      alert(t('alerts.validation.enterTitle'));
       return;
     }
     if (!dateDebutPrevue) {
-      alert('Veuillez indiquer la date de début prévue des travaux');
+      alert(t('alerts.validation.enterDate'));
       return;
     }
     if (lignes.length === 0) {
-      alert('Veuillez ajouter au moins une prestation');
+      alert(t('alerts.validation.addPrestation'));
       return;
     }
     if (lignes.some(l => !l.description.trim() || l.prixUnitaireHT <= 0)) {
-      alert('Toutes les lignes doivent avoir une description et un prix');
+      alert(t('alerts.validation.completeLines'));
       return;
     }
 
@@ -262,11 +264,11 @@ export default function EditDevisPage() {
         statut: 'envoye', // Changement de statut !
       });
       
-      alert('✅ Devis envoyé au client !');
+      alert(t('alerts.devis.sendSuccess'));
       router.push('/artisan/devis');
     } catch (error) {
       console.error('Erreur envoi:', error);
-      alert('Erreur lors de l\'envoi du devis');
+      alert(t('alerts.devis.sendError'));
     } finally {
       setSaving(false);
     }

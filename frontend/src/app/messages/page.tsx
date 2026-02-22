@@ -456,7 +456,7 @@ export default function MessagesPage() {
     // VÉRIFICATION : Conversation inactive ?
     // ========================================
     if (isConversationInactive) {
-      alert('❌ Impossible d\'envoyer un message.\n\nCette conversation est close car le devis a été annulé, refusé ou a expiré.');
+      alert(t('alerts.message.conversationClosed'));
       return;
     }
 
@@ -473,7 +473,7 @@ export default function MessagesPage() {
       const validation = validateMessage(messageContent.trim(), isPaid);
 
       if (!validation.isValid) {
-        alert(validation.message);
+        alert(validation.message); // Message déjà traduit par antiBypassValidator
         setSending(false);
         return;
       }
@@ -505,7 +505,7 @@ export default function MessagesPage() {
       setValidationWarning(null);
     } catch (error) {
       console.error('Erreur envoi message:', error);
-      alert('Erreur lors de l\'envoi du message');
+      alert(t('alerts.message.sendError'));
     } finally {
       setSending(false);
     }

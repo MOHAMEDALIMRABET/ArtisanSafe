@@ -341,7 +341,7 @@ export default function MesDevisPage() {
       const devisDoc = await getDoc(devisRef);
       
       if (!devisDoc.exists()) {
-        alert('❌ Devis introuvable');
+        alert(t('alerts.devis.notFound'));
         return;
       }
 
@@ -363,13 +363,13 @@ export default function MesDevisPage() {
       });
 
       console.log('✅ Devis envoyé avec succès');
-      alert('✅ Devis envoyé au client avec succès !');
+      alert(t('alerts.devis.sendSuccess'));
       
       // Recharger la liste des devis
       loadDevis();
     } catch (error) {
       console.error('❌ Erreur envoi devis:', error);
-      alert('❌ Erreur lors de l\'envoi du devis. Veuillez réessayer.');
+      alert(t('alerts.devis.sendError'));
     }
   };
 
@@ -389,11 +389,11 @@ export default function MesDevisPage() {
       setActionEnCours(devisId);
       await declarerDebutTravaux(devisId, user!.uid);
       console.log('✅ Début des travaux déclaré');
-      alert('✅ Début des travaux déclaré avec succès !');
+      alert(t('alerts.devis.workStartSuccess'));
       await loadDevis(); // Recharger la liste
     } catch (error) {
       console.error('❌ Erreur déclaration début:', error);
-      alert('❌ Erreur lors de la déclaration. Veuillez réessayer.');
+      alert(t('alerts.devis.declarationError'));
     } finally {
       setActionEnCours(null);
     }
@@ -416,11 +416,11 @@ export default function MesDevisPage() {
       setActionEnCours(devisId);
       await declarerFinTravaux(devisId, user!.uid);
       console.log('✅ Fin des travaux déclarée');
-      alert('✅ Fin des travaux déclarée avec succès !\n\nLe client a maintenant 7 jours pour valider.');
+      alert(t('alerts.devis.workEndSuccess'));
       await loadDevis(); // Recharger la liste
     } catch (error) {
       console.error('❌ Erreur déclaration fin:', error);
-      alert('❌ Erreur lors de la déclaration. Veuillez réessayer.');
+      alert(t('alerts.devis.declarationError'));
     } finally {
       setActionEnCours(null);
     }
@@ -444,13 +444,13 @@ export default function MesDevisPage() {
       await deleteDoc(devisRef);
       
       console.log('✅ Devis supprimé:', devisId);
-      alert('✅ Devis supprimé avec succès');
+      alert(t('alerts.devis.deleteSuccess'));
       
       // Recharger la liste des devis
       loadDevis();
     } catch (error) {
       console.error('❌ Erreur suppression devis:', error);
-      alert('❌ Erreur lors de la suppression. Veuillez réessayer.');
+      alert(t('alerts.devis.deleteError'));
     }
   };
 

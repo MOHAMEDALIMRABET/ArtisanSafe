@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getPropositionExpressById, getDemandeExpressById } from '@/lib/firebase/demande-express-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +20,7 @@ export default function PaiementExpressPage() {
   const params = useParams();
   const propositionId = params.id as string;
   const { user: firebaseUser } = useAuth();
+  const { t } = useLanguage();
 
   const [proposition, setProposition] = useState<PropositionExpress | null>(null);
   const [demande, setDemande] = useState<DemandeExpress | null>(null);
@@ -41,13 +43,13 @@ export default function PaiementExpressPage() {
     try {
       const propositionData = await getPropositionExpressById(propositionId);
       if (!propositionData) {
-        alert('Proposition introuvable');
+        alert(t('alerts.express.notFound'));
         router.push('/client/dashboard');
         return;
       }
 
       if (propositionData.clientId !== firebaseUser.uid) {
-        alert('Accès non autorisé');
+        alert(t('alerts.express.accessDenied'));
         router.push('/client/dashboard');
         return;
       }
@@ -64,7 +66,7 @@ export default function PaiementExpressPage() {
       await createPaymentIntent(propositionData.id);
     } catch (error) {
       console.error('Erreur chargement:', error);
-      alert('Erreur lors du chargement');
+      alert(t('alerts.demande.loadError'));
     } finally {
       setLoading(false);
     }

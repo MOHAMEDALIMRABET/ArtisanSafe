@@ -6,6 +6,7 @@
  */
 
 import { useRef, useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SignatureCanvasProps {
   onSave: (signatureDataURL: string) => void;
@@ -13,6 +14,7 @@ interface SignatureCanvasProps {
 }
 
 export function SignatureCanvas({ onSave, onCancel }: SignatureCanvasProps) {
+  const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
@@ -90,7 +92,7 @@ export function SignatureCanvas({ onSave, onCancel }: SignatureCanvasProps) {
   const saveSignature = () => {
     const canvas = canvasRef.current;
     if (!canvas || !hasSignature) {
-      alert('⚠️ Veuillez signer avant de valider.');
+      alert(t('alerts.signature.required'));
       return;
     }
 

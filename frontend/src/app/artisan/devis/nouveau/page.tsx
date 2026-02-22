@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getDemandeById } from '@/lib/firebase/demande-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
@@ -71,6 +72,7 @@ export default function NouveauDevisPage() {
   const devisBrouillonId = searchParams?.get('devisId'); // ID du brouillon à modifier
   const revisionDevisId = searchParams?.get('revisionDevisId'); // ID du devis à réviser
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   // États
   const [loading, setLoading] = useState(true);
@@ -161,7 +163,7 @@ export default function NouveauDevisPage() {
         console.log('✅ Demande chargée:', demandeData);
         
         if (!demandeData) {
-          alert('Demande introuvable');
+          alert(t('alerts.demande.notFound'));
           router.push('/artisan/demandes');
           return;
         }
@@ -276,7 +278,7 @@ export default function NouveauDevisPage() {
         
         if (!artisan) {
           console.error('❌ Profil artisan introuvable pour:', user.uid);
-          alert('Votre profil artisan n\'a pas été trouvé. Veuillez compléter votre inscription.');
+          alert(t('alerts.demande.profileNotFound'));
           router.push('/artisan/profil');
           return;
         }
@@ -330,7 +332,7 @@ export default function NouveauDevisPage() {
       } catch (error) {
         console.error('❌ ERREUR chargement données:', error);
         console.error('Stack trace:', error instanceof Error ? error.stack : 'Pas de stack');
-        alert('Erreur lors du chargement des données');
+        alert(t('alerts.demande.loadError'));
       } finally {
         setLoading(false);
       }
@@ -452,7 +454,7 @@ export default function NouveauDevisPage() {
       // Récupérer le devis
       const devisDoc = await getDoc(doc(db, 'devis', devisId));
       if (!devisDoc.exists()) {
-        alert('Devis introuvable');
+        alert(t('alerts.devis.notFound'));
         router.push('/artisan/devis');
         return;
       }
@@ -461,13 +463,13 @@ export default function NouveauDevisPage() {
       
       // Vérifier que c'est bien un brouillon de l'artisan
       if (devisBrouillon.artisanId !== user.uid) {
-        alert('Vous n\'êtes pas autorisé à modifier ce devis');
+        alert(t('alerts.devis.unauthorized'));
         router.push('/artisan/devis');
         return;
       }
 
       if (devisBrouillon.statut !== 'genere') {
-        alert('Seuls les devis générés peuvent être modifiés');
+        alert(t('alerts.devis.onlyDraftEditable'));
         router.push('/artisan/devis');
         return;
       }
@@ -539,7 +541,7 @@ export default function NouveauDevisPage() {
 
     } catch (error) {
       console.error('❌ Erreur chargement brouillon:', error);
-      alert('Erreur lors du chargement du brouillon');
+      alert(t('alerts.draft.loadError'));
       router.push('/artisan/devis');
     } finally {
       setLoading(false);
@@ -559,7 +561,7 @@ export default function NouveauDevisPage() {
       // Récupérer le devis original
       const devisDoc = await getDoc(doc(db, 'devis', devisId));
       if (!devisDoc.exists()) {
-        alert('Devis original introuvable');
+        alert(t('alerts.devis.notFound'));
         router.push('/artisan/devis');
         return;
       }
@@ -568,7 +570,7 @@ export default function NouveauDevisPage() {
       
       // Vérifier que c'est bien un devis de l'artisan
       if (devisOriginal.artisanId !== user.uid) {
-        alert('Vous n\'êtes pas autorisé à réviser ce devis');
+        alert(t('alerts.devis.unauthorized'));
         router.push('/artisan/devis');
         return;
       }
@@ -630,7 +632,7 @@ export default function NouveauDevisPage() {
 
     } catch (error) {
       console.error('❌ Erreur chargement devis pour révision:', error);
-      alert('Erreur lors du chargement du devis');
+      alert(t('alerts.devis.loadError'));
       router.push('/artisan/devis');
     } finally {
       setLoading(false);
@@ -764,32 +766,32 @@ export default function NouveauDevisPage() {
 
     // Vérification : au moins une demande OU mode édition
     if (!modeEdition && (!demande || !demandeId)) {
-      alert('Impossible de sauvegarder : aucune demande associée');
+      alert(t('alerts.validation.noDemande'));
       return;
     }
 
     // Validation minimale pour brouillon
     if (!titre.trim()) {
-      alert('Veuillez saisir un titre pour le devis');
+      alert(t('alerts.validation.enterTitle'));
       return;
     }
     
     if (!mainOeuvrePrixHT || mainOeuvrePrixHT <= 0 || isNaN(mainOeuvrePrixHT)) {
-      alert('Veuillez indiquer un prix valide pour la main d\'\u0153uvre');
+      alert(t('alerts.validation.enterPrice'));
       return;
     }
     
     if (!mainOeuvreQuantite || mainOeuvreQuantite <= 0 || isNaN(mainOeuvreQuantite)) {
-      alert('Veuillez indiquer une quantité valide pour la main d\'\u0153uvre (nombre de jours)');
+      alert(t('alerts.validation.enterQuantity'));
       return;
     }
     
     if (lignes.length === 0) {
-      alert('Veuillez ajouter au moins une prestation');
+      alert(t('alerts.validation.addPrestation'));
       return;
     }
     if (lignes.some(l => !l.description.trim() || l.prixUnitaireHT <= 0)) {
-      alert('Toutes les lignes doivent avoir une description et un prix');
+      alert(t('alerts.validation.completeLines'));
       return;
     }
 
@@ -891,12 +893,12 @@ export default function NouveauDevisPage() {
         // Mise à jour du brouillon existant
         console.log('📝 Mise à jour du brouillon:', devisBrouillonId);
         await updateDevis(devisBrouillonId, devisData);
-        alert('✅ Brouillon mis à jour avec succès');
+        alert(t('alerts.devis.draftUpdated'));
       } else {
         // Création d'un nouveau brouillon
         console.log('➕ Création nouveau brouillon');
         await createDevis(devisData);
-        alert('✅ Devis généré');
+        alert(t('alerts.devis.draftGenerated'));
       }
       
       router.push('/artisan/devis');
@@ -917,25 +919,25 @@ export default function NouveauDevisPage() {
     
     // Vérification : au moins une demande OU mode édition
     if (!modeEdition && (!demande || !demandeId)) {
-      alert('Impossible d\'envoyer : aucune demande associée');
+      alert(t('alerts.validation.noSendDemande'));
       return;
     }
     
     // Validation
     if (!titre.trim()) {
-      alert('Veuillez saisir un titre');
+      alert(t('alerts.validation.enterTitle'));
       return;
     }
     if (!mainOeuvrePrixHT || mainOeuvrePrixHT <= 0 || isNaN(mainOeuvrePrixHT)) {
-      alert('Veuillez indiquer un prix valide pour la main d\'\u0153uvre');
+      alert(t('alerts.validation.enterPrice'));
       return;
     }
     if (!mainOeuvreQuantite || mainOeuvreQuantite <= 0 || isNaN(mainOeuvreQuantite)) {
-      alert('Veuillez indiquer une quantité valide pour la main d\'\u0153uvre (nombre de jours)');
+      alert(t('alerts.validation.enterQuantity'));
       return;
     }
     if (!dateDebutPrevue) {
-      alert('Veuillez indiquer la date de début prévue des travaux');
+      alert(t('alerts.validation.enterDate'));
       return;
     }
     
@@ -964,11 +966,11 @@ export default function NouveauDevisPage() {
     }
     
     if (lignes.length === 0) {
-      alert('Veuillez ajouter au moins une prestation');
+      alert(t('alerts.validation.addPrestation'));
       return;
     }
     if (lignes.some(l => !l.description.trim() || l.prixUnitaireHT <= 0)) {
-      alert('Toutes les lignes doivent avoir une description et un prix');
+      alert(t('alerts.validation.completeLines'));
       return;
     }
 
@@ -1099,7 +1101,7 @@ export default function NouveauDevisPage() {
           });
         }
         
-        alert('✅ Devis envoyé au client !');
+        alert(t('alerts.devis.sendSuccess'));
       } else {
         // Création + envoi d'un nouveau devis
         console.log('➕ Création et envoi nouveau devis');
@@ -1115,7 +1117,7 @@ export default function NouveauDevisPage() {
           });
         }
         
-        alert('✅ Devis envoyé au client !');
+        alert(t('alerts.devis.sendSuccess'));
       }
       
       router.push('/artisan/devis');
