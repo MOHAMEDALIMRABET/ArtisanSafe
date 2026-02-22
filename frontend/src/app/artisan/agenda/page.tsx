@@ -11,6 +11,7 @@ import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import { useAgendaData, invalidateAgendaCache } from '@/hooks/useAgendaData';
 import type { DisponibiliteSlot, Artisan } from '@/types/firestore';
 import { Timestamp } from 'firebase/firestore';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Configuration du localisateur français
 const locales = {
@@ -39,6 +40,7 @@ interface CalendarEvent {
 
 export default function AgendaPage() {
   const router = useRouter();
+  const { t, language } = useLanguage();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [artisanId, setArtisanId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -304,11 +306,11 @@ export default function AgendaPage() {
     
     // Empêcher la suppression des périodes de contrat
     if (editingEvent.isContrat) {
-      alert('🔒 Impossible de supprimer une période de contrat.\n\nCette période est automatiquement générée à partir d\'un devis signé et ne peut pas être modifiée ou supprimée manuellement.');
+      alert(t('artisanAgenda.editModal.deleteContractError'));
       return;
     }
     
-    const confirmDelete = window.confirm(`⚠️ Supprimer "${editingEvent.title}" ?`);
+    const confirmDelete = window.confirm(t('artisanAgenda.editModal.deleteConfirm').replace('{title}', editingEvent.title));
     if (confirmDelete) {
       setEvents(events.filter(e => e.id !== editingEvent.id));
       setEditingEvent(null);
@@ -323,7 +325,7 @@ export default function AgendaPage() {
 
   const handleCreateRangeDisponibilite = () => {
     if (!rangeStart || !rangeEnd) {
-      alert('Veuillez sélectionner une date de début et de fin');
+      alert(t('artisanAgenda.quickModal.errorNoDate'));
       return;
     }
 
@@ -331,11 +333,11 @@ export default function AgendaPage() {
     const end = new Date(rangeEnd);
 
     if (start > end) {
-      alert('La date de début doit être avant la date de fin');
+      alert(t('artisanAgenda.quickModal.errorInvalidRange'));
       return;
     }
 
-    const title = window.prompt('Titre de l\'indisponibilité :', 'Occupé');
+    const title = window.prompt(t('artisanAgenda.quickModal.titlePrompt'), t('artisanAgenda.quickModal.defaultTitle'));
     if (!title) return;
 
     const newEvents: CalendarEvent[] = [];
@@ -365,7 +367,7 @@ export default function AgendaPage() {
     setRangeStart('');
     setRangeEnd('');
     setSelectingStart(true);
-    alert(`✅ ${newEvents.length} jour(s) d'indisponibilité créé(s) !`);
+    alert(t('artisanAgenda.quickModal.successMessage').replace('{count}', String(newEvents.length)));
   };
 
   const handleDateClick = (date: Date) => {
@@ -512,11 +514,11 @@ export default function AgendaPage() {
       // Invalider le cache après sauvegarde
       invalidateAgendaCache(artisanId);
       
-      alert('✅ Disponibilités sauvegardées avec succès !');
+      alert(t('artisanAgenda.actions.saveSuccess'));
       router.push('/artisan/dashboard');
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
-      alert('❌ Erreur lors de la sauvegarde');
+      alert(t('artisanAgenda.actions.saveError'));
     } finally {
       setSaving(false);
     }
@@ -529,8 +531,8 @@ export default function AgendaPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement de l'agenda...</p>
-          {dataLoading && <p className="text-sm text-gray-500 mt-2">Chargement des données...</p>}
+          <p className="text-gray-600">{t('artisanAgenda.loading.title')}</p>
+          {dataLoading && <p className="text-sm text-gray-500 mt-2">{t('artisanAgenda.loading.data')}</p>}
         </div>
       </div>
     );
@@ -540,13 +542,13 @@ export default function AgendaPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
         <div className="text-center text-red-600">
-          <p className="text-xl font-bold mb-2">❌ Erreur</p>
+          <p className="text-xl font-bold mb-2">❌ {t('artisanAgenda.error.title')}</p>
           <p>{error}</p>
           <button 
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100]"
           >
-            Réessayer
+            {t('artisanAgenda.error.retry')}
           </button>
         </div>
       </div>
@@ -567,12 +569,12 @@ export default function AgendaPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Retour au tableau de bord
+                {t('artisanAgenda.backButton')}
               </button>
             </div>
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold text-[#2C3E50]">
-                📅 Mon Agenda
+                📅 {t('artisanAgenda.pageTitle')}
               </h1>
               <div className="relative">
                 <button
@@ -582,7 +584,7 @@ export default function AgendaPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  Sélection rapide par dates
+                  {t('artisanAgenda.quickSelection')}
                 </button>
 
                 {/* Modal Sélection Rapide - Descend du bouton */}
@@ -605,7 +607,7 @@ export default function AgendaPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                   <h2 className="text-xl font-bold text-[#2C3E50]">
-                    Créer indisponibilités par plage
+                    {t('artisanAgenda.quickModal.title')}
                   </h2>
                   <button
                     onClick={() => {
@@ -632,7 +634,7 @@ export default function AgendaPage() {
                         : 'text-gray-500'
                     }`}
                   >
-                    📅 {rangeStart ? format(new Date(rangeStart), 'dd/MM/yyyy', { locale: fr }) : 'Date de début'}
+                    📅 {rangeStart ? format(new Date(rangeStart), 'dd/MM/yyyy', { locale: fr }) : t('artisanAgenda.quickModal.startLabel')}
                   </button>
                   <button 
                     onClick={() => setCalendarMode('end')}
@@ -642,7 +644,7 @@ export default function AgendaPage() {
                         : 'text-gray-500'
                     }`}
                   >
-                    📅 {rangeEnd ? format(new Date(rangeEnd), 'dd/MM/yyyy', { locale: fr }) : 'Date de fin'}
+                    📅 {rangeEnd ? format(new Date(rangeEnd), 'dd/MM/yyyy', { locale: fr }) : t('artisanAgenda.quickModal.endLabel')}
                   </button>
                 </div>
 
@@ -724,9 +726,9 @@ export default function AgendaPage() {
                     <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
                       <p className="text-gray-700">
                         {rangeEnd ? (
-                          <>📅 Du <strong>{format(new Date(rangeStart), 'dd/MM/yyyy', { locale: fr })}</strong> au <strong>{format(new Date(rangeEnd), 'dd/MM/yyyy', { locale: fr })}</strong></>
+                          <>📅 {t('artisanAgenda.quickModal.from')} <strong>{format(new Date(rangeStart), 'dd/MM/yyyy', { locale: fr })}</strong> {t('artisanAgenda.quickModal.to')} <strong>{format(new Date(rangeEnd), 'dd/MM/yyyy', { locale: fr })}</strong></>
                         ) : (
-                          <>📅 Début: <strong>{format(new Date(rangeStart), 'dd/MM/yyyy', { locale: fr })}</strong> - Sélectionnez la date de fin</>
+                          <>📅 {t('artisanAgenda.quickModal.startSelected')}: <strong>{format(new Date(rangeStart), 'dd/MM/yyyy', { locale: fr })}</strong> - {t('artisanAgenda.quickModal.selectEndDate')}</>
                         )}
                       </p>
                     </div>
@@ -744,14 +746,14 @@ export default function AgendaPage() {
                     }}
                     className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-white font-semibold transition-colors"
                   >
-                    Annuler
+                    {t('artisanAgenda.quickModal.closeButton')}
                   </button>
                   <button
                     onClick={handleCreateRangeDisponibilite}
                     disabled={!rangeStart || !rangeEnd}
                     className="flex-1 px-4 py-3 bg-[#FF6B00] text-white rounded-xl hover:bg-[#E56100] font-semibold transition-colors shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Créer
+                    {t('artisanAgenda.quickModal.createButton')}
                   </button>
                 </div>
               </div>
@@ -975,22 +977,22 @@ export default function AgendaPage() {
                 // Affichage lecture seule pour les contrats
                 <>
                   <h3 className="text-xl font-bold text-[#DC3545] mb-6">
-                    🔒 Période de contrat (non modifiable)
+                    🔒 {t('artisanAgenda.editModal.contractTitle')}
                   </h3>
 
                   <div className="space-y-4 mb-6">
                     <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
                       <p className="text-sm text-red-800 mb-2">
-                        <strong>Cette période est générée automatiquement à partir d'un devis signé.</strong>
+                        <strong>{t('artisanAgenda.editModal.contractWarning')}</strong>
                       </p>
                       <p className="text-xs text-red-700">
-                        Elle ne peut pas être modifiée ou supprimée manuellement. Pour toute modification, veuillez modifier le devis correspondant.
+                        {t('artisanAgenda.editModal.contractNote')}
                       </p>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Titre
+                        {t('artisanAgenda.editModal.titleLabel')}
                       </label>
                       <p className="text-lg font-semibold text-gray-900">
                         {editingEvent.title}
@@ -999,10 +1001,10 @@ export default function AgendaPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Date
+                        {t('artisanAgenda.editModal.dateLabel')}
                       </label>
                       <p className="text-gray-900">
-                        {editingEvent.start.toLocaleDateString('fr-FR', { 
+                        {editingEvent.start.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { 
                           weekday: 'long', 
                           year: 'numeric', 
                           month: 'long', 
@@ -1016,27 +1018,27 @@ export default function AgendaPage() {
                     onClick={handleCloseEditModal}
                     className="w-full px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium"
                   >
-                    Fermer
+                    {t('artisanAgenda.editModal.closeButton')}
                   </button>
                 </>
               ) : (
                 // Mode édition normal pour les indisponibilités manuelles
                 <>
                   <h3 className="text-xl font-bold text-[#2C3E50] mb-6">
-                    ✏️ Modifier l'événement
+                    ✏️ {t('artisanAgenda.editModal.eventTitle')}
                   </h3>
 
                   {/* Champ de texte pour renommer */}
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Titre de l'indisponibilité
+                      {t('artisanAgenda.editModal.inputLabel')}
                     </label>
                     <input
                       type="text"
                       value={editedTitle}
                       onChange={(e) => setEditedTitle(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#FF6B00] focus:outline-none text-lg"
-                      placeholder="Ex: Occupé, Congés, Rendez-vous..."
+                      placeholder={t('artisanAgenda.editModal.inputPlaceholder')}
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -1054,7 +1056,7 @@ export default function AgendaPage() {
                       className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center justify-center gap-2"
                     >
                       <span className="text-xl">×</span>
-                      Supprimer
+                      {t('artisanAgenda.editModal.deleteButton')}
                     </button>
 
                     {/* Bouton Enregistrer */}
@@ -1063,7 +1065,7 @@ export default function AgendaPage() {
                       disabled={!editedTitle.trim()}
                       className="flex-1 px-4 py-3 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      ✓ Enregistrer
+                      ✓ {t('artisanAgenda.editModal.saveButton')}
                     </button>
                   </div>
                 </>

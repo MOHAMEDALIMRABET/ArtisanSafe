@@ -336,7 +336,6 @@
       "kbisVerification": "KBIS verification",
       "idVerification": "ID card verification",
       "rcProVerification": "Professional liability insurance verification",
-      "verified": "verified",
       "rejected": "rejected",
       "craftspaceTitle": "Craftsman Space",
       "trades": "trade(s)",
@@ -1610,6 +1609,274 @@
       
       "infoTitle": "Ten-year liability insurance",
       "infoDescription": "If your trade requires ten-year insurance (masonry, roofing, carpentry, joinery, insulation, plumbing, electrical, tiling, heating, air conditioning), it will be requested after entering your profile in the <strong>My Profile</strong> section."
+    }
+  },
+
+  "clientDemandes": {
+    "pageTitle": "My Requests",
+    "backButton": "← Back to dashboard",
+    "searchArtisan": "Search for a tradesperson",
+    
+    "sections": {
+      "all": "All",
+      "sent": "🎯 Sent",
+      "published": "📢 Published",
+      "inProgress": "⏳ In Progress",
+      "processed": "✅ Processed"
+    },
+    
+    "sectionTitles": {
+      "sent": "🎯 Sent to tradesperson",
+      "published": "📢 Published",
+      "inProgress": "⏳ Being processed",
+      "processed": "✅ Processed"
+    },
+    
+    "sectionDescriptions": {
+      "sent": "Direct requests sent to a specific tradesperson, awaiting quotes",
+      "published": "Public requests visible to all tradespeople, awaiting proposals",
+      "inProgress": "Requests with at least one quote received, awaiting your decision",
+      "processed": "Finalized requests: paid, rejected, expired, work in progress or completed"
+    },
+    
+    "subFilters": {
+      "all": "All",
+      "signedQuotes": "✅ Signed quotes",
+      "worksInProgress": "🚧 Work in progress",
+      "completed": "✅ Completed",
+      "rejected": "❌ Rejected",
+      "expired": "⏰ Expired"
+    },
+    
+    "badges": {
+      "signedQuote": "✅ Quote signed",
+      "worksInProgress": "🚧 Work in progress",
+      "worksCompleted": "✅ Work completed",
+      "dispute": "⚠️ Dispute",
+      "contractInProgress": "✅ Contract in progress",
+      "awaitingPayment": "💳 Awaiting payment",
+      "quotesReceived": "📬 {count} quote(s) received",
+      "sentToArtisan": "🎯 Sent to tradesperson",
+      "directRequestNotAssigned": "⚠️ Direct request (tradesperson not assigned)",
+      "published": "📢 Published",
+      "matched": "✅ Matched",
+      "assigned": "✅ Assigned",
+      "inProgress": "🔄 In progress",
+      "completed": "✅ Completed",
+      "cancelled": "❌ Cancelled",
+      "expired": "⏰ Expired",
+      "quotaReached": "🚫 Quota reached",
+      "publicRequest": "📢 Public request",
+      "directRequest": "🎯 Direct request"
+    },
+    
+    "artisan": {
+      "label": "Tradesperson",
+      "notAssigned": "Tradesperson not assigned"
+    },
+    
+    "card": {
+      "createdOn": "Created on",
+      "startDate": "Start:",
+      "delay": "Delay:",
+      "days": "day(s)",
+      "description": "Description:",
+      "expand": "View details",
+      "collapse": "Hide details",
+      "completeDraft": "Complete this draft",
+      "completeDraftTitle": "Complete and publish this draft",
+      "relaunchSearch": "Restart this search",
+      "relaunchSearchTitle": "Restart a search with the same criteria",
+      "delete": "Delete",
+      "deleteTitle": "Delete this request"
+    },
+    
+    "details": {
+      "title": "📋 Complete request details",
+      "photos": "📸 Project photos ({count})",
+      "photoName": "Photo {number}",
+      "location": "📍 Location",
+      "city": "City:",
+      "postalCode": "Postal code:",
+      "address": "Address:",
+      "dates": "📅 Desired dates",
+      "date": "Date {number}:",
+      "flexibleDates": "✅ Flexible dates up to {days} days",
+      "noDates": "No date specified",
+      "urgent": "🚨 Urgent request"
+    },
+    
+    "contract": {
+      "title": "✅ Quote accepted and paid - Contract in progress",
+      "description": "You have signed and paid the tradesperson's quote.",
+      "viewQuote": "📋 View paid quote",
+      "contactArtisan": "💬 Contact tradesperson"
+    },
+    
+    "searchAnotherArtisan": "🔍 Search for another tradesperson",
+    
+    "empty": {
+      "noRequests": "No requests yet",
+      "noRequestsDescription": "Start by searching for a tradesperson to receive personalized quotes",
+      "searchArtisan": "Search for a tradesperson",
+      "noRequestsInCategory": "No requests in this category",
+      "tryAnotherCategory": "Try another category",
+      "viewAllRequests": "← View all requests",
+      "noRequestsYet": "You haven't created any requests yet"
+    },
+    
+    "success": {
+      "published": "Your request has been published! Qualified tradespeople in your area can now view it and send you quotes."
+    },
+    
+    "dialogs": {
+      "deleteConfirm": "Are you sure you want to delete the request \"{title}\"?\n\nThis action is irreversible.",
+      "deleteSuccess": "Request successfully deleted",
+      "deleteError": "Error during deletion. Please try again.",
+      "revisionPrompt": "Why do you want a quote revision?\n\nExamples: \"Price too high\", \"Deadline too long\", \"Need modifications\"",
+      "revisionSuccess": "Request sent to {artisan}.\n\nThe tradesperson will be notified and can send you a revised quote.",
+      "revisionError": "Error sending. Please try again."
+    },
+    
+    "expirationHelp": {
+      "title": "How does request expiration work?",
+      "subtitle": "Understand why your requests close automatically",
+      "close": "Close",
+      "understood": "I understand",
+      
+      "intro": {
+        "title": "💡 Why automatic expiration?",
+        "description": "To ensure tradespeople have enough time to visit your site and send you quality quotes, while avoiding obsolete requests."
+      },
+      
+      "rules": {
+        "title": "📐 The 4 calculation rules",
+        
+        "urgent": {
+          "title": "🚨 Case 1: Urgent work (less than 7 days)",
+          "expiration": "Expiration:",
+          "expirationValue": "Minimum 5 days after creation",
+          "example": "Example:",
+          "created": "Request created: February 19",
+          "worksStart": "Work starts: February 20 (tomorrow)",
+          "result": "→ Expiration: February 24 (5 days)",
+          "note": "✅ Tradespeople have time to respond"
+        },
+        
+        "normal": {
+          "title": "📅 Case 2: Normal work (7 to 30 days)",
+          "expiration": "Expiration:",
+          "expirationValue": "5 days before work start date",
+          "example": "Example:",
+          "created": "Request created: February 19",
+          "worksStart": "Work starts: March 11 (in 20 days)",
+          "result": "→ Expiration: March 6 (March 11 - 5 days)",
+          "note": "✅ Tradespeople have 15 days to send quotes"
+        },
+        
+        "distant": {
+          "title": "📆 Case 3: Distant work (more than 30 days)",
+          "expiration": "Expiration:",
+          "expirationValue": "Maximum cap of 30 days after creation",
+          "example": "Example:",
+          "created": "Request created: February 19",
+          "worksStart": "Work starts: April 20 (in 60 days)",
+          "result": "→ Expiration: March 21 (30-day cap)",
+          "note": "✅ Avoids obsolete requests"
+        },
+        
+        "noDate": {
+          "title": "❓ Case 4: No date specified",
+          "expiration": "Expiration:",
+          "expirationValue": "30 days by default",
+          "example": "Example:",
+          "created": "Request created: February 19",
+          "worksStart": "Work starts: \"As soon as possible\"",
+          "result": "→ Expiration: March 21 (30 days)"
+        }
+      },
+      
+      "faq": {
+        "title": "❓ Frequently asked questions",
+        "why5Days": {
+          "question": "Why minimum 5 days?",
+          "answer": "Tradespeople need 2-3 days to visit your site and 1-2 days to write a detailed quote. You then have time to compare multiple offers."
+        },
+        "expired": {
+          "question": "My request has expired, what should I do?",
+          "answer": "Create a new request with updated dates. You can reuse the photos and descriptions from the old request."
+        },
+        "extend": {
+          "question": "Can I extend a request?",
+          "answer": "No, to ensure request freshness. Simply create a new request if necessary."
+        }
+      }
+    }
+  },
+
+  "artisanAgenda": {
+    "pageTitle": "My Schedule",
+    "backButton": "Back to dashboard",
+    "quickSelection": "Quick date selection",
+    
+    "loading": {
+      "title": "Loading schedule...",
+      "data": "Loading data..."
+    },
+    
+    "error": {
+      "title": "Error",
+      "retry": "Retry"
+    },
+    
+    "quickModal": {
+      "title": "📅 Quick period selection",
+      "instructions": "Click on a start date, then on an end date",
+      "startLabel": "Start:",
+      "endLabel": "End:",
+      "selectStart": "• Select start date",
+      "selectEnd": "• Select end date",
+      "createButton": "Create unavailability",
+      "closeButton": "Cancel",
+      "titlePrompt": "Unavailability title:",
+      "defaultTitle": "Busy",
+      "successMessage": "{count} day(s) of unavailability created!",
+      "errorNoDate": "Please select a start and end date",
+      "errorInvalidRange": "Start date must be before end date",
+      "from": "From",
+      "to": "to",
+      "startSelected": "Start",
+      "selectEndDate": "Select end date"
+    },
+    
+    "editModal": {
+      "contractTitle": "Contract period (non-modifiable)",
+      "eventTitle": "Edit event",
+      "contractWarning": "This period is automatically generated from a signed quote.",
+      "contractNote": "It cannot be modified or deleted manually. To make changes, please modify the corresponding quote.",
+      "titleLabel": "Title",
+      "dateLabel": "Date",
+      "inputLabel": "Unavailability title",
+      "inputPlaceholder": "E.g.: Busy, Vacation, Appointment...",
+      "deleteButton": "Delete",
+      "saveButton": "Save",
+      "closeButton": "Close",
+      "deleteConfirm": "Delete \"{title}\"?",
+      "deleteContractError": "Cannot delete a contract period.\\n\\nThis period is automatically generated from a signed quote and cannot be modified or deleted manually."
+    },
+    
+    "actions": {
+      "saveAll": "Save all availabilities",
+      "saveSuccess": "Availabilities saved successfully!",
+      "saveError": "Error saving",
+      "saving": "Saving..."
+    },
+    
+    "legend": {
+      "title": "Legend",
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "contract": "Contract period (signed quote)"
     }
   }
 }

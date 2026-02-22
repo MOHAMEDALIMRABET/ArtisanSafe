@@ -167,7 +167,6 @@
     "renovation": "Rénovation",
     "locationPlaceholder": "Paris, Lyon...",
     "department": "Dépt.",
-    "searchDate": "Date souhaitée",
     "datePlaceholder": "Dès que possible",
     "flexibility": "Flexibilité",
     "flexibilityOption0": "±0 jour",
@@ -336,7 +335,6 @@
       "kbisVerification": "Vérification KBIS",
       "idVerification": "Vérification pièce d'identité",
       "rcProVerification": "Vérification assurance resp civile Pro",
-      "verified": "vérifié",
       "rejected": "rejeté",
       "craftspaceTitle": "Espace Artisan",
       "trades": "métier(s)",
@@ -456,15 +454,6 @@
     "cancelQuoteSuccessTitle": "Devis annulé avec succès",
     "cancelQuoteSuccessMessage": "Votre demande a été close définitivement.\nL'artisan {{artisanName}} a été notifié de votre désistement.\n\nPour relancer ce projet, créez une nouvelle demande depuis votre tableau de bord.",
     "cancelQuoteError": "Erreur lors de l'annulation",
-    "automaticManagement": "Gestion automatique des devis",
-    "refusedQuoteCleanup": "Devis refusés : Supprimés automatiquement après 24 heures.",
-    "cancelledQuoteCleanup": "Devis annulés : Supprimés automatiquement après 24 heures (client s'est désisté après avoir accepté le devis, avant paiement).",
-    "revisionQuoteCleanup": "Devis en révision : Supprimés immédiatement après création de la variante.",
-    "specificQuoteConsultation": "Consultation d'un devis spécifique",
-    "quoteHighlighted": "Le devis concerné est mis en évidence ci-dessous avec une bordure orange",
-    "recentClientResponses": "Réponses clients récentes",
-    "showReplaced": "Afficher les devis remplacés",
-    "obsoleteQuotes": "Devis obsolètes",
     "number": "Numéro",
     "associatedRequest": "Demande associée",
     "client": "Client",
@@ -540,7 +529,7 @@
     "processedTitle": "✅ Traitées",
     "signedQuotes": "Devis signés",
     "worksInProgress": "Travaux en cours",
-    "completed": "Terminés",
+    "completedWorks": "Terminés",
     "refused": "Refusées",
     "expired": "Expirées",
     "showAll": "Tout",
@@ -742,7 +731,7 @@
       "fileSelected": "📎 {filename} ({size} MB)"
     }
   },
-  "profile": {
+  "artisanProfile": {
     "pageTitle": "Mon Profil Professionnel",
     "pageDescription": "Complétez votre profil pour recevoir des demandes de clients",
     "backToDashboard": "Retour au tableau de bord",
@@ -801,7 +790,7 @@
       "updateError": "Une erreur est survenue lors de la mise à jour"
     }
   },
-  "requests": {
+  "artisanRequests": {
     "pageTitle": "Demandes Clients",
     "pageDescription": "Gérez les demandes de clients qui correspondent à vos compétences",
     "backToDashboard": "← Retour au tableau de bord",
@@ -1618,6 +1607,274 @@
       
       "infoTitle": "Assurance décennale",
       "infoDescription": "Si votre métier nécessite une assurance décennale (maçonnerie, toiture, charpente, menuiserie, isolation, plomberie, électricité, carrelage, chauffage, climatisation), elle sera demandée après la saisie de votre profil dans la section <strong>Mon Profil</strong>."
+    }
+  },
+
+  "clientDemandes": {
+    "pageTitle": "Mes Demandes",
+    "backButton": "← Retour au tableau de bord",
+    "searchArtisan": "Rechercher un artisan",
+    
+    "sections": {
+      "all": "Toutes",
+      "sent": "🎯 Envoyés",
+      "published": "📢 Publiées",
+      "inProgress": "⏳ En traitement",
+      "processed": "✅ Traitées"
+    },
+    
+    "sectionTitles": {
+      "sent": "🎯 Envoyés à l'artisan",
+      "published": "📢 Publiées",
+      "inProgress": "⏳ En cours de traitement",
+      "processed": "✅ Traitées"
+    },
+    
+    "sectionDescriptions": {
+      "sent": "Demandes directes envoyées à un artisan spécifique, en attente de devis",
+      "published": "Demandes publiques visibles par tous les artisans, en attente de propositions",
+      "inProgress": "Demandes avec au moins un devis reçu, en attente de votre décision",
+      "processed": "Demandes finalisées : payées, refusées, expirées, travaux en cours ou terminés"
+    },
+    
+    "subFilters": {
+      "all": "Tout",
+      "signedQuotes": "✅ Devis signés",
+      "worksInProgress": "🚧 Travaux en cours",
+      "completed": "✅ Terminés",
+      "rejected": "❌ Refusées",
+      "expired": "⏰ Expirées"
+    },
+    
+    "badges": {
+      "signedQuote": "✅ Devis signé",
+      "worksInProgress": "🚧 Travaux en cours",
+      "worksCompleted": "✅ Travaux terminés",
+      "dispute": "⚠️ Litige",
+      "contractInProgress": "✅ Contrat en cours",
+      "awaitingPayment": "💳 En attente de paiement",
+      "quotesReceived": "📬 {count} devis reçu(s)",
+      "sentToArtisan": "🎯 Envoyé à artisan",
+      "directRequestNotAssigned": "⚠️ Demande directe (artisan non assigné)",
+      "published": "📢 Publiée",
+      "matched": "✅ Matchée",
+      "assigned": "✅ Attribuée",
+      "inProgress": "🔄 En cours",
+      "completed": "✅ Terminée",
+      "cancelled": "❌ Annulée",
+      "expired": "⏰ Expirée",
+      "quotaReached": "🚫 Quota atteint",
+      "publicRequest": "📢 Demande publique",
+      "directRequest": "🎯 Demande directe"
+    },
+    
+    "artisan": {
+      "label": "Artisan",
+      "notAssigned": "Artisan non assigné"
+    },
+    
+    "card": {
+      "createdOn": "Créée le",
+      "startDate": "Début:",
+      "delay": "Délai :",
+      "days": "jour(s)",
+      "description": "Description :",
+      "expand": "Voir le détail",
+      "collapse": "Masquer les détails",
+      "completeDraft": "Compléter ce brouillon",
+      "completeDraftTitle": "Compléter et publier ce brouillon",
+      "relaunchSearch": "Relancer cette recherche",
+      "relaunchSearchTitle": "Relancer une recherche avec les mêmes critères",
+      "delete": "Supprimer",
+      "deleteTitle": "Supprimer cette demande"
+    },
+    
+    "details": {
+      "title": "📋 Détails complets de la demande",
+      "photos": "📸 Photos du projet ({count})",
+      "photoName": "Photo {number}",
+      "location": "📍 Localisation",
+      "city": "Ville :",
+      "postalCode": "Code postal :",
+      "address": "Adresse :",
+      "dates": "📅 Dates souhaitées",
+      "date": "Date {number} :",
+      "flexibleDates": "✅ Dates flexibles jusqu'à {days} jours",
+      "noDates": "Aucune date spécifiée",
+      "urgent": "🚨 Demande urgente"
+    },
+    
+    "contract": {
+      "title": "✅ Devis accepté et payé - Contrat en cours",
+      "description": "Vous avez signé et payé le devis de l'artisan.",
+      "viewQuote": "📋 Voir devis payé",
+      "contactArtisan": "💬 Contacter artisan"
+    },
+    
+    "searchAnotherArtisan": "🔍 Chercher un autre artisan",
+    
+    "empty": {
+      "noRequests": "Aucune demande pour le moment",
+      "noRequestsDescription": "Commencez par rechercher un artisan pour recevoir des devis personnalisés",
+      "searchArtisan": "Rechercher un artisan",
+      "noRequestsInCategory": "Aucune demande dans cette catégorie",
+      "tryAnotherCategory": "Essayez une autre catégorie",
+      "viewAllRequests": "← Voir toutes les demandes",
+      "noRequestsYet": "Vous n'avez pas encore créé de demande"
+    },
+    
+    "success": {
+      "published": "Votre demande a été publiée ! Les artisans qualifiés de votre région peuvent maintenant la consulter et vous envoyer des devis."
+    },
+    
+    "dialogs": {
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer la demande \"{title}\" ?\n\nCette action est irréversible.",
+      "deleteSuccess": "Demande supprimée avec succès",
+      "deleteError": "Erreur lors de la suppression. Veuillez réessayer.",
+      "revisionPrompt": "Pourquoi souhaitez-vous une révision du devis ?\n\nExemples: \"Prix trop élevé\", \"Délai trop long\", \"Besoin de modifications\"",
+      "revisionSuccess": "Demande envoyée à {artisan}.\n\nL'artisan sera notifié et pourra vous envoyer un devis révisé.",
+      "revisionError": "Erreur lors de l'envoi. Veuillez réessayer."
+    },
+    
+    "expirationHelp": {
+      "title": "Comment fonctionne l'expiration des demandes ?",
+      "subtitle": "Comprenez pourquoi vos demandes se ferment automatiquement",
+      "close": "Fermer",
+      "understood": "J'ai compris",
+      
+      "intro": {
+        "title": "💡 Pourquoi une expiration automatique ?",
+        "description": "Pour garantir que les artisans aient suffisamment de temps pour visiter votre chantier et vous envoyer des devis de qualité, tout en évitant les demandes obsolètes."
+      },
+      
+      "rules": {
+        "title": "📐 Les 4 règles de calcul",
+        
+        "urgent": {
+          "title": "🚨 Cas 1 : Travaux urgents (moins de 7 jours)",
+          "expiration": "Expiration :",
+          "expirationValue": "Minimum 5 jours après la création",
+          "example": "Exemple :",
+          "created": "Demande créée : 19 février",
+          "worksStart": "Travaux début : 20 février (demain)",
+          "result": "→ Expiration : 24 février (5 jours)",
+          "note": "✅ Les artisans ont le temps de répondre"
+        },
+        
+        "normal": {
+          "title": "📅 Cas 2 : Travaux normaux (7 à 30 jours)",
+          "expiration": "Expiration :",
+          "expirationValue": "5 jours avant la date de début des travaux",
+          "example": "Exemple :",
+          "created": "Demande créée : 19 février",
+          "worksStart": "Travaux début : 11 mars (dans 20 jours)",
+          "result": "→ Expiration : 6 mars (11 mars - 5 jours)",
+          "note": "✅ Artisans ont 15 jours pour envoyer devis"
+        },
+        
+        "distant": {
+          "title": "📆 Cas 3 : Travaux lointains (plus de 30 jours)",
+          "expiration": "Expiration :",
+          "expirationValue": "Cap maximum de 30 jours après création",
+          "example": "Exemple :",
+          "created": "Demande créée : 19 février",
+          "worksStart": "Travaux début : 20 avril (dans 60 jours)",
+          "result": "→ Expiration : 21 mars (cap 30 jours)",
+          "note": "✅ Évite demandes obsolètes"
+        },
+        
+        "noDate": {
+          "title": "❓ Cas 4 : Pas de date précisée",
+          "expiration": "Expiration :",
+          "expirationValue": "30 jours par défaut",
+          "example": "Exemple :",
+          "created": "Demande créée : 19 février",
+          "worksStart": "Travaux début : \"Dès que possible\"",
+          "result": "→ Expiration : 21 mars (30 jours)"
+        }
+      },
+      
+      "faq": {
+        "title": "❓ Questions fréquentes",
+        "why5Days": {
+          "question": "Pourquoi minimum 5 jours ?",
+          "answer": "Les artisans ont besoin de 2-3 jours pour visiter votre chantier et 1-2 jours pour rédiger un devis détaillé. Vous avez ensuite le temps de comparer plusieurs offres."
+        },
+        "expired": {
+          "question": "Ma demande est expirée, que faire ?",
+          "answer": "Créez une nouvelle demande avec des dates actualisées. Vous pouvez réutiliser les photos et descriptions de l'ancienne demande."
+        },
+        "extend": {
+          "question": "Puis-je prolonger une demande ?",
+          "answer": "Non, pour garantir la fraîcheur des demandes. Recréez simplement une nouvelle demande si nécessaire."
+        }
+      }
+    }
+  },
+
+  "artisanAgenda": {
+    "pageTitle": "Mon Agenda",
+    "backButton": "Retour au tableau de bord",
+    "quickSelection": "Sélection rapide par dates",
+    
+    "loading": {
+      "title": "Chargement de l'agenda...",
+      "data": "Chargement des données..."
+    },
+    
+    "error": {
+      "title": "Erreur",
+      "retry": "Réessayer"
+    },
+    
+    "quickModal": {
+      "title": "📅 Sélection rapide de période",
+      "instructions": "Cliquez sur une date de début, puis sur une date de fin",
+      "startLabel": "Début :",
+      "endLabel": "Fin :",
+      "selectStart": "• Sélectionnez la date de début",
+      "selectEnd": "• Sélectionnez la date de fin",
+      "createButton": "Créer l'indisponibilité",
+      "closeButton": "Annuler",
+      "titlePrompt": "Titre de l'indisponibilité :",
+      "defaultTitle": "Occupé",
+      "successMessage": "{count} jour(s) d'indisponibilité créé(s) !",
+      "errorNoDate": "Veuillez sélectionner une date de début et de fin",
+      "errorInvalidRange": "La date de début doit être avant la date de fin",
+      "from": "Du",
+      "to": "au",
+      "startSelected": "Début",
+      "selectEndDate": "Sélectionnez la date de fin"
+    },
+    
+    "editModal": {
+      "contractTitle": "Période de contrat (non modifiable)",
+      "eventTitle": "Modifier l'événement",
+      "contractWarning": "Cette période est générée automatiquement à partir d'un devis signé.",
+      "contractNote": "Elle ne peut pas être modifiée ou supprimée manuellement. Pour toute modification, veuillez modifier le devis correspondant.",
+      "titleLabel": "Titre",
+      "dateLabel": "Date",
+      "inputLabel": "Titre de l'indisponibilité",
+      "inputPlaceholder": "Ex: Occupé, Congés, Rendez-vous...",
+      "deleteButton": "Supprimer",
+      "saveButton": "Enregistrer",
+      "closeButton": "Fermer",
+      "deleteConfirm": "Supprimer \"{title}\" ?",
+      "deleteContractError": "Impossible de supprimer une période de contrat.\\n\\nCette période est automatiquement générée à partir d'un devis signé et ne peut pas être modifiée ou supprimée manuellement."
+    },
+    
+    "actions": {
+      "saveAll": "Enregistrer toutes les disponibilités",
+      "saveSuccess": "Disponibilités sauvegardées avec succès !",
+      "saveError": "Erreur lors de la sauvegarde",
+      "saving": "Enregistrement en cours..."
+    },
+    
+    "legend": {
+      "title": "Légende",
+      "available": "Disponible",
+      "unavailable": "Indisponible",
+      "contract": "Période de contrat (devis signé)"
     }
   }
 }

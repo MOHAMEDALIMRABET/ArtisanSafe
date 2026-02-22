@@ -13,11 +13,13 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { Demande, Artisan } from '@/types/firestore';
 import type { Devis } from '@/types/devis';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function MesDemandesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [artisansMap, setArtisansMap] = useState<Map<string, Artisan>>(new Map());
   const [devisMap, setDevisMap] = useState<Map<string, Devis[]>>(new Map());
@@ -181,30 +183,30 @@ export default function MesDemandesPage() {
 
   async function handleDemanderRevision(demandeId: string, artisanId: string, artisanNom: string) {
     const message = prompt(
-      'Pourquoi souhaitez-vous une révision du devis ?\n\nExemples: "Prix trop élevé", "Délai trop long", "Besoin de modifications"'
+      t('clientDemandes.dialogs.revisionPrompt')
     );
 
     if (!message) return;
 
     try {
-      const clientNom = user?.displayName || user?.email || 'Un client';
+      const clientNom = user?.displayName || user?.email || (language === 'fr' ? 'Un client' : 'A client');
       
       await createNotification(artisanId, {
         type: 'nouvelle_demande',
-        titre: '🔄 Demande de révision de devis',
-        message: `${clientNom} souhaite une révision du devis. Motif : ${message}`,
+        titre: language === 'fr' ? '🔄 Demande de révision de devis' : '🔄 Quote revision request',
+        message: `${clientNom} ${language === 'fr' ? 'souhaite une révision du devis. Motif : ' : 'requests a quote revision. Reason: '}${message}`,
         lien: `/artisan/devis/nouveau?demandeId=${demandeId}`,
       });
 
-      alert(`✅ Demande envoyée à ${artisanNom}.\n\nL'artisan sera notifié et pourra vous envoyer un devis révisé.`);
+      alert(t('clientDemandes.dialogs.revisionSuccess').replace('{artisan}', artisanNom));
     } catch (error) {
       console.error('Erreur envoi demande révision:', error);
-      alert('❌ Erreur lors de l\'envoi. Veuillez réessayer.');
+      alert(t('clientDemandes.dialogs.revisionError'));
     }
   }
 
   async function handleDeleteDemande(demandeId: string, titre: string) {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer la demande "${titre}" ?\n\nCette action est irréversible.`)) {
+    if (!confirm(t('clientDemandes.dialogs.deleteConfirm').replace('{title}', titre))) {
       return;
     }
 
@@ -212,10 +214,10 @@ export default function MesDemandesPage() {
       await deleteDemande(demandeId);
       // Recharger la liste après suppression
       setDemandes(demandes.filter(d => d.id !== demandeId));
-      alert('✅ Demande supprimée avec succès');
+      alert(t('clientDemandes.dialogs.deleteSuccess'));
     } catch (error) {
       console.error('Erreur suppression demande:', error);
-      alert('❌ Erreur lors de la suppression. Veuillez réessayer.');
+      alert(t('clientDemandes.dialogs.deleteError'));
     }
   }
 
@@ -541,11 +543,11 @@ export default function MesDemandesPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Retour au tableau de bord
+            {t('clientDemandes.backButton')}
           </button>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Mes Demandes</h1>
+              <h1 className="text-3xl font-bold">{t('clientDemandes.pageTitle')}</h1>
               <p className="text-gray-300 mt-2">Suivez vos projets en temps réel</p>
             </div>
             
@@ -557,12 +559,12 @@ export default function MesDemandesPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Nouvelle demande
+                {t('common.search')} {t('common.artisan')}
               </Button>
               <button
                 onClick={() => setShowExpirationHelp(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-10 text-white rounded-lg hover:bg-opacity-20 transition-colors"
-                title="Comprendre l'expiration des demandes"
+                title={t('clientDemandes.expirationHelp.subtitle')}
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
@@ -617,7 +619,7 @@ export default function MesDemandesPage() {
             }`}>{demandes.length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'toutes' ? 'text-white' : 'text-gray-600'
-            }`}>Toutes</div>
+            }`}>{t('clientDemandes.sections.all')}</div>
           </button>
           
           <button
@@ -633,7 +635,7 @@ export default function MesDemandesPage() {
             }`}>{getDemandesEnvoyees(demandes).length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'envoyes' ? 'text-white' : 'text-gray-600'
-            }`}>🎯 Envoyés</div>
+            }`}>{t('clientDemandes.sections.sent')}</div>
           </button>
           
           <button
@@ -649,7 +651,7 @@ export default function MesDemandesPage() {
             }`}>{getDemandesPubliees(demandes).length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'publiees' ? 'text-white' : 'text-gray-600'
-            }`}>📢 Publiées</div>
+            }`}>{t('clientDemandes.sections.published')}</div>
           </button>
           
           <button
@@ -665,7 +667,7 @@ export default function MesDemandesPage() {
             }`}>{getDemandesEnTraitement(demandes).length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'en_traitement' ? 'text-white' : 'text-gray-600'
-            }`}>⏳ En traitement</div>
+            }`}>{t('clientDemandes.sections.inProgress')}</div>
           </button>
           
           <button
@@ -681,7 +683,7 @@ export default function MesDemandesPage() {
             }`}>{getToutesDemandesTraitees(demandes).length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide ${
               filtreSection === 'traitees' ? 'text-white' : 'text-gray-600'
-            }`}>✅ Traitées</div>
+            }`}>{t('clientDemandes.sections.processed')}</div>
           </button>
         </div>
 
@@ -693,16 +695,16 @@ export default function MesDemandesPage() {
               </svg>
             </div>
             <h2 className="text-3xl font-bold text-[#2C3E50] mb-3">
-              Aucune demande pour le moment
+              {t('clientDemandes.empty.noRequests')}
             </h2>
             <p className="text-gray-500 mb-8 text-lg max-w-md mx-auto">
-              Commencez par rechercher un artisan pour recevoir des devis personnalisés
+              {t('clientDemandes.empty.noRequestsDescription')}
             </p>
             <Button
               onClick={() => router.push('/recherche')}
               className="bg-gradient-to-r from-[#FF6B00] to-[#E56100] hover:from-[#E56100] hover:to-[#D55000] text-white px-8 py-4 rounded-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-0.5"
             >
-              Rechercher un artisan
+              {t('clientDemandes.empty.searchArtisan')}
             </Button>
           </div>
         ) : (
@@ -810,7 +812,7 @@ export default function MesDemandesPage() {
                       toggleExpandDemande(demande.id);
                     }}
                     className="absolute top-5 right-5 p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
-                    title={isExpanded ? "Masquer les détails" : "Voir le détail"}
+                    title={isExpanded ? t('clientDemandes.card.collapse') : t('clientDemandes.card.expand')}
                   >
                     <svg 
                       className={`w-5 h-5 text-gray-400 group-hover:text-[#FF6B00] transition-all duration-200 ${
@@ -860,7 +862,7 @@ export default function MesDemandesPage() {
                         return (
                           <div className="mb-5 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
                             <div className="flex items-center gap-3">
-                              <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">Artisan</span>
+                              <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">{t('clientDemandes.artisan.label')}</span>
                               <div className="w-10 h-10 bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
                                 {initiales || 'A'}
                               </div>
@@ -874,12 +876,12 @@ export default function MesDemandesPage() {
                         return (
                           <div className="mb-5 bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
                             <div className="flex items-center gap-3">
-                              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Artisan</span>
+                              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('clientDemandes.artisan.label')}</span>
                               <div className="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
                                 ?
                               </div>
                               <p className="font-semibold text-gray-500 text-lg">
-                                Artisan non assigné
+                                {t('clientDemandes.artisan.notAssigned')}
                               </p>
                             </div>
                           </div>
@@ -900,12 +902,12 @@ export default function MesDemandesPage() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <span className="font-medium">Créée le {demande.dateCreation?.toDate().toLocaleDateString('fr-FR')}</span>
+                        <span className="font-medium">{t('clientDemandes.card.createdOn')} {demande.dateCreation?.toDate().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</span>
                       </div>
                       {demande.datesSouhaitees?.dates && demande.datesSouhaitees.dates.length > 0 && (
                         <div className="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-lg">
                           <span className="text-amber-600">📅</span>
-                          <span className="font-semibold text-amber-900">Début: {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}</span>
+                          <span className="font-semibold text-amber-900">{t('clientDemandes.card.startDate')} {new Date(demande.datesSouhaitees.dates[0].toMillis()).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short', day: 'numeric' })}</span>
                         </div>
                       )}
                       {(() => {
@@ -916,8 +918,8 @@ export default function MesDemandesPage() {
                           return (
                             <div className="flex items-center gap-1">
                               <span className="text-green-600">⏱️</span>
-                              <span className="font-semibold">Délai :</span>
-                              <span>{devisPaye.delaiRealisation} jour(s)</span>
+                              <span className="font-semibold">{t('clientDemandes.card.delay')} :</span>
+                              <span>{devisPaye.delaiRealisation} {t('clientDemandes.card.days')}</span>
                             </div>
                           );
                         }
@@ -934,7 +936,7 @@ export default function MesDemandesPage() {
 
                 {/* Description (toujours visible, tronquée si collapsed) */}
                 <div className="mb-4">
-                  <p className="text-sm font-bold text-gray-700 mb-2">Description :</p>
+                  <p className="text-sm font-bold text-gray-700 mb-2">{t('clientDemandes.card.description')}</p>
                   <p className={`text-gray-700 leading-relaxed ${!isExpanded ? 'line-clamp-2' : ''}`}>
                     {demande.description}
                   </p>
@@ -951,7 +953,7 @@ export default function MesDemandesPage() {
                           router.push(`/demande/nouvelle?brouillonId=${demande.id}`);
                         }}
                         className="px-3 py-2 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
-                        title="Compléter et publier ce brouillon"
+                        title={t('clientDemandes.card.completeDraftTitle')}
                       >
                         <svg 
                           xmlns="http://www.w3.org/2000/svg" 
@@ -967,7 +969,7 @@ export default function MesDemandesPage() {
                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
                           />
                         </svg>
-                        Compléter ce brouillon
+                        {t('clientDemandes.card.completeDraft')}
                       </button>
                     )}
                     
@@ -989,12 +991,12 @@ export default function MesDemandesPage() {
                           router.push('/recherche');
                         }}
                         className="px-3 py-2 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
-                        title="Relancer une recherche avec les mêmes critères"
+                        title={t('clientDemandes.card.relaunchSearchTitle')}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        Relancer cette recherche
+                        {t('clientDemandes.card.relaunchSearch')}
                       </button>
                     )}
                     
@@ -1006,7 +1008,7 @@ export default function MesDemandesPage() {
                           handleDeleteDemande(demande.id, demande.titre);
                         }}
                         className="px-3 py-2 border-2 border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545] hover:text-white rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
-                        title="Supprimer cette demande"
+                        title={t('clientDemandes.card.deleteTitle')}
                       >
                         <svg 
                           xmlns="http://www.w3.org/2000/svg" 
@@ -1022,7 +1024,7 @@ export default function MesDemandesPage() {
                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
                           />
                         </svg>
-                        Supprimer
+                        {t('clientDemandes.card.delete')}
                       </button>
                     )}
                   </div>
@@ -1031,7 +1033,7 @@ export default function MesDemandesPage() {
                 {/* Informations détaillées - visibles uniquement si étendu */}
                 {isExpanded && (
                   <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
-                    <h4 className="font-bold text-[#2C3E50] text-lg mb-4">📋 Détails complets de la demande</h4>
+                    <h4 className="font-bold text-[#2C3E50] text-lg mb-4">{t('clientDemandes.details.title')}</h4>
                     
                     {/* Photos du projet */}
                     {(() => {
@@ -1043,7 +1045,7 @@ export default function MesDemandesPage() {
                       return (
                         <div className="mb-4">
                           <p className="text-sm font-semibold text-gray-700 mb-2">
-                            📸 Photos du projet ({validPhotos.length})
+                            {t('clientDemandes.details.photos').replace('{count}', String(validPhotos.length))}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {validPhotos.map((photoUrl: string, idx: number) => {
@@ -1082,12 +1084,12 @@ export default function MesDemandesPage() {
                     {demande.localisation && (
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="bg-blue-50 p-4 rounded-lg">
-                          <p className="text-sm font-semibold text-blue-900 mb-2">📍 Localisation</p>
+                          <p className="text-sm font-semibold text-blue-900 mb-2">{t('clientDemandes.details.location')}</p>
                           <div className="space-y-1 text-sm text-blue-800">
-                            <p><strong>Ville :</strong> {demande.localisation.ville}</p>
-                            <p><strong>Code postal :</strong> {demande.localisation.codePostal}</p>
+                            <p><strong>{t('clientDemandes.details.city')}</strong> {demande.localisation.ville}</p>
+                            <p><strong>{t('clientDemandes.details.postalCode')}</strong> {demande.localisation.codePostal}</p>
                             {demande.localisation.adresse && (
-                              <p><strong>Adresse :</strong> {demande.localisation.adresse}</p>
+                              <p><strong>{t('clientDemandes.details.address')}</strong> {demande.localisation.adresse}</p>
                             )}
                           </div>
                         </div>
@@ -1095,13 +1097,13 @@ export default function MesDemandesPage() {
                         {/* Dates souhaitées */}
                         {demande.datesSouhaitees && (
                           <div className="bg-green-50 p-4 rounded-lg">
-                            <p className="text-sm font-semibold text-green-900 mb-2">📅 Dates souhaitées</p>
+                            <p className="text-sm font-semibold text-green-900 mb-2">{t('clientDemandes.details.dates')}</p>
                             <div className="space-y-1 text-sm text-green-800">
                               {demande.datesSouhaitees.dates && demande.datesSouhaitees.dates.length > 0 ? (
                                 <>
                                   {demande.datesSouhaitees.dates.map((date, idx) => (
                                     <p key={idx}>
-                                      <strong>Date {idx + 1} :</strong> {date.toDate().toLocaleDateString('fr-FR', { 
+                                      <strong>{t('clientDemandes.details.date').replace('{number}', String(idx + 1))}</strong> {date.toDate().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { 
                                         weekday: 'long', 
                                         year: 'numeric', 
                                         month: 'long', 
@@ -1111,12 +1113,12 @@ export default function MesDemandesPage() {
                                   ))}
                                   {demande.datesSouhaitees.flexible && (
                                     <p className="text-xs mt-2 text-green-700">
-                                      ✅ Dates flexibles jusqu'à {demande.datesSouhaitees.flexibiliteDays || 7} jours
+                                      {t('clientDemandes.details.flexibleDates').replace('{days}', String(demande.datesSouhaitees.flexibiliteDays || 7))}
                                     </p>
                                   )}
                                 </>
                               ) : (
-                                <p>Aucune date spécifiée</p>
+                                <p>{t('clientDemandes.details.noDates')}</p>
                               )}
                             </div>
                           </div>
@@ -1128,7 +1130,7 @@ export default function MesDemandesPage() {
                     {demande.urgence && (
                       <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded">
                         <p className="text-red-800 font-semibold flex items-center gap-2">
-                          🚨 Demande urgente
+                          {t('clientDemandes.details.urgent')}
                         </p>
                       </div>
                     )}
@@ -1149,9 +1151,9 @@ export default function MesDemandesPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div className="flex-1">
-                            <p className="font-bold text-green-700 mb-1">✅ Devis accepté et payé - Contrat en cours</p>
+                            <p className="font-bold text-green-700 mb-1">{t('clientDemandes.contract.title')}</p>
                             <p className="text-sm text-green-600">
-                              Vous avez signé et payé le devis de l'artisan.
+                              {t('clientDemandes.contract.description')}
                             </p>
                           </div>
                         </div>
@@ -1167,7 +1169,7 @@ export default function MesDemandesPage() {
                           }}
                           className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
                         >
-                          📋 Voir devis payé
+                          {t('clientDemandes.contract.viewQuote')}
                         </button>
                         <button
                           onClick={(e) => {
@@ -1186,7 +1188,7 @@ export default function MesDemandesPage() {
                           }}
                           className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
                         >
-                          💬 Contacter artisan
+                          {t('clientDemandes.contract.contactArtisan')}
                         </button>
                       </div>
                     </div>
@@ -1230,7 +1232,7 @@ export default function MesDemandesPage() {
                           }}
                           className="text-sm bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition font-medium flex items-center gap-2"
                         >
-                          🔍 Chercher un autre artisan
+                          {t('clientDemandes.searchAnotherArtisan')}
                         </button>
                       </div>
                     );
@@ -1248,16 +1250,16 @@ export default function MesDemandesPage() {
               {filtreSection !== 'toutes' && demandesFiltrees.length > 0 && (
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-[#2C3E50]">
-                    {filtreSection === 'envoyes' && '🎯 Envoyés à l\'artisan'}
-                    {filtreSection === 'publiees' && '📢 Publiées'}
-                    {filtreSection === 'en_traitement' && '⏳ En cours de traitement'}
-                    {filtreSection === 'traitees' && '✅ Traitées'}
+                    {filtreSection === 'envoyes' && t('clientDemandes.sectionTitles.sent')}
+                    {filtreSection === 'publiees' && t('clientDemandes.sectionTitles.published')}
+                    {filtreSection === 'en_traitement' && t('clientDemandes.sectionTitles.inProgress')}
+                    {filtreSection === 'traitees' && t('clientDemandes.sectionTitles.processed')}
                   </h2>
                   <p className="text-sm text-[#6C757D] mt-1">
-                    {filtreSection === 'envoyes' && 'Demandes directes envoyées à un artisan spécifique, en attente de devis'}
-                    {filtreSection === 'publiees' && 'Demandes publiques visibles par tous les artisans, en attente de propositions'}
-                    {filtreSection === 'en_traitement' && 'Demandes avec au moins un devis reçu, en attente de votre décision'}
-                    {filtreSection === 'traitees' && 'Demandes finalisées : payées, refusées, expirées, travaux en cours ou terminés'}
+                    {filtreSection === 'envoyes' && t('clientDemandes.sectionDescriptions.sent')}
+                    {filtreSection === 'publiees' && t('clientDemandes.sectionDescriptions.published')}
+                    {filtreSection === 'en_traitement' && t('clientDemandes.sectionDescriptions.inProgress')}
+                    {filtreSection === 'traitees' && t('clientDemandes.sectionDescriptions.processed')}
                   </p>
 
                   {/* Pills de sous-filtrage pour "✅ Traitées" */}
@@ -1317,7 +1319,7 @@ export default function MesDemandesPage() {
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                         >
-                          Tout ({toutesTraitees.length})
+                          {t('clientDemandes.subFilters.all')} ({toutesTraitees.length})
                         </button>
 
                         {/* Pill "✅ Devis signés" */}
@@ -1330,7 +1332,7 @@ export default function MesDemandesPage() {
                                 : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                             }`}
                           >
-                            ✅ Devis signés ({countDevisSignes})
+                            {t('clientDemandes.subFilters.signedQuotes')} ({countDevisSignes})
                           </button>
                         )}
 
@@ -1344,7 +1346,7 @@ export default function MesDemandesPage() {
                                 : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200'
                             }`}
                           >
-                            🚧 Travaux en cours ({countTravauxEnCours})
+                            {t('clientDemandes.subFilters.worksInProgress')} ({countTravauxEnCours})
                           </button>
                         )}
 
@@ -1358,7 +1360,7 @@ export default function MesDemandesPage() {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
                             }`}
                           >
-                            ✅ Terminés ({countTermines})
+                            {t('clientDemandes.subFilters.completed')} ({countTermines})
                           </button>
                         )}
 
@@ -1372,7 +1374,7 @@ export default function MesDemandesPage() {
                                 : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                             }`}
                           >
-                            ❌ Refusées ({countRefusees})
+                            {t('clientDemandes.subFilters.rejected')} ({countRefusees})
                           </button>
                         )}
 
@@ -1386,7 +1388,7 @@ export default function MesDemandesPage() {
                                 : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-300'
                             }`}
                           >
-                            ⏰ Expirées ({countExpirees})
+                            {t('clientDemandes.subFilters.expired')} ({countExpirees})
                           </button>
                         )}
                       </div>
@@ -1404,17 +1406,17 @@ export default function MesDemandesPage() {
                 <Card className="p-12 text-center">
                   <div className="text-6xl mb-4">🔍</div>
                   <h2 className="text-2xl font-bold text-[#2C3E50] mb-2">
-                    Aucune demande dans cette catégorie
+                    {t('clientDemandes.empty.noRequestsInCategory')}
                   </h2>
                   <p className="text-[#6C757D] mb-6">
-                    {filtreSection === 'toutes' ? 'Vous n\'avez pas encore créé de demande' : 'Essayez une autre catégorie'}
+                    {filtreSection === 'toutes' ? t('clientDemandes.empty.noRequestsYet') : t('clientDemandes.empty.tryAnotherCategory')}
                   </p>
                   {filtreSection !== 'toutes' && (
                     <button
                       onClick={() => setFiltreSection('toutes')}
                       className="text-[#FF6B00] hover:underline font-medium"
                     >
-                      ← Voir toutes les demandes
+                      {t('clientDemandes.empty.viewAllRequests')}
                     </button>
                   )}
                 </Card>
@@ -1438,9 +1440,9 @@ export default function MesDemandesPage() {
                     <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                     </svg>
-                    Comment fonctionne l'expiration des demandes ?
+                    {t('clientDemandes.expirationHelp.title')}
                   </h2>
-                  <p className="text-blue-100">Comprenez pourquoi vos demandes se ferment automatiquement</p>
+                  <p className="text-blue-100">{t('clientDemandes.expirationHelp.subtitle')}</p>
                 </div>
                 <button 
                   onClick={() => setShowExpirationHelp(false)}
@@ -1458,8 +1460,8 @@ export default function MesDemandesPage() {
               {/* Intro */}
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                 <p className="text-gray-700">
-                  <strong>💡 Pourquoi une expiration automatique ?</strong><br />
-                  Pour garantir que les artisans aient suffisamment de temps pour visiter votre chantier et vous envoyer des devis de qualité, tout en évitant les demandes obsolètes.
+                  <strong>{t('clientDemandes.expirationHelp.intro.title')}</strong><br />
+                  {t('clientDemandes.expirationHelp.intro.description')}
                 </p>
               </div>
 
@@ -1467,66 +1469,66 @@ export default function MesDemandesPage() {
               <div>
                 <h3 className="text-xl font-bold text-[#2C3E50] mb-4 flex items-center gap-2">
                   <span className="text-2xl">📐</span>
-                  Les 4 règles de calcul
+                  {t('clientDemandes.expirationHelp.rules.title')}
                 </h3>
                 
                 <div className="space-y-4">
                   {/* Règle 1 */}
                   <div className="border-l-4 border-orange-400 bg-orange-50 p-4 rounded">
-                    <h4 className="font-bold text-orange-900 mb-2">🚨 Cas 1 : Travaux urgents (moins de 7 jours)</h4>
+                    <h4 className="font-bold text-orange-900 mb-2">{t('clientDemandes.expirationHelp.rules.urgent.title')}</h4>
                     <p className="text-sm text-gray-700 mb-2">
-                      <strong>Expiration :</strong> Minimum 5 jours après la création
+                      <strong>{t('clientDemandes.expirationHelp.rules.urgent.expiration')}</strong> {t('clientDemandes.expirationHelp.rules.urgent.expirationValue')}
                     </p>
                     <div className="bg-white p-3 rounded text-sm">
-                      <strong>Exemple :</strong><br />
-                      Demande créée : 19 février<br />
-                      Travaux début : 20 février (demain)<br />
-                      → <span className="text-green-600 font-bold">Expiration : 24 février (5 jours)</span><br />
-                      <span className="text-xs text-gray-600">✅ Les artisans ont le temps de répondre</span>
+                      <strong>{t('clientDemandes.expirationHelp.rules.urgent.example')}</strong><br />
+                      {t('clientDemandes.expirationHelp.rules.urgent.created')}<br />
+                      {t('clientDemandes.expirationHelp.rules.urgent.worksStart')}<br />
+                      → <span className="text-green-600 font-bold">{t('clientDemandes.expirationHelp.rules.urgent.result')}</span><br />
+                      <span className="text-xs text-gray-600">{t('clientDemandes.expirationHelp.rules.urgent.note')}</span>
                     </div>
                   </div>
 
                   {/* Règle 2 */}
                   <div className="border-l-4 border-blue-400 bg-blue-50 p-4 rounded">
-                    <h4 className="font-bold text-blue-900 mb-2">📅 Cas 2 : Travaux normaux (7 à 30 jours)</h4>
+                    <h4 className="font-bold text-blue-900 mb-2">{t('clientDemandes.expirationHelp.rules.normal.title')}</h4>
                     <p className="text-sm text-gray-700 mb-2">
-                      <strong>Expiration :</strong> 5 jours avant la date de début des travaux
+                      <strong>{t('clientDemandes.expirationHelp.rules.normal.expiration')}</strong> {t('clientDemandes.expirationHelp.rules.normal.expirationValue')}
                     </p>
                     <div className="bg-white p-3 rounded text-sm">
-                      <strong>Exemple :</strong><br />
-                      Demande créée : 19 février<br />
-                      Travaux début : 11 mars (dans 20 jours)<br />
-                      → <span className="text-green-600 font-bold">Expiration : 6 mars (11 mars - 5 jours)</span><br />
-                      <span className="text-xs text-gray-600">✅ Artisans ont 15 jours pour envoyer devis</span>
+                      <strong>{t('clientDemandes.expirationHelp.rules.normal.example')}</strong><br />
+                      {t('clientDemandes.expirationHelp.rules.normal.created')}<br />
+                      {t('clientDemandes.expirationHelp.rules.normal.worksStart')}<br />
+                      → <span className="text-green-600 font-bold">{t('clientDemandes.expirationHelp.rules.normal.result')}</span><br />
+                      <span className="text-xs text-gray-600">{t('clientDemandes.expirationHelp.rules.normal.note')}</span>
                     </div>
                   </div>
 
                   {/* Règle 3 */}
                   <div className="border-l-4 border-purple-400 bg-purple-50 p-4 rounded">
-                    <h4 className="font-bold text-purple-900 mb-2">📆 Cas 3 : Travaux lointains (plus de 30 jours)</h4>
+                    <h4 className="font-bold text-purple-900 mb-2">{t('clientDemandes.expirationHelp.rules.distant.title')}</h4>
                     <p className="text-sm text-gray-700 mb-2">
-                      <strong>Expiration :</strong> Cap maximum de 30 jours après création
+                      <strong>{t('clientDemandes.expirationHelp.rules.distant.expiration')}</strong> {t('clientDemandes.expirationHelp.rules.distant.expirationValue')}
                     </p>
                     <div className="bg-white p-3 rounded text-sm">
-                      <strong>Exemple :</strong><br />
-                      Demande créée : 19 février<br />
-                      Travaux début : 20 avril (dans 60 jours)<br />
-                      → <span className="text-green-600 font-bold">Expiration : 21 mars (cap 30 jours)</span><br />
-                      <span className="text-xs text-gray-600">✅ Évite demandes obsolètes</span>
+                      <strong>{t('clientDemandes.expirationHelp.rules.distant.example')}</strong><br />
+                      {t('clientDemandes.expirationHelp.rules.distant.created')}<br />
+                      {t('clientDemandes.expirationHelp.rules.distant.worksStart')}<br />
+                      → <span className="text-green-600 font-bold">{t('clientDemandes.expirationHelp.rules.distant.result')}</span><br />
+                      <span className="text-xs text-gray-600">{t('clientDemandes.expirationHelp.rules.distant.note')}</span>
                     </div>
                   </div>
 
                   {/* Règle 4 */}
                   <div className="border-l-4 border-gray-400 bg-gray-50 p-4 rounded">
-                    <h4 className="font-bold text-gray-900 mb-2">❓ Cas 4 : Pas de date précisée</h4>
+                    <h4 className="font-bold text-gray-900 mb-2">{t('clientDemandes.expirationHelp.rules.noDate.title')}</h4>
                     <p className="text-sm text-gray-700 mb-2">
-                      <strong>Expiration :</strong> 30 jours par défaut
+                      <strong>{t('clientDemandes.expirationHelp.rules.noDate.expiration')}</strong> {t('clientDemandes.expirationHelp.rules.noDate.expirationValue')}
                     </p>
                     <div className="bg-white p-3 rounded text-sm">
-                      <strong>Exemple :</strong><br />
-                      Demande créée : 19 février<br />
-                      Travaux début : "Dès que possible"<br />
-                      → <span className="text-green-600 font-bold">Expiration : 21 mars (30 jours)</span>
+                      <strong>{t('clientDemandes.expirationHelp.rules.noDate.example')}</strong><br />
+                      {t('clientDemandes.expirationHelp.rules.noDate.created')}<br />
+                      {t('clientDemandes.expirationHelp.rules.noDate.worksStart')}<br />
+                      → <span className="text-green-600 font-bold">{t('clientDemandes.expirationHelp.rules.noDate.result')}</span>
                     </div>
                   </div>
                 </div>
@@ -1534,19 +1536,19 @@ export default function MesDemandesPage() {
 
               {/* FAQ rapide */}
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="text-lg font-bold text-[#2C3E50] mb-3">❓ Questions fréquentes</h3>
+                <h3 className="text-lg font-bold text-[#2C3E50] mb-3">{t('clientDemandes.expirationHelp.faq.title')}</h3>
                 <div className="space-y-3 text-sm">
                   <div>
-                    <p className="font-semibold text-gray-900">Pourquoi minimum 5 jours ?</p>
-                    <p className="text-gray-700">Les artisans ont besoin de 2-3 jours pour visiter votre chantier et 1-2 jours pour rédiger un devis détaillé. Vous avez ensuite le temps de comparer plusieurs offres.</p>
+                    <p className="font-semibold text-gray-900">{t('clientDemandes.expirationHelp.faq.why5Days.question')}</p>
+                    <p className="text-gray-700">{t('clientDemandes.expirationHelp.faq.why5Days.answer')}</p>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">Ma demande est expirée, que faire ?</p>
-                    <p className="text-gray-700">Créez une nouvelle demande avec des dates actualisées. Vous pouvez réutiliser les photos et descriptions de l'ancienne demande.</p>
+                    <p className="font-semibold text-gray-900">{t('clientDemandes.expirationHelp.faq.expired.question')}</p>
+                    <p className="text-gray-700">{t('clientDemandes.expirationHelp.faq.expired.answer')}</p>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">Puis-je prolonger une demande ?</p>
-                    <p className="text-gray-700">Non, pour garantir la fraîcheur des demandes. Recréez simplement une nouvelle demande si nécessaire.</p>
+                    <p className="font-semibold text-gray-900">{t('clientDemandes.expirationHelp.faq.extend.question')}</p>
+                    <p className="text-gray-700">{t('clientDemandes.expirationHelp.faq.extend.answer')}</p>
                   </div>
                 </div>
               </div>
@@ -1557,7 +1559,7 @@ export default function MesDemandesPage() {
                   onClick={() => setShowExpirationHelp(false)}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                 >
-                  J'ai compris
+                  {t('clientDemandes.expirationHelp.understood')}
                 </button>
               </div>
             </div>
