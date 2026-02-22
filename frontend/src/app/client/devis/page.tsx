@@ -230,59 +230,86 @@ export default function ClientDevisPage() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Filtres */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilter('tous')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'tous'
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              📋 {t('quotes.all')} ({totalDevis})
-            </button>
-            <button
-              onClick={() => setFilter('en_attente')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'en_attente'
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              🆕 {t('quotes.newPlural')} ({devisEnAttente.length})
-            </button>
-            <button
-              onClick={() => setFilter('acceptes')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'acceptes'
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              ✅ {t('quotes.acceptedPending')} ({devisAcceptes.length})
-            </button>
-            <button
-              onClick={() => setFilter('payes')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'payes'
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              💰 {t('quotes.paidPlural')} ({devisPayes.length})
-            </button>
-            <button
-              onClick={() => setFilter('refuses')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === 'refuses'
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              ❌ {t('quotes.refusedExpired')} ({devisRefuses.length})
-            </button>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          <button
+            onClick={() => setFilter('tous')}
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filter === 'tous'
+                ? 'bg-gradient-to-br from-[#FF6B00] to-[#E56100] text-white shadow-xl scale-105'
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
+            }`}
+          >
+            <div className={`text-3xl font-black mb-1 ${filter === 'tous' ? 'text-white' : 'text-[#FF6B00]'}`}>
+              {totalDevis}
+            </div>
+            <div className={`text-xs font-semibold uppercase tracking-wide ${filter === 'tous' ? 'text-white' : 'text-gray-600'}`}>
+              📋 {t('quotes.all')}
+            </div>
+          </button>
+
+          <button
+            onClick={() => setFilter('en_attente')}
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filter === 'en_attente'
+                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-xl scale-105'
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
+            }`}
+          >
+            <div className={`text-3xl font-black mb-1 ${filter === 'en_attente' ? 'text-white' : 'text-blue-600'}`}>
+              {devisEnAttente.length}
+            </div>
+            <div className={`text-xs font-semibold uppercase tracking-wide ${filter === 'en_attente' ? 'text-white' : 'text-gray-600'}`}>
+              🆕 {t('quotes.newPlural')}
+            </div>
+          </button>
+
+          <button
+            onClick={() => setFilter('acceptes')}
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filter === 'acceptes'
+                ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-xl scale-105'
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
+            }`}
+          >
+            <div className={`text-3xl font-black mb-1 ${filter === 'acceptes' ? 'text-white' : 'text-amber-600'}`}>
+              {devisAcceptes.length}
+            </div>
+            <div className={`text-xs font-semibold uppercase tracking-wide ${filter === 'acceptes' ? 'text-white' : 'text-gray-600'}`}>
+              ✅ {t('quotes.acceptedPending')}
+            </div>
+          </button>
+
+          <button
+            onClick={() => setFilter('payes')}
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filter === 'payes'
+                ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-xl scale-105'
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
+            }`}
+          >
+            <div className={`text-3xl font-black mb-1 ${filter === 'payes' ? 'text-white' : 'text-green-600'}`}>
+              {devisPayes.length}
+            </div>
+            <div className={`text-xs font-semibold uppercase tracking-wide ${filter === 'payes' ? 'text-white' : 'text-gray-600'}`}>
+              💰 {t('quotes.paidPlural')}
+            </div>
+          </button>
+
+          <button
+            onClick={() => setFilter('refuses')}
+            className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+              filter === 'refuses'
+                ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-xl scale-105'
+                : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
+            }`}
+          >
+            <div className={`text-3xl font-black mb-1 ${filter === 'refuses' ? 'text-white' : 'text-red-600'}`}>
+              {devisRefuses.length}
+            </div>
+            <div className={`text-xs font-semibold uppercase tracking-wide ${filter === 'refuses' ? 'text-white' : 'text-gray-600'}`}>
+              ❌ {t('quotes.refusedExpired')}
+            </div>
+          </button>
         </div>
 
         {/* Liste des devis */}

@@ -10,6 +10,7 @@ import { getDemandesForArtisan, getDemandesPubliquesForArtisan, removeArtisanFro
 import { getDevisByDemande, declarerDebutTravaux, declarerFinTravaux } from '@/lib/firebase/devis-service';
 import { createNotification } from '@/lib/firebase/notification-service';
 import { getFileMetadata } from '@/lib/firebase/storage-service';
+import { isDemandeExpired } from '@/lib/dateExpirationUtils';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import type { User, Demande } from '@/types/firestore';
@@ -26,8 +27,9 @@ export default function ArtisanDemandesPage() {
   const [demandesPubliques, setDemandesPubliques] = useState<Demande[]>([]);
   const [sectionActive, setSectionActive] = useState<'mes_demandes' | 'demandes_publiques'>('mes_demandes');
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'en_traitement' | 'contrats' | 'traitees'>('toutes');
+  const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'en_traitement' | 'traitees'>('toutes');
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
+  const [sousFiltreTraitees, setSousFiltreTraitees] = useState<'tout' | 'payees' | 'refusees' | 'expirees' | 'travaux_en_cours' | 'termines'>('tout');
   const [refusingDemandeId, setRefusingDemandeId] = useState<string | null>(null);
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
   const [demandesRefusStatut, setDemandesRefusStatut] = useState<Map<string, { definitif: boolean; revision: boolean }>>(new Map());
@@ -60,6 +62,13 @@ export default function ArtisanDemandesPage() {
       }, 300);
     }
   }, [highlightedDemandeId, isLoading]);
+
+  // Réinitialiser le sous-filtre quand on quitte la section "Traitées"
+  useEffect(() => {
+    if (filter !== 'traitees') {
+      setSousFiltreTraitees('tout');
+    }
+  }, [filter]);
 
   async function loadData() {
     if (!authUser) return;
@@ -381,26 +390,54 @@ export default function ArtisanDemandesPage() {
   }
 
   /**
-   * ✅ CONTRATS
-   * - Devis payés et signés
-   * - Travaux en cours ou terminés non validés
-   * - Exclut les terminées validées
+   * Helper : Toutes les demandes traitées (sans sous-filtre)
+   * Utilisé pour le compteur du bouton "✅ Traitées"
    */
-  function getDemandesContrats(demandes: Demande[]) {
-    return demandes.filter(d => 
-      demandesAvecDevisPayeIds.has(d.id) && !demandesTermineesIds.has(d.id)
+  function getToutesDemandesTraitees(demandes: Demande[]) {
+    return demandes.filter(d =>
+      demandesAvecDevisPayeIds.has(d.id) ||
+      d.statut === 'annulee' ||
+      demandesTermineesIds.has(d.id) ||
+      d.statut === 'expiree' ||
+      (d.dateExpiration && isDemandeExpired(d.dateExpiration))
     );
   }
 
   /**
-   * ✅ TRAITÉES
-   * - Demandes refusées par l'artisan
-   * - Travaux terminés et validés par le client
+   * ✅ TRAITÉES (avec sous-filtrage)
+   * - Payées (devis signé, travaux pas encore démarrés)
+   * - Travaux en cours
+   * - Travaux terminés (validés)
+   * - Refusées par l'artisan
+   * - Expirées
    */
   function getDemandesTraitees(demandes: Demande[]) {
-    return demandes.filter(d => 
-      d.statut === 'annulee' || demandesTermineesIds.has(d.id)
-    );
+    const demandesTraitees = getToutesDemandesTraitees(demandes);
+
+    if (filter === 'traitees' && sousFiltreTraitees !== 'tout') {
+      return demandesTraitees.filter(d => {
+        const devisForDemande = devisMap.get(d.id) || [];
+        const devisPaye = devisForDemande.find(dv =>
+          ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(dv.statut)
+        );
+        switch (sousFiltreTraitees) {
+          case 'payees':
+            return devisPaye?.statut === 'paye';
+          case 'travaux_en_cours':
+            return devisPaye?.statut === 'en_cours';
+          case 'termines':
+            return devisPaye && ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devisPaye.statut);
+          case 'refusees':
+            return d.statut === 'annulee' && !devisPaye;
+          case 'expirees':
+            return (d.statut === 'expiree' || (d.dateExpiration && isDemandeExpired(d.dateExpiration))) && !devisPaye;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return demandesTraitees;
   }
 
   /**
@@ -422,25 +459,27 @@ export default function ArtisanDemandesPage() {
       return 'bg-gradient-to-b from-blue-400 to-blue-600';
     }
     
-    // Section "✅ Contrats" → Vert ou Jaune selon statut
-    if (filter === 'contrats') {
+    // Section "✅ Traitées" → couleur selon statut
+    if (filter === 'traitees') {
       // Travaux en cours → Jaune
       if (devisPaye?.statut === 'en_cours') {
         return 'bg-gradient-to-b from-yellow-400 to-yellow-600';
       }
-      // Devis signé → Vert
-      return 'bg-gradient-to-b from-green-400 to-green-600';
-    }
-    
-    // Section "✅ Traitées" → Rouge (refusées) ou Noir (terminées)
-    if (filter === 'traitees') {
+      // Terminés (validés) → Gris foncé
+      if (devisPaye && ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devisPaye.statut)) {
+        return 'bg-gradient-to-b from-gray-700 to-gray-900';
+      }
+      // Devis payé (signé) → Vert
+      if (devisPaye?.statut === 'paye') {
+        return 'bg-gradient-to-b from-green-400 to-green-600';
+      }
       // Refusées → Rouge
       if (demande.statut === 'annulee') {
         return 'bg-gradient-to-b from-red-400 to-red-600';
       }
-      // Terminées → Noir
-      if (demandesTermineesIds.has(demande.id)) {
-        return 'bg-gradient-to-b from-gray-700 to-gray-900';
+      // Expirées → Rouge rayé
+      if (demande.statut === 'expiree' || (demande.dateExpiration && isDemandeExpired(demande.dateExpiration))) {
+        return 'bg-[repeating-linear-gradient(45deg,#f87171,#f87171_10px,#dc2626_10px,#dc2626_20px)]';
       }
     }
     
@@ -463,8 +502,6 @@ export default function ArtisanDemandesPage() {
       demandesFiltrees = getDemandesNouvelles(demandesSource);
     } else if (filter === 'en_traitement') {
       demandesFiltrees = getDemandesEnTraitement(demandesSource);
-    } else if (filter === 'contrats') {
-      demandesFiltrees = getDemandesContrats(demandesSource);
     } else if (filter === 'traitees') {
       demandesFiltrees = getDemandesTraitees(demandesSource);
     }
@@ -561,79 +598,105 @@ export default function ArtisanDemandesPage() {
           </div>
         )}
 
-        {/* Onglets de filtrage - Style client/demandes - Affichés seulement dans "Mes demandes" */}
+        {/* Onglets de filtrage - Affichés seulement dans "Mes demandes" */}
         {!highlightedDemandeId && sectionActive === 'mes_demandes' && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            <button
-              onClick={() => setFilter('toutes')}
-              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-                filter === 'toutes' ? 'bg-[#FF6B00] text-white ring-4 ring-[#FF6B00] ring-opacity-50' : 'bg-white'
-              }`}
-            >
-              <div className={`text-2xl font-bold ${
-                filter === 'toutes' ? 'text-white' : 'text-[#FF6B00]'
-              }`}>{demandes.filter(d => d.statut !== 'expiree').length}</div>
-              <div className={`text-sm ${
-                filter === 'toutes' ? 'text-white' : 'text-gray-600'
-              }`}>{t('artisanRequests.filters.all')}</div>
-            </button>
-            
-            <button
-              onClick={() => setFilter('nouvelles')}
-              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-                filter === 'nouvelles' ? 'bg-[#FF6B00] text-white ring-4 ring-[#FF6B00] ring-opacity-50' : 'bg-white'
-              }`}
-            >
-              <div className={`text-2xl font-bold ${
-                filter === 'nouvelles' ? 'text-white' : 'text-[#FF6B00]'
-              }`}>{getDemandesNouvelles(demandes).length}</div>
-              <div className={`text-sm ${
-                filter === 'nouvelles' ? 'text-white' : 'text-gray-600'
-              }`}>📬 {t('artisanRequests.filters.new')}</div>
-            </button>
-            
-            <button
-              onClick={() => setFilter('en_traitement')}
-              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-                filter === 'en_traitement' ? 'bg-[#FF6B00] text-white ring-4 ring-[#FF6B00] ring-opacity-50' : 'bg-white'
-              }`}
-            >
-              <div className={`text-2xl font-bold ${
-                filter === 'en_traitement' ? 'text-white' : 'text-[#FF6B00]'
-              }`}>{getDemandesEnTraitement(demandes).length}</div>
-              <div className={`text-sm ${
-                filter === 'en_traitement' ? 'text-white' : 'text-gray-600'
-              }`}>⏳ En traitement</div>
-            </button>
-            
-            <button
-              onClick={() => setFilter('contrats')}
-              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-                filter === 'contrats' ? 'bg-green-600 text-white ring-4 ring-green-600 ring-opacity-50' : 'bg-white'
-              }`}
-            >
-              <div className={`text-2xl font-bold ${
-                filter === 'contrats' ? 'text-white' : 'text-green-600'
-              }`}>{getDemandesContrats(demandes).length}</div>
-              <div className={`text-sm ${
-                filter === 'contrats' ? 'text-white' : 'text-gray-600'
-              }`}>✅ Contrats</div>
-            </button>
-            
-            <button
-              onClick={() => setFilter('traitees')}
-              className={`rounded-lg shadow-md p-4 text-left transition-all hover:shadow-lg ${
-                filter === 'traitees' ? 'bg-gray-700 text-white ring-4 ring-gray-700 ring-opacity-50' : 'bg-white'
-              }`}
-            >
-              <div className={`text-2xl font-bold ${
-                filter === 'traitees' ? 'text-white' : 'text-gray-700'
-              }`}>{getDemandesTraitees(demandes).length}</div>
-              <div className={`text-sm ${
-                filter === 'traitees' ? 'text-white' : 'text-gray-600'
-              }`}>✅ Traitées</div>
-            </button>
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              {/* Toutes */}
+              <button
+                onClick={() => setFilter('toutes')}
+                className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+                  filter === 'toutes'
+                    ? 'bg-gradient-to-br from-[#FF6B00] to-[#E56100] text-white shadow-xl scale-105'
+                    : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
+                }`}
+              >
+                <div className={`text-3xl font-black mb-1 ${filter === 'toutes' ? 'text-white' : 'text-[#FF6B00]'}`}>
+                  {demandes.length}
+                </div>
+                <div className={`text-xs font-semibold uppercase tracking-wide ${filter === 'toutes' ? 'text-white' : 'text-gray-600'}`}>
+                  {t('artisanRequests.filters.all')}
+                </div>
+              </button>
+
+              {/* Nouvelles */}
+              <button
+                onClick={() => setFilter('nouvelles')}
+                className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+                  filter === 'nouvelles'
+                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-xl scale-105'
+                    : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
+                }`}
+              >
+                <div className={`text-3xl font-black mb-1 ${filter === 'nouvelles' ? 'text-white' : 'text-orange-500'}`}>
+                  {getDemandesNouvelles(demandes).length}
+                </div>
+                <div className={`text-xs font-semibold uppercase tracking-wide ${filter === 'nouvelles' ? 'text-white' : 'text-gray-600'}`}>
+                  📬 {t('artisanRequests.filters.new')}
+                </div>
+              </button>
+
+              {/* En traitement */}
+              <button
+                onClick={() => setFilter('en_traitement')}
+                className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+                  filter === 'en_traitement'
+                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-xl scale-105'
+                    : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
+                }`}
+              >
+                <div className={`text-3xl font-black mb-1 ${filter === 'en_traitement' ? 'text-white' : 'text-blue-600'}`}>
+                  {getDemandesEnTraitement(demandes).length}
+                </div>
+                <div className={`text-xs font-semibold uppercase tracking-wide ${filter === 'en_traitement' ? 'text-white' : 'text-gray-600'}`}>
+                  ⏳ En traitement
+                </div>
+              </button>
+
+              {/* Traitées */}
+              <button
+                onClick={() => setFilter('traitees')}
+                className={`group rounded-xl p-5 text-center transition-all duration-300 transform hover:-translate-y-1 ${
+                  filter === 'traitees'
+                    ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-xl scale-105'
+                    : 'bg-white hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-100'
+                }`}
+              >
+                <div className={`text-3xl font-black mb-1 ${filter === 'traitees' ? 'text-white' : 'text-green-600'}`}>
+                  {getToutesDemandesTraitees(demandes).length}
+                </div>
+                <div className={`text-xs font-semibold uppercase tracking-wide ${filter === 'traitees' ? 'text-white' : 'text-gray-600'}`}>
+                  ✅ Traitées
+                </div>
+              </button>
+            </div>
+
+            {/* Sous-filtres pour la section "Traitées" */}
+            {filter === 'traitees' && (
+              <div className="flex flex-wrap gap-2 mb-6 bg-white rounded-xl shadow-sm p-3 border border-gray-100">
+                {([
+                  { key: 'tout', label: '🔍 Tout', count: getToutesDemandesTraitees(demandes).length },
+                  { key: 'payees', label: '💰 Payées', count: getToutesDemandesTraitees(demandes).filter(d => devisMap.get(d.id)?.some(v => v.statut === 'paye')).length },
+                  { key: 'travaux_en_cours', label: '🚧 Travaux en cours', count: getToutesDemandesTraitees(demandes).filter(d => devisMap.get(d.id)?.some(v => v.statut === 'en_cours')).length },
+                  { key: 'termines', label: '✅ Terminés', count: getToutesDemandesTraitees(demandes).filter(d => devisMap.get(d.id)?.some(v => ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(v.statut))).length },
+                  { key: 'refusees', label: '❌ Refusées', count: getToutesDemandesTraitees(demandes).filter(d => d.statut === 'annulee' && !devisMap.get(d.id)?.some(v => ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(v.statut))).length },
+                  { key: 'expirees', label: '⏰ Expirées', count: getToutesDemandesTraitees(demandes).filter(d => (d.statut === 'expiree' || (d.dateExpiration && isDemandeExpired(d.dateExpiration))) && !devisMap.get(d.id)?.some(v => ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(v.statut))).length },
+                ] as { key: string; label: string; count: number }[]).map(({ key, label, count }) => (
+                  <button
+                    key={key}
+                    onClick={() => setSousFiltreTraitees(key as typeof sousFiltreTraitees)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      sousFiltreTraitees === key
+                        ? 'bg-green-600 text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {label} <span className="opacity-75">({count})</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
         
         {/* Liste des demandes */}

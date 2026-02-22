@@ -39,6 +39,7 @@ export default function MesDevisPage() {
   const [filter, setFilter] = useState<DevisFilter>('tous');
   const [showRemplace, setShowRemplace] = useState(false);
   const [actionEnCours, setActionEnCours] = useState<string | null>(null);
+  const [showInfoGestion, setShowInfoGestion] = useState(false);
   const devisRefs = useRef<{[key: string]: HTMLTableRowElement | null}>({});
 
   // Helper pour vérifier si un devis a une réponse client récente (notification récente)
@@ -728,27 +729,45 @@ export default function MesDevisPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Message informatif sur la suppression automatique */}
-        <div className="mb-6 bg-gray-50 border-l-4 border-gray-300 p-4 rounded-lg">
-          <div className="flex items-start gap-3">
-            <svg className="w-6 h-6 text-[#2C3E50] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Bouton info collapsible - Gestion automatique des devis */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowInfoGestion(prev => !prev)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
+              showInfoGestion
+                ? 'bg-[#2C3E50] text-white border-[#2C3E50]'
+                : 'bg-white text-[#2C3E50] border-gray-300 hover:border-[#2C3E50] hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <div>
-              <p className="text-[#2C3E50] font-semibold mb-1">ℹ️ {t('quotes.automaticManagement')}</p>
-              <p className="text-[#2C3E50] text-sm">
-                <span className="block mb-1.5">
-                  <strong>{t('quotes.refusedQuoteCleanup')}</strong>
-                </span>
-                <span className="block mb-1.5">
-                  <strong>{t('quotes.cancelledQuoteCleanup')}</strong>
-                </span>
-                <span className="block">
-                  <strong>{t('quotes.revisionQuoteCleanup')}</strong>
-                </span>
+            ℹ️ {t('quotes.automaticManagement')}
+            <svg
+              className={`w-4 h-4 ml-1 transition-transform duration-200 ${showInfoGestion ? 'rotate-180' : ''}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showInfoGestion && (
+            <div className="mt-2 bg-gray-50 border-l-4 border-gray-300 p-4 rounded-lg relative">
+              <button
+                onClick={() => setShowInfoGestion(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <p className="text-[#2C3E50] text-sm pr-6">
+                <span className="block mb-1.5"><strong>{t('quotes.refusedQuoteCleanup')}</strong></span>
+                <span className="block mb-1.5"><strong>{t('quotes.cancelledQuoteCleanup')}</strong></span>
+                <span className="block"><strong>{t('quotes.revisionQuoteCleanup')}</strong></span>
               </p>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Bannière de notification si devis spécifique */}
@@ -1139,12 +1158,7 @@ export default function MesDevisPage() {
                               {actionEnCours === d.id ? (
                                 <>⏳ {t('common.loading')}...</>
                               ) : (
-                                <>
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                  </svg>
-                                  🔨 {t('quotes.startWork')}
-                                </>
+                                <>🔨 {t('quotes.startWork')}</>
                               )}
                             </button>
                             <button
