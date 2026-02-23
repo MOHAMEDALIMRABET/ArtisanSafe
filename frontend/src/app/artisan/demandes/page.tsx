@@ -522,24 +522,24 @@ export default function ArtisanDemandesPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* En-tête */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      {/* Header */}
+      <div className="bg-[#2C3E50] text-white py-8">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <button
+            onClick={() => router.push('/artisan/dashboard')}
+            className="flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            {t('artisanRequests.backToDashboard')}
+          </button>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">
+              <h1 className="text-3xl font-bold">
                 📬 {t('artisanRequests.pageTitle')}
               </h1>
-              <p className="text-gray-600">
-                {highlightedDemandeId ? (
-                  t('artisanRequests.detailTitle')
-                ) : (
-                  <>
-                    {t('artisanRequests.requestCount').replace('{count}', demandesFiltrees.length.toString()).replace('{s}', demandesFiltrees.length > 1 ? 's' : '')} 
-                    {filter !== 'toutes' && ` (${filter})`}
-                  </>
-                )}
-              </p>
+              <p className="text-gray-300 mt-2">{t('artisanRequests.pageDescription')}</p>
             </div>
             {highlightedDemandeId && (
               <button
@@ -554,7 +554,8 @@ export default function ArtisanDemandesPage() {
             )}
           </div>
         </div>
-
+      </div>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Sections principales - Mes demandes / Demandes publiées */}
         {!highlightedDemandeId && (
           <div className="flex gap-4 mb-6">
