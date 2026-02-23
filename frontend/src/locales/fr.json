@@ -518,6 +518,14 @@
     "pending": "Attente paiement",
     "paid": "Payé",
     "paidPlural": "Payés",
+    "subFiltersPayes": {
+      "all": "Tout",
+      "signed": "💳 Signé",
+      "inProgress": "🚧 Travaux en cours",
+      "worksCompleted": "🔨 Travaux terminés",
+      "validated": "✔️ Terminés & Validés",
+      "dispute": "⚠️ Litige"
+    },
     "inProgress": "Travaux en cours",
     "worksCompleted": "Travaux terminés",
     "validated": "Validé",

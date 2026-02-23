@@ -35,6 +35,14 @@ export default function ClientDevisPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'tous' | 'en_attente' | 'acceptes' | 'payes' | 'refuses'>('en_attente');
   const [avisParDevisId, setAvisParDevisId] = useState<Record<string, boolean>>({});
+  const [sousFiltrePayes, setSousFiltrePayes] = useState<'tout' | 'paye' | 'en_cours' | 'travaux_termines' | 'valides' | 'litige'>('tout');
+
+  // Réinitialiser le sous-filtre quand on quitte la section "Payés"
+  useEffect(() => {
+    if (filter !== 'payes') {
+      setSousFiltrePayes('tout');
+    }
+  }, [filter]);
 
   // Restaurer le filtre depuis l'URL au retour
   useEffect(() => {
@@ -213,7 +221,16 @@ export default function ClientDevisPage() {
     if (filter === 'tous') return true;
     if (filter === 'en_attente') return d.statut === 'envoye';
     if (filter === 'acceptes') return isDevisAccepte(d.statut);
-    if (filter === 'payes') return isDevisPaye(d.statut);
+    if (filter === 'payes') {
+      if (!isDevisPaye(d.statut)) return false;
+      if (sousFiltrePayes === 'tout') return true;
+      if (sousFiltrePayes === 'paye') return d.statut === 'paye';
+      if (sousFiltrePayes === 'en_cours') return d.statut === 'en_cours';
+      if (sousFiltrePayes === 'travaux_termines') return d.statut === 'travaux_termines';
+      if (sousFiltrePayes === 'valides') return ['termine_valide', 'termine_auto_valide'].includes(d.statut);
+      if (sousFiltrePayes === 'litige') return d.statut === 'litige';
+      return true;
+    }
     if (filter === 'refuses') return ['refuse', 'expire', 'annule'].includes(d.statut);
     return true;
   });
@@ -222,7 +239,14 @@ export default function ClientDevisPage() {
   const devisAcceptes = devis.filter(d => isDevisAccepte(d.statut));
   const devisPayes = devis.filter(d => isDevisPaye(d.statut));
   const devisRefuses = devis.filter(d => ['refuse', 'expire', 'annule'].includes(d.statut));
-  const totalDevis = devis.length; // Total tous devis visibles (hors brouillons)
+  const totalDevis = devis.length;
+
+  // Compteurs sous-filtres Payés
+  const countPayeSigne = devisPayes.filter(d => d.statut === 'paye').length;
+  const countEnCours = devisPayes.filter(d => d.statut === 'en_cours').length;
+  const countTravauxTermines = devisPayes.filter(d => d.statut === 'travaux_termines').length;
+  const countValides = devisPayes.filter(d => ['termine_valide', 'termine_auto_valide'].includes(d.statut)).length;
+  const countLitige = devisPayes.filter(d => d.statut === 'litige').length; // Total tous devis visibles (hors brouillons)
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
@@ -326,6 +350,92 @@ export default function ClientDevisPage() {
             </div>
           </button>
         </div>
+
+        {/* Sous-filtres pour la carte 💰 Payés */}
+        {filter === 'payes' && devisPayes.length > 0 && (
+          <div className="bg-white rounded-xl shadow-md p-4 mb-6 border border-gray-100">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
+              Filtrer par statut
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSousFiltrePayes('tout')}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  sousFiltrePayes === 'tout'
+                    ? 'bg-[#2C3E50] text-white shadow-lg transform scale-105'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {t('quotes.subFiltersPayes.all')} ({devisPayes.length})
+              </button>
+
+              {countPayeSigne > 0 && (
+                <button
+                  onClick={() => setSousFiltrePayes('paye')}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                    sousFiltrePayes === 'paye'
+                      ? 'bg-gradient-to-r from-green-500 to-green-700 text-white shadow-lg transform scale-105'
+                      : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                  }`}
+                >
+                  {t('quotes.subFiltersPayes.signed')} ({countPayeSigne})
+                </button>
+              )}
+
+              {countEnCours > 0 && (
+                <button
+                  onClick={() => setSousFiltrePayes('en_cours')}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                    sousFiltrePayes === 'en_cours'
+                      ? 'bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-lg transform scale-105'
+                      : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+                  }`}
+                >
+                  {t('quotes.subFiltersPayes.inProgress')} ({countEnCours})
+                </button>
+              )}
+
+              {countTravauxTermines > 0 && (
+                <button
+                  onClick={() => setSousFiltrePayes('travaux_termines')}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                    sousFiltrePayes === 'travaux_termines'
+                      ? 'bg-gradient-to-r from-orange-400 to-orange-600 text-white shadow-lg transform scale-105'
+                      : 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'
+                  }`}
+                >
+                  {t('quotes.subFiltersPayes.worksCompleted')} ({countTravauxTermines})
+                </button>
+              )}
+
+              {countValides > 0 && (
+                <button
+                  onClick={() => setSousFiltrePayes('valides')}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                    sousFiltrePayes === 'valides'
+                      ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-lg transform scale-105'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                  }`}
+                >
+                  {t('quotes.subFiltersPayes.validated')} ({countValides})
+                </button>
+              )}
+
+              {countLitige > 0 && (
+                <button
+                  onClick={() => setSousFiltrePayes('litige')}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                    sousFiltrePayes === 'litige'
+                      ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg transform scale-105'
+                      : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                  }`}
+                >
+                  {t('quotes.subFiltersPayes.dispute')} ({countLitige})
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Liste des devis */}
         {filteredDevis.length === 0 ? (

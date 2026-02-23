@@ -518,6 +518,14 @@
     "pending": "Pending",
     "paid": "Paid",
     "paidPlural": "Paid",
+    "subFiltersPayes": {
+      "all": "All",
+      "signed": "💳 Signed",
+      "inProgress": "🚧 Work in progress",
+      "worksCompleted": "🔨 Work completed",
+      "validated": "✔️ Completed & Validated",
+      "dispute": "⚠️ Dispute"
+    },
     "inProgress": "Work in progress",
     "worksCompleted": "Work completed",
     "validated": "Validated",
