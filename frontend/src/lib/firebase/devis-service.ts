@@ -1023,8 +1023,9 @@ export async function signalerLitige(
     throw new Error('Non autorisé');
   }
   
-  if (devis.statut !== 'travaux_termines') {
-    throw new Error(`Impossible de signaler un litige (statut actuel: ${devis.statut})`);
+  const statutsAutorisesLitige: DevisStatut[] = ['paye', 'en_cours', 'travaux_termines'];
+  if (!statutsAutorisesLitige.includes(devis.statut)) {
+    throw new Error(`Impossible de signaler un litige (statut actuel: ${devis.statut}). Le litige est possible uniquement après paiement.`);
   }
   
   // Mettre à jour
