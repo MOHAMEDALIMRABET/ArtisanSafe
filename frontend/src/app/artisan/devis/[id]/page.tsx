@@ -704,7 +704,7 @@ export default function VoirDevisPage() {
           )}
 
           {/* Informations supplémentaires pour statuts accepté/en cours (non payé) */}
-          {(devis.statut === 'accepte' || devis.statut === 'en_cours' || devis.statut === 'travaux_termines' || devis.statut === 'termine_valide' || devis.statut === 'termine_auto_valide') && !['paye'].includes(devis.statut) && devis.signatureClient && (
+          {(devis.statut === 'en_cours' || devis.statut === 'travaux_termines' || devis.statut === 'termine_valide' || devis.statut === 'termine_auto_valide') && devis.signatureClient && (
             <div className="border-t-2 border-green-500 mt-8 pt-6 bg-green-50 rounded-lg p-6">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">

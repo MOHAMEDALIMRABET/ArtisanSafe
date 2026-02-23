@@ -68,7 +68,7 @@ export function useAgendaData(artisanId: string | null) {
           // Récupérer tous les devis avec statuts contractuels
           const allDevis = await getDevisByArtisan(artisanId);
           contratsData = allDevis.filter(d => 
-            ['accepte', 'en_attente_paiement', 'paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut)
+            ['en_attente_paiement', 'paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut)
           );
           cache.set(contratCacheKey, { data: contratsData, timestamp: Date.now() });
           console.log(`✅ Contrats chargés en ${Date.now() - contratsStartTime}ms`);

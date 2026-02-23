@@ -47,7 +47,7 @@ export default function MesDevisPage() {
   // Le badge apparaît UNIQUEMENT si le CLIENT a répondu ET l'artisan n'a PAS encore consulté
   const aReponseClienteRecente = (devis: Devis): boolean => {
     // Règle simple : Devis accepté OU refusé OU annulé + Non vu par l'artisan
-    if ((devis.statut === 'accepte' || devis.statut === 'refuse' || devis.statut === 'annule') && devis.vuParArtisan === false) {
+    if ((devis.statut === 'en_attente_paiement' || devis.statut === 'refuse' || devis.statut === 'annule') && devis.vuParArtisan === false) {
       return true;
     }
     return false;
@@ -55,7 +55,7 @@ export default function MesDevisPage() {
 
   // Obtenir le texte du badge selon le statut
   const getTexteBadgeReponse = (devis: Devis): string => {
-    if (devis.statut === 'accepte') return '✅ Accepté';
+    if (devis.statut === 'en_attente_paiement') return '💳 En attente paiement';
     if (devis.statut === 'en_revision') return '🔄 Révision';
     if (devis.statut === 'refuse') return '❌ Refusé';
     if (devis.statut === 'annule') return '🚫 Annulé';
@@ -189,7 +189,7 @@ export default function MesDevisPage() {
 
       // 🔍 DEBUG : Vérifier les devis NON VUS (système lu/non lu)
       const devisNonVus = devisData.filter(d => 
-        (d.statut === 'accepte' || d.statut === 'refuse') && d.vuParArtisan === false
+        (d.statut === 'en_attente_paiement' || d.statut === 'refuse') && d.vuParArtisan === false
       );
       
       console.log('📊 Total devis:', devisData.length);
@@ -259,7 +259,7 @@ export default function MesDevisPage() {
         if (filtre === 'tous') return true;
         if (filtre === 'genere') return d.statut === 'genere';
         if (filtre === 'envoye') return d.statut === 'envoye';
-        if (filtre === 'en_attente_paiement') return d.statut === 'en_attente_paiement' || d.statut === 'accepte';
+        if (filtre === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
         if (filtre === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
         if (filtre === 'revision') return d.statut === 'en_revision';
         if (filtre === 'refuse') return d.statut === 'refuse' || d.statut === 'annule';

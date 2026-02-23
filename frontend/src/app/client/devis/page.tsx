@@ -18,8 +18,7 @@ import { annulerDevisParClient } from '@/lib/firebase/devis-service';
 import { getAvisByContratId } from '@/lib/firebase/avis-service';
 
 // Helper: Devis considérés comme "acceptés" (en attente de paiement)
-const isDevisAccepte = (statut: string) => 
-  ['accepte', 'en_attente_paiement'].includes(statut);
+const isDevisAccepte = (statut: string) => statut === 'en_attente_paiement';
 
 // Helper: Devis considérés comme "payés" (contrats signés)
 const isDevisPaye = (statut: string) => 
@@ -570,7 +569,7 @@ export default function ClientDevisPage() {
                     )}
 
                     {/* Devis accepté/en attente paiement : Procéder au paiement + Annuler + Voir le détail */}
-                    {(d.statut === 'accepte' || d.statut === 'en_attente_paiement') && (
+                    {d.statut === 'en_attente_paiement' && (
                       <>
                         <button 
                           onClick={(e) => {

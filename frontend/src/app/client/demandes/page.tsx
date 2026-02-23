@@ -287,9 +287,9 @@ export default function MesDemandesPage() {
       }
     }
     
-    // 🎯 PRIORITÉ 2 : DEVIS ACCEPTÉ (en attente de paiement)
+    // 🎯 PRIORITÉ 2 : DEVIS EN ATTENTE DE PAIEMENT
     // → Badge "En attente de paiement"
-    const devisAccepte = devisForDemande.find(d => d.statut === 'accepte');
+    const devisAccepte = devisForDemande.find(d => d.statut === 'en_attente_paiement');
     if (devisAccepte) {
       return (
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border-2 border-yellow-400">
@@ -447,7 +447,7 @@ export default function MesDemandesPage() {
    * - Définition : Demandes avec au moins 1 devis reçu (pas encore finalisées)
    * - Caractéristiques :
    *   • Au moins 1 devis reçu
-   *   • Devis avec statut 'envoye' ou 'accepte'
+   *   • Devis avec statut 'envoye' ou 'en_attente_paiement'
    *   • PAS ENCORE payé, refusé, travaux commencés/terminés
    * - Workflow : Artisan envoie devis → Client compare → Client accepte → Devient "Traitées"
    */

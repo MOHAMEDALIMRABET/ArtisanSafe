@@ -48,8 +48,7 @@ export type DevisStatut =
   | 'genere' 
   | 'envoye'
   | 'en_revision'          // Client demande des modifications (statut dédié)
-  | 'accepte' 
-  | 'en_attente_paiement'  // Devis accepté, en attente de paiement
+  | 'en_attente_paiement'  // Client a signé, paiement en attente (24h max)
   | 'paye'                 // Devis payé et signé
   | 'refuse' 
   | 'expire';

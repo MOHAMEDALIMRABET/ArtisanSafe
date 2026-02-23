@@ -889,7 +889,7 @@ export async function getContexteCompletLitige(litigeId: string): Promise<{
     // Calculer statistiques
     const statistiques = {
       totalDevis: historiqueDevis.length,
-      devisAcceptes: historiqueDevis.filter(d => d.statut === 'accepte' || d.statut === 'paye').length,
+      devisAcceptes: historiqueDevis.filter(d => d.statut === 'en_attente_paiement' || d.statut === 'paye').length,
       devisRefuses: historiqueDevis.filter(d => d.statut === 'refuse').length,
       montantMoyenDevis: historiqueDevis.length > 0
         ? historiqueDevis.reduce((sum, d) => sum + (d.totaux?.totalTTC || 0), 0) / historiqueDevis.length

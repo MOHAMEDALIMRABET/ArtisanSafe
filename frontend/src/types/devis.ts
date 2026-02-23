@@ -13,7 +13,6 @@ export type DevisStatut =
   | 'genere'                // Devis généré par l'artisan
   | 'envoye'                // Devis envoyé au client
   | 'en_revision'           // Client demande des modifications (statut dédié, jamais supprimé)
-  | 'accepte'               // Client a accepté le devis (OBSOLÈTE - remplacé par en_attente_paiement)
   | 'en_attente_paiement'   // Client a signé, paiement en attente (24h max)
   | 'paye'                  // Devis signé ET payé avec escrow (paiement bloqué) = CONTRAT JURIDIQUE
   | 'en_cours'              // Travaux en cours (artisan a débuté)

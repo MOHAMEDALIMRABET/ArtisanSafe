@@ -367,62 +367,6 @@ export async function updateDevis(
       } catch (emailError) {
         console.error('⚠️ Erreur envoi email devis reçu:', emailError);
       }
-    } else if (updates.statut === 'accepte') {
-      updateData.dateAcceptation = Timestamp.now();
-      updateData.dateDerniereNotification = Timestamp.now(); // Notifier l'artisan
-      
-      // 🆕 TRACKING: Enregistrer l'acceptation pour le scoring
-      try {
-        await trackDevisAccepte(devisActuel.artisanId);
-        console.log('📊 Stats artisan mises à jour : devis accepté');
-      } catch (error) {
-        console.error('⚠️ Erreur tracking devis accepté:', error);
-      }
-      
-      // 🆕 ATTRIBUTION ARTISAN : Ajouter l'artisan à artisansMatches si pas déjà présent
-      if (devisActuel.demandeId) {
-        try {
-          const demandeRef = doc(db, 'demandes', devisActuel.demandeId);
-          await updateDoc(demandeRef, {
-            artisansMatches: arrayUnion(devisActuel.artisanId),
-            dateModification: Timestamp.now(),
-          });
-          console.log('✅ Artisan ajouté à artisansMatches:', devisActuel.artisanId);
-        } catch (error) {
-          console.error('⚠️ Erreur mise à jour artisansMatches:', error);
-        }
-      }
-      
-      // Si c'est un devis avec variantes, annuler automatiquement les autres variantes
-      if (devisActuel.varianteGroupe || devisActuel.demandeId) {
-        await annulerAutresVariantes(
-          devisId, 
-          devisActuel.varianteGroupe, 
-          devisActuel.demandeId
-        );
-      }
-      
-      // Envoyer email à l'artisan
-      try {
-        const { getUserById } = await import('./user-service');
-        const { getArtisanById } = await import('./artisan-service');
-        const artisanUser = await getUserById(devisActuel.artisanId);
-        const client = await getUserById(devisActuel.clientId);
-        const artisan = await getArtisanById(devisActuel.artisanId);
-        
-        if (artisanUser?.email && client?.prenom && artisan?.businessName) {
-          const { sendDevisAcceptedEmail } = await import('./email-notification-service');
-          await sendDevisAcceptedEmail(
-            artisanUser.email,
-            `${artisanUser.prenom} ${artisanUser.nom}`,
-            `${client.prenom} ${client.nom}`,
-            devisActuel.montantTTC
-          );
-          console.log(`✅ Email devis accepté envoyé à ${artisanUser.email}`);
-        }
-      } catch (emailError) {
-        console.error('⚠️ Erreur envoi email devis accepté:', emailError);
-      }
     } else if (updates.statut === 'paye') {
       // 🆕 PAIEMENT : Annuler les autres variantes quand une est payée
       updateData.datePaiement = Timestamp.now();
@@ -775,7 +719,7 @@ export async function deleteDevis(devisId: string): Promise<void> {
  * Vérifier si un devis est expiré
  */
 export function isDevisExpire(devis: Devis): boolean {
-  if (devis.statut === 'accepte' || devis.statut === 'refuse') {
+  if (devis.statut === 'en_attente_paiement' || devis.statut === 'paye' || devis.statut === 'refuse') {
     return false; // Devis finalisé
   }
   
@@ -1380,7 +1324,7 @@ export async function annulerDevisParClient(
     }
 
     // Vérifier que le devis est en attente de paiement ou accepté
-    if (devis.statut !== 'en_attente_paiement' && devis.statut !== 'accepte') {
+    if (devis.statut !== 'en_attente_paiement') {
       throw new Error(`Impossible d'annuler un devis avec le statut : ${devis.statut}`);
     }
 

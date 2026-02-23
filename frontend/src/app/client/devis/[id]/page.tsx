@@ -282,8 +282,8 @@ export default function ClientDevisDetailPage() {
     if (!devis) return;
 
     // Cas : client revient signer après avoir abandonné le paiement
-    // Devis déjà en_attente_paiement ou accepte → on ne re-notifie pas, on ne re-calcule pas la deadline
-    const isResignature = ['en_attente_paiement', 'accepte'].includes(devis.statut);
+    // Devis déjà en_attente_paiement → on ne re-notifie pas, on ne re-calcule pas la deadline
+    const isResignature = devis.statut === 'en_attente_paiement';
 
     try {
       setProcessing(true);
@@ -351,7 +351,7 @@ export default function ClientDevisDetailPage() {
           const batch = writeBatch(db);
           autresDevisSnapshot.docs.forEach(devisDoc => {
             const statut = devisDoc.data().statut;
-            if (devisDoc.id !== devisId && !['en_attente_paiement', 'accepte', 'annule', 'refuse', 'remplace'].includes(statut)) {
+            if (devisDoc.id !== devisId && !['en_attente_paiement', 'annule', 'refuse', 'remplace'].includes(statut)) {
               batch.update(devisDoc.ref, {
                 statut: 'annule',
                 typeRefus: 'automatique',
@@ -1541,7 +1541,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
               🖨️ Imprimer
             </button>
 
-            {devis.statut === 'accepte' && (
+            {['en_attente_paiement', 'paye', 'en_cours', 'travaux_termines'].includes(devis.statut) && (
               <button
                 onClick={() => router.push(`/messages?userId=${devis.artisanId}&devisId=${devis.id}&demandeId=${devis.demandeId || ''}`)}
                 className="bg-[#FF6B00] text-white px-6 py-2 rounded-lg hover:bg-[#E56100] transition"
@@ -1570,7 +1570,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
           dateLimitePaiement={devis.dateLimitePaiement}
           onSuccess={handlePaymentSuccess}
           onCancel={() => {
-            // Le client peut payer plus tard — devis reste à l'état 'accepte' 24h
+            // Le client peut payer plus tard — devis reste à l'état 'en_attente_paiement' 24h
             setShowPaymentModal(false);
           }}
         />
