@@ -648,8 +648,8 @@ export default function VoirDevisPage() {
             </div>
           )}
 
-          {/* Signature électronique - visible à l'impression (NOUVEAU FORMAT) */}
-          {devis.statut === 'paye' && devis.signatureClient?.url && (
+          {/* Signature électronique - visible à l'impression (tous statuts post-paiement) */}
+          {(['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'] as const).includes(devis.statut as any) && devis.signatureClient?.url && (
             <div className="mt-8 pt-6 border-t-2 border-green-500 signature-section no-break">
               <div className="text-center mb-4">
                 <p className="text-sm font-semibold text-green-800">✅ Devis signé et payé</p>

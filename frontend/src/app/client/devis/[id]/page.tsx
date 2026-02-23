@@ -746,6 +746,10 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
     );
   };
 
+  // Statuts post-paiement : les coordonnées artisan doivent être visibles
+  const STATUTS_DONT_MASQUER = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
+  const coordonneesVisibles = STATUTS_DONT_MASQUER.includes(devis?.statut ?? '');
+
   return (
     <>
       {/* Styles d'impression optimisés pour tenir sur 1 page */}
@@ -999,18 +1003,18 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                   <p className="text-sm text-gray-600 mt-1">
                     📍 {masquerAdresse(
                       `${devis.artisan.adresse.rue}, ${devis.artisan.adresse.codePostal} ${devis.artisan.adresse.ville}`,
-                      devis.statut !== 'paye'
+                      !coordonneesVisibles
                     )}
                   </p>
                 )}
                 {devis.artisan.telephone && (
                   <p className="text-sm">
-                    📞 {masquerTelephoneComplet(devis.artisan.telephone, devis.statut !== 'paye')}
+                    📞 {masquerTelephoneComplet(devis.artisan.telephone, !coordonneesVisibles)}
                   </p>
                 )}
                 {devis.artisan.email && (
                   <p className="text-sm">
-                    📧 {masquerEmail(devis.artisan.email, devis.statut !== 'paye')}
+                    📧 {masquerEmail(devis.artisan.email, !coordonneesVisibles)}
                   </p>
                 )}
               </div>
@@ -1092,10 +1096,11 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
             )}
 
             {/* Date de fin des travaux prévue */}
-            {devis.dateDebutPrevue && devis.delaiRealisation && (
+            {devis.dateDebutPrevue && (
               <div className="mb-8 bg-gray-50 border-l-4 border-[#FF6B00] p-4 rounded">
                 <p className="text-[#2C3E50] font-semibold">
-                  📅 Date de fin des travaux prévue : {(() => {
+                  📅 Date de fin des travaux prévue :{' '}
+                  {devis.delaiRealisation && Number(devis.delaiRealisation) > 0 ? (() => {
                     const debut = devis.dateDebutPrevue.toDate();
                     debut.setDate(debut.getDate() + Number(devis.delaiRealisation));
                     return debut.toLocaleDateString('fr-FR', {
@@ -1104,7 +1109,7 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                       month: 'long',
                       day: 'numeric'
                     });
-                  })()}
+                  })() : <span className="text-gray-400 font-normal italic">Non précisée par l&apos;artisan</span>}
                 </p>
               </div>
             )}
@@ -1230,8 +1235,8 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
               </div>
             )}
 
-            {/* Mentions légales - masquées pour devis payés */}
-            {devis.statut !== 'paye' && (
+            {/* Mentions légales - masquées pour tous les statuts post-paiement */}
+            {!coordonneesVisibles && (
               <div className="pt-6 mt-6">
                 <p className="text-xs text-gray-500">
                   Ce devis est valable jusqu'au {devis.dateValidite?.toDate().toLocaleDateString('fr-FR')} et ne constitue pas une facture.
@@ -1240,8 +1245,8 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
               </div>
             )}
 
-            {/* Signature électronique - visible à l'impression */}
-            {devis.statut === 'paye' && devis.signatureClient?.url && (
+            {/* Signature électronique - visible à l'impression pour tous les statuts post-paiement */}
+            {coordonneesVisibles && devis.signatureClient?.url && (
               <div className="mt-8 pt-6 border-t-2 border-green-500 signature-section no-break">
                 <div className="text-center mb-4">
                   <p className="text-sm font-semibold text-green-800">✅ Devis signé et payé</p>
