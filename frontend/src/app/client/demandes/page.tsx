@@ -937,7 +937,7 @@ export default function MesDemandesPage() {
                 {/* Description (toujours visible, tronquée si collapsed) */}
                 <div className="mb-4">
                   <p className="text-sm font-bold text-gray-700 mb-2">{t('clientDemandes.card.description')}</p>
-                  <p className={`text-gray-700 leading-relaxed ${!isExpanded ? 'line-clamp-2' : ''}`}>
+                  <p className={`text-gray-700 leading-relaxed break-words ${!isExpanded ? 'line-clamp-2' : 'whitespace-pre-wrap'}`}>
                     {demande.description}
                   </p>
                 </div>

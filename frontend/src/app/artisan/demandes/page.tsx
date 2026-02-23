@@ -672,7 +672,7 @@ export default function ArtisanDemandesPage() {
             </div>
 
             {/* Sous-filtres pour la section "Traitées" */}
-            {filter === 'traitees' && (
+            {filter === 'traitees' && getToutesDemandesTraitees(demandes).length > 0 && (
               <div className="flex flex-wrap gap-2 mb-6 bg-white rounded-xl shadow-sm p-3 border border-gray-100">
                 {([
                   { key: 'tout', label: '🔍 Tout', count: getToutesDemandesTraitees(demandes).length },
@@ -681,7 +681,7 @@ export default function ArtisanDemandesPage() {
                   { key: 'termines', label: '✅ Terminés', count: getToutesDemandesTraitees(demandes).filter(d => devisMap.get(d.id)?.some(v => ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(v.statut))).length },
                   { key: 'refusees', label: '❌ Refusées', count: getToutesDemandesTraitees(demandes).filter(d => d.statut === 'annulee' && !devisMap.get(d.id)?.some(v => ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(v.statut))).length },
                   { key: 'expirees', label: '⏰ Expirées', count: getToutesDemandesTraitees(demandes).filter(d => (d.statut === 'expiree' || (d.dateExpiration && isDemandeExpired(d.dateExpiration))) && !devisMap.get(d.id)?.some(v => ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(v.statut))).length },
-                ] as { key: string; label: string; count: number }[]).map(({ key, label, count }) => (
+                ] as { key: string; label: string; count: number }[]).filter(({ key, count }) => key === 'tout' || count > 0).map(({ key, label, count }) => (
                   <button
                     key={key}
                     onClick={() => setSousFiltreTraitees(key as typeof sousFiltreTraitees)}
@@ -1105,28 +1105,78 @@ export default function ArtisanDemandesPage() {
                   // Affichage normal
                   return (
                     <div className="flex gap-3 mt-4">
-                      {(demande.statut as string) !== 'attribuee' && (demande.statut as string) !== 'quota_atteint' && (
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (demande.type === 'publique' && authUser) {
-                              const { markDemandeAsViewed } = await import('@/lib/firebase/demande-service');
-                              markDemandeAsViewed(demande.id, authUser.uid).catch(error => {
-                                console.error('⚠️ Erreur tracking consultation:', error);
-                              });
-                            }
-                            router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`);
-                          }}
-                          className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-                        >
-                          📝 {t('artisanRequests.actions.sendQuote')}
-                        </button>
-                      )}
-                      {(demande.statut as string) === 'attribuee' && (
-                        <div className="flex-1 bg-gray-100 text-gray-600 px-4 py-2.5 rounded-lg font-medium border-2 border-gray-300 text-center">
-                          ✅ {t('artisanRequests.status.alreadyAssigned')}
-                        </div>
-                      )}
+                      {(demande.statut as string) !== 'attribuee' && (demande.statut as string) !== 'quota_atteint' && (() => {
+                        // Vérifier si cet artisan a déjà un devis envoyé/en attente
+                        const tousDevisDemande = (devisMap.get(demande.id) || []).filter(d => d.artisanId === user?.uid);
+                        const devisEnvoye = tousDevisDemande.find(d => ['envoye', 'en_attente_acceptation', 'brouillon'].includes(d.statut));
+                        if (devisEnvoye) {
+                          return (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/artisan/devis/${devisEnvoye.id}`);
+                              }}
+                              className="flex-1 bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2.5 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              📋 {t('artisanRequests.actions.viewSentQuote') || 'Voir le devis envoyé'}
+                            </button>
+                          );
+                        }
+                        return (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (demande.type === 'publique' && authUser) {
+                                const { markDemandeAsViewed } = await import('@/lib/firebase/demande-service');
+                                markDemandeAsViewed(demande.id, authUser.uid).catch(error => {
+                                  console.error('⚠️ Erreur tracking consultation:', error);
+                                });
+                              }
+                              router.push(`/artisan/devis/nouveau?demandeId=${demande.id}`);
+                            }}
+                            className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                          >
+                            📝 {t('artisanRequests.actions.sendQuote')}
+                          </button>
+                        );
+                      })()}
+                      {(demande.statut as string) === 'attribuee' && (() => {
+                        // Vérifier si C'EST cet artisan l'attributaire
+                        // Cas 1 : artisanAttributaireId correspond à cet artisan
+                        // Cas 2 : l'artisan a un devis payé/en cours sur cette demande (rétrocompatibilité)
+                        // ⚠️ IMPORTANT : filtrer par artisanId car devisMap contient TOUS les artisans
+                        const devisCetArtisan = (devisMap.get(demande.id) || []).filter(d => d.artisanId === user?.uid);
+                        const estAttributaire =
+                          demande.artisanAttributaireId === user?.uid ||
+                          devisCetArtisan.some(d =>
+                            ['en_attente_paiement', 'paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut)
+                          );
+
+                        if (estAttributaire) {
+                          // Ce devis est pour cet artisan → bouton vers le devis concerné
+                          const devisActif = devisCetArtisan.find(d =>
+                            ['en_attente_paiement', 'paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut)
+                          );
+                          if (devisActif) {
+                            return (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); router.push(`/artisan/devis/${devisActif.id}`); }}
+                                className="flex-1 bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2.5 font-medium transition-all duration-200 text-center"
+                              >
+                                📄 Voir le devis
+                              </button>
+                            );
+                          }
+                          return null;
+                        }
+
+                        // Un autre artisan a été choisi
+                        return (
+                          <div className="flex-1 bg-gray-100 text-gray-500 px-4 py-2.5 rounded-lg font-medium border border-gray-200 text-center text-sm italic">
+                            ✅ {t('artisanRequests.status.alreadyAssigned')}
+                          </div>
+                        );
+                      })()}
                       {(demande.statut as string) === 'quota_atteint' && (
                         <div className="flex-1 bg-orange-50 text-orange-700 px-4 py-2.5 rounded-lg font-medium border-2 border-orange-300 text-center">
                           🔒 {t('artisanRequests.status.quotaReached')}

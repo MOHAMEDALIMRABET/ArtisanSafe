@@ -1017,7 +1017,8 @@
       "refusing": "Refus en cours...",
       "sendQuote": "Créer un devis",
       "startWork": "Démarrer les travaux",
-      "viewPaidQuote": "Voir le devis payé"
+      "viewPaidQuote": "Voir le devis payé",
+      "viewSentQuote": "Voir le devis envoyé"
     }
   },
   "messaging": {

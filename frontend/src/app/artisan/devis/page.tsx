@@ -942,7 +942,7 @@ export default function MesDevisPage() {
           </div>
 
           {/* Sous-filtres pour la section "Payés" */}
-          {filter === 'paye' && (
+          {filter === 'paye' && devisPayes.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6 bg-white rounded-xl shadow-sm p-3 border border-gray-100">
               {([
                 { key: 'tout', label: '🔍 Tout', count: devisPayes.length },
@@ -951,7 +951,7 @@ export default function MesDevisPage() {
                 { key: 'travaux_termines', label: '⏳ Attente validation', count: devisActifs.filter(d => d.statut === 'travaux_termines').length },
                 { key: 'valide', label: '✔️ Validés', count: devisActifs.filter(d => ['termine_valide', 'termine_auto_valide'].includes(d.statut)).length },
                 { key: 'litige', label: '⚠️ Litige', count: devisActifs.filter(d => d.statut === 'litige').length },
-              ] as { key: string; label: string; count: number }[]).map(({ key, label, count }) => (
+              ] as { key: string; label: string; count: number }[]).filter(({ key, count }) => key === 'tout' || count > 0).map(({ key, label, count }) => (
                 <button
                   key={key}
                   onClick={() => setSousFiltrePayes(key as typeof sousFiltrePayes)}

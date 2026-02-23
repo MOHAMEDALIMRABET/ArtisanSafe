@@ -1018,7 +1018,8 @@
       "refusing": "Refusing...",
       "sendQuote": "Create quote",
       "startWork": "Start work",
-      "viewPaidQuote": "View paid quote"
+      "viewPaidQuote": "View paid quote",
+      "viewSentQuote": "View sent quote"
     }
   },
   "messaging": {
