@@ -60,13 +60,13 @@ export const annulerDevisNonPayes = functions.pubsub
         console.log(`     Artisan: ${devis.artisanId}`);
         console.log(`     Délai dépassé: ${heuresDepasse}h`);
 
-        // 2a. Mettre à jour le devis (statut → annule)
+        // 2a. Mettre à jour le devis (statut → expire)
         batch.update(doc.ref, {
-          statut: 'annule',
-          dateAnnulation: now,
-          motifAnnulation: 'Paiement non effectué dans les 24h après signature',
+          statut: 'expire',
+          dateExpiration: now,
+          motifExpiration: 'Paiement non effectué dans les 24h après signature',
           dateDerniereModification: now,
-          vuParArtisan: false,  // Force artisan à voir l'annulation
+          vuParArtisan: false,  // Force artisan à voir l'expiration
         });
 
         // 2b. Créer notification pour l'artisan (type refus classique)
@@ -74,8 +74,8 @@ export const annulerDevisNonPayes = functions.pubsub
         batch.set(notificationRef, {
           recipientId: devis.artisanId,
           type: 'devis_annule_non_paye',  // Type spécial pour distinction
-          title: `Devis ${numeroDevis} annulé`,
-          message: `Le client n'a pas effectué le paiement dans les 24h après signature. Le devis a été automatiquement annulé.`,
+          title: `Devis ${numeroDevis} expiré`,
+          message: `Le client n'a pas effectué le paiement dans les 24h après signature. Le devis a été automatiquement expiré.`,
           relatedId: doc.id,
           relatedType: 'devis',
           lue: false,
@@ -88,7 +88,7 @@ export const annulerDevisNonPayes = functions.pubsub
       // 3. Exécuter toutes les mises à jour atomiquement
       await batch.commit();
 
-      console.log(`✅ ${snapshot.size} devis annulés avec succès`);
+      console.log(`✅ ${snapshot.size} devis expirés avec succès`);
       console.log(`   Numéros: ${devisAnnules.join(', ')}`);
 
       return {
@@ -156,9 +156,9 @@ export const annulerDevisNonPayesManual = functions.https.onRequest(async (req, 
       const devis = doc.data();
 
       batch.update(doc.ref, {
-        statut: 'annule',
-        dateAnnulation: now,
-        motifAnnulation: 'Paiement non effectué dans les 24h après signature (manuel)',
+        statut: 'expire',
+        dateExpiration: now,
+        motifExpiration: 'Paiement non effectué dans les 24h après signature (manuel)',
         dateDerniereModification: now,
         vuParArtisan: false,
       });
@@ -168,7 +168,7 @@ export const annulerDevisNonPayesManual = functions.https.onRequest(async (req, 
         recipientId: devis.artisanId,
         type: 'devis_annule_non_paye',
         title: `Devis ${devis.numeroDevis} annulé`,
-        message: `Le client n'a pas effectué le paiement dans les 24h. Devis annulé automatiquement.`,
+        message: `Le client n'a pas effectué le paiement dans les 24h. Devis expiré automatiquement.`,
         relatedId: doc.id,
         relatedType: 'devis',
         lue: false,

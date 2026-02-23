@@ -205,6 +205,26 @@ export default function ClientDevisDetailPage() {
 
       setDevis(devisData);
 
+      // Auto-expirer si la deadline de paiement est dépassée
+      if (
+        devisData.statut === 'en_attente_paiement' &&
+        devisData.dateLimitePaiement &&
+        devisData.dateLimitePaiement.toMillis() < Date.now()
+      ) {
+        try {
+          await updateDoc(doc(db, 'devis', devisId), {
+            statut: 'expire',
+            dateExpiration: Timestamp.now(),
+            motifExpiration: 'Paiement non effectué dans le délai imparti',
+          });
+          setDevis({ ...devisData, statut: 'expire' } as Devis);
+          console.log('⏰ Devis expiré (délai paiement dépassé)');
+        } catch (e) {
+          console.error('Erreur expiration devis:', e);
+        }
+        return; // Plus rien à faire
+      }
+
       // Vérifier si un avis a déjà été donné pour ce contrat (si travaux terminés)
       if (['termine_valide', 'termine_auto_valide'].includes(devisData.statut)) {
         setCheckingAvis(true);

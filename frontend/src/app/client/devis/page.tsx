@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
@@ -95,9 +95,35 @@ export default function ClientDevisPage() {
         return dateB - dateA;
       });
 
-      setDevis(devisData);
+      // Auto-expirer les devis dont la deadline de paiement est dépassée
+      const now = Date.now();
+      const aExpirerIds: string[] = [];
+      const devisDataFinal = devisData.map(d => {
+        if (
+          d.statut === 'en_attente_paiement' &&
+          d.dateLimitePaiement &&
+          d.dateLimitePaiement.toMillis() < now
+        ) {
+          aExpirerIds.push(d.id);
+          return { ...d, statut: 'expire' as const };
+        }
+        return d;
+      });
 
-      // Charger les demandes associées
+      setDevis(devisDataFinal);
+
+      if (aExpirerIds.length > 0) {
+        // Persister en Firestore (fire-and-forget)
+        Promise.all(
+          aExpirerIds.map(id =>
+            updateDoc(doc(db, 'devis', id), {
+              statut: 'expire',
+              dateExpiration: Timestamp.now(),
+              motifExpiration: 'Paiement non effectué dans le délai imparti',
+            })
+          )
+        ).catch(e => console.error('Erreur expiration devis:', e));
+      }
       const demandesMap = new Map<string, Demande>();
       for (const d of devisData) {
         if (d.demandeId && !demandesMap.has(d.demandeId)) {
