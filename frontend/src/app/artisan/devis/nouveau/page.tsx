@@ -312,8 +312,15 @@ export default function NouveauDevisPage() {
         }
 
         // Charger le prochain numéro de devis pour la prévisualisation
+        // Passer demandeId + info variante pour afficher le bon numéro (ex: DV-2026-00001-A)
         try {
-          const prochainNumero = await genererProchainNumeroDevis(user.uid);
+          const varInfoPreview = await calculerVarianteInfo(demandeId);
+          const prochainNumero = await genererProchainNumeroDevis(
+            user.uid,
+            demandeId,
+            varInfoPreview?.varianteLettreReference,
+            varInfoPreview?.varianteGroupe
+          );
           setNumeroDevisPreview(prochainNumero);
         } catch (error) {
           console.error('Erreur génération numéro devis:', error);
@@ -628,9 +635,21 @@ export default function NouveauDevisPage() {
       // Stocker l'ID du devis original pour révision
       setAncienDevisId(devisOriginal.id);
 
-      // Charger les variantes existantes
+      // Charger les variantes existantes + calculer le numéro de prévisualisation
       if (devisOriginal.demandeId) {
         await chargerVariantesExistantes(devisOriginal.demandeId, user.uid);
+        try {
+          const varInfoPreview = await calculerVarianteInfo(devisOriginal.demandeId);
+          const prochainNumero = await genererProchainNumeroDevis(
+            user.uid,
+            devisOriginal.demandeId,
+            varInfoPreview?.varianteLettreReference,
+            varInfoPreview?.varianteGroupe
+          );
+          setNumeroDevisPreview(prochainNumero);
+        } catch (e) {
+          console.error('Erreur génération numéro preview révision:', e);
+        }
       }
 
       console.log('✅ Formulaire pré-rempli pour révision avec succès');
