@@ -520,7 +520,7 @@
     "paidPlural": "Paid",
     "subFiltersPayes": {
       "all": "All",
-      "signed": "💳 Signed",
+      "signed": "� Paid",
       "inProgress": "🚧 Work in progress",
       "worksCompleted": "🔨 Work completed",
       "validated": "✔️ Completed & Validated",
