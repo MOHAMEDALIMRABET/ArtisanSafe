@@ -265,29 +265,21 @@ export default function ClientDevisDetailPage() {
       setProcessing(true);
       setShowSignatureModal(false);
 
-      // 1. Uploader la signature immédiatement
-      const signatureRef = ref(storage, `signatures/${devisId}_${Date.now()}.png`);
-      await uploadString(signatureRef, dataURL, 'data_url');
-      const signatureURL = await getDownloadURL(signatureRef);
+      // 1. Stocker le dataURL en mémoire UNIQUEMENT (pas d'upload Firebase avant paiement)
+      setSignatureDataURL(dataURL);
 
-      console.log('✅ Signature uploadée:', signatureURL);
-
-      // 2. Mettre à jour le devis → statut "accepte" + signature + limite paiement 24h
+      // 2. Mettre à jour le devis → statut "en_attente_paiement" + limite 24h
+      //    La signature sera uploadée et persistie UNIQUEMENT après confirmation du paiement
       const dateLimitePaiement = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
       await updateDoc(doc(db, 'devis', devisId), {
-        statut: 'accepte',
+        statut: 'en_attente_paiement',
         dateAcceptation: Timestamp.now(),
         dateLimitePaiement,
         dateDerniereNotification: Timestamp.now(),
         vuParArtisan: false,
-        signatureClient: {
-          url: signatureURL,
-          date: Timestamp.now(),
-          ip: '',
-        },
       });
 
-      console.log('✅ Devis accepté et signé par le client');
+      console.log('✅ Devis en attente de paiement (signature stockée en mémoire)');
 
       // 3. Fermer la demande : marquer comme attribuée
       if (devis.demandeId) {
@@ -358,21 +350,42 @@ export default function ClientDevisDetailPage() {
   const handlePaymentSuccess = async (paymentData: PaymentData) => {
     if (!devis) return;
 
+    // La signature doit avoir été saisie dans cette session (sinon bloquer)
+    if (!signatureDataURL) {
+      alert('⚠️ Votre session a expiré. Veuillez re-signer le devis avant de procéder au paiement.');
+      setShowSignatureModal(true);
+      return;
+    }
+
     try {
       setProcessing(true);
       setShowPaymentModal(false);
 
-      // 1. Mettre à jour le devis : statut payé + données paiement
-      // (la signature est déjà uploadée et enregistrée lors de l'acceptation)
+      // 1. Uploader la signature maintenant que le paiement est confirmé
+      const signatureRef = ref(storage, `signatures/${devisId}_${Date.now()}.png`);
+      await uploadString(signatureRef, signatureDataURL, 'data_url');
+      const signatureURL = await getDownloadURL(signatureRef);
+
+      console.log('✅ Signature uploadée après confirmation paiement:', signatureURL);
+
+      // 2. Mettre à jour le devis : statut payé + signature + données paiement
       await updateDoc(doc(db, 'devis', devisId), {
         statut: 'paye',
         datePaiement: paymentData.date,
         paiement: paymentData,
         dateDerniereNotification: Timestamp.now(),
         vuParArtisan: false,
+        signatureClient: {
+          url: signatureURL,
+          date: Timestamp.now(),
+          ip: '',
+        },
       });
 
       console.log('✅ Paiement enregistré + Signature persistée:', paymentData.referenceTransaction);
+
+      // Nettoyer la signature de la mémoire
+      setSignatureDataURL(null);
 
       // 3. FERMER LA DEMANDE : marquer comme attribuée
       if (devis.demandeId) {
@@ -1001,17 +1014,17 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
                   <div className="text-sm text-red-800">
                     <p className="font-semibold mb-1">⏰ Paiement en attente - Coordonnées masquées</p>
                     <p className="text-red-700 mb-2">
-                      Vous avez signé ce devis le {devis.signatureClient?.date?.toDate().toLocaleDateString('fr-FR')}.
+                      ⚠️ Ce devis est en attente de paiement.
                       <strong> Il vous reste jusqu'au {devis.dateLimitePaiement.toDate().toLocaleDateString('fr-FR')} à {devis.dateLimitePaiement.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} pour payer.</strong>
                     </p>
                     <p className="text-red-700">
-                      Les coordonnées de l'artisan seront démasquées après paiement.
+                      Votre signature sera enregistrée au moment du paiement. Les coordonnées de l'artisan seront démasquées ensuite.
                     </p>
                     <button
-                      onClick={() => setShowPaymentModal(true)}
+                      onClick={() => setShowSignatureModal(true)}
                       className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
                     >
-                      💳 Payer maintenant ({devis.totaux.totalTTC.toFixed(2)} €)
+                      ✍️ Signer et payer ({devis.totaux.totalTTC.toFixed(2)} €)
                     </button>
                   </div>
                 </div>
