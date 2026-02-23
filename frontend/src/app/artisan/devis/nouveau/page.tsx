@@ -1745,7 +1745,14 @@ export default function NouveauDevisPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4">
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push('/artisan/devis')}
+              disabled={savingBrouillon || savingEnvoi}
+              className="px-5 py-3 rounded-lg font-semibold border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ✕ Annuler
+            </button>
             <button
               onClick={sauvegarderBrouillon}
               disabled={savingBrouillon || savingEnvoi || (demande?.type === 'publique' && (demande?.devisRecus || 0) >= 10)}
