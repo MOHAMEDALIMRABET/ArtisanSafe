@@ -261,6 +261,10 @@ export default function ClientDevisDetailPage() {
   const handleSignatureValidated = async (dataURL: string) => {
     if (!devis) return;
 
+    // Cas : client revient signer après avoir abandonné le paiement
+    // Devis déjà en_attente_paiement ou accepte → on ne re-notifie pas, on ne re-calcule pas la deadline
+    const isResignature = ['en_attente_paiement', 'accepte'].includes(devis.statut);
+
     try {
       setProcessing(true);
       setShowSignatureModal(false);
@@ -268,8 +272,25 @@ export default function ClientDevisDetailPage() {
       // 1. Stocker le dataURL en mémoire UNIQUEMENT (pas d'upload Firebase avant paiement)
       setSignatureDataURL(dataURL);
 
+      if (isResignature) {
+        // Re-signature : deadline d'origine conservée (ou recréée si absente pour anciens devis)
+        if (!devis.dateLimitePaiement) {
+          const dateLimitePaiement = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+          await updateDoc(doc(db, 'devis', devisId), {
+            statut: 'en_attente_paiement',
+            dateLimitePaiement,
+          });
+          await loadDevis(); // Recharger pour avoir la deadline dans l'état
+        }
+        console.log('🔄 Re-signature client (paiement reporté) — ouverture directe du paiement');
+        setShowPaymentModal(true);
+        return;
+      }
+
+      // ─── PREMIÈRE SIGNATURE (devis encore "envoye") ──────────────────────────
+
       // 2. Mettre à jour le devis → statut "en_attente_paiement" + limite 24h
-      //    La signature sera uploadée et persistie UNIQUEMENT après confirmation du paiement
+      //    La signature sera uploadée et persistée UNIQUEMENT après confirmation du paiement
       const dateLimitePaiement = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
       await updateDoc(doc(db, 'devis', devisId), {
         statut: 'en_attente_paiement',
@@ -310,7 +331,7 @@ export default function ClientDevisDetailPage() {
           const batch = writeBatch(db);
           autresDevisSnapshot.docs.forEach(devisDoc => {
             const statut = devisDoc.data().statut;
-            if (devisDoc.id !== devisId && !['accepte', 'annule', 'refuse', 'remplace'].includes(statut)) {
+            if (devisDoc.id !== devisId && !['en_attente_paiement', 'accepte', 'annule', 'refuse', 'remplace'].includes(statut)) {
               batch.update(devisDoc.ref, {
                 statut: 'annule',
                 typeRefus: 'automatique',
@@ -326,7 +347,7 @@ export default function ClientDevisDetailPage() {
         }
       }
 
-      // 5. Notifier l'artisan
+      // 5. Notifier l'artisan (une seule fois, à la première signature)
       try {
         const clientNom = `${devis.client.prenom} ${devis.client.nom}`;
         await notifyArtisanDevisAccepte(devis.artisanId, devisId, clientNom, devis.numeroDevis);
