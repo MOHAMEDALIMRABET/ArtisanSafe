@@ -1885,6 +1885,14 @@
     "contract": {
       "title": "✅ Quote accepted and paid - Contract in progress",
       "description": "You have signed and paid the tradesperson's quote.",
+      "titleEnCours": "🚧 Work in progress",
+      "descriptionEnCours": "The tradesperson is currently carrying out your work.",
+      "titleTravauxTermines": "✅ Work declared complete",
+      "descriptionTravauxTermines": "The tradesperson has declared the work finished. Please verify and validate to release the payment.",
+      "titleTermine": "✅ Project completed and validated",
+      "descriptionTermine": "The work has been validated. The project is successfully closed.",
+      "titleLitige": "⚠️ Dispute in progress",
+      "descriptionLitige": "A dispute has been opened on this project. Our team will analyse the situation.",
       "viewQuote": "📋 View paid quote",
       "contactArtisan": "💬 Contact tradesperson"
     },

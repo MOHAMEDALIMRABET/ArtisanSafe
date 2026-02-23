@@ -1884,6 +1884,14 @@
     "contract": {
       "title": "✅ Devis accepté et payé - Contrat en cours",
       "description": "Vous avez signé et payé le devis de l'artisan.",
+      "titleEnCours": "🚧 Travaux en cours",
+      "descriptionEnCours": "L'artisan est actuellement en train de réaliser vos travaux.",
+      "titleTravauxTermines": "✅ Travaux déclarés terminés",
+      "descriptionTravauxTermines": "L'artisan a déclaré les travaux terminés. Vérifiez et validez pour libérer le paiement.",
+      "titleTermine": "✅ Projet terminé et validé",
+      "descriptionTermine": "Les travaux ont été validés. Le projet est clôturé avec succès.",
+      "titleLitige": "⚠️ Litige en cours",
+      "descriptionLitige": "Un litige a été ouvert sur ce projet. Notre équipe va analyser la situation.",
       "viewQuote": "📋 Voir devis payé",
       "contactArtisan": "💬 Contacter artisan"
     },
