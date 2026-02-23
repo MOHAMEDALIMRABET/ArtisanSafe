@@ -272,10 +272,12 @@ export default function ClientDevisDetailPage() {
 
       console.log('✅ Signature uploadée:', signatureURL);
 
-      // 2. Mettre à jour le devis → statut "accepte" + signature
+      // 2. Mettre à jour le devis → statut "accepte" + signature + limite paiement 24h
+      const dateLimitePaiement = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
       await updateDoc(doc(db, 'devis', devisId), {
         statut: 'accepte',
         dateAcceptation: Timestamp.now(),
+        dateLimitePaiement,
         dateDerniereNotification: Timestamp.now(),
         vuParArtisan: false,
         signatureClient: {
@@ -341,10 +343,9 @@ export default function ClientDevisDetailPage() {
         console.error('Erreur notification artisan:', error);
       }
 
-      alert(`✅ Devis signé et accepté !\n\nVotre signature a été enregistrée.\nL'artisan a été notifié et va vous contacter pour planifier les travaux.`);
-
-      // 6. Recharger
+      // 6. Recharger le devis (pour avoir dateLimitePaiement dans l'état) puis ouvrir le paiement
       await loadDevis();
+      setShowPaymentModal(true);
     } catch (error) {
       console.error('Erreur après signature:', error);
       alert(t('alerts.signature.saveError'));
@@ -355,31 +356,20 @@ export default function ClientDevisDetailPage() {
   };
 
   const handlePaymentSuccess = async (paymentData: PaymentData) => {
-    if (!devis || !signatureDataURL) return;
+    if (!devis) return;
 
     try {
       setProcessing(true);
       setShowPaymentModal(false);
 
-      // 1. MAINTENANT uploader la signature (paiement validé)
-      const signatureRef = ref(storage, `signatures/${devisId}_${Date.now()}.png`);
-      await uploadString(signatureRef, signatureDataURL, 'data_url');
-      const signatureURL = await getDownloadURL(signatureRef);
-
-      console.log('✅ Signature uploadée après paiement:', signatureURL);
-
-      // 2. Mettre à jour le devis : statut payé + signature + données paiement
+      // 1. Mettre à jour le devis : statut payé + données paiement
+      // (la signature est déjà uploadée et enregistrée lors de l'acceptation)
       await updateDoc(doc(db, 'devis', devisId), {
         statut: 'paye',
         datePaiement: paymentData.date,
         paiement: paymentData,
         dateDerniereNotification: Timestamp.now(),
         vuParArtisan: false,
-        signatureClient: {
-          url: signatureURL,
-          date: Timestamp.now(),
-          ip: '',
-        },
       });
 
       console.log('✅ Paiement enregistré + Signature persistée:', paymentData.referenceTransaction);
@@ -1524,10 +1514,8 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
           dateLimitePaiement={devis.dateLimitePaiement}
           onSuccess={handlePaymentSuccess}
           onCancel={() => {
-            if (confirm('⚠️ Attention : Vous avez 24h pour payer ce devis.\n\nSi vous annulez maintenant, vous pourrez revenir payer plus tard, mais le devis sera automatiquement annulé après 24h.\n\nVoulez-vous vraiment reporter le paiement ?')) {
-              setShowPaymentModal(false);
-              router.push('/client/devis');
-            }
+            // Le client peut payer plus tard — devis reste à l'état 'accepte' 24h
+            setShowPaymentModal(false);
           }}
         />
       )}
