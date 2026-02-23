@@ -179,28 +179,24 @@ export default function AvisArtisanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
-        {/* Breadcrumb */}
-        <div className="mb-6">
+    <div className="min-h-screen bg-[#F5F7FA]">
+      {/* Header */}
+      <div className="bg-[#2C3E50] text-white py-8">
+        <div className="container mx-auto px-4 max-w-6xl">
           <Link
             href="/artisan/dashboard"
-            className="inline-flex items-center gap-2 text-[#FF6B00] hover:underline"
+            className="inline-flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4 transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             {t('artisanReviews.backToDashboard')}
           </Link>
+          <h1 className="text-3xl font-bold">⭐ {t('artisanReviews.pageTitle')}</h1>
+          <p className="text-gray-300 mt-2">{t('artisanReviews.pageDescription')}</p>
         </div>
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">{t('artisanReviews.pageTitle')}</h1>
-          <p className="text-gray-600">
-            {t('artisanReviews.pageDescription')}
-          </p>
-        </div>
+      </div>
+      <div className="container mx-auto px-4 max-w-6xl py-8">
 
         {/* Statistiques avec répartition */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
