@@ -686,14 +686,16 @@ L'artisan a été notifié et va vous contacter pour planifier les travaux.`);
   const getStatutBadge = (statut: string) => {
     const styles: { [key: string]: string } = {
       envoye: 'bg-purple-100 text-purple-700',
-      accepte: 'bg-green-100 text-green-800',
+      accepte: 'bg-yellow-100 text-yellow-800',
+      en_attente_paiement: 'bg-yellow-100 text-yellow-800',
       refuse: 'bg-red-100 text-red-800',
       expire: 'bg-orange-100 text-orange-800',
     };
 
     const labels: { [key: string]: string } = {
       envoye: '⏳ En attente de votre réponse',
-      accepte: '✅ Accepté',
+      accepte: '💳 Attente paiement',
+      en_attente_paiement: '💳 Attente paiement',
       refuse: '❌ Refusé',
       expire: '⏰ Expiré',
     };
