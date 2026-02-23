@@ -1788,7 +1788,7 @@
 
   "clientDemandes": {
     "pageTitle": "My Requests",
-    "backButton": "← Back to dashboard",
+    "backButton": "Back to dashboard",
     "searchArtisan": "Search for a tradesperson",
     
     "sections": {

@@ -1787,7 +1787,7 @@
 
   "clientDemandes": {
     "pageTitle": "Mes Demandes",
-    "backButton": "← Retour au tableau de bord",
+    "backButton": "Retour au tableau de bord",
     "searchArtisan": "Rechercher un artisan",
     
     "sections": {
