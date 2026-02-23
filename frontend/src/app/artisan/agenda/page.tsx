@@ -558,25 +558,23 @@ export default function AgendaPage() {
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
       {/* Header */}
-      <nav className="bg-white shadow-md sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
+      <div className="bg-[#2C3E50] text-white py-8">
+        <div className="container mx-auto px-4">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            {t('artisanAgenda.backButton')}
+          </button>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.back()}
-                className="text-gray-600 hover:text-[#FF6B00] flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                {t('artisanAgenda.backButton')}
-              </button>
+            <div>
+              <h1 className="text-3xl font-bold">📅 {t('artisanAgenda.pageTitle')}</h1>
+              <p className="text-gray-300 mt-2">{t('artisanAgenda.pageDescription')}</p>
             </div>
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-[#2C3E50]">
-                📅 {t('artisanAgenda.pageTitle')}
-              </h1>
-              <div className="relative">
+            <div className="relative">
                 <button
                   onClick={() => setShowRangeModal(true)}
                   className="px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] font-medium flex items-center gap-2 text-sm"
@@ -764,7 +762,7 @@ export default function AgendaPage() {
             </div>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Contenu principal */}
       <div className="container mx-auto px-4 py-8">

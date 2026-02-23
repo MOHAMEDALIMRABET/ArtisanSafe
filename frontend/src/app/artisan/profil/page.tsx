@@ -236,24 +236,23 @@ export default function ProfilArtisanPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
-        {/* En-tête */}
-        <div className="mb-8">
-          <button 
+      {/* Header */}
+      <div className="bg-[#2C3E50] text-white py-8">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <button
             onClick={() => router.back()}
-            className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-4"
+            className="flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4 transition-colors"
           >
-            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             {t('profile.backToDashboard')}
           </button>
-          
-          <h1 className="text-3xl font-bold text-[#2C3E50] mb-2">{t('profile.pageTitle')}</h1>
-          <p className="text-gray-600">
-            {t('profile.pageDescription')}
-          </p>
+          <h1 className="text-3xl font-bold">👤 {t('profile.pageTitle')}</h1>
+          <p className="text-gray-300 mt-2">{t('profile.pageDescription')}</p>
         </div>
+      </div>
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
 
         {/* Messages */}
         {error && (

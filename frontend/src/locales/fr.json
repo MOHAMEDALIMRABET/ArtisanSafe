@@ -726,6 +726,9 @@
   },
   "profile": {
     "title": "Profil",
+    "pageTitle": "Mon Profil",
+    "pageDescription": "Gérez votre profil professionnel",
+    "backToDashboard": "Retour au tableau de bord",
     "myProfile": "Mon profil",
     "editProfile": "Modifier le profil",
     "personalInfo": "Informations personnelles",
@@ -1988,6 +1991,7 @@
 
   "artisanAgenda": {
     "pageTitle": "Mon Agenda",
+    "pageDescription": "Gérez vos disponibilités et bloquez vos dates",
     "backButton": "Retour au tableau de bord",
     "quickSelection": "Sélection rapide par dates",
     

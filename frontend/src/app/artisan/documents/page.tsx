@@ -414,25 +414,24 @@ export default function DocumentsUploadPage() {
   const needsDecennale = artisan.metiers && artisan.metiers.length > 0 && artisanDoitDecennale(artisan.metiers);
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-[#F5F7FA]">
+      {/* Header */}
+      <div className="bg-[#2C3E50] text-white py-8">
+        <div className="container mx-auto px-4 max-w-4xl">
           <button
             onClick={() => router.back()}
-            className="text-gray-600 hover:text-[#FF6B00] flex items-center gap-2 mb-4"
+            className="flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             {t('documents.backToDashboard')}
           </button>
-
-          <h1 className="text-3xl font-bold text-gray-900">{t('documents.pageTitle')}</h1>
-          <p className="text-gray-600 mt-2">
-            {t('documents.pageDescription')}
-          </p>
+          <h1 className="text-3xl font-bold">📄 {t('documents.pageTitle')}</h1>
+          <p className="text-gray-300 mt-2">{t('documents.pageDescription')}</p>
         </div>
+      </div>
+      <div className="container mx-auto px-4 max-w-4xl py-8">
 
         {/* Prérequis */}
         {(!artisan.siretVerified) && (

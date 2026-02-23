@@ -727,6 +727,9 @@
   },
   "profile": {
     "title": "Profile",
+    "pageTitle": "My Profile",
+    "pageDescription": "Manage your professional profile",
+    "backToDashboard": "Back to dashboard",
     "myProfile": "My Profile",
     "editProfile": "Edit Profile",
     "personalInfo": "Personal Information",
@@ -1989,6 +1992,7 @@
 
   "artisanAgenda": {
     "pageTitle": "My Schedule",
+    "pageDescription": "Manage your availability and block dates",
     "backButton": "Back to dashboard",
     "quickSelection": "Quick date selection",
     
