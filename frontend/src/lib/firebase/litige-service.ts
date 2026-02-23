@@ -572,12 +572,20 @@ export async function resolveLitige(
     if (!litige) return;
 
     // resolu_accord / resolu_admin → travaux validés définitivement
-    // abandonne → litige retiré, on revient à travaux_termines
-    //             pour que le client puisse valider normalement (ou 7j auto-validation)
-    const nouveauStatutDevis = statut === 'abandonne' ? 'travaux_termines' : 'termine_valide';
+    // abandonne → litige retiré, on restaure le statut d'avant le litige
+    //             (paye | en_cours | travaux_termines selon quand le litige a été ouvert)
+    let nouveauStatutDevis: import('@/types/devis').DevisStatut = 'termine_valide';
+    if (statut === 'abandonne') {
+      // Récupérer le devis pour connaître le statut d'origine
+      const devisSnap = await getDoc(doc(db, 'devis', litige.devisId));
+      const devisData = devisSnap.data();
+      // Restaurer statutAvantLitige si présent, sinon fallback travaux_termines (anciens docs)
+      nouveauStatutDevis = (devisData?.statutAvantLitige as import('@/types/devis').DevisStatut) || 'travaux_termines';
+    }
 
     await updateDoc(doc(db, 'devis', litige.devisId), {
       statut: nouveauStatutDevis,
+      statutAvantLitige: null, // Réinitialiser maintenant que le litige est clos
       dateModification: serverTimestamp(),
       updatedAt: serverTimestamp(),
       ...(statut !== 'abandonne' && { dateValidation: serverTimestamp() }),

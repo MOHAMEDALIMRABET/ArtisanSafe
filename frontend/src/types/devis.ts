@@ -159,6 +159,10 @@ export interface Devis {
   // Délai limite de paiement (24h après signature)
   dateLimitePaiement?: Timestamp;  // Calculé automatiquement (dateSignature + 24h)
   
+  // Statut sauvegardé avant un litige (pour restauration si litige abandonné)
+  // Peut valoir : 'paye' | 'en_cours' | 'travaux_termines'
+  statutAvantLitige?: DevisStatut;
+
   // Devis alternatifs (pour proposer plusieurs options au client)
   varianteGroupe?: string;       // ID du groupe de variantes (même pour tous les devis alternatifs)
   varianteLettreReference?: string; // Ex: "A", "B", "C" - Lettre attribuée automatiquement

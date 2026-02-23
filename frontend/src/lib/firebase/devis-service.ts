@@ -1031,6 +1031,7 @@ export async function signalerLitige(
   // Mettre à jour
   await updateDoc(devisRef, {
     statut: 'litige',
+    statutAvantLitige: devis.statut,  // Mémoriser pour restauration si litige abandonné
     'travaux.litige': {
       declarePar: 'client',
       motif,
