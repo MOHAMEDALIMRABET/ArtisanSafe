@@ -1423,8 +1423,7 @@ export async function annulerDevisParClient(
     }
 
     // Notifier l'artisan avec message détaillé
-    await createNotification({
-      recipientId: devis.artisanId,
+    await createNotification(devis.artisanId, {
       type: 'devis_annule',
       title: '❌ Devis annulé par le client',
       message: `Le client s'est désisté avant paiement pour le devis ${devis.numeroDevis} (${devis.totaux?.totalTTC || 0}€ TTC). La demande est close définitivement.`,
@@ -1470,8 +1469,7 @@ export async function supprimerDevisAnulesExpires(artisanId: string): Promise<nu
         console.log(`🗑️ Suppression devis annulé expiré: ${devis.numeroDevis} (${Math.floor(deltaTemps / (60 * 60 * 1000))}h)`);
 
         // Notifier l'artisan de la suppression
-        await createNotification({
-          recipientId: artisanId,
+        await createNotification(artisanId, {
           type: 'devis_supprime',
           title: '🗑️ Devis annulé supprimé',
           message: `Le devis ${devis.numeroDevis} (annulé il y a plus de 24h) a été automatiquement supprimé pour optimiser votre espace.`,
