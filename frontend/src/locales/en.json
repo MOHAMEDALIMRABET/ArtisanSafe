@@ -1818,6 +1818,7 @@
       "signedQuotes": "✅ Signed quotes",
       "worksInProgress": "🚧 Work in progress",
       "completed": "✅ Completed",
+      "disputes": "⚠️ Disputes",
       "rejected": "❌ Rejected",
       "expired": "⏰ Expired"
     },

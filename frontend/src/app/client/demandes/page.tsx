@@ -30,7 +30,7 @@ export default function MesDemandesPage() {
   const [filtreDateTravaux, setFiltreDateTravaux] = useState<string>('');
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
   const [filtreSection, setFiltreSection] = useState<'toutes' | 'envoyes' | 'publiees' | 'en_traitement' | 'traitees'>('toutes');
-  const [sousFiltreTraitees, setSousFiltreTraitees] = useState<'tout' | 'devis_signes' | 'travaux_en_cours' | 'termines' | 'refusees' | 'expirees'>('tout');
+  const [sousFiltreTraitees, setSousFiltreTraitees] = useState<'tout' | 'devis_signes' | 'travaux_en_cours' | 'termines' | 'litiges' | 'refusees' | 'expirees'>('tout');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedDemandeIds, setExpandedDemandeIds] = useState<Set<string>>(new Set());
   const [photoMetadata, setPhotoMetadata] = useState<Map<string, string>>(new Map());
@@ -496,8 +496,8 @@ export default function MesDemandesPage() {
     if (filtreSection === 'traitees' && sousFiltreTraitees !== 'tout') {
       return demandesTraitees.filter(d => {
         const devisForDemande = devisMap.get(d.id) || [];
-        const devisPaye = devisForDemande.find(dv => 
-          ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(dv.statut)
+        const devisPaye = devisForDemande.find(dv =>
+          ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(dv.statut)
         );
 
         // ⚠️ RÈGLE CRITIQUE : Un devis payé a TOUJOURS la priorité sur le statut de la demande
@@ -508,6 +508,8 @@ export default function MesDemandesPage() {
             return devisPaye?.statut === 'en_cours';
           case 'termines':
             return devisPaye && ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(devisPaye.statut);
+          case 'litiges':
+            return devisPaye?.statut === 'litige';
           case 'refusees':
             // CORRECTION : Seulement les demandes annulées SANS devis payé
             return d.statut === 'annulee' && !devisPaye;
@@ -1370,6 +1372,11 @@ export default function MesDemandesPage() {
                       return devisForDemande.some(dv => ['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(dv.statut));
                     }).length;
 
+                    const countLitiges = toutesTraitees.filter(d => {
+                      const devisForDemande = devisMap.get(d.id) || [];
+                      return devisForDemande.some(dv => dv.statut === 'litige');
+                    }).length;
+
                     // CORRECTION : Seulement les demandes annulées SANS devis payé
                     const countRefusees = toutesTraitees.filter(d => {
                       if (d.statut !== 'annulee') return false;
@@ -1443,6 +1450,20 @@ export default function MesDemandesPage() {
                             }`}
                           >
                             {t('clientDemandes.subFilters.completed')} ({countTermines})
+                          </button>
+                        )}
+
+                        {/* Pill "⚠️ Litiges" */}
+                        {countLitiges > 0 && (
+                          <button
+                            onClick={() => setSousFiltreTraitees('litiges')}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                              sousFiltreTraitees === 'litiges'
+                                ? 'bg-gradient-to-r from-orange-400 to-orange-600 text-white shadow-lg transform scale-105'
+                                : 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-300'
+                            }`}
+                          >
+                            {t('clientDemandes.subFilters.disputes')} ({countLitiges})
                           </button>
                         )}
 

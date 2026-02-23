@@ -1817,6 +1817,7 @@
       "signedQuotes": "✅ Devis signés",
       "worksInProgress": "🚧 Travaux en cours",
       "completed": "✅ Terminés",
+      "disputes": "⚠️ Litiges",
       "rejected": "❌ Refusées",
       "expired": "⏰ Expirées"
     },
