@@ -1023,6 +1023,8 @@
   },
   "messaging": {
     "pageTitle": "Messages",
+    "pageSubtitle": "Échangez avec vos artisans ou clients",
+    "backToDashboard": "Retour au tableau de bord",
     "loading": "Chargement...",
     "noConversation": "Sélectionnez une conversation",
     "noConversationDesc": "Choisissez un contact dans la liste pour commencer à discuter",

@@ -1024,6 +1024,8 @@
   },
   "messaging": {
     "pageTitle": "Messages",
+    "pageSubtitle": "Exchange messages with your artisans or clients",
+    "backToDashboard": "Back to dashboard",
     "loading": "Loading...",
     "noConversation": "Select a conversation",
     "noConversationDesc": "Choose a contact from the list to start chatting",

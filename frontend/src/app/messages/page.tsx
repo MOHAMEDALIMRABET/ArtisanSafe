@@ -527,11 +527,26 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] pt-20">
+    <div className="min-h-screen bg-[#F5F7FA]">
+      {/* Header */}
+      <div className="bg-[#2C3E50] text-white py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-2 text-white hover:text-[#FF6B00] mb-4 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            {t('messaging.backToDashboard')}
+          </button>
+          <h1 className="text-3xl font-bold">💬 {t('messaging.pageTitle')}</h1>
+          <p className="text-gray-300 mt-2">{t('messaging.pageSubtitle')}</p>
+        </div>
+      </div>
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-[#2C3E50] mb-6">💬 {t('messaging.pageTitle')}</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-320px)]">
           {/* Liste des conversations */}
           <div className="lg:col-span-1 bg-white rounded-lg shadow-md overflow-hidden">
             <div className="bg-[#2C3E50] text-white p-4">
