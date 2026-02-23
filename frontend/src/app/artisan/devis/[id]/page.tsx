@@ -648,140 +648,87 @@ export default function VoirDevisPage() {
             </div>
           )}
 
-          {/* Signature électronique - visible à l'impression (tous statuts post-paiement) */}
-          {(['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'] as const).includes(devis.statut as any) && devis.signatureClient?.url && (
-            <div className="mt-8 pt-6 border-t-2 border-green-500 signature-section no-break">
+          {/* ═══════════════════════════════════════════════
+              SECTION SIGNATURES — visible dès l'envoi
+              Artisan signe avant d'envoyer, client signe au paiement.
+          ═══════════════════════════════════════════════ */}
+          {!['genere', 'brouillon', 'refuse', 'expire', 'annule', 'remplace'].includes(devis.statut) && (
+            <div className={`mt-8 pt-6 border-t-2 signature-section no-break ${
+              ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(devis.statut)
+                ? 'border-green-500' : 'border-gray-300'
+            }`}>
               <div className="text-center mb-4">
-                <p className="text-sm font-semibold text-green-800">✅ Devis signé et payé</p>
-                <p className="text-xs text-green-700">
-                  Paiement effectué le {devis.paiement?.date?.toDate().toLocaleDateString('fr-FR')}
-                  {devis.paiement?.stripe?.paymentIntentId && (
-                    <> - Réf : {devis.paiement.stripe.paymentIntentId.substring(0, 20)}...</>
-                  )}
-                </p>
+                {['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(devis.statut) && devis.signatureClient?.url ? (
+                  <>
+                    <p className="text-sm font-semibold text-green-800">✅ Devis signé et payé</p>
+                    {devis.paiement?.date && (
+                      <p className="text-xs text-green-700">
+                        Paiement effectué le {devis.paiement.date.toDate().toLocaleDateString('fr-FR')}
+                        {devis.paiement?.stripe?.paymentIntentId && (
+                          <> - Réf : {devis.paiement.stripe.paymentIntentId.substring(0, 20)}...</>
+                        )}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xs text-gray-500 italic">
+                    🖊️ Zone de signatures — le client signera lors du paiement
+                  </p>
+                )}
               </div>
-              <div className="flex justify-between items-end">
-                <div className="text-left">
+
+              <div className="flex justify-between items-end gap-4">
+                {/* ── GAUCHE : Signature CLIENT ── */}
+                <div className="flex-1 text-left">
                   <p className="text-xs font-semibold text-gray-700 mb-2">Signature du client :</p>
-                  <div className="border-2 border-gray-300 rounded p-2 inline-block bg-white">
-                    <img 
-                      src={devis.signatureClient.url} 
-                      alt="Signature client" 
-                      className="h-16 w-auto"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-600 mt-2">
-                    {devis.client.prenom} {devis.client.nom}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Signée le {devis.signatureClient.date?.toDate().toLocaleDateString('fr-FR')} à{' '}
-                    {devis.signatureClient.date?.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                  {devis.signatureClient?.url ? (
+                    <>
+                      <div className="border-2 border-green-400 rounded p-2 inline-block bg-white">
+                        <img
+                          src={devis.signatureClient.url}
+                          alt="Signature client"
+                          className="h-16 w-auto"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1 font-medium">
+                        {devis.client.prenom} {devis.client.nom}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Signée le {devis.signatureClient.date?.toDate().toLocaleDateString('fr-FR')} à{' '}
+                        {devis.signatureClient.date?.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50">
+                      <p className="text-xs text-gray-400 text-center">En attente<br/>de la signature client</p>
+                    </div>
+                  )}
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-semibold text-gray-700 mb-2">Signature artisan :</p>
+
+                {/* ── DROITE : Signature ARTISAN ── */}
+                <div className="flex-1 text-right">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Votre signature (artisan) :</p>
                   {devis.signatureArtisan?.url ? (
-                    <div>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-2 inline-block">
+                    <>
+                      <div className="border-2 border-[#FF6B00] rounded-lg bg-white p-2 inline-block">
                         <img
                           src={devis.signatureArtisan.url}
                           alt="Signature artisan"
                           className="h-16 w-auto"
                         />
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-600 mt-1 font-medium">
+                        {devis.artisan.raisonSociale}
+                      </p>
+                      <p className="text-xs text-gray-500">
                         Signée le {devis.signatureArtisan.date?.toDate().toLocaleDateString('fr-FR')}
                       </p>
-                    </div>
+                    </>
                   ) : (
-                    <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50">
+                    <div className="border-2 border-dashed border-gray-300 rounded p-4 w-48 h-24 flex items-center justify-center bg-gray-50 ml-auto">
                       <p className="text-xs text-gray-400 text-center">Espace réservé<br/>au cachet</p>
                     </div>
                   )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Informations supplémentaires pour statuts accepté/en cours (non payé) */}
-          {(devis.statut === 'en_cours' || devis.statut === 'travaux_termines' || devis.statut === 'termine_valide' || devis.statut === 'termine_auto_valide') && devis.signatureClient && (
-            <div className="border-t-2 border-green-500 mt-8 pt-6 bg-green-50 rounded-lg p-6">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-green-800 mb-2">✅ Devis accepté et signé électroniquement</h3>
-                  <p className="text-sm text-green-700 mb-4">
-                    Le client <strong>{devis.client.prenom} {devis.client.nom}</strong> a accepté ce devis le{' '}
-                    <strong>{devis.dateAcceptation?.toDate().toLocaleDateString('fr-FR', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}</strong>
-                  </p>
-                  
-                  <div className="bg-white border-2 border-green-300 rounded-lg p-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-3">Signature du client :</p>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 inline-block">
-                      <img
-                        src={devis.signatureClient.url}
-                        alt="Signature du client"
-                        className="max-w-md h-auto"
-                        style={{ maxHeight: '150px' }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-3">
-                      📅 Signé le {devis.signatureClient.date?.toDate().toLocaleDateString('fr-FR')} à{' '}
-                      {devis.signatureClient.date?.toDate().toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      🔒 Signature électronique conforme au règlement eIDAS (UE n°910/2014)
-                    </p>
-                  </div>
-
-                  {/* Signature artisan */}
-                  {devis.signatureArtisan?.url && (
-                    <div className="mt-3 bg-white border-2 border-orange-200 rounded-lg p-4">
-                      <p className="text-sm font-semibold text-gray-700 mb-3">Votre signature (artisan) :</p>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 inline-block">
-                        <img
-                          src={devis.signatureArtisan.url}
-                          alt="Signature artisan"
-                          className="h-16 w-auto"
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        📅 Signée le {devis.signatureArtisan.date?.toDate().toLocaleDateString('fr-FR')}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mt-4 bg-orange-50 border-l-4 border-[#FF6B00] p-4 rounded">
-                    <div className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-[#FF6B00] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                      <div className="text-sm text-[#2C3E50]">
-                        <p className="font-semibold mb-1">Prochaines étapes :</p>
-                        <ul className="list-disc list-inside space-y-1 text-[#2C3E50]">
-                          <li>Contactez le client pour planifier les travaux</li>
-                          <li>Le paiement sera effectué via la plateforme (séquestre sécurisé)</li>
-                          <li>Conservez ce devis signé pour vos dossiers</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

@@ -1197,37 +1197,28 @@ export default function MesDevisPage() {
                           </div>
                         ) : d.statut === 'travaux_termines' ? (
                           // ⏳ EN ATTENTE VALIDATION CLIENT + Lien Voir
-                          <div className="flex flex-row flex-wrap gap-2 items-center">
-                            <span className="text-xs text-purple-600 font-semibold">⏳ {t('quotes.waitingValidation')}</span>
-                            <button
-                              onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
-                              className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
-                            >
-                              {t('quotes.viewDetails')}
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
+                            className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
+                          >
+                            {t('quotes.viewDetails')}
+                          </button>
                         ) : ['termine_valide', 'termine_auto_valide'].includes(d.statut) ? (
                           // ✅ TRAVAUX VALIDÉS - PAIEMENT LIBÉRÉ + Lien Voir
-                          <div className="flex flex-row flex-wrap gap-2 items-center">
-                            <span className="text-xs text-green-600 font-semibold">✅ {t('quotes.validated')}</span>
-                            <button
-                              onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
-                              className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
-                            >
-                              {t('quotes.viewDetails')}
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
+                            className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
+                          >
+                            {t('quotes.viewDetails')}
+                          </button>
                         ) : d.statut === 'litige' ? (
                           // ⚠️ LITIGE EN COURS
-                          <div className="flex flex-row flex-wrap gap-2 items-center">
-                            <span className="text-xs text-red-600 font-semibold">⚠️ {t('quotes.dispute')}</span>
-                            <button
-                              onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
-                              className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
-                            >
-                              {t('quotes.viewDetails')}
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
+                            className="px-3 py-1 border border-[#FF6B00] text-[#FF6B00] rounded hover:bg-[#FF6B00] hover:text-white text-xs font-medium transition"
+                          >
+                            {t('quotes.viewDetails')}
+                          </button>
                         ) : (
                           <button
                             onClick={() => handleVoirDevis(d.id, aReponseClienteRecente(d))}
