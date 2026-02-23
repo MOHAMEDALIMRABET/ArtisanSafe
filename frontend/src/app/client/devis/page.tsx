@@ -15,6 +15,7 @@ import type { Devis } from '@/types/devis';
 import type { Demande } from '@/types/firestore';
 import Link from 'next/link';
 import { annulerDevisParClient } from '@/lib/firebase/devis-service';
+import { getAvisByContratId } from '@/lib/firebase/avis-service';
 
 // Helper: Devis considérés comme "acceptés" (en attente de paiement)
 const isDevisAccepte = (statut: string) => 
@@ -33,6 +34,7 @@ export default function ClientDevisPage() {
   const [demandes, setDemandes] = useState<Map<string, Demande>>(new Map());
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'tous' | 'en_attente' | 'acceptes' | 'payes' | 'refuses'>('en_attente');
+  const [avisParDevisId, setAvisParDevisId] = useState<Record<string, boolean>>({});
 
   // Restaurer le filtre depuis l'URL au retour
   useEffect(() => {
@@ -101,6 +103,19 @@ export default function ClientDevisPage() {
         }
       }
       setDemandes(demandesMap);
+
+      // Charger l'existence d'un avis pour les devis terminés
+      const devisTermines = devisData.filter(d =>
+        ['termine_valide', 'termine_auto_valide'].includes(d.statut)
+      );
+      const avisMap: Record<string, boolean> = {};
+      await Promise.all(
+        devisTermines.map(async (d) => {
+          const avis = await getAvisByContratId(d.id);
+          avisMap[d.id] = !!avis;
+        })
+      );
+      setAvisParDevisId(avisMap);
     } catch (error) {
       console.error('Erreur chargement devis:', error);
     } finally {
@@ -512,15 +527,21 @@ export default function ClientDevisPage() {
                     {/* Travaux validés : bouton avis + Voir le détail */}
                     {['termine_valide', 'termine_auto_valide'].includes(d.statut) && (
                       <>
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/client/avis/nouveau/${d.id}`);
-                          }}
-                          className="flex-1 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition text-center font-medium cursor-pointer"
-                        >
-                          ⭐ Donner mon avis
-                        </div>
+                        {avisParDevisId[d.id] ? (
+                          <div className="flex-1 bg-green-100 text-green-700 px-4 py-2 rounded-lg text-center font-medium border border-green-300 cursor-default">
+                            ✅ Avis donné
+                          </div>
+                        ) : (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/client/avis/nouveau/${d.id}`);
+                            }}
+                            className="flex-1 bg-[#FF6B00] text-white px-4 py-2 rounded-lg hover:bg-[#E56100] transition text-center font-medium cursor-pointer"
+                          >
+                            ⭐ Donner mon avis
+                          </div>
+                        )}
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
