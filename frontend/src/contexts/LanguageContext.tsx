@@ -2,6 +2,15 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil, formatTime as formatTimeUtil } from '@/lib/i18n-utils';
+// Imports statiques — webpack HMR détecte correctement les changements
+// (les imports dynamiques avec template literal sont mis en cache et ne se rechargent pas)
+import frTranslations from '@/locales/fr.json';
+import enTranslations from '@/locales/en.json';
+
+const TRANSLATION_FILES: Record<'fr' | 'en', Record<string, unknown>> = {
+  fr: frTranslations as Record<string, unknown>,
+  en: enTranslations as Record<string, unknown>,
+};
 
 type Language = 'fr' | 'en';
 
@@ -22,53 +31,37 @@ interface LanguageProviderProps {
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>('fr');
-  const [translations, setTranslations] = useState<Record<string, string>>({});
+  // Initialisation directe avec fr (évite le flash de clés brutes au premier render)
+  const [translations, setTranslations] = useState<Record<string, unknown>>(TRANSLATION_FILES['fr']);
 
-  // Charger la langue sauvegardée au montage
+  // Lire la langue sauvegardée et charger les traductions correspondantes
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') as Language;
     if (savedLanguage && (savedLanguage === 'fr' || savedLanguage === 'en')) {
       setLanguageState(savedLanguage);
+      setTranslations(TRANSLATION_FILES[savedLanguage]);
+      document.documentElement.lang = savedLanguage;
     }
   }, []);
 
-  // Charger les traductions quand la langue change
-  useEffect(() => {
-    loadTranslations(language);
-  }, [language]);
-
-  const loadTranslations = async (lang: Language) => {
-    try {
-      const module = await import(`@/locales/${lang}.json`);
-      setTranslations(module.default);
-    } catch (error) {
-      console.error(`Erreur chargement traductions ${lang}:`, error);
-      // Fallback vers français si erreur
-      if (lang !== 'fr') {
-        const fallback = await import('@/locales/fr.json');
-        setTranslations(fallback.default);
-      }
-    }
-  };
-
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
+    setTranslations(TRANSLATION_FILES[lang]);
     localStorage.setItem('language', lang);
-    // Changer la langue du HTML
     document.documentElement.lang = lang;
   };
 
-  // Fonction de traduction avec fallback
+  // Fonction de traduction avec fallback sur la clé brute
   const t = (key: string): string => {
     const keys = key.split('.');
-    let value: any = translations;
+    let value: unknown = translations;
     
     for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = value[k];
+      if (value && typeof value === 'object' && k in (value as Record<string, unknown>)) {
+        value = (value as Record<string, unknown>)[k];
       } else {
         console.warn(`Traduction manquante pour: ${key}`);
-        return key; // Retourner la clé si traduction non trouvée
+        return key;
       }
     }
     
