@@ -1894,7 +1894,8 @@
       "titleLitige": "⚠️ Dispute in progress",
       "descriptionLitige": "A dispute has been opened on this project. Our team will analyse the situation.",
       "viewQuote": "📋 View paid quote",
-      "contactArtisan": "💬 Contact tradesperson"
+      "contactArtisan": "💬 Contact tradesperson",
+      "newProject": "➕ New project"
     },
     
     "searchAnotherArtisan": "🔍 Search for another tradesperson",

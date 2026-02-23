@@ -1220,39 +1220,59 @@ export default function MesDemandesPage() {
                           </div>
                         </div>
                         <div className="flex gap-3 mt-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (devisPaye?.id) {
-                              router.push(`/client/devis/${devisPaye.id}`);
-                            } else {
-                              router.push(`/client/contrats?demandeId=${demande.id}`);
-                            }
-                          }}
-                          className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
-                        >
-                          {t('clientDemandes.contract.viewQuote')}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const artisanId = demande.artisansMatches?.[0];
-                            if (artisanId) {
-                              // Sauvegarder l'état avant de naviguer (pour restauration au retour)
-                              sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-                                demandeId: demande.id,
-                                scrollY: window.scrollY,
-                                timestamp: Date.now()
-                              }));
-                              
-                              router.push(`/messages?userId=${artisanId}`);
-                            }
-                          }}
-                          className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
-                        >
-                          {t('clientDemandes.contract.contactArtisan')}
-                        </button>
-                      </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (devisPaye?.id) {
+                                router.push(`/client/devis/${devisPaye.id}`);
+                              } else {
+                                router.push(`/client/contrats?demandeId=${demande.id}`);
+                              }
+                            }}
+                            className="flex-1 bg-[#FF6B00] text-white hover:bg-[#E56100] rounded-lg px-4 py-2.5 font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                          >
+                            {t('clientDemandes.contract.viewQuote')}
+                          </button>
+
+                          {/* Bouton Contacter artisan : masqué si travaux terminés/validés */}
+                          {['travaux_termines', 'termine_valide', 'termine_auto_valide'].includes(st || '') ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const params = new URLSearchParams({
+                                  categorie: demande.categorie,
+                                  ville: demande.localisation.ville,
+                                  codePostal: demande.localisation.codePostal,
+                                });
+                                router.push(`/recherche?${params.toString()}`);
+                              }}
+                              className="px-4 py-2.5 border-2 border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              {t('clientDemandes.contract.newProject')}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const artisanId = demande.artisansMatches?.[0];
+                                if (artisanId) {
+                                  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                                    demandeId: demande.id,
+                                    scrollY: window.scrollY,
+                                    timestamp: Date.now()
+                                  }));
+                                  router.push(`/messages?userId=${artisanId}`);
+                                }
+                              }}
+                              className="px-4 py-2.5 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
+                            >
+                              {t('clientDemandes.contract.contactArtisan')}
+                            </button>
+                          )}
+                        </div>
                     </div>
                   </div>
                   );
