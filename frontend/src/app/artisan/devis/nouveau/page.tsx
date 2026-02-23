@@ -1357,17 +1357,9 @@ export default function NouveauDevisPage() {
                       <p className="font-semibold text-indigo-800 mb-1">
                         🔄 Révision automatique du devis
                       </p>
-                      <p className="text-sm text-indigo-700 mb-3">
+                      <p className="text-sm text-indigo-700">
                         Ce devis est une révision suite au refus du client. Il sera automatiquement lié au devis original comme variante alternative.
                       </p>
-                      <div className="bg-white rounded-lg p-3 border border-indigo-200">
-                        <p className="text-sm font-medium text-indigo-900">
-                          🔄 Mode révision automatique activé
-                        </p>
-                        <p className="text-xs text-indigo-700 mt-1">
-                          Une nouvelle variante sera créée avec la prochaine lettre disponible
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
