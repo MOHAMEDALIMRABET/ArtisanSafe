@@ -567,20 +567,30 @@ export async function resolveLitige(
       details: { resolution },
     });
 
-    // Mettre à jour le statut du devis
+    // Mettre à jour le statut du devis selon le type de résolution
     const litige = await getLitigeById(litigeId);
     if (!litige) return;
 
+    // resolu_accord / resolu_admin → travaux validés définitivement
+    // abandonne → litige retiré, on revient à travaux_termines
+    //             pour que le client puisse valider normalement (ou 7j auto-validation)
+    const nouveauStatutDevis = statut === 'abandonne' ? 'travaux_termines' : 'termine_valide';
+
     await updateDoc(doc(db, 'devis', litige.devisId), {
-      statut: 'termine' as const,
+      statut: nouveauStatutDevis,
+      dateModification: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      ...(statut !== 'abandonne' && { dateValidation: serverTimestamp() }),
     });
 
     // Notifier les parties
+    const notifType = statut === 'abandonne' ? 'litige_abandonne' : 'litige_resolu';
+    const notifTitre = statut === 'abandonne' ? 'Litige abandonné' : 'Litige résolu';
+
     for (const recipientId of [litige.clientId, litige.artisanId]) {
       await createNotification(recipientId, {
-        type: 'litige_resolu',
-        titre: 'Litige résolu',
+        type: notifType,
+        titre: notifTitre,
         message: getResolutionMessage(statut),
         lien: `/litiges/${litigeId}`,
       });
@@ -723,7 +733,7 @@ function getResolutionMessage(statut: string): string {
     case 'resolu_admin':
       return 'Litige résolu par décision administrative';
     case 'abandonne':
-      return 'Litige abandonné';
+      return 'Litige abandonné — le dossier a été clôturé. Vous pouvez finaliser la prestation normalement.';
     default:
       return 'Litige résolu';
   }

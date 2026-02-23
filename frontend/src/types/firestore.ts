@@ -115,6 +115,7 @@ export type NotificationType =
   | 'litige_acceptation_partielle' // ✅ Une partie a accepté la proposition
   | 'litige_refus'               // ✅ Proposition refusée
   | 'litige_resolu'              // ✅ Litige résolu
+  | 'litige_abandonne'           // ✅ Litige abandonné (retour flux normal)
   | 'litige_escalade'            // ✅ Litige escaladé
   | 'admin_surveillance';        // ✅ Admin surveille conversation (prévention)
 
