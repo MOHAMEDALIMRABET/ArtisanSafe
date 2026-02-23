@@ -37,6 +37,7 @@ export default function MesDevisPage() {
   const [demandesInfo, setDemandesInfo] = useState<Record<string, DemandeInfo>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<DevisFilter>('tous');
+  const [sousFiltrePayes, setSousFiltrePayes] = useState<'tout' | 'paye' | 'en_cours' | 'travaux_termines' | 'valide' | 'litige'>('tout');
   const [showRemplace, setShowRemplace] = useState(false);
   const [actionEnCours, setActionEnCours] = useState<string | null>(null);
   const [showInfoGestion, setShowInfoGestion] = useState(false);
@@ -305,6 +306,10 @@ export default function MesDevisPage() {
 
   // Gérer le changement de filtre avec marquage automatique comme "vu"
   const handleFilterChange = async (newFilter: DevisFilter) => {
+    // Réinitialiser le sous-filtre quand on quitte la section "Payés"
+    if (newFilter !== 'paye') {
+      setSousFiltrePayes('tout');
+    }
     // D'abord changer le filtre (synchrone)
     setFilter(newFilter);
     
@@ -539,7 +544,16 @@ export default function MesDevisPage() {
       if (filter === 'genere') return d.statut === 'genere';
       if (filter === 'envoye') return d.statut === 'envoye';
       if (filter === 'en_attente_paiement') return d.statut === 'en_attente_paiement';
-      if (filter === 'paye') return ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut);
+      if (filter === 'paye') {
+        if (!['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut)) return false;
+        if (sousFiltrePayes === 'tout') return true;
+        if (sousFiltrePayes === 'paye') return d.statut === 'paye';
+        if (sousFiltrePayes === 'en_cours') return d.statut === 'en_cours';
+        if (sousFiltrePayes === 'travaux_termines') return d.statut === 'travaux_termines';
+        if (sousFiltrePayes === 'valide') return ['termine_valide', 'termine_auto_valide'].includes(d.statut);
+        if (sousFiltrePayes === 'litige') return d.statut === 'litige';
+        return true;
+      }
       if (filter === 'revision') return d.statut === 'en_revision';
       if (filter === 'refuse') return d.statut === 'refuse' || d.statut === 'annule';
       return true;
@@ -926,6 +940,33 @@ export default function MesDevisPage() {
               )}
             </button>
           </div>
+
+          {/* Sous-filtres pour la section "Payés" */}
+          {filter === 'paye' && (
+            <div className="flex flex-wrap gap-2 mb-6 bg-white rounded-xl shadow-sm p-3 border border-gray-100">
+              {([
+                { key: 'tout', label: '🔍 Tout', count: devisPayes.length },
+                { key: 'paye', label: '💰 Payé', count: devisActifs.filter(d => d.statut === 'paye').length },
+                { key: 'en_cours', label: '🚧 Travaux en cours', count: devisActifs.filter(d => d.statut === 'en_cours').length },
+                { key: 'travaux_termines', label: '⏳ Attente validation', count: devisActifs.filter(d => d.statut === 'travaux_termines').length },
+                { key: 'valide', label: '✔️ Validés', count: devisActifs.filter(d => ['termine_valide', 'termine_auto_valide'].includes(d.statut)).length },
+                { key: 'litige', label: '⚠️ Litige', count: devisActifs.filter(d => d.statut === 'litige').length },
+              ] as { key: string; label: string; count: number }[]).map(({ key, label, count }) => (
+                <button
+                  key={key}
+                  onClick={() => setSousFiltrePayes(key as typeof sousFiltrePayes)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    sousFiltrePayes === key
+                      ? 'bg-green-600 text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {label} <span className="opacity-75">({count})</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {devisRemplace.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
