@@ -3,7 +3,18 @@
  * Vérification cohérence BTP
  */
 
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
 import { calculateExpirationDate, isDemandeExpired, formatExpirationStatus } from '../dateExpirationUtils';
+
+// Figer le temps à la date de référence des tests pour les fonctions dépendant de Date.now()
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-02-19T12:00:00Z'));
+});
+
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 describe('calculateExpirationDate - Logique BTP', () => {
   // Référence : 19 février 2026

@@ -78,17 +78,22 @@ export function calculateExpirationDate(
     minExp.setDate(minExp.getDate() + 5);
     if (expiration < minExp) expiration = minExp;
   } else {
-    // Travaux URGENTS (< 7 jours) → création + 7 jours
-    expiration = new Date(now);
-    expiration.setDate(expiration.getDate() + 7);
+    // Travaux URGENTS (< 7 jours) → max(dateDebut - 2, création + 5)
+    // ⚠️ Le minimum de 5 jours prime sur la règle "ne pas dépasser dateDebut"
+    // (car cela rendrait la demande expirée dès la création)
+    const deuxJoursAvant = new Date(dateDebutTravaux);
+    deuxJoursAvant.setDate(deuxJoursAvant.getDate() - 2);
+    const cinqJoursMin = new Date(now);
+    cinqJoursMin.setDate(cinqJoursMin.getDate() + 5);
+    expiration = deuxJoursAvant > cinqJoursMin ? deuxJoursAvant : cinqJoursMin;
+    return expiration; // Pas de cap dateDebut pour les cas urgents
   }
 
-  // ⚠️ RÈGLE ABSOLUE : l'expiration ne dépasse JAMAIS la date de début souhaitée
-  // → Il est incohérent d'accepter des devis après que les travaux ont commencé
+  // ⚠️ RÈGLE : l'expiration ne dépasse pas la date de début (cas normaux uniquement)
   if (expiration > dateDebutTravaux) {
     expiration = new Date(dateDebutTravaux);
   }
-  
+
   return expiration;
 }
 

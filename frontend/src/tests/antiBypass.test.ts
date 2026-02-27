@@ -1,66 +1,103 @@
 /**
- * Tests du système anti-bypass
+ * Tests du système anti-bypass (Vitest)
  * Vérifie la détection de tous les patterns de contournement
  */
 
+import { describe, it, expect } from 'vitest';
 import { validateMessage, BLOCKED_EXAMPLES, VALID_EXAMPLES } from '../lib/antiBypassValidator';
 
-console.log('🧪 Tests du système anti-bypass\n');
-console.log('=' + '='.repeat(60) + '\n');
-
-// Test 1: Messages bloqués
-console.log('❌ MESSAGES DEVANT ÊTRE BLOQUÉS:\n');
-BLOCKED_EXAMPLES.forEach((msg, index) => {
-  const result = validateMessage(msg);
-  const status = result.isValid ? '❌ ÉCHEC' : '✅ OK';
-  console.log(`${index + 1}. ${status} - "${msg}"`);
-  if (!result.isValid) {
-    console.log(`   → Catégories détectées: ${result.blockedPatterns.join(', ')}`);
-  }
-  console.log('');
+// ============================================================
+// 1. MESSAGES DE LA LISTE BLOCKED_EXAMPLES — tous doivent être bloqués
+// ============================================================
+describe('antiBypassValidator — messages bloqués (BLOCKED_EXAMPLES)', () => {
+  BLOCKED_EXAMPLES.forEach((msg) => {
+    it(`bloque : "${msg}"`, () => {
+      const result = validateMessage(msg);
+      expect(result.isValid).toBe(false);
+      expect(result.blockedPatterns.length).toBeGreaterThan(0);
+    });
+  });
 });
 
-// Test 2: Messages valides
-console.log('\n' + '=' + '='.repeat(60) + '\n');
-console.log('✅ MESSAGES DEVANT PASSER:\n');
-VALID_EXAMPLES.forEach((msg, index) => {
-  const result = validateMessage(msg);
-  const status = result.isValid ? '✅ OK' : '❌ ÉCHEC';
-  console.log(`${index + 1}. ${status} - "${msg}"`);
-  if (!result.isValid) {
-    console.log(`   → Faux positif! Catégories: ${result.blockedPatterns.join(', ')}`);
-  }
-  console.log('');
+// ============================================================
+// 2. MESSAGES DE LA LISTE VALID_EXAMPLES — tous doivent passer
+// ============================================================
+describe('antiBypassValidator — messages valides (VALID_EXAMPLES)', () => {
+  VALID_EXAMPLES.forEach((msg) => {
+    it(`autorise : "${msg}"`, () => {
+      const result = validateMessage(msg);
+      expect(result.isValid).toBe(true);
+    });
+  });
 });
 
-// Test 3: Cas limites
-console.log('\n' + '=' + '='.repeat(60) + '\n');
-console.log('⚠️ CAS LIMITES ET CONTOURNEMENTS:\n');
+// ============================================================
+// 3. CAS LIMITES — contournements sophistiqués
+// ============================================================
+describe('antiBypassValidator — cas limites (contournements)', () => {
+  // --- Doit être BLOQUÉ ---
+  it('bloque un numéro avec lettre "o" à la place du 0', () => {
+    expect(validateMessage('Appelle au o6 12 34 56 78').isValid).toBe(false);
+  });
 
-const edgeCases = [
-  "Mon numéro c'est zéro six douze",
-  "Appelle au o6 12 34 56 78", // o au lieu de 0
-  "Contact: 0 6 1 2 3 4 5 6 7 8", // Chiffres séparés
-  "Mon mail: test arobase gmail point com",
-  "Retrouve-moi sur g m a i l . c o m",
-  "J'habite 75001 Paris 1er",
-  "Code postal: 75 001",
-  "Contacte-moi en dehors de la plateforme",
-  "On peut se voir directement ?",
-  "Travaux urgents le 12/06", // Ne doit PAS bloquer (date, pas téléphone)
-  "Devis de 1200 euros", // Ne doit PAS bloquer (prix)
-  "Rendez-vous à 12h30", // Ne doit PAS bloquer (heure)
-];
+  it('bloque les chiffres séparés par des espaces (0 6 1 2 3 4 5 6 7 8)', () => {
+    expect(validateMessage('Contact: 0 6 1 2 3 4 5 6 7 8').isValid).toBe(false);
+  });
 
-edgeCases.forEach((msg, index) => {
-  const result = validateMessage(msg);
-  const status = result.isValid ? '✅ PASSÉ' : '❌ BLOQUÉ';
-  console.log(`${index + 1}. ${status} - "${msg}"`);
-  if (!result.isValid) {
-    console.log(`   → Catégories: ${result.blockedPatterns.join(', ')}`);
-  }
-  console.log('');
+  it('bloque "zéro six" en toutes lettres', () => {
+    expect(validateMessage("Mon numéro c'est zéro six douze").isValid).toBe(false);
+  });
+
+  it('bloque "arobase" à la place de @', () => {
+    expect(validateMessage('Mon mail: test arobase gmail point com').isValid).toBe(false);
+  });
+
+  it('bloque un code postal 5 chiffres (75001)', () => {
+    expect(validateMessage("J'habite 75001 Paris 1er").isValid).toBe(false);
+  });
+
+  it('bloque un code postal fragmenté (75 001)', () => {
+    expect(validateMessage('Code postal: 75 001').isValid).toBe(false);
+  });
+
+  it('bloque un numéro collé aux lettres (NUMEROtelephoine066882710)', () => {
+    expect(validateMessage('NUMEROtelephoine066882710').isValid).toBe(false);
+  });
+
+  it('bloque "Contacte-moi en dehors de la plateforme"', () => {
+    expect(validateMessage('Contacte-moi en dehors de la plateforme').isValid).toBe(false);
+  });
+
+  it('bloque "On peut se voir directement ?"', () => {
+    expect(validateMessage('On peut se voir directement ?').isValid).toBe(false);
+  });
+
+  // --- Doit être AUTORISÉ ---
+  it('autorise une date (Travaux urgents le 12/06)', () => {
+    expect(validateMessage('Travaux urgents le 12/06').isValid).toBe(true);
+  });
+
+  it('autorise un prix (Devis de 1200 euros)', () => {
+    expect(validateMessage('Devis de 1200 euros').isValid).toBe(true);
+  });
+
+  it('autorise une heure (Rendez-vous à 12h30)', () => {
+    expect(validateMessage('Rendez-vous à 12h30').isValid).toBe(true);
+  });
 });
 
-console.log('\n' + '=' + '='.repeat(60));
-console.log('✅ Tests terminés !');
+// ============================================================
+// 4. OPTION isPaid — bypass complet quand devis payé
+// ============================================================
+describe('antiBypassValidator — option isPaid', () => {
+  it('autorise tout message quand isPaid=true', () => {
+    const result = validateMessage('Mon téléphone est le 06 12 34 56 78', true);
+    expect(result.isValid).toBe(true);
+    expect(result.blockedPatterns).toHaveLength(0);
+  });
+
+  it('bloque les messages par défaut (isPaid absent)', () => {
+    const result = validateMessage('06 12 34 56 78');
+    expect(result.isValid).toBe(false);
+  });
+});
