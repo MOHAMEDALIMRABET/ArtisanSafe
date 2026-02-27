@@ -1930,10 +1930,6 @@
       "newProject": "➕ Nouveau projet"
     },
     "searchAnotherArtisan": "🔍 Chercher un autre artisan",
-    "devis": {
-      "examine": "Examiner ce devis",
-      "unknownArtisan": "Artisan inconnu"
-    },
     "empty": {
       "noRequests": "Aucune demande pour le moment",
       "noRequestsDescription": "Commencez par rechercher un artisan pour recevoir des devis personnalisés",
@@ -1953,6 +1949,10 @@
       "revisionPrompt": "Pourquoi souhaitez-vous une révision du devis ?\n\nExemples: \"Prix trop élevé\", \"Délai trop long\", \"Besoin de modifications\"",
       "revisionSuccess": "Demande envoyée à {artisan}.\n\nL'artisan sera notifié et pourra vous envoyer un devis révisé.",
       "revisionError": "Erreur lors de l'envoi. Veuillez réessayer."
+    },
+    "expiredRetentionBanner": {
+      "title": "Suppression automatique après 120 jours",
+      "message": "Ces demandes expirées sont conservées dans votre historique à titre informatif. Elles seront supprimées définitivement de la plateforme après 120 jours d'expiration."
     },
     "expirationHelp": {
       "title": "Comment fonctionne l'expiration des demandes ?",
@@ -2018,6 +2018,10 @@
         "extend": {
           "question": "Puis-je prolonger une demande ?",
           "answer": "Non, pour garantir la fraîcheur des demandes. Recréez simplement une nouvelle demande si nécessaire."
+        },
+        "retention": {
+          "question": "Mes demandes expirées sont-elles supprimées ?",
+          "answer": "Non, pas immédiatement. Vos demandes expirées restent visibles dans votre historique pendant 120 jours. Passé ce délai, elles sont supprimées définitivement de manière automatique."
         }
       }
     }

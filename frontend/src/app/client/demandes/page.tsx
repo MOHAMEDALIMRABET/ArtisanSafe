@@ -1632,6 +1632,21 @@ export default function MesDemandesPage() {
                 </div>
               )}
 
+              {/* ⚠️ Bandeau rétention 120 jours - visible uniquement dans le sous-filtre Expirées */}
+              {filtreSection === 'traitees' && sousFiltreTraitees === 'expirees' && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3 mb-2">
+                  <span className="text-2xl flex-shrink-0">🗑️</span>
+                  <div>
+                    <p className="font-semibold text-orange-800 text-sm">
+                      {t('clientDemandes.expiredRetentionBanner.title')}
+                    </p>
+                    <p className="text-orange-700 text-sm mt-1">
+                      {t('clientDemandes.expiredRetentionBanner.message')}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Liste des demandes filtrées */}
               {demandesFiltrees.length > 0 ? (
                 <div className="space-y-4">
@@ -1784,6 +1799,10 @@ export default function MesDemandesPage() {
                   <div>
                     <p className="font-semibold text-gray-900">{t('clientDemandes.expirationHelp.faq.extend.question')}</p>
                     <p className="text-gray-700">{t('clientDemandes.expirationHelp.faq.extend.answer')}</p>
+                  </div>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <p className="font-semibold text-orange-900">{t('clientDemandes.expirationHelp.faq.retention.question')}</p>
+                    <p className="text-orange-800">{t('clientDemandes.expirationHelp.faq.retention.answer')}</p>
                   </div>
                 </div>
               </div>
