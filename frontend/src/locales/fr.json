@@ -60,7 +60,12 @@
       "enterLocation": "Veuillez renseigner votre localisation",
       "selectDate": "Veuillez sélectionner au moins une date",
       "cityNotFound": "Ville introuvable",
-      "searchError": "Erreur lors de la recherche. Veuillez réessayer."
+      "searchError": "Erreur lors de la recherche. Veuillez réessayer.",
+      "enterCity": "⚠️ Veuillez saisir une ville",
+      "enterDescription": "⚠️ Veuillez décrire votre besoin",
+      "fillRequired": "⚠️ Veuillez remplir tous les champs obligatoires",
+      "missingCriteria": "❌ Critères de recherche manquants. Veuillez recommencer votre recherche.",
+      "publishError": "❌ Impossible de publier la demande. Veuillez réessayer."
     },
     "express": {
       "clientOnly": "Seuls les clients peuvent créer des demandes",
@@ -90,7 +95,8 @@
       "reasonRequired": "⚠️ Le motif du refus est obligatoire pour demander une nouvelle option.\\n\\nCela permet à l'artisan de comprendre vos attentes et de vous proposer une offre mieux adaptée.",
       "variantRejected": "❌ Cette variante a été refusée.\\n\\nL'artisan pourra toujours vous proposer d'autres options.",
       "revisionRecorded": "🔄 Demande de révision enregistrée.\\n\\nL'artisan pourra vous envoyer une nouvelle proposition améliorée.",
-      "refusalError": "Erreur lors du refus. Veuillez réessayer."
+      "refusalError": "Erreur lors du refus. Veuillez réessayer.",
+      "refusalReasonRequired": "⚠️ Veuillez indiquer un motif de refus"
     },
     "work": {
       "validatedSuccess": "✅ Travaux validés !\\n\\nL'artisan sera payé sous 24-48h.\\n\\nMerci d'avoir utilisé ArtisanDispo !",
@@ -110,7 +116,7 @@
       "createdSuccess": "✅ Litige déclaré avec succès. Notre équipe va examiner votre demande."
     },
     "review": {
-     "contractNotFound": "Contrat introuvable",
+      "contractNotFound": "Contrat introuvable",
       "unauthorized": "Vous n'êtes pas autorisé à accéder à ce contrat",
       "workNotCompleted": "Ce contrat n'est pas encore terminé",
       "ratingRequired": "Veuillez donner une note",
@@ -167,7 +173,11 @@
     "moreNotifications": "notification(s) de plus",
     "wait": "Attendre",
     "verifiedProfile": "Profil Vérifié",
-    "notSpecified": "Non spécifié"
+    "notSpecified": "Non spécifié",
+    "artisan": "Artisan",
+    "individual": "Particulier",
+    "tradesperson": "Artisan",
+    "unknownError": "Une erreur inattendue s'est produite"
   },
   "nav": {
     "home": "Accueil",
@@ -732,11 +742,30 @@
     "myProfile": "Mon profil",
     "editProfile": "Modifier le profil",
     "personalInfo": "Informations personnelles",
-    "companyInfo": "Informations entreprise",
+    "companyInfo": {
+      "title": "Informations entreprise",
+      "siret": "Numéro SIRET",
+      "siretPlaceholder": "14 chiffres (ex: 12345678901234)",
+      "siretHelper": "Le SIRET est votre identifiant unique d'entreprise (14 chiffres)",
+      "businessName": "Nom de l'entreprise",
+      "businessNamePlaceholder": "Ex: Plomberie Dupont",
+      "address": "Adresse professionnelle",
+      "addressPlaceholder": "Numéro, rue, ville...",
+      "addressHelper": "L'adresse complète de votre entreprise"
+    },
     "documents": "Documents",
     "verification": "Vérification",
     "skills": "Compétences",
-    "trades": "Métiers",
+    "trades": {
+      "title": "Métiers",
+      "selectAtLeastOne": "(sélectionnez au moins un)",
+      "lockedTitle": "🔒 Métiers verrouillés",
+      "lockedMessage": "Vos métiers sont verrouillés car des documents ont déjà été vérifiés.",
+      "lockedHelper": "Contactez le support pour modifier vos métiers.",
+      "decennaleMandatoryTitle": "⚠️ Assurance décennale obligatoire",
+      "decennaleMandatoryMessage": "Certains de vos métiers nécessitent une garantie décennale.",
+      "decennaleConcernedTrades": "Métiers concernés : maçonnerie, charpente, couverture, plomberie, électricité..."
+    },
     "availability": "Disponibilités",
     "photos": "Photos",
     "reviews": "Avis",
@@ -744,7 +773,39 @@
     "portfolio": "Portfolio",
     "verificationPending": "Vérification en attente",
     "verified": "Vérifié",
-    "rejected": "Rejeté"
+    "rejected": "Rejeté",
+    "actions": {
+      "save": "Enregistrer les modifications",
+      "saving": "Enregistrement...",
+      "cancel": "Annuler"
+    },
+    "messages": {
+      "profileNotFound": "Profil artisan introuvable. Veuillez compléter votre inscription.",
+      "loadError": "Erreur lors du chargement du profil",
+      "businessNameRequired": "⚠️ Le nom de l'entreprise est obligatoire",
+      "addressRequired": "⚠️ L'adresse est obligatoire",
+      "tradesRequired": "⚠️ Veuillez sélectionner au moins un métier",
+      "cityRequired": "⚠️ La ville principale est obligatoire",
+      "updateSuccess": "✅ Profil mis à jour avec succès",
+      "updateSuccessTitle": "Profil mis à jour !",
+      "updateSuccessMessage": "Vos modifications ont été enregistrées avec succès.",
+      "updateError": "❌ Erreur lors de la mise à jour du profil. Veuillez réessayer."
+    },
+    "presentation": {
+      "title": "Présentation",
+      "label": "Description de votre activité",
+      "placeholder": "Décrivez votre expérience, vos spécialités, vos valeurs...",
+      "characters": "{count} / 1000 caractères"
+    },
+    "serviceArea": {
+      "title": "Zone d'intervention",
+      "mainCity": "Ville principale",
+      "mainCityPlaceholder": "Ex: Paris, Lyon, Marseille...",
+      "radius": "Rayon d'intervention",
+      "radiusMin": "5 km",
+      "radiusMax": "100 km"
+    },
+    "loading": "Chargement du profil..."
   },
   "contracts": {
     "title": "Contrats",
@@ -1056,7 +1117,8 @@
       "expired": "Le devis a expiré. Vous ne pouvez plus envoyer de messages.",
       "completed": "Les travaux ont été terminés et validés par les deux parties. Cette conversation est maintenant close. Vous pouvez consulter l'historique mais ne pouvez plus envoyer de messages."
     },
-    "conversationClosed": "Conversation close"
+    "conversationClosed": "Conversation close",
+    "conversations": "Conversations"
   },
   "clientProfile": {
     "pageTitle": "Mon profil",
@@ -1624,18 +1686,15 @@
       "tracking": "Suivi complet de votre demande"
     }
   },
-
   "artisanStripe": {
     "pageTitle": "Configuration du compte bancaire",
     "pageDescription": "Ajoutez vos coordonnées bancaires pour recevoir vos paiements",
     "backButton": "Retour",
     "loading": "Chargement...",
-    
     "stepper": {
       "step1": "Informations",
       "step2": "Coordonnées bancaires"
     },
-    
     "step1": {
       "title": "Informations personnelles",
       "firstNameLabel": "Prénom",
@@ -1647,7 +1706,6 @@
       "cityLabel": "Ville",
       "required": "*",
       "continueButton": "Continuer →",
-      
       "errors": {
         "firstNameRequired": "Prénom requis",
         "lastNameRequired": "Nom requis",
@@ -1657,30 +1715,23 @@
         "postalCodeRequired": "Code postal requis"
       }
     },
-    
     "step2": {
       "title": "Coordonnées bancaires",
-      
       "securityNotice": {
         "title": "🔒 Sécurité maximale",
         "description": "Vos coordonnées bancaires sont transmises directement à Stripe (PCI-DSS Level 1) et ne sont jamais stockées dans notre base de données."
       },
-      
       "ibanLabel": "IBAN",
       "ibanPlaceholder": "FR76 XXXX XXXX XXXX XXXX XXXX XXX",
       "ibanHint": "IBAN français (27 caractères)",
-      
       "bicLabel": "BIC (optionnel)",
       "bicPlaceholder": "BNPAFRPPXXX",
-      
       "accountHolderLabel": "Nom du titulaire du compte",
       "accountHolderPlaceholder": "Prénom Nom ou Raison sociale",
-      
       "required": "*",
       "backButton": "← Retour",
       "submitButton": "Finaliser la configuration",
       "submitting": "Configuration en cours...",
-      
       "errors": {
         "ibanRequired": "IBAN requis",
         "ibanInvalid": "Format IBAN invalide (FR76 + 23 caractères)",
@@ -1688,19 +1739,16 @@
       }
     }
   },
-
   "artisanVerification": {
     "pageTitle": "Vérification du Profil",
     "pageDescription": "Complétez ces étapes pour recevoir le badge \"Profil Vérifié\"",
     "backToDashboard": "Retour au tableau de bord",
     "loadingError": "Impossible de charger les données",
-    
     "badges": {
       "verified": "Vérifié",
       "rejected": "Rejeté",
       "pending": "En cours de vérification"
     },
-    
     "siret": {
       "title": "Vérification SIRET",
       "description": "Validation automatique via la base SIRENE",
@@ -1731,12 +1779,10 @@
       },
       "notSpecified": "Non renseigné"
     },
-    
     "phone": {
       "title": "Validation téléphone",
       "description": "Numéro vérifié par SMS"
     },
-    
     "kbis": {
       "title": "KBIS",
       "verified": "Extrait Kbis vérifié",
@@ -1747,7 +1793,6 @@
       "uploadButton": "📤 Uploader le KBIS",
       "reuploadButton": "📤 Re-uploader le KBIS"
     },
-    
     "rcPro": {
       "title": "Garantie Responsabilité Civile Professionnelle",
       "verified": "Attestation vérifiée",
@@ -1758,7 +1803,6 @@
       "uploadButton": "📤 Uploader l'attestation RC Pro",
       "reuploadButton": "📤 Re-uploader l'attestation RC Pro"
     },
-    
     "idCard": {
       "title": "Pièce d'identité",
       "verified": "CNI ou Passeport vérifié",
@@ -1769,7 +1813,6 @@
       "uploadButton": "📤 Uploader la pièce d'identité",
       "reuploadButton": "📤 Re-uploader la pièce d'identité"
     },
-    
     "decennale": {
       "titleRequired": "Attestation d'assurance décennale",
       "required": "(obligatoire)",
@@ -1779,17 +1822,14 @@
       "pending": "⏳ Décennale en attente de validation",
       "notUploaded": "⚠️ Aucune attestation déposée",
       "rejectionReason": "Raison :",
-      
       "infoTitle": "Assurance décennale",
       "infoDescription": "Si votre métier nécessite une assurance décennale (maçonnerie, toiture, charpente, menuiserie, isolation, plomberie, électricité, carrelage, chauffage, climatisation), elle sera demandée après la saisie de votre profil dans la section <strong>Mon Profil</strong>."
     }
   },
-
   "clientDemandes": {
     "pageTitle": "Mes Demandes",
     "backButton": "Retour au tableau de bord",
     "searchArtisan": "Rechercher un artisan",
-    
     "sections": {
       "all": "Toutes",
       "sent": "🎯 Envoyés",
@@ -1797,21 +1837,18 @@
       "inProgress": "⏳ En traitement",
       "processed": "✅ Traitées"
     },
-    
     "sectionTitles": {
       "sent": "🎯 Envoyés à l'artisan",
       "published": "📢 Publiées",
       "inProgress": "⏳ En cours de traitement",
       "processed": "✅ Traitées"
     },
-    
     "sectionDescriptions": {
       "sent": "Demandes directes envoyées à un artisan spécifique, en attente de devis",
       "published": "Demandes publiques visibles par tous les artisans, en attente de propositions",
       "inProgress": "Demandes avec au moins un devis reçu, en attente de votre décision",
       "processed": "Demandes finalisées : payées, refusées, expirées, travaux en cours ou terminés"
     },
-    
     "subFilters": {
       "all": "Tout",
       "signedQuotes": "✅ Devis signés",
@@ -1821,7 +1858,6 @@
       "rejected": "❌ Refusées",
       "expired": "⏰ Expirées"
     },
-    
     "badges": {
       "signedQuote": "✅ Devis signé",
       "worksInProgress": "🚧 Travaux en cours",
@@ -1845,12 +1881,10 @@
       "expiredTooltip": "Demande fermée automatiquement. Cliquez sur 'Aide : Expiration' pour en savoir plus",
       "artisanFound": "🤝 Artisan trouvé"
     },
-    
     "artisan": {
       "label": "Artisan",
       "notAssigned": "Artisan non assigné"
     },
-    
     "card": {
       "createdOn": "Créée le",
       "startDate": "Début:",
@@ -1866,7 +1900,6 @@
       "delete": "Supprimer",
       "deleteTitle": "Supprimer cette demande"
     },
-    
     "details": {
       "title": "📋 Détails complets de la demande",
       "photos": "📸 Photos du projet ({count})",
@@ -1881,7 +1914,6 @@
       "noDates": "Aucune date spécifiée",
       "urgent": "🚨 Demande urgente"
     },
-    
     "contract": {
       "title": "✅ Devis accepté et payé - Contrat en cours",
       "description": "Vous avez signé et payé le devis de l'artisan.",
@@ -1897,9 +1929,7 @@
       "contactArtisan": "💬 Contacter artisan",
       "newProject": "➕ Nouveau projet"
     },
-    
     "searchAnotherArtisan": "🔍 Chercher un autre artisan",
-    
     "empty": {
       "noRequests": "Aucune demande pour le moment",
       "noRequestsDescription": "Commencez par rechercher un artisan pour recevoir des devis personnalisés",
@@ -1909,11 +1939,9 @@
       "viewAllRequests": "← Voir toutes les demandes",
       "noRequestsYet": "Vous n'avez pas encore créé de demande"
     },
-    
     "success": {
       "published": "✅ Votre demande a été publiée ! Les artisans qualifiés de votre région peuvent maintenant la consulter et vous envoyer des devis."
     },
-    
     "dialogs": {
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer la demande \"{title}\" ?\n\nCette action est irréversible.",
       "deleteSuccess": "Demande supprimée avec succès",
@@ -1922,21 +1950,17 @@
       "revisionSuccess": "Demande envoyée à {artisan}.\n\nL'artisan sera notifié et pourra vous envoyer un devis révisé.",
       "revisionError": "Erreur lors de l'envoi. Veuillez réessayer."
     },
-    
     "expirationHelp": {
       "title": "Comment fonctionne l'expiration des demandes ?",
       "subtitle": "Comprenez pourquoi vos demandes se ferment automatiquement",
       "close": "Fermer",
       "understood": "J'ai compris",
-      
       "intro": {
         "title": "💡 Pourquoi une expiration automatique ?",
         "description": "Pour garantir que les artisans aient suffisamment de temps pour visiter votre chantier et vous envoyer des devis de qualité, tout en évitant les demandes obsolètes."
       },
-      
       "rules": {
         "title": "📐 Les 4 règles de calcul",
-        
         "urgent": {
           "title": "🚨 Cas 1 : Travaux urgents (moins de 7 jours)",
           "expiration": "Expiration :",
@@ -1947,7 +1971,6 @@
           "result": "→ Expiration : 24 février (5 jours)",
           "note": "✅ Les artisans ont le temps de répondre"
         },
-        
         "normal": {
           "title": "📅 Cas 2 : Travaux normaux (7 à 30 jours)",
           "expiration": "Expiration :",
@@ -1958,7 +1981,6 @@
           "result": "→ Expiration : 6 mars (11 mars - 5 jours)",
           "note": "✅ Artisans ont 15 jours pour envoyer devis"
         },
-        
         "distant": {
           "title": "📆 Cas 3 : Travaux lointains (plus de 30 jours)",
           "expiration": "Expiration :",
@@ -1969,7 +1991,6 @@
           "result": "→ Expiration : 21 mars (cap 30 jours)",
           "note": "✅ Évite demandes obsolètes"
         },
-        
         "noDate": {
           "title": "❓ Cas 4 : Pas de date précisée",
           "expiration": "Expiration :",
@@ -1980,7 +2001,6 @@
           "result": "→ Expiration : 21 mars (30 jours)"
         }
       },
-      
       "faq": {
         "title": "❓ Questions fréquentes",
         "why5Days": {
@@ -1998,23 +2018,19 @@
       }
     }
   },
-
   "artisanAgenda": {
     "pageTitle": "Mon Agenda",
     "pageDescription": "Gérez vos disponibilités et bloquez vos dates",
     "backButton": "Retour au tableau de bord",
     "quickSelection": "Sélection rapide par dates",
-    
     "loading": {
       "title": "Chargement de l'agenda...",
       "data": "Chargement des données..."
     },
-    
     "error": {
       "title": "Erreur",
       "retry": "Réessayer"
     },
-    
     "quickModal": {
       "title": "📅 Sélection rapide de période",
       "instructions": "Cliquez sur une date de début, puis sur une date de fin",
@@ -2034,7 +2050,6 @@
       "startSelected": "Début",
       "selectEndDate": "Sélectionnez la date de fin"
     },
-    
     "editModal": {
       "contractTitle": "Période de contrat (non modifiable)",
       "eventTitle": "Modifier l'événement",
@@ -2050,35 +2065,57 @@
       "deleteConfirm": "Supprimer \"{title}\" ?",
       "deleteContractError": "Impossible de supprimer une période de contrat.\\n\\nCette période est automatiquement générée à partir d'un devis signé et ne peut pas être modifiée ou supprimée manuellement."
     },
-    
     "errors": {
       "profileIncomplete": "Vous devez d'abord compléter votre profil artisan.",
       "noPastDates": "Vous ne pouvez pas sélectionner des dates passées",
       "contractEditError": "🔒 Cet événement est lié à un contrat signé et ne peut pas être modifié.\\n\\nLes contrats créent automatiquement des indisponibilités pour leurs dates.",
       "contractModifyError": "🔒 Impossible de modifier une période de contrat.\\n\\nCette période est automatiquement générée à partir d'un devis signé et ne peut pas être modifiée manuellement."
     },
-    
     "prompts": {
       "eventTitle": "Titre de l'indisponibilité :"
     },
-    
     "defaults": {
       "available": "Disponible",
       "unavailable": "Occupé"
     },
-    
     "actions": {
       "saveAll": "Enregistrer toutes les disponibilités",
       "saveSuccess": "Disponibilités sauvegardées avec succès !",
       "saveError": "Erreur lors de la sauvegarde",
       "saving": "Enregistrement en cours..."
     },
-    
     "legend": {
       "title": "Légende",
       "available": "Disponible",
       "unavailable": "Indisponible",
       "contract": "Période de contrat (devis signé)"
+    },
+    "calendar": {
+      "month": "Mois",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "today": "Aujourd'hui",
+      "agenda": "Agenda",
+      "date": "Date",
+      "event": "Événement",
+      "allDay": "Toute la journée",
+      "noEventsInRange": "Aucun événement sur cette période",
+      "showMore": "+ {total} de plus"
+    },
+    "dateFilters": {
+      "startDateLabel": "Date de début",
+      "endDateLabel": "Date de fin",
+      "resetButton": "Réinitialiser les filtres"
+    },
+    "instructions": {
+      "title": "Comment utiliser l'agenda ?",
+      "quickSelection": "Cliquer sur une plage de dates pour bloquer rapidement vos disponibilités",
+      "agendaView": "Vue liste de tous vos événements à venir",
+      "calendarView": "Vue mensuelle pour visualiser et gérer vos événements",
+      "clickDay": "Cliquer sur un jour vide pour ajouter un événement",
+      "clickEvent": "Cliquer sur un événement pour le modifier ou le supprimer",
+      "colors": "Chaque couleur correspond à un type d'événement (disponibilité, indisponibilité, contrat)",
+      "contracts": "Les blocs oranges représentent vos contrats en cours (non modifiables)"
     }
   },
   "search": {

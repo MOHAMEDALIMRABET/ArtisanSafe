@@ -60,7 +60,12 @@
       "enterLocation": "Please enter your location",
       "selectDate": "Please select at least one date",
       "cityNotFound": "City not found",
-      "searchError": "Search error. Please try again."
+      "searchError": "Search error. Please try again.",
+      "enterCity": "⚠️ Please enter a city",
+      "enterDescription": "⚠️ Please describe your needs",
+      "fillRequired": "⚠️ Please fill in all required fields",
+      "missingCriteria": "❌ Missing search criteria. Please start your search again.",
+      "publishError": "❌ Unable to publish the request. Please try again."
     },
     "express": {
       "clientOnly": "Only clients can create requests",
@@ -90,7 +95,8 @@
       "reasonRequired": "⚠️ Refusal reason is required to request a new option.\\n\\nThis helps the craftsman understand your expectations and propose a better offer.",
       "variantRejected": "❌ This variant has been rejected.\\n\\nThe craftsman can still propose other options.",
       "revisionRecorded": "🔄 Revision request recorded.\\n\\nThe craftsman can send you an improved proposal.",
-      "refusalError": "Error refusing. Please try again."
+      "refusalError": "Error refusing. Please try again.",
+      "refusalReasonRequired": "⚠️ Please provide a reason for refusal"
     },
     "work": {
       "validatedSuccess": "✅ Work validated!\\n\\nCraftsman will be paid within 24-48h.\\n\\nThank you for using ArtisanDispo!",
@@ -167,7 +173,11 @@
     "moreNotifications": "more notification(s)",
     "wait": "Wait",
     "verifiedProfile": "Verified Profile",
-    "notSpecified": "Not specified"
+    "notSpecified": "Not specified",
+    "artisan": "Tradesperson",
+    "individual": "Individual",
+    "tradesperson": "Tradesperson",
+    "unknownError": "An unexpected error occurred"
   },
   "nav": {
     "home": "Home",
@@ -733,11 +743,30 @@
     "myProfile": "My Profile",
     "editProfile": "Edit Profile",
     "personalInfo": "Personal Information",
-    "companyInfo": "Company Information",
+    "companyInfo": {
+      "title": "Company information",
+      "siret": "SIRET number",
+      "siretPlaceholder": "14 digits (e.g. 12345678901234)",
+      "siretHelper": "SIRET is your unique company identifier (14 digits)",
+      "businessName": "Company name",
+      "businessNamePlaceholder": "e.g. Dupont Plumbing",
+      "address": "Business address",
+      "addressPlaceholder": "Number, street, city...",
+      "addressHelper": "The full address of your business"
+    },
     "documents": "Documents",
     "verification": "Verification",
     "skills": "Skills",
-    "trades": "Trades",
+    "trades": {
+      "title": "Trades",
+      "selectAtLeastOne": "(select at least one)",
+      "lockedTitle": "🔒 Locked trades",
+      "lockedMessage": "Your trades are locked because documents have already been verified.",
+      "lockedHelper": "Contact support to change your trades.",
+      "decennaleMandatoryTitle": "⚠️ Decennial insurance required",
+      "decennaleMandatoryMessage": "Some of your trades require decennial (10-year) insurance.",
+      "decennaleConcernedTrades": "Concerned trades: masonry, framing, roofing, plumbing, electrical..."
+    },
     "availability": "Availability",
     "photos": "Photos",
     "reviews": "Reviews",
@@ -745,7 +774,39 @@
     "verificationPending": "Verification Pending",
     "verified": "Verified",
     "rejected": "Rejected",
-    "siretTrades": "SIRET, trades, areas"
+    "siretTrades": "SIRET, trades, areas",
+    "actions": {
+      "save": "Save changes",
+      "saving": "Saving...",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "profileNotFound": "Tradesperson profile not found. Please complete your registration.",
+      "loadError": "Error loading profile",
+      "businessNameRequired": "⚠️ Company name is required",
+      "addressRequired": "⚠️ Address is required",
+      "tradesRequired": "⚠️ Please select at least one trade",
+      "cityRequired": "⚠️ Main city is required",
+      "updateSuccess": "✅ Profile updated successfully",
+      "updateSuccessTitle": "Profile updated!",
+      "updateSuccessMessage": "Your changes have been saved successfully.",
+      "updateError": "❌ Error updating profile. Please try again."
+    },
+    "presentation": {
+      "title": "Presentation",
+      "label": "Description of your activity",
+      "placeholder": "Describe your experience, specialities, values...",
+      "characters": "{count} / 1000 characters"
+    },
+    "serviceArea": {
+      "title": "Service area",
+      "mainCity": "Main city",
+      "mainCityPlaceholder": "e.g. London, Manchester...",
+      "radius": "Service radius",
+      "radiusMin": "5 km",
+      "radiusMax": "100 km"
+    },
+    "loading": "Loading profile..."
   },
   "contracts": {
     "title": "Contracts",
@@ -1057,7 +1118,8 @@
       "expired": "The quote has expired. You can no longer send messages.",
       "completed": "The work has been completed and validated by both parties. This conversation is now closed. You can view the history but can no longer send messages."
     },
-    "conversationClosed": "Conversation closed"
+    "conversationClosed": "Conversation closed",
+    "conversations": "Conversations"
   },
   "clientProfile": {
     "pageTitle": "My Profile",
@@ -1625,18 +1687,15 @@
       "tracking": "Complete tracking of your request"
     }
   },
-
   "artisanStripe": {
     "pageTitle": "Bank Account Setup",
     "pageDescription": "Add your bank details to receive your payments",
     "backButton": "Back",
     "loading": "Loading...",
-    
     "stepper": {
       "step1": "Information",
       "step2": "Bank details"
     },
-    
     "step1": {
       "title": "Personal information",
       "firstNameLabel": "First name",
@@ -1648,7 +1707,6 @@
       "cityLabel": "City",
       "required": "*",
       "continueButton": "Continue →",
-      
       "errors": {
         "firstNameRequired": "First name required",
         "lastNameRequired": "Last name required",
@@ -1658,30 +1716,23 @@
         "postalCodeRequired": "Postal code required"
       }
     },
-    
     "step2": {
       "title": "Bank details",
-      
       "securityNotice": {
         "title": "🔒 Maximum security",
         "description": "Your bank details are transmitted directly to Stripe (PCI-DSS Level 1) and are never stored in our database."
       },
-      
       "ibanLabel": "IBAN",
       "ibanPlaceholder": "FR76 XXXX XXXX XXXX XXXX XXXX XXX",
       "ibanHint": "French IBAN (27 characters)",
-      
       "bicLabel": "BIC (optional)",
       "bicPlaceholder": "BNPAFRPPXXX",
-      
       "accountHolderLabel": "Account holder name",
       "accountHolderPlaceholder": "First name Last name or Company name",
-      
       "required": "*",
       "backButton": "← Back",
       "submitButton": "Finalize setup",
       "submitting": "Setup in progress...",
-      
       "errors": {
         "ibanRequired": "IBAN required",
         "ibanInvalid": "Invalid IBAN format (FR76 + 23 characters)",
@@ -1689,19 +1740,16 @@
       }
     }
   },
-
   "artisanVerification": {
     "pageTitle": "Profile Verification",
     "pageDescription": "Complete these steps to receive the \"Verified Profile\" badge",
     "backToDashboard": "Back to dashboard",
     "loadingError": "Unable to load data",
-    
     "badges": {
       "verified": "Verified",
       "rejected": "Rejected",
       "pending": "Under review"
     },
-    
     "siret": {
       "title": "SIRET Verification",
       "description": "Automatic validation via the SIRENE database",
@@ -1732,12 +1780,10 @@
       },
       "notSpecified": "Not specified"
     },
-    
     "phone": {
       "title": "Phone validation",
       "description": "Number verified by SMS"
     },
-    
     "kbis": {
       "title": "KBIS",
       "verified": "Kbis extract verified",
@@ -1748,7 +1794,6 @@
       "uploadButton": "📤 Upload KBIS",
       "reuploadButton": "📤 Re-upload KBIS"
     },
-    
     "rcPro": {
       "title": "Professional Liability Insurance",
       "verified": "Certificate verified",
@@ -1759,7 +1804,6 @@
       "uploadButton": "📤 Upload RC Pro certificate",
       "reuploadButton": "📤 Re-upload RC Pro certificate"
     },
-    
     "idCard": {
       "title": "Identity Document",
       "verified": "ID Card or Passport verified",
@@ -1770,7 +1814,6 @@
       "uploadButton": "📤 Upload identity document",
       "reuploadButton": "📤 Re-upload identity document"
     },
-    
     "decennale": {
       "titleRequired": "Ten-year liability insurance certificate",
       "required": "(mandatory)",
@@ -1780,17 +1823,14 @@
       "pending": "⏳ Ten-year insurance awaiting validation",
       "notUploaded": "⚠️ No certificate uploaded",
       "rejectionReason": "Reason:",
-      
       "infoTitle": "Ten-year liability insurance",
       "infoDescription": "If your trade requires ten-year insurance (masonry, roofing, carpentry, joinery, insulation, plumbing, electrical, tiling, heating, air conditioning), it will be requested after entering your profile in the <strong>My Profile</strong> section."
     }
   },
-
   "clientDemandes": {
     "pageTitle": "My Requests",
     "backButton": "Back to dashboard",
     "searchArtisan": "Search for a tradesperson",
-    
     "sections": {
       "all": "All",
       "sent": "🎯 Sent",
@@ -1798,21 +1838,18 @@
       "inProgress": "⏳ In Progress",
       "processed": "✅ Processed"
     },
-    
     "sectionTitles": {
       "sent": "🎯 Sent to tradesperson",
       "published": "📢 Published",
       "inProgress": "⏳ Being processed",
       "processed": "✅ Processed"
     },
-    
     "sectionDescriptions": {
       "sent": "Direct requests sent to a specific tradesperson, awaiting quotes",
       "published": "Public requests visible to all tradespeople, awaiting proposals",
       "inProgress": "Requests with at least one quote received, awaiting your decision",
       "processed": "Finalized requests: paid, rejected, expired, work in progress or completed"
     },
-    
     "subFilters": {
       "all": "All",
       "signedQuotes": "✅ Signed quotes",
@@ -1822,7 +1859,6 @@
       "rejected": "❌ Rejected",
       "expired": "⏰ Expired"
     },
-    
     "badges": {
       "signedQuote": "✅ Quote signed",
       "worksInProgress": "🚧 Work in progress",
@@ -1846,12 +1882,10 @@
       "expiredTooltip": "Request automatically closed. Click 'Help: Expiration' to learn more",
       "artisanFound": "🤝 Artisan found"
     },
-    
     "artisan": {
       "label": "Tradesperson",
       "notAssigned": "Tradesperson not assigned"
     },
-    
     "card": {
       "createdOn": "Created on",
       "startDate": "Start:",
@@ -1867,7 +1901,6 @@
       "delete": "Delete",
       "deleteTitle": "Delete this request"
     },
-    
     "details": {
       "title": "📋 Complete request details",
       "photos": "📸 Project photos ({count})",
@@ -1882,7 +1915,6 @@
       "noDates": "No date specified",
       "urgent": "🚨 Urgent request"
     },
-    
     "contract": {
       "title": "✅ Quote accepted and paid - Contract in progress",
       "description": "You have signed and paid the tradesperson's quote.",
@@ -1898,9 +1930,7 @@
       "contactArtisan": "💬 Contact tradesperson",
       "newProject": "➕ New project"
     },
-    
     "searchAnotherArtisan": "🔍 Search for another tradesperson",
-    
     "empty": {
       "noRequests": "No requests yet",
       "noRequestsDescription": "Start by searching for a tradesperson to receive personalized quotes",
@@ -1910,11 +1940,9 @@
       "viewAllRequests": "← View all requests",
       "noRequestsYet": "You haven't created any requests yet"
     },
-    
     "success": {
       "published": "Your request has been published! Qualified tradespeople in your area can now view it and send you quotes."
     },
-    
     "dialogs": {
       "deleteConfirm": "Are you sure you want to delete the request \"{title}\"?\n\nThis action is irreversible.",
       "deleteSuccess": "Request successfully deleted",
@@ -1923,21 +1951,17 @@
       "revisionSuccess": "Request sent to {artisan}.\n\nThe tradesperson will be notified and can send you a revised quote.",
       "revisionError": "Error sending. Please try again."
     },
-    
     "expirationHelp": {
       "title": "How does request expiration work?",
       "subtitle": "Understand why your requests close automatically",
       "close": "Close",
       "understood": "I understand",
-      
       "intro": {
         "title": "💡 Why automatic expiration?",
         "description": "To ensure tradespeople have enough time to visit your site and send you quality quotes, while avoiding obsolete requests."
       },
-      
       "rules": {
         "title": "📐 The 4 calculation rules",
-        
         "urgent": {
           "title": "🚨 Case 1: Urgent work (less than 7 days)",
           "expiration": "Expiration:",
@@ -1948,7 +1972,6 @@
           "result": "→ Expiration: February 24 (5 days)",
           "note": "✅ Tradespeople have time to respond"
         },
-        
         "normal": {
           "title": "📅 Case 2: Normal work (7 to 30 days)",
           "expiration": "Expiration:",
@@ -1959,7 +1982,6 @@
           "result": "→ Expiration: March 6 (March 11 - 5 days)",
           "note": "✅ Tradespeople have 15 days to send quotes"
         },
-        
         "distant": {
           "title": "📆 Case 3: Distant work (more than 30 days)",
           "expiration": "Expiration:",
@@ -1970,7 +1992,6 @@
           "result": "→ Expiration: March 21 (30-day cap)",
           "note": "✅ Avoids obsolete requests"
         },
-        
         "noDate": {
           "title": "❓ Case 4: No date specified",
           "expiration": "Expiration:",
@@ -1981,7 +2002,6 @@
           "result": "→ Expiration: March 21 (30 days)"
         }
       },
-      
       "faq": {
         "title": "❓ Frequently asked questions",
         "why5Days": {
@@ -1999,23 +2019,19 @@
       }
     }
   },
-
   "artisanAgenda": {
     "pageTitle": "My Schedule",
     "pageDescription": "Manage your availability and block dates",
     "backButton": "Back to dashboard",
     "quickSelection": "Quick date selection",
-    
     "loading": {
       "title": "Loading schedule...",
       "data": "Loading data..."
     },
-    
     "error": {
       "title": "Error",
       "retry": "Retry"
     },
-    
     "quickModal": {
       "title": "📅 Quick period selection",
       "instructions": "Click on a start date, then on an end date",
@@ -2035,7 +2051,6 @@
       "startSelected": "Start",
       "selectEndDate": "Select end date"
     },
-    
     "editModal": {
       "contractTitle": "Contract period (non-modifiable)",
       "eventTitle": "Edit event",
@@ -2051,35 +2066,57 @@
       "deleteConfirm": "Delete \"{title}\"?",
       "deleteContractError": "Cannot delete a contract period.\\n\\nThis period is automatically generated from a signed quote and cannot be modified or deleted manually."
     },
-    
     "errors": {
       "profileIncomplete": "You must first complete your artisan profile.",
       "noPastDates": "You cannot select past dates",
       "contractEditError": "🔒 This event is linked to a signed contract and cannot be modified.\\n\\nContracts automatically create unavailabilities for their dates.",
       "contractModifyError": "🔒 Cannot modify a contract period.\\n\\nThis period is automatically generated from a signed quote and cannot be manually modified."
     },
-    
     "prompts": {
       "eventTitle": "Unavailability title:"
     },
-    
     "defaults": {
       "available": "Available",
       "unavailable": "Busy"
     },
-    
     "actions": {
       "saveAll": "Save all availabilities",
       "saveSuccess": "Availabilities saved successfully!",
       "saveError": "Error saving",
       "saving": "Saving..."
     },
-    
     "legend": {
       "title": "Legend",
       "available": "Available",
       "unavailable": "Unavailable",
       "contract": "Contract period (signed quote)"
+    },
+    "calendar": {
+      "month": "Month",
+      "previous": "Previous",
+      "next": "Next",
+      "today": "Today",
+      "agenda": "Agenda",
+      "date": "Date",
+      "event": "Event",
+      "allDay": "All day",
+      "noEventsInRange": "No events in this range",
+      "showMore": "+ {total} more"
+    },
+    "dateFilters": {
+      "startDateLabel": "Start date",
+      "endDateLabel": "End date",
+      "resetButton": "Reset filters"
+    },
+    "instructions": {
+      "title": "How to use the agenda?",
+      "quickSelection": "Click on a date range to quickly block your availability",
+      "agendaView": "List view of all your upcoming events",
+      "calendarView": "Monthly view to visualise and manage your events",
+      "clickDay": "Click on an empty day to add an event",
+      "clickEvent": "Click on an event to edit or delete it",
+      "colors": "Each colour represents a type of event (availability, unavailability, contract)",
+      "contracts": "Orange blocks represent your active contracts (non-editable)"
     }
   },
   "search": {
