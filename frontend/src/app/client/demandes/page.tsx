@@ -1227,7 +1227,7 @@ export default function MesDemandesPage() {
                       const devisAExaminer = (devisMap.get(demande.id) || []).filter(d => d.statut === 'envoye');
                       if (devisAExaminer.length === 0) return null;
                       return (
-                        <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4">
+                        <div id={`devis-section-${demande.id}`} className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 scroll-mt-4">
                           <h5 className="font-bold text-purple-800 mb-3 flex items-center gap-2">
                             📬 {devisAExaminer.length} devis à examiner
                           </h5>
