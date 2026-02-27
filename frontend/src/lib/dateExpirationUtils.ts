@@ -3,13 +3,13 @@
  * ⚠️ VERSION CORRIGÉE - Cohérente avec les réalités du BTP
  * 
  * Règles métier BTP :
- * 1. SI travaux URGENTS (< 7 jours) : expiration = création + 5 jours MINIMUM
- *    → Permet artisan de visiter le chantier et envoyer devis
- * 2. SI travaux NORMAUX (7-30 jours) : expiration = dateDebut - 5 jours
- *    → Marge confortable pour réception et comparaison devis
- * 3. SI travaux LOINTAINS (>= 30 jours) : expiration = création + 30 jours (cap)
- *    → Évite demandes qui traînent trop longtemps
- * 4. SI pas de date début : expiration = création + 30 jours (par défaut)
+ * 1. SI pas de date début → expiration = création + 30 jours
+ * 2. SI travaux URGENTS (< 7 jours)  → expiration = création + 7 jours
+ * 3. SI travaux NORMAUX (7–30 jours) → expiration = dateDebut - 5 jours (min 5j depuis création)
+ * 4. SI travaux LOINTAINS (≥ 30 jours) → expiration = création + 30 jours (cap)
+ *
+ * ⚠️ RÈGLE ABSOLUE : l'expiration ne dépasse JAMAIS la dateDebut souhaitée.
+ * → Inutile d'accepter des devis une fois les travaux commencés.
  * 
  * Rationale BTP :
  * - Artisan a besoin de 2-3 jours pour visite sur place + rédaction devis
@@ -52,7 +52,7 @@ export function calculateExpirationDate(
 ): Date {
   const now = new Date(dateCreation);
   
-  // Cas 4 : Pas de date début travaux → 30 jours par défaut
+  // Cas : Pas de date début travaux → 30 jours par défaut
   if (!dateDebutTravaux) {
     const expiration = new Date(now);
     expiration.setDate(expiration.getDate() + 30);
@@ -63,36 +63,30 @@ export function calculateExpirationDate(
   const diffMs = dateDebutTravaux.getTime() - now.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   
-  // Cas 3 : Date début >= 30 jours → Cap de 30 jours
+  let expiration: Date;
+
   if (diffDays >= 30) {
-    const expiration = new Date(now);
+    // Travaux LOINTAINS (>= 30 jours) → cap 30 jours
+    expiration = new Date(now);
     expiration.setDate(expiration.getDate() + 30);
-    return expiration;
+  } else if (diffDays >= 7) {
+    // Travaux NORMAUX (7–30 jours) → dateDebut - 5 jours
+    expiration = new Date(dateDebutTravaux);
+    expiration.setDate(expiration.getDate() - 5);
+    // Plancher : minimum 5 jours depuis la création
+    const minExp = new Date(now);
+    minExp.setDate(minExp.getDate() + 5);
+    if (expiration < minExp) expiration = minExp;
+  } else {
+    // Travaux URGENTS (< 7 jours) → création + 7 jours
+    expiration = new Date(now);
+    expiration.setDate(expiration.getDate() + 7);
   }
-  
-  // Cas 1 : Travaux URGENTS (< 7 jours) → Minimum 5 jours d'expiration pour viabilité BTP
-  if (diffDays < 7) {
-    // Expiration = maximum entre (création + 5 jours) et (début - 2 jours)
-    const expirationMin = new Date(now);
-    expirationMin.setDate(expirationMin.getDate() + 5); // Minimum 5 jours pour artisans
-    
-    const expirationAvantDebut = new Date(dateDebutTravaux);
-    expirationAvantDebut.setDate(expirationAvantDebut.getDate() - 2); // 2 jours avant début
-    
-    // Prendre le maximum pour garantir minimum 5 jours
-    return expirationMin > expirationAvantDebut ? expirationMin : expirationAvantDebut;
-  }
-  
-  // Cas 2 : Travaux NORMAUX (7-30 jours) → Expiration = dateDebut - 5 jours
-  const expiration = new Date(dateDebutTravaux);
-  expiration.setDate(expiration.getDate() - 5);
-  
-  // Sécurité : Minimum absolu 5 jours entre création et expiration
-  const minExpiration = new Date(now);
-  minExpiration.setDate(minExpiration.getDate() + 5);
-  
-  if (expiration < minExpiration) {
-    return minExpiration;
+
+  // ⚠️ RÈGLE ABSOLUE : l'expiration ne dépasse JAMAIS la date de début souhaitée
+  // → Il est incohérent d'accepter des devis après que les travaux ont commencé
+  if (expiration > dateDebutTravaux) {
+    expiration = new Date(dateDebutTravaux);
   }
   
   return expiration;
