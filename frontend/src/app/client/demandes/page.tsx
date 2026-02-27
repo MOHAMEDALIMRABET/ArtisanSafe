@@ -254,9 +254,10 @@ export default function MesDemandesPage() {
     const demandeType = demande.type || 'directe';
     const statut = demande.statut;
     const devisForDemande = devisMap.get(demande.id) || [];
-    
+    const isExpired = demande.dateExpiration ? isDemandeExpired(demande.dateExpiration) : false;
+
     // 🔥 PRIORITÉ 1 : CONTRAT EN COURS (devis payé/signé)
-    // → Badge avec BORDURE selon statut du devis
+    // → Badge avec BORDURE selon statut du devis — prioritaire sur tout, même l'expiration
     if (demandesAvecDevisPayeIds.has(demande.id)) {
       const devisPaye = devisForDemande.find(d => 
         ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'].includes(d.statut)
@@ -302,6 +303,20 @@ export default function MesDemandesPage() {
       }
     }
     
+    // ⏰ PRIORITÉ 1.5 : DEMANDE EXPIRÉE
+    // → Prioritaire sur tout sauf un contrat actif (priorité 1)
+    // → Une demande expirée ne doit JAMAIS afficher "Envoyé à artisan" ou "Publiée"
+    if (isExpired) {
+      return (
+        <span
+          className="px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700"
+          title={t('clientDemandes.badges.expiredTooltip')}
+        >
+          ⏰ {t('clientDemandes.badges.expired')}
+        </span>
+      );
+    }
+
     // 🎯 PRIORITÉ 2 : DEVIS EN ATTENTE DE PAIEMENT
     // → Badge "En attente de paiement"
     const devisAccepte = devisForDemande.find(d => d.statut === 'en_attente_paiement');
