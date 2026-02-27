@@ -312,7 +312,7 @@ export default function MesDemandesPage() {
     // ✅ PRIORITÉ 4 : DEMANDE DIRECTE (envoyée à un artisan spécifique)
     // → Badge "Envoyé à artisan" dès la création (artisan déjà assigné)
     // ✅ FALLBACK : Badge orange aussi pour demandes directes orphelines (sans artisan)
-    if (demandeType === 'directe' && (statut === 'publiee' || statut === 'matchee' || statut === 'genere')) {
+    if (demandeType === 'directe' && (statut === 'publiee' || statut === 'matchee' || statut === 'genere' || statut === 'attribuee')) {
       // Si artisan assigné → badge avec bordure
       if (hasArtisan) {
         return (
@@ -411,9 +411,9 @@ export default function MesDemandesPage() {
       const demandeType = d.type || 'directe';
       
       // ✅ NOUVEAU : Inclut les demandes directes orphelines (sans artisan assigné)
-      // Envoyée = type directe + (artisan assigné OU statut publiee) + AUCUN devis
-      if (demandeType === 'directe' && d.statut === 'publiee' && !hasDevis && !hasDevisPaye) {
-        return true; // Inclut TOUTES les demandes directes publiées sans devis
+      // Envoyée = type directe + (statut publiee OU attribuee) + AUCUN devis
+      if (demandeType === 'directe' && (d.statut === 'publiee' || d.statut === 'attribuee') && !hasDevis && !hasDevisPaye) {
+        return true; // Inclut TOUTES les demandes directes publiées/attribuées sans devis
       }
       
       return false;
