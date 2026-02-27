@@ -454,11 +454,14 @@ export default function MesDemandesPage() {
   function getDemandesEnTraitement(demandes: Demande[]) {
     return demandes.filter(d => {
       const devis = devisMap.get(d.id) || [];
-      const hasDevis = devis.length > 0;
       const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
       
-      // En traitement = devis reçus + AUCUN payé + statut normal (pas annulé/terminé)
-      return hasDevis && !hasDevisPaye && 
+      // En traitement = au moins 1 devis ENVOYÉ au client (statut 'envoye' ou 'en_attente_paiement')
+      // ⚠️ Les devis en brouillon (côté artisan uniquement) ne font PAS basculer la demande ici
+      // → La demande reste dans "Envoyés" tant que l'artisan n'a pas soumis son devis
+      const hasDevisVisible = devis.some(dv => dv.statut === 'envoye' || dv.statut === 'en_attente_paiement');
+      
+      return hasDevisVisible && !hasDevisPaye &&
              d.statut !== 'annulee' && d.statut !== 'terminee';
     });
   }
