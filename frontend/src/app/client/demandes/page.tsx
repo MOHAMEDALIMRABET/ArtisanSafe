@@ -490,12 +490,14 @@ export default function MesDemandesPage() {
     return demandes.filter(d => {
       const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
       const demandeType = d.type || 'directe';
-      
-      // Publiée = type publique + statut publiee, matchee ou quota_atteint + pas de devis payé
-      // Note : on inclut matchee (artisan trouvé mais pas encore de devis envoyé)
-      // Note : on inclut quota_atteint (5 devis reçus - info utile pour le client)
-      // Note : on n'exclut plus !hasDevis car des brouillons côté artisan ne concernent pas le client
-      return demandeType === 'publique' && !hasDevisPaye &&
+      const devis = devisMap.get(d.id) || [];
+
+      // Dès qu'un devis est envoyé ou en attente de paiement → passe dans EN TRAITEMENT
+      const hasDevisVisible = devis.some(dv => dv.statut === 'envoye' || dv.statut === 'en_attente_paiement');
+
+      // Publiée = type publique + AUCUN devis visible + pas de devis payé
+      // Statuts inclus : publiee, matchee (artisan trouvé), quota_atteint (5 devis max atteint mais aucun envoyé)
+      return demandeType === 'publique' && !hasDevisVisible && !hasDevisPaye &&
              (d.statut === 'publiee' || d.statut === 'matchee' || d.statut === 'quota_atteint');
     });
   }
