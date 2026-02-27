@@ -283,12 +283,22 @@ export async function getDemandesPubliquesForArtisan(
       return [];
     }
     
-    // Statuts visibles pour l'artisan (attribuee = devis accepté → disparaît)
+    // Statuts visibles pour l'artisan (attribuee = accepté → disparaît, expiree = plus visible)
     const STATUTS_VISIBLES = ['publiee', 'matchee', 'quota_atteint'];
+    const now = new Date();
     
     const demandes = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() } as Demande))
-      .filter(d => STATUTS_VISIBLES.includes(d.statut));
+      .filter(d => {
+        // Exclure les statuts non visibles
+        if (!STATUTS_VISIBLES.includes(d.statut)) return false;
+        // Exclure les demandes dont la dateExpiration est dépassée
+        if (d.dateExpiration) {
+          const expDate = d.dateExpiration.toDate ? d.dateExpiration.toDate() : new Date(d.dateExpiration.seconds * 1000);
+          if (expDate < now) return false;
+        }
+        return true;
+      });
     
     // Filtrage côté client par métier
     const demandesFiltrees = demandes.filter(d => {

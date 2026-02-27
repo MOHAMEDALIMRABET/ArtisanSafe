@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { getDemandesByClient, deleteDemande } from '@/lib/firebase/demande-service';
+import { getDemandesByClient, deleteDemande, updateDemandeStatut } from '@/lib/firebase/demande-service';
 import { getArtisansByIds } from '@/lib/firebase/artisan-service';
 import { getDevisByDemande } from '@/lib/firebase/devis-service';
 import { createNotification } from '@/lib/firebase/notification-service';
@@ -174,6 +174,28 @@ export default function MesDemandesPage() {
       }
       setDevisMap(devisMapTemp);
       setDemandesAvecDevisPayeIds(demandesAvecDevisPayeSet);
+
+      // ⏰ Marquer automatiquement en 'expiree' dans Firestore les demandes expirées
+      // (à défaut de Cloud Function — le frontend fait le travail au chargement)
+      const STATUTS_NON_EXPIRABLES = ['annulee', 'terminee', 'attribuee', 'expiree'];
+      const demandesAMarquerExpirees = userDemandes.filter(d =>
+        d.dateExpiration &&
+        isDemandeExpired(d.dateExpiration) &&
+        !STATUTS_NON_EXPIRABLES.includes(d.statut) &&
+        !demandesAvecDevisPayeSet.has(d.id) // ne pas expirer si contrat actif
+      );
+      if (demandesAMarquerExpirees.length > 0) {
+        console.log(`⏰ ${demandesAMarquerExpirees.length} demande(s) à marquer comme expirée(s) dans Firestore`);
+        await Promise.allSettled(
+          demandesAMarquerExpirees.map(d => updateDemandeStatut(d.id, 'expiree'))
+        );
+        // Mettre à jour le state local pour refléter immédiatement le changement
+        setDemandes(prev => prev.map(d =>
+          demandesAMarquerExpirees.some(exp => exp.id === d.id)
+            ? { ...d, statut: 'expiree' }
+            : d
+        ));
+      }
 
       // Charger les artisans des devis non encore présents dans la map (ex: demandes publiques avec plusieurs artisans)
       const devisArtisanIds = new Set<string>();
