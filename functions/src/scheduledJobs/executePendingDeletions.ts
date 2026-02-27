@@ -266,7 +266,7 @@ async function deleteUserCompletely(
     if (accountType === 'artisan') {
       const artisanRef = db.collection('artisans').doc(userId);
       const artisanSnap = await artisanRef.get();
-      if (artisanSnap.exists()) {
+      if (artisanSnap.exists) {
         await artisanRef.delete();
         stats.deleted++;
         console.log(`        - Document artisans supprimé`);
@@ -360,9 +360,10 @@ async function deleteUserCompletely(
  * Cron quotidien : Exécuter les suppressions programmées arrivées à échéance
  */
 export const executePendingDeletions = functions
+  .region('europe-west1') // Paris - cohérent avec les autres jobs
   .runWith({
     timeoutSeconds: 540, // 9 minutes max
-    memory: '1GB' // Plus de mémoire pour suppressions multiples
+    memory: '512MB' // Réduit pour compatibilité déploiement
   })
   .pubsub
   .schedule('every day 03:00')
@@ -533,7 +534,7 @@ export const executePendingDeletionsManual = functions
     console.log('════════════════════════════════════════');
     
     try {
-      const result = await executePendingDeletions.run({} as any);
+      const result = await executePendingDeletions.run({} as any, {} as any);
       
       res.status(200).json({
         message: 'Exécution manuelle terminée',
