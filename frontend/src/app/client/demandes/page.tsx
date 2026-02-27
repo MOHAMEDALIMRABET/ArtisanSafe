@@ -174,6 +174,21 @@ export default function MesDemandesPage() {
       }
       setDevisMap(devisMapTemp);
       setDemandesAvecDevisPayeIds(demandesAvecDevisPayeSet);
+
+      // Charger les artisans des devis non encore présents dans la map (ex: demandes publiques avec plusieurs artisans)
+      const devisArtisanIds = new Set<string>();
+      devisMapTemp.forEach(devisList => {
+        devisList.forEach(d => { if (d.artisanId) devisArtisanIds.add(d.artisanId); });
+      });
+      const missingArtisanIds = Array.from(devisArtisanIds).filter(id => !allArtisanIds.has(id));
+      if (missingArtisanIds.length > 0) {
+        const artisansSup = await getArtisansByIds(missingArtisanIds);
+        setArtisansMap(prev => {
+          const updated = new Map(prev);
+          artisansSup.forEach(a => updated.set(a.userId, a));
+          return updated;
+        });
+      }
     } catch (error) {
       console.error('Erreur chargement demandes:', error);
     } finally {
@@ -299,12 +314,12 @@ export default function MesDemandesPage() {
     }
     
     // 📬 PRIORITÉ 3 : DEVIS REÇU (au moins 1 devis envoyé)
-    // → Badge "X devis reçu(s)"
+    // → Badge "X devis à examiner"
     const devisEnvoyes = devisForDemande.filter(d => d.statut === 'envoye');
     if (devisEnvoyes.length > 0) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
-          📬 {devisEnvoyes.length} devis reçu{devisEnvoyes.length > 1 ? 's' : ''}
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 cursor-pointer">
+          📬 {devisEnvoyes.length} devis à examiner
         </span>
       );
     }
@@ -1140,6 +1155,53 @@ export default function MesDemandesPage() {
                         </p>
                       </div>
                     )}
+
+                    {/* Liste des devis à examiner */}
+                    {(() => {
+                      const devisAExaminer = (devisMap.get(demande.id) || []).filter(d => d.statut === 'envoye');
+                      if (devisAExaminer.length === 0) return null;
+                      return (
+                        <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4">
+                          <h5 className="font-bold text-purple-800 mb-3 flex items-center gap-2">
+                            📬 {devisAExaminer.length} devis à examiner
+                          </h5>
+                          <div className="space-y-3">
+                            {devisAExaminer.map(devis => {
+                              const artisan = artisansMap.get(devis.artisanId);
+                              const nomArtisan = artisan?.raisonSociale || t('clientDemandes.devis.unknownArtisan');
+                              const initiales = nomArtisan.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() || '').join('');
+                              return (
+                                <div key={devis.id} className="bg-white rounded-lg p-4 border border-purple-100 flex items-center justify-between gap-4">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-[#2C3E50] to-[#1A3A5C] text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                      {initiales || 'A'}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-[#2C3E50] truncate">{nomArtisan}</p>
+                                      <div className="flex items-center gap-3 text-sm flex-wrap">
+                                        <span className="font-bold text-[#FF6B00]">{devis.montantTTC?.toFixed(2)} € TTC</span>
+                                        {devis.delaiRealisation && (
+                                          <span className="text-gray-600">⏱️ {devis.delaiRealisation}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/client/devis/${devis.id}`);
+                                    }}
+                                    className="flex-shrink-0 bg-[#FF6B00] text-white hover:bg-[#E56100] px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap shadow-sm"
+                                  >
+                                    {t('clientDemandes.devis.examine')}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 

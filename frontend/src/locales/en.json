@@ -1931,6 +1931,10 @@
       "newProject": "➕ New project"
     },
     "searchAnotherArtisan": "🔍 Search for another tradesperson",
+    "devis": {
+      "examine": "Review this quote",
+      "unknownArtisan": "Unknown tradesperson"
+    },
     "empty": {
       "noRequests": "No requests yet",
       "noRequestsDescription": "Start by searching for a tradesperson to receive personalized quotes",
