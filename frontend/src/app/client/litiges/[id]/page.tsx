@@ -151,7 +151,7 @@ export default function ClientLitigeDetailPage() {
   // Vérifier si le client a déjà accepté la proposition
   const clientAlreadyAccepted = litige.historique.some(
     (action) =>
-      action.type === 'acceptation_resolution' && action.auteurRole === 'client'
+      action.type === 'acceptation_resolution' && action.acteurRole === 'client'
   );
 
   return (

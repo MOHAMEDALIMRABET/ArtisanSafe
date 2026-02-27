@@ -643,7 +643,8 @@ function ResultatsContent() {
 
             {/* Liste des artisans */}
             {results.map((result, index) => (
-              <Card key={result.artisan.userId} onClick={() => router.push(`/artisan/${result.artisan.userId}`)} className="p-6 hover:border-[#FF6B00] transition-all cursor-pointer">
+              <div key={result.artisan.userId} onClick={() => router.push(`/artisan/${result.artisan.userId}`)} className="cursor-pointer">
+              <Card className="p-6 hover:border-[#FF6B00] transition-all">
                 <div className="flex gap-6">
                     {/* Photo profil */}
                     <div className="flex-shrink-0">
@@ -747,6 +748,7 @@ function ResultatsContent() {
                     </div>
                   </div>
                 </Card>
+              </div>
             ))}
 
             {/* Section "Pas trouvé l'artisan idéal ?" - MASQUÉE */}
@@ -965,6 +967,7 @@ function ResultatsContent() {
                         type: 'publique',
                         statut: 'publiee',
                         categorie: categorie as any,
+                        titre: publishDescription.trim().slice(0, 100) || `Demande de ${categorie}`,
                         description: publishDescription.trim(),
                         localisation: {
                           ville,
@@ -972,11 +975,12 @@ function ResultatsContent() {
                           adresse: ville,
                         },
                         datesSouhaitees: {
+                          dateDebut: dates[0] || new Date().toISOString().split('T')[0],
                           dates: datesTimestamps,
                           flexible,
+                          urgence: (urgence || 'normale') as any,
                           ...(flexible && flexibiliteDays > 0 && { flexibiliteDays }),
                         },
-                        urgence: urgence || 'normale',
                         critereRecherche: {
                           metier: categorie,
                           ville,

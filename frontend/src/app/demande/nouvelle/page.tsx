@@ -68,9 +68,9 @@ function NouvelleDemandeContent() {
             setFormData({
               titre: brouillon.titre,
               description: brouillon.description,
-              budget: typeof brouillon.budget === 'number' 
-                ? brouillon.budget 
-                : (brouillon.budget?.min || 0), // Compatibilité ancien format
+              budget: typeof (brouillon as any).budget === 'number' 
+                ? (brouillon as any).budget 
+                : ((brouillon as any).budget?.min || brouillon.budgetIndicatif || 0), // Compatibilité ancien format
             });
 
             // Pré-remplir les critères de recherche depuis le brouillon
@@ -174,7 +174,7 @@ function NouvelleDemandeContent() {
       if (photos.length > 0) {
         console.log(`📤 Upload de ${photos.length} photo(s) vers Firebase Storage...`);
         try {
-          photoUrls = await uploadMultiplePhotos(photos, 'demandes', user.uid);
+          photoUrls = await uploadMultiplePhotos(photos, 'demandes', user!.uid);
           console.log(`✅ Photos uploadées:`, photoUrls);
         } catch (error: any) {
           console.error('❌ Erreur upload photos:', error);
@@ -188,7 +188,7 @@ function NouvelleDemandeContent() {
       // Créer la demande
       const demandeData: any = {
         type: 'directe' as const, // ✅ Demande directe (envoyée à un artisan spécifique)
-        clientId: user.uid,
+        clientId: user!.uid,
         categorie: criteria.categorie,
         titre: formData.titre,
         description: formData.description,
@@ -206,7 +206,7 @@ function NouvelleDemandeContent() {
         urgence: criteria.urgence,
         photosUrls: photoUrls, // URLs Firebase Storage au lieu des noms de fichiers
         // ✅ Statut intelligent : 'matchee' si artisan présélectionné, sinon 'publiee'
-        statut: (artisanPreselect ? 'matchee' : 'publiee') as const,
+        statut: (artisanPreselect ? 'matchee' : 'publiee'),
         devisRecus: 0,
         artisansMatches: artisanPreselect ? [artisanPreselect] : [],
       };
