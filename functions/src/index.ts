@@ -208,6 +208,7 @@ export { onArtisanVerified } from './triggers/artisanTriggers';
 export { 
   onDevisCreated,      // Incrément + fermeture quota
   onDevisDeleted,      // Décrément si suppression
+  onDevisUpdated,      // Notifications changement statut (envoye/accepte/refuse/revision)
   syncDevisCounter     // Resync manuel (HTTP)
 } from './triggers/devisTriggers';
 

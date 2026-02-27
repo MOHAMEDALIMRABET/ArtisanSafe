@@ -264,6 +264,190 @@ export const onDevisDeleted = functions
 
 
 /**
+ * TRIGGER: Notifications automatiques sur changement de statut devis
+ *
+ * DÉCLENCHEUR: Toute mise à jour d'un document devis/
+ *
+ * Cas gérés (SOURCE UNIQUE DE VÉRITÉ côté serveur) :
+ * ┌─────────────────────────────┬──────────────────────────────────────────┐
+ * │ Transition statut           │ Action                                   │
+ * ├─────────────────────────────┼──────────────────────────────────────────┤
+ * │ brouillon → envoye          │ Notification client "Nouveau devis reçu" │
+ * │ * → accepte                 │ Notification artisan "Devis accepté !"   │
+ * │                             │ + Statut demande → 'attribuee'           │
+ * │ * → refuse (typeRefus ≠ revision) │ Notification artisan "Devis refusé"│
+ * │ * → refuse (typeRefus = revision) │ Notification artisan "Révision"    │
+ * └─────────────────────────────┴──────────────────────────────────────────┘
+ *
+ * Note: Le frontend appelle aussi les notifications pour fiabilité immédiate.
+ * Ce trigger est le filet de sécurité si la fenêtre est fermée.
+ * Les doublons sont inoffensifs (l'UI déduplique par dateCreation).
+ */
+export const onDevisUpdated = functions
+  .region('europe-west1')
+  .firestore
+  .document('devis/{devisId}')
+  .onUpdate(async (change, context) => {
+    const before = change.before.data();
+    const after = change.after.data();
+    const devisId = context.params.devisId;
+
+    // Ignorer si statut inchangé
+    if (before.statut === after.statut) {
+      console.log(`⏭️  [onDevisUpdated] Statut inchangé (${after.statut}) - Fin`);
+      return null;
+    }
+
+    console.log(`🔄 [onDevisUpdated] ${devisId}: ${before.statut} → ${after.statut}`);
+
+    const clientId: string = after.clientId;
+    const artisanId: string = after.artisanId;
+    const numeroDevis: string = after.numeroDevis || devisId;
+
+    // Noms d'affichage
+    const artisanNom: string =
+      after.artisan?.raisonSociale ||
+      (after.artisan?.prenom && after.artisan?.nom
+        ? `${after.artisan.prenom} ${after.artisan.nom}`
+        : 'L\'artisan');
+    const clientNom: string =
+      after.client?.prenom && after.client?.nom
+        ? `${after.client.prenom} ${after.client.nom}`
+        : 'Le client';
+
+    // Helper : créer notification dans le format attendu par l'UI (notification-service.ts)
+    const createNotif = (userId: string, type: string, titre: string, message: string, lien: string) =>
+      db.collection('notifications').add({
+        userId,
+        type,
+        titre,
+        message,
+        lien,
+        lue: false,
+        dateCreation: admin.firestore.FieldValue.serverTimestamp(),
+        // Champs de compatibilité Cloud Function (pour affichage admin)
+        relatedId: devisId,
+        relatedType: 'devis',
+      });
+
+    try {
+      // ================================================================
+      // CAS 1 : brouillon → envoye
+      // Artisan vient d'envoyer le devis → Notifier le CLIENT
+      // ================================================================
+      if (before.statut === 'brouillon' && after.statut === 'envoye') {
+        console.log(`📨 [onDevisUpdated] CAS 1 : devis envoyé → notification client`);
+
+        await createNotif(
+          clientId,
+          'devis_recu',
+          '📄 Nouveau devis reçu',
+          `${artisanNom} vous a envoyé le devis ${numeroDevis}.`,
+          `/client/devis/${devisId}`
+        );
+
+        console.log(`✅ [onDevisUpdated] Notification devis_recu → client ${clientId}`);
+      }
+
+      // ================================================================
+      // CAS 2 : * → accepte
+      // Client vient d'accepter → Notifier l'ARTISAN + marquer demande
+      // ================================================================
+      else if (after.statut === 'accepte' && before.statut !== 'accepte') {
+        console.log(`✅ [onDevisUpdated] CAS 2 : devis accepté → notification artisan`);
+
+        await createNotif(
+          artisanId,
+          'devis_accepte',
+          '✅ Devis accepté !',
+          `${clientNom} a accepté votre devis ${numeroDevis}. Un contrat a été généré.`,
+          `/artisan/devis?devisId=${devisId}`
+        );
+
+        console.log(`✅ [onDevisUpdated] Notification devis_accepte → artisan ${artisanId}`);
+
+        // Mettre à jour statut demande → 'attribuee' si ce n'est pas déjà fait
+        if (after.demandeId) {
+          const demandeRef = db.collection('demandes').doc(after.demandeId);
+          const demandeSnap = await demandeRef.get();
+
+          if (demandeSnap.exists) {
+            const demandeStatut = demandeSnap.data()!.statut;
+            const STATUTS_A_PASSER = ['publiee', 'matchee', 'quota_atteint', 'en_attente_devis'];
+
+            if (STATUTS_A_PASSER.includes(demandeStatut)) {
+              await demandeRef.update({
+                statut: 'attribuee',
+                artisanAttribueId: artisanId,
+                dateAttribution: admin.firestore.FieldValue.serverTimestamp(),
+                dateModification: admin.firestore.FieldValue.serverTimestamp(),
+              });
+              console.log(`✅ [onDevisUpdated] Demande ${after.demandeId} → 'attribuee'`);
+            }
+          }
+        }
+      }
+
+      // ================================================================
+      // CAS 3 : * → refuse (typeRefus = revision)
+      // Client demande une modification → Notifier l'ARTISAN
+      // ================================================================
+      else if (after.statut === 'refuse' && before.statut !== 'refuse' && after.typeRefus === 'revision') {
+        console.log(`🔄 [onDevisUpdated] CAS 3 : révision demandée → notification artisan`);
+
+        const motif = after.motifRefus || '';
+        await createNotif(
+          artisanId,
+          'devis_revision',
+          '🔄 Demande de révision de devis',
+          `${clientNom} souhaite une révision du devis ${numeroDevis}.${motif ? ` Motif : ${motif}` : ''}`,
+          `/artisan/devis?devisId=${devisId}`
+        );
+
+        console.log(`✅ [onDevisUpdated] Notification devis_revision → artisan ${artisanId}`);
+      }
+
+      // ================================================================
+      // CAS 4 : * → refuse (typeRefus ≠ revision)
+      // Client refuse définitivement → Notifier l'ARTISAN
+      // ================================================================
+      else if (after.statut === 'refuse' && before.statut !== 'refuse') {
+        console.log(`❌ [onDevisUpdated] CAS 4 : refus définitif → notification artisan`);
+
+        const motif = after.motifRefus || '';
+        const typeLabel = after.typeRefus === 'artisan'
+          ? ' (artisan bloqué)'
+          : after.typeRefus === 'variante'
+            ? ' (variante refusée)'
+            : '';
+
+        await createNotif(
+          artisanId,
+          'devis_refuse',
+          '❌ Devis refusé',
+          `${clientNom} a refusé votre devis ${numeroDevis}${typeLabel}.${motif ? ` Motif : ${motif}` : ''}`,
+          `/artisan/devis?devisId=${devisId}`
+        );
+
+        console.log(`✅ [onDevisUpdated] Notification devis_refuse → artisan ${artisanId}`);
+      }
+
+      else {
+        console.log(`⏭️  [onDevisUpdated] Transition ${before.statut} → ${after.statut} non ciblée`);
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error(`❌ [onDevisUpdated] ERREUR:`, error);
+      console.error(`   Devis ID: ${devisId}`);
+      // Ne jamais bloquer la mise à jour du devis
+      return null;
+    }
+  });
+
+
+/**
  * HTTP Function: Synchroniser manuellement compteur devisRecus
  * 
  * Use case: Compteur désynchronisé (bug, migration, etc.)
