@@ -311,9 +311,10 @@ export default function MesDemandesPage() {
     
     // ✅ PRIORITÉ 4 : DEMANDE DIRECTE (envoyée à un artisan spécifique)
     // → Badge "Envoyé à artisan" dès la création (artisan déjà assigné)
-    // ✅ FALLBACK : Badge orange aussi pour demandes directes orphelines (sans artisan)
-    if (demandeType === 'directe' && (statut === 'publiee' || statut === 'matchee' || statut === 'genere' || statut === 'attribuee')) {
-      // Si artisan assigné → badge avec bordure
+    // ✅ PRIORITÉ 4 : DEMANDE DIRECTE
+    // Une demande directe avec artisan assigné affiche TOUJOURS "🎯 Envoyé à artisan"
+    // (peu importe le statut Firestore — les priorités 1-3 ont déjà géré les cas contrat/devis)
+    if (demandeType === 'directe') {
       if (hasArtisan) {
         return (
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border-2 border-orange-300">
@@ -321,7 +322,7 @@ export default function MesDemandesPage() {
           </span>
         );
       }
-      // Si PAS d'artisan assigné → badge orphelin (sans bordure)
+      // Demande directe sans artisan assigné (orpheline)
       return (
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700">
           ⚠️ Demande directe (artisan non assigné)
