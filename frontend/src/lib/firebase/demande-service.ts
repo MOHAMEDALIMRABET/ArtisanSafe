@@ -269,11 +269,12 @@ export async function getDemandesPubliquesForArtisan(
   try {
     const demandesRef = collection(db, COLLECTION_NAME);
     
-    // Requête simple (éviter index composite)
+    // Requête simple par type (éviter index composite)
+    // Le filtre sur statut est fait côté client pour inclure publiee + matchee + quota_atteint
+    // et exclure attribuee, terminee, annulee, expiree
     const q = query(
       demandesRef,
-      where('type', '==', 'publique'),
-      where('statut', '==', 'publiee')
+      where('type', '==', 'publique')
     );
     
     const snapshot = await getDocs(q);
@@ -282,10 +283,12 @@ export async function getDemandesPubliquesForArtisan(
       return [];
     }
     
-    const demandes = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Demande));
+    // Statuts visibles pour l'artisan (attribuee = devis accepté → disparaît)
+    const STATUTS_VISIBLES = ['publiee', 'matchee', 'quota_atteint'];
+    
+    const demandes = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as Demande))
+      .filter(d => STATUTS_VISIBLES.includes(d.statut));
     
     // Filtrage côté client par métier
     const demandesFiltrees = demandes.filter(d => {

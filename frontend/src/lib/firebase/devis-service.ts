@@ -220,6 +220,13 @@ export async function createDevis(
       await updateDoc(demandeRef, {
         devisRecus: increment(1)
       });
+      // Vérifier si le quota de 5 devis est atteint → passer en quota_atteint
+      const demandeSnap = await getDoc(demandeRef);
+      const demandeData = demandeSnap.data();
+      if (demandeData && (demandeData.devisRecus || 0) >= 5 && demandeData.statut !== 'quota_atteint') {
+        await updateDoc(demandeRef, { statut: 'quota_atteint' });
+        console.log('🔒 Quota 5 devis atteint pour demande:', devisData.demandeId);
+      }
     } catch (error) {
       console.error('Erreur mise à jour compteur devisRecus:', error);
       // Ne pas bloquer la création du devis si la mise à jour échoue
@@ -340,6 +347,13 @@ export async function updateDevis(
             devisRecus: increment(1)
           });
           console.log('✅ Compteur devisRecus incrémenté pour demande:', devisActuel.demandeId);
+          // Vérifier si le quota de 5 devis est atteint → passer en quota_atteint
+          const demandeSnap = await getDoc(demandeRef);
+          const demandeData = demandeSnap.data();
+          if (demandeData && (demandeData.devisRecus || 0) >= 5 && demandeData.statut !== 'quota_atteint') {
+            await updateDoc(demandeRef, { statut: 'quota_atteint' });
+            console.log('🔒 Quota 5 devis atteint pour demande:', devisActuel.demandeId);
+          }
         } catch (error) {
           console.error('Erreur mise à jour compteur devisRecus:', error);
         }
@@ -431,6 +445,26 @@ export async function updateDevis(
     } else if (updates.statut === 'refuse') {
       updateData.dateRefus = Timestamp.now();
       updateData.dateDerniereNotification = Timestamp.now(); // Notifier l'artisan
+      
+      // Décrémenter devisRecus si le devis était envoyé (libère une place pour un autre devis)
+      if (devisActuel.demandeId && devisActuel.statut === 'envoye') {
+        try {
+          const demandeRef = doc(db, 'demandes', devisActuel.demandeId);
+          await updateDoc(demandeRef, {
+            devisRecus: increment(-1)
+          });
+          // Si la demande était quota_atteint, la remettre en publiee (place libérée)
+          const demandeSnap = await getDoc(demandeRef);
+          const demandeData = demandeSnap.data();
+          if (demandeData?.statut === 'quota_atteint' && (demandeData.devisRecus || 0) < 5) {
+            await updateDoc(demandeRef, { statut: 'publiee' });
+            console.log('🔓 Quota libéré, demande remise en publiee:', devisActuel.demandeId);
+          }
+          console.log('✅ Compteur devisRecus décrémenté pour demande:', devisActuel.demandeId);
+        } catch (error) {
+          console.error('Erreur décrémentation compteur devisRecus:', error);
+        }
+      }
       
       // 🆕 TRACKING: Enregistrer le refus pour le scoring
       try {

@@ -360,14 +360,29 @@ export default function MesDemandesPage() {
       );
     }
     
-    // ✅ PRIORITÉ 5 : DEMANDE PUBLIQUE publiée (pas encore de devis)
-    // → Badge "Publiée"
-    if (demandeType === 'publique' && statut === 'publiee') {
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
-          {t('clientDemandes.badges.published')}
-        </span>
-      );
+    // ✅ PRIORITÉ 5 : DEMANDE PUBLIQUE (publiée, matchée, quota atteint)
+    if (demandeType === 'publique') {
+      if (statut === 'publiee') {
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+            📢 {t('clientDemandes.badges.published')}
+          </span>
+        );
+      }
+      if (statut === 'matchee') {
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+            🔍 Artisan trouvé
+          </span>
+        );
+      }
+      if (statut === 'quota_atteint') {
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
+            🔒 5 devis reçus
+          </span>
+        );
+      }
     }
     
     // Badges statuts standards (fallback)
@@ -436,18 +451,28 @@ export default function MesDemandesPage() {
    */
   function getDemandesEnvoyees(demandes: Demande[]) {
     return demandes.filter(d => {
-      const hasArtisan = d.artisansMatches && d.artisansMatches.length > 0;
-      const hasDevis = devisMap.get(d.id) && (devisMap.get(d.id)?.length || 0) > 0;
-      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
       const demandeType = d.type || 'directe';
-      
-      // ✅ NOUVEAU : Inclut les demandes directes orphelines (sans artisan assigné)
-      // Envoyée = type directe + (statut publiee OU attribuee) + AUCUN devis
-      if (demandeType === 'directe' && (d.statut === 'publiee' || d.statut === 'attribuee') && !hasDevis && !hasDevisPaye) {
-        return true; // Inclut TOUTES les demandes directes publiées/attribuées sans devis
-      }
-      
-      return false;
+      if (demandeType !== 'directe') return false;
+
+      const devis = devisMap.get(d.id) || [];
+      const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
+      const isExpired = d.dateExpiration ? isDemandeExpired(d.dateExpiration) : false;
+
+      // Même logique que getStatutBadge() priorité 4 :
+      // Une demande directe apparaît dans Envoyés si et seulement si le badge affiche 🎯 Envoyé à artisan
+      // → Pas de contrat actif
+      // → Pas expirée
+      // → Aucun devis ENVOYÉ ou EN ATTENTE DE PAIEMENT (sinon elle est dans EN TRAITEMENT)
+      // → Non annulée / terminée
+      // → Statut compatible : publiee, attribuee ou matchee
+      const hasDevisVisible = devis.some(dv => dv.statut === 'envoye' || dv.statut === 'en_attente_paiement');
+
+      return !hasDevisPaye &&
+             !isExpired &&
+             !hasDevisVisible &&
+             d.statut !== 'annulee' &&
+             d.statut !== 'terminee' &&
+             (d.statut === 'publiee' || d.statut === 'attribuee' || d.statut === 'matchee');
     });
   }
 
@@ -457,19 +482,21 @@ export default function MesDemandesPage() {
    * - Caractéristiques :
    *   • Type: 'publique'
    *   • Visibles par TOUS les artisans qualifiés
-   *   • AUCUN devis reçu encore
-   *   • Statut: 'publiee'
-   * - Workflow : Client publie → Artisans découvrent → Attend devis
+   *   • Statut: 'publiee' OU 'matchee' (le système a trouvé un artisan compatible)
+   *   • 'quota_atteint' = 5 devis reçus, plus de devis possibles
+   * - Workflow : Client publie → matchee quand artisan trouvé → Attend devis
    */
   function getDemandesPubliees(demandes: Demande[]) {
     return demandes.filter(d => {
-      const hasDevis = devisMap.get(d.id) && (devisMap.get(d.id)?.length || 0) > 0;
       const hasDevisPaye = demandesAvecDevisPayeIds.has(d.id);
       const demandeType = d.type || 'directe';
       
-      // Publiée = type publique + AUCUN devis + statut publiee
-      return demandeType === 'publique' && !hasDevis && !hasDevisPaye && 
-             d.statut === 'publiee';
+      // Publiée = type publique + statut publiee, matchee ou quota_atteint + pas de devis payé
+      // Note : on inclut matchee (artisan trouvé mais pas encore de devis envoyé)
+      // Note : on inclut quota_atteint (5 devis reçus - info utile pour le client)
+      // Note : on n'exclut plus !hasDevis car des brouillons côté artisan ne concernent pas le client
+      return demandeType === 'publique' && !hasDevisPaye &&
+             (d.statut === 'publiee' || d.statut === 'matchee' || d.statut === 'quota_atteint');
     });
   }
 
@@ -1194,7 +1221,7 @@ export default function MesDemandesPage() {
                                     <div className="min-w-0">
                                       <p className="font-semibold text-[#2C3E50] truncate">{nomArtisan}</p>
                                       <div className="flex items-center gap-3 text-sm flex-wrap">
-                                        <span className="font-bold text-[#FF6B00]">{devis.montantTTC?.toFixed(2)} € TTC</span>
+                                        <span className="font-bold text-[#FF6B00]">{devis.totaux?.totalTTC?.toFixed(2)} € TTC</span>
                                         {devis.delaiRealisation && (
                                           <span className="text-gray-600">⏱️ {devis.delaiRealisation}</span>
                                         )}
