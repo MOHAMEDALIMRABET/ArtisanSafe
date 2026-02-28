@@ -30,18 +30,18 @@ export default function LanguageSelector() {
     setIsOpen(false);
   };
 
-  // Drapeau France SVG
+  // Drapeau France SVG - rond, même taille que l'avatar connexion
   const FranceFlag = () => (
-    <svg viewBox="0 0 900 600" className="w-6 h-6 rounded shadow-sm">
+    <svg viewBox="0 0 900 600" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '100%' }}>
       <rect fill="#ED2939" width="900" height="600"/>
       <rect fill="#fff" width="600" height="600"/>
       <rect fill="#002395" width="300" height="600"/>
     </svg>
   );
 
-  // Drapeau Royaume-Uni SVG
+  // Drapeau Royaume-Uni SVG - rond, même taille que l'avatar connexion
   const UKFlag = () => (
-    <svg viewBox="0 0 60 30" className="w-6 h-6 rounded shadow-sm">
+    <svg viewBox="0 0 60 30" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '100%' }}>
       <clipPath id="s">
         <path d="M0,0 v30 h60 v-30 z"/>
       </clipPath>
@@ -60,32 +60,16 @@ export default function LanguageSelector() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Bouton sélecteur de langue */}
+      {/* Bouton sélecteur de langue — cercle identique au bouton connexion */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-[#FF6B00] shadow-md transition-all duration-200 flex items-center justify-center p-0"
         aria-label="Changer la langue"
         title={language === 'fr' ? 'Français' : 'English'}
       >
-        {/* Drapeau actuel */}
-        <div className="w-10 h-10 rounded-full flex items-center justify-center hover:ring-2 hover:ring-[#FF6B00] transition-all">
+        <div className="w-full h-full">
           {language === 'fr' ? <FranceFlag /> : <UKFlag />}
         </div>
-
-        {/* Flèche */}
-        <svg
-          className={`w-3 h-3 text-gray-600 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
       </button>
 
       {/* Dropdown menu */}
@@ -98,7 +82,7 @@ export default function LanguageSelector() {
               language === 'fr' ? 'bg-orange-50 border-l-4 border-[#FF6B00]' : ''
             }`}
           >
-            <FranceFlag />
+            <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 shadow-sm"><FranceFlag /></div>
             <span className="font-medium text-gray-800">Français</span>
             {language === 'fr' && (
               <svg className="w-5 h-5 text-[#FF6B00] ml-auto" fill="currentColor" viewBox="0 0 20 20">
@@ -114,7 +98,7 @@ export default function LanguageSelector() {
               language === 'en' ? 'bg-orange-50 border-l-4 border-[#FF6B00]' : ''
             }`}
           >
-            <UKFlag />
+            <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 shadow-sm"><UKFlag /></div>
             <span className="font-medium text-gray-800">English</span>
             {language === 'en' && (
               <svg className="w-5 h-5 text-[#FF6B00] ml-auto" fill="currentColor" viewBox="0 0 20 20">
