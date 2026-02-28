@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -16,6 +16,20 @@ export default function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedCodePostal, setSelectedCodePostal] = useState('');
   const [currentCardIndex, setCurrentCardIndex] = useState(0); // État pour le carrousel
+  const carouselFlexRef = useRef<HTMLDivElement>(null);
+  const [stepPx, setStepPx] = useState(0);
+
+  useEffect(() => {
+    const measure = () => {
+      if (carouselFlexRef.current) {
+        const firstCard = carouselFlexRef.current.children[0] as HTMLElement;
+        if (firstCard) setStepPx(firstCard.offsetWidth + 24); // 24px = gap-6
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
   
   // État du formulaire de recherche
   const [searchForm, setSearchForm] = useState({
@@ -339,7 +353,7 @@ export default function Home() {
           </div>
 
           {/* Carrousel de cartes avec navigation */}
-          <div className="relative max-w-7xl mx-auto px-4">
+          <div className="relative max-w-7xl mx-auto px-14">
             {/* Bouton flèche gauche */}
             <button
               onClick={() => setCurrentCardIndex(Math.max(0, currentCardIndex - 1))}
@@ -357,9 +371,10 @@ export default function Home() {
             {/* Conteneur de défilement */}
             <div className="overflow-hidden">
               <div 
+                ref={carouselFlexRef}
                 className="flex transition-transform duration-500 ease-in-out gap-6"
                 style={{ 
-                  transform: `translateX(-${currentCardIndex * (100 / 5)}%)` 
+                  transform: `translateX(-${currentCardIndex * stepPx}px)` 
                 }}
               >
                 {/* Carte 1 : Paiement sécurisé */}
