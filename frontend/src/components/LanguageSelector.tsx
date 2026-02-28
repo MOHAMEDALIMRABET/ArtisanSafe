@@ -82,7 +82,7 @@ export default function LanguageSelector() {
               language === 'fr' ? 'bg-orange-50 border-l-4 border-[#FF6B00]' : ''
             }`}
           >
-            <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 shadow-sm"><FranceFlag /></div>
+            <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 shadow-sm"><FranceFlag /></div>
             <span className="font-medium text-gray-800">Français</span>
             {language === 'fr' && (
               <svg className="w-5 h-5 text-[#FF6B00] ml-auto" fill="currentColor" viewBox="0 0 20 20">
@@ -98,7 +98,7 @@ export default function LanguageSelector() {
               language === 'en' ? 'bg-orange-50 border-l-4 border-[#FF6B00]' : ''
             }`}
           >
-            <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 shadow-sm"><UKFlag /></div>
+            <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 shadow-sm"><UKFlag /></div>
             <span className="font-medium text-gray-800">English</span>
             {language === 'en' && (
               <svg className="w-5 h-5 text-[#FF6B00] ml-auto" fill="currentColor" viewBox="0 0 20 20">
