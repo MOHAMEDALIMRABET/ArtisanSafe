@@ -103,9 +103,8 @@ const loadEmailStats = async () => {
           alertLevel
         });
       }
-    } catch (error) {
-      console.error('Erreur chargement stats emails:', error);
-      // Ne pas bloquer le dashboard si l'API email n'est pas disponible
+    } catch {
+      // Backend non disponible - silencieux
     }
   };
 

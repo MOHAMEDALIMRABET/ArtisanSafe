@@ -60,11 +60,6 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
-      
-      // Validation des données
-      allow write: if request.resource.data.keys().hasAll(['email', 'role', 'nom', 'prenom', 'telephone']) &&
-                      request.resource.data.role in ['client', 'artisan', 'admin'] &&
-                      request.resource.data.statut in ['non_verifie', 'verifie', 'suspendu'];
     }
     
     // ============================================
@@ -337,11 +332,12 @@ service cloud.firestore {
     // Création par le système (via Functions)
     
     match /notifications/{notificationId} {
-      allow read: if isOwner(resource.data.userId);
-      allow list: if isAuthenticated() && request.auth.uid != null; // ✅ Permettre queries avec where('userId', '==', userId)
-      allow create: if isAuthenticated(); // Via Cloud Functions
-      allow update: if isOwner(resource.data.userId); // Marquer comme lu
-      allow delete: if isOwner(resource.data.userId) || isAdmin();
+      // ✅ FIX: le champ est 'recipientId' (pas 'userId')
+      allow read: if isAdmin() || isOwner(resource.data.recipientId);
+      allow list: if isAuthenticated() && request.auth.uid != null; // ✅ Permettre queries avec where('recipientId', '==', uid)
+      allow create: if isAuthenticated(); // Via services Firebase
+      allow update: if isOwner(resource.data.recipientId) || isAdmin(); // Marquer comme lu
+      allow delete: if isOwner(resource.data.recipientId) || isAdmin();
     }
     
     // ============================================
@@ -419,27 +415,7 @@ service cloud.firestore {
     }
     
     // ============================================
-    // 16. COLLECTION: avis
-    // ============================================
-    // Avis clients après fin d'intervention
-    // Lecture publique pour transparence
-    // Écriture uniquement par client auteur ou artisan (réponse)
-    
-    match /avis/{avisId} {
-      allow read: if resource.data.visible == true || isAdmin(); // Publics si visibles
-      allow create: if isAuthenticated() && 
-                       isClient() &&
-                       request.auth.uid == request.resource.data.clientId;
-      allow update: if isOwner(resource.data.clientId) || // Client peut modifier
-                       (isArtisan() && request.auth.uid == resource.data.artisanId) || // Artisan peut répondre
-                       isAdmin();
-      allow delete: if isAdmin();
-    }
-    
-    // ============================================
-    // 17. COLLECTION: contrats (ESCROW - SYSTÈME SÉQUESTRE)
-    // ============================================
-    // 18. COLLECTION: deleted_accounts
+    // 17. COLLECTION: deleted_accounts
     // ============================================
     // Archives des comptes supprimés
     // Accessible uniquement par admin en lecture seule
