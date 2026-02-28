@@ -18,12 +18,21 @@ export default function Home() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0); // État pour le carrousel
   const carouselFlexRef = useRef<HTMLDivElement>(null);
   const [stepPx, setStepPx] = useState(0);
+  const [cardWidthPx, setCardWidthPx] = useState(0);
 
   useEffect(() => {
     const measure = () => {
       if (carouselFlexRef.current) {
-        const firstCard = carouselFlexRef.current.children[0] as HTMLElement;
-        if (firstCard) setStepPx(firstCard.offsetWidth + 24); // 24px = gap-6
+        // Mesurer le conteneur visible (parent du flex div = div overflow-hidden)
+        const conteneurVisible = carouselFlexRef.current.parentElement;
+        if (conteneurVisible) {
+          const largeurConteneur = conteneurVisible.offsetWidth;
+          const gap = 24; // gap-6 = 24px
+          const cartesVisibles = 4;
+          const largeurCarte = (largeurConteneur - (cartesVisibles - 1) * gap) / cartesVisibles;
+          setCardWidthPx(largeurCarte);
+          setStepPx(largeurCarte + gap); // un pas = largeur carte + gap
+        }
       }
     };
     measure();
@@ -378,7 +387,7 @@ export default function Home() {
                 }}
               >
                 {/* Carte 1 : Paiement sécurisé */}
-                <Link href="/confiance/paiement-securise" className="group flex-shrink-0 w-[calc(20%-1.2rem)]">
+                <Link href="/confiance/paiement-securise" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#E8F5E9] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
                       <span className="text-4xl">🔒</span>
@@ -409,7 +418,7 @@ export default function Home() {
                 </Link>
 
                 {/* Carte 2 : Vérification artisans */}
-                <Link href="/confiance/verification-artisans" className="group flex-shrink-0 w-[calc(20%-1.2rem)]">
+                <Link href="/confiance/verification-artisans" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#E3F2FD] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
                       <span className="text-4xl">✓</span>
@@ -440,7 +449,7 @@ export default function Home() {
                 </Link>
 
                 {/* Carte 3 : Planning flexible */}
-                <Link href="/confiance/planning-flexibilite" className="group flex-shrink-0 w-[calc(20%-1.2rem)]">
+                <Link href="/confiance/planning-flexibilite" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#FFF3E0] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
                       <span className="text-4xl">📅</span>
@@ -471,7 +480,7 @@ export default function Home() {
                 </Link>
 
                 {/* Carte 4 : Avis certifiés */}
-                <Link href="/confiance/avis-certifies" className="group flex-shrink-0 w-[calc(20%-1.2rem)]">
+                <Link href="/confiance/avis-certifies" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#FFFBF0] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
                       <span className="text-4xl">⭐</span>
@@ -502,7 +511,7 @@ export default function Home() {
                 </Link>
 
                 {/* Carte 5 : Devis gratuits */}
-                <Link href="/confiance/devis-gratuits" className="group flex-shrink-0 w-[calc(20%-1.2rem)]">
+                <Link href="/confiance/devis-gratuits" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#E8F5E9] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
                       <span className="text-4xl">💰</span>
@@ -533,7 +542,7 @@ export default function Home() {
                 </Link>
 
                 {/* Carte 6 : Petits travaux */}
-                <Link href="/petits-travaux" className="group flex-shrink-0 w-[calc(20%-1.2rem)]">
+                <Link href="/petits-travaux" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#FFF9E6] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
                       <span className="text-4xl">🔧</span>
@@ -564,7 +573,7 @@ export default function Home() {
                 </Link>
 
                 {/* Carte 7 : Protection & médiation */}
-                <Link href="/confiance/protection-mediation" className="group flex-shrink-0 w-[calc(20%-1.2rem)]">
+                <Link href="/confiance/protection-mediation" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#FFEBEE] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
                       <span className="text-4xl">🛡️</span>
@@ -598,10 +607,10 @@ export default function Home() {
 
             {/* Bouton flèche droite */}
             <button
-              onClick={() => setCurrentCardIndex(Math.min(2, currentCardIndex + 1))}
-              disabled={currentCardIndex === 2}
+              onClick={() => setCurrentCardIndex(Math.min(3, currentCardIndex + 1))}
+              disabled={currentCardIndex === 3}
               className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-xl rounded-full p-3 hover:bg-[#FF6B00] hover:text-white transition-all duration-300 ${
-                currentCardIndex === 2 ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:scale-110'
+                currentCardIndex === 3 ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:scale-110'
               }`}
               aria-label={t('home.nextCard')}
             >
@@ -610,29 +619,18 @@ export default function Home() {
               </svg>
             </button>
 
-            {/* Indicateurs de position */}
+            {/* Indicateurs de position - 4 points pour 4 positions (7 cartes, 4 visibles) */}
             <div className="flex justify-center gap-2 mt-8">
-              <button
-                onClick={() => setCurrentCardIndex(0)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  currentCardIndex === 0 ? 'w-8 bg-[#FF6B00]' : 'w-2 bg-gray-300 hover:bg-gray-400'
-                }`}
-                aria-label="Voir cartes 1-5"
-              />
-              <button
-                onClick={() => setCurrentCardIndex(1)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  currentCardIndex === 1 ? 'w-8 bg-[#FF6B00]' : 'w-2 bg-gray-300 hover:bg-gray-400'
-                }`}
-                aria-label="Voir cartes 2-6"
-              />
-              <button
-                onClick={() => setCurrentCardIndex(2)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  currentCardIndex === 2 ? 'w-8 bg-[#FF6B00]' : 'w-2 bg-gray-300 hover:bg-gray-400'
-                }`}
-                aria-label="Voir cartes 3-7"
-              />
+              {[0, 1, 2, 3].map((idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentCardIndex(idx)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    currentCardIndex === idx ? 'w-8 bg-[#FF6B00]' : 'w-2 bg-gray-300 hover:bg-gray-400'
+                  }`}
+                  aria-label={`Voir cartes ${idx + 1} à ${idx + 3}`}
+                />
+              ))}
             </div>
           </div>
         </div>
