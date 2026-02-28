@@ -377,8 +377,8 @@ export default function Home() {
               </svg>
             </button>
 
-            {/* Conteneur de défilement */}
-            <div className="overflow-hidden">
+            {/* Conteneur de défilement - pt-3 pour que hover:-translate-y-2 ne soit pas coupé */}
+            <div className="overflow-hidden pt-3 -mt-3">
               <div 
                 ref={carouselFlexRef}
                 className="flex transition-transform duration-500 ease-in-out gap-6"
