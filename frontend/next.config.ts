@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   turbopack: {},
   
   webpack: (config, { isServer }) => {
+    // Ne pas bundler @techstark/opencv-js (optionnel, fallbacks en place)
+    config.externals = [
+      ...(Array.isArray(config.externals) ? config.externals : config.externals ? [config.externals] : []),
+      '@techstark/opencv-js',
+    ];
+
     // Ignorer les modules Node.js dans le bundle client
     if (!isServer) {
       config.resolve.fallback = {
