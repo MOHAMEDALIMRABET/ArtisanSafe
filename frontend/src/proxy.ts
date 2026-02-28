@@ -1,12 +1,12 @@
 /**
- * Middleware Next.js - Protection routes admin
+ * Proxy Next.js - Protection routes admin
  * Ce fichier s'exécute AVANT toute requête vers /admin/*
  */
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 🔒 PROTECTION ADMIN : Bloquer /admin/* sauf URL sécurisée

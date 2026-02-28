@@ -214,6 +214,68 @@ async function deleteUserCompletely(
       }
     }
 
+    // Litiges → Anonymiser les parties (données légales conservées)
+    const litigesClientSnapshot = await getDocs(
+      query(collection(db, 'litiges'), where('clientId', '==', userId))
+    );
+    const litigesArtisanSnapshot = await getDocs(
+      query(collection(db, 'litiges'), where('artisanId', '==', userId))
+    );
+    const tousLesLitiges = [...litigesClientSnapshot.docs, ...litigesArtisanSnapshot.docs];
+    for (const litigeDoc of tousLesLitiges) {
+      const updates: any = { anonymizedAt: Timestamp.now() };
+      if (accountType === 'artisan') {
+        updates.artisanNom = '[Compte supprimé]';
+        updates.artisanEmail = null;
+        updates.anonymizedArtisan = true;
+      } else {
+        updates.clientNom = '[Compte supprimé]';
+        updates.clientEmail = null;
+        updates.anonymizedClient = true;
+      }
+      await updateDoc(litigeDoc.ref, updates);
+    }
+    if (tousLesLitiges.length > 0) {
+      anonymizedCollections.push(`litiges (${tousLesLitiges.length})`);
+    }
+
+    // Support tickets → Supprimer
+    const supportTicketsSnapshot = await getDocs(
+      query(collection(db, 'support_tickets'), where('userId', '==', userId))
+    );
+    for (const ticketDoc of supportTicketsSnapshot.docs) {
+      await deleteDoc(ticketDoc.ref);
+    }
+    if (supportTicketsSnapshot.size > 0) {
+      deletedCollections.push(`support_tickets (${supportTicketsSnapshot.size})`);
+    }
+
+    // Wallet (artisan uniquement) → Supprimer
+    if (accountType === 'artisan') {
+      const walletRef = doc(db, 'wallets', userId);
+      const walletSnap = await getDoc(walletRef);
+      if (walletSnap.exists()) {
+        await deleteDoc(walletRef);
+        deletedCollections.push('wallets (1)');
+      }
+
+      // Transactions wallet → Anonymiser (données financières légales)
+      const walletTransactionsSnapshot = await getDocs(
+        query(collection(db, 'walletTransactions'), where('artisanId', '==', userId))
+      );
+      for (const txDoc of walletTransactionsSnapshot.docs) {
+        await updateDoc(txDoc.ref, {
+          artisanNom: '[Compte supprimé]',
+          artisanEmail: null,
+          anonymizedArtisan: true,
+          anonymizedAt: Timestamp.now()
+        });
+      }
+      if (walletTransactionsSnapshot.size > 0) {
+        anonymizedCollections.push(`walletTransactions (${walletTransactionsSnapshot.size})`);
+      }
+    }
+
     // Suppression programmée (si existe)
     const scheduledDeletionRef = doc(db, 'scheduled_deletions', userId);
     const scheduledDeletionSnap = await getDoc(scheduledDeletionRef);

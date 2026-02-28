@@ -57,6 +57,10 @@ export default function AdminComptesPage() {
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<'confirm' | 'loading' | 'result'>('confirm');
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteResult, setDeleteResult] = useState<{ success: boolean; details?: string; error?: string } | null>(null);
   
   // Form states
   const [suspensionReason, setSuspensionReason] = useState('');
@@ -265,52 +269,42 @@ export default function AdminComptesPage() {
     }
   };
 
-  // Suppression IMMÉDIATE - DANGER (tests, fraude uniquement)
-  const handleImmediateDeleteDirect = async (account: Artisan | Client) => {
-    const reason = prompt(
-      '⚠️ SUPPRESSION IMMÉDIATE DÉFINITIVE\n\n' +
-      'Cette action est IRRÉVERSIBLE et IMMÉDIATE.\n' +
-      'À utiliser uniquement pour : tests, fraude avérée, demande urgente\n\n' +
-      'Raison de la suppression :'
-    );
-    
-    if (!reason || !reason.trim()) {
-      alert('Raison obligatoire');
-      return;
-    }
+  // Suppression IMMÉDIATE — ouvre le modal de confirmation
+  const handleImmediateDeleteDirect = (account: Artisan | Client) => {
+    setSelectedAccount(account);
+    setDeleteStep('confirm');
+    setDeleteReason('');
+    setDeleteResult(null);
+    setShowDeleteModal(true);
+  };
 
-    if (!confirm(
-      '⚠️⚠️⚠️ DERNIÈRE CONFIRMATION ⚠️⚠️⚠️\n\n' +
-      'SUPPRESSION IMMÉDIATE ET IRRÉVERSIBLE\n\n' +
-      `Utilisateur : ${account.nom} ${account.prenom}\n` +
-      `Email : ${account.email}\n` +
-      `Raison : ${reason}\n\n` +
-      '→ Toutes les données personnelles seront supprimées MAINTENANT\n' +
-      '→ AUCUN délai de recours\n' +
-      '→ IMPOSSIBLE à annuler\n\n' +
-      'Êtes-vous ABSOLUMENT SÛR ?'
-    )) return;
+  // Exécution de la suppression après confirmation dans le modal
+  const executeImmediateDelete = async () => {
+    if (!selectedAccount || !deleteReason.trim()) return;
 
-    // Double confirmation pour sécurité
-    if (!confirm('⚠️ CONFIRMER UNE DERNIÈRE FOIS ?\n\nSuppression IRRÉVERSIBLE de ' + account.email)) return;
-
-    setActionLoading(true);
+    setDeleteStep('loading');
     try {
       const result = accountType === 'artisans'
-        ? await deleteArtisanAccount(account.userId, 'admin_temp', 'Admin', reason)
-        : await deleteClientAccount(account.userId, 'admin_temp', 'Admin', reason);
+        ? await deleteArtisanAccount(selectedAccount.userId, 'admin_temp', 'Admin', deleteReason)
+        : await deleteClientAccount(selectedAccount.userId, 'admin_temp', 'Admin', deleteReason);
 
+      setDeleteResult(result);
+      setDeleteStep('result');
       if (result.success) {
         await loadData();
-        alert('✅ Compte supprimé définitivement');
-      } else {
-        alert('❌ ' + (result.error || 'Erreur lors de la suppression'));
       }
     } catch (error) {
-      alert('❌ Erreur lors de la suppression');
-    } finally {
-      setActionLoading(false);
+      setDeleteResult({ success: false, error: 'Erreur inattendue lors de la suppression' });
+      setDeleteStep('result');
     }
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedAccount(null);
+    setDeleteReason('');
+    setDeleteStep('confirm');
+    setDeleteResult(null);
   };
 
   const handleAddNote = async () => {
@@ -931,6 +925,138 @@ export default function AdminComptesPage() {
           </div>
         </div>
       )}
+      {/* Modal Suppression Immédiate — 3 étapes */}
+      {showDeleteModal && selectedAccount && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden">
+
+            {/* Étape 1 — Confirmation + saisie raison */}
+            {deleteStep === 'confirm' && (
+              <>
+                <div className="bg-red-600 px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">⚠️</span>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Suppression immédiate définitive</h3>
+                      <p className="text-red-200 text-sm">Action irréversible — toutes les données seront supprimées</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  {/* Récapitulatif utilisateur */}
+                  <div className="bg-gray-50 rounded-lg p-4 mb-5 border border-gray-200">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Utilisateur ciblé</p>
+                    <p className="font-bold text-[#2C3E50] text-lg">{selectedAccount.nom} {selectedAccount.prenom}</p>
+                    <p className="text-gray-600 text-sm">{selectedAccount.email}</p>
+                    {accountType === 'artisans' && selectedAccount.siret && (
+                      <p className="text-gray-500 text-xs mt-1 font-mono">SIRET : {selectedAccount.siret}</p>
+                    )}
+                  </div>
+
+                  {/* Ce qui sera supprimé */}
+                  <div className="bg-red-50 rounded-lg p-4 mb-5 border border-red-100">
+                    <p className="text-xs font-semibold text-red-700 mb-2">Données supprimées en cascade :</p>
+                    <div className="grid grid-cols-2 gap-1 text-xs text-red-600">
+                      <span>🗑️ Compte utilisateur</span>
+                      <span>🗑️ Messages</span>
+                      <span>🗑️ Notifications</span>
+                      <span>🗑️ Demandes</span>
+                      <span>🗑️ Devis</span>
+                      <span>🗑️ Contrats</span>
+                      <span>🗑️ Conversations</span>
+                      <span>🗑️ Litiges</span>
+                      <span>🗑️ Tickets support</span>
+                      <span>🗑️ Rappels &amp; Avis</span>
+                      {accountType === 'artisans' && <span>🗑️ Wallet &amp; Transactions</span>}
+                      {accountType === 'artisans' && <span>🗑️ Disponibilités</span>}
+                    </div>
+                  </div>
+
+                  {/* Raison */}
+                  <div className="mb-5">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Raison de la suppression <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={deleteReason}
+                      onChange={(e) => setDeleteReason(e.target.value)}
+                      rows={3}
+                      placeholder="Fraude avérée, demande RGPD, compte test..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={closeDeleteModal}
+                      className="flex-1 border-2 border-[#2C3E50] text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white px-4 py-2.5 rounded-lg font-semibold transition-colors"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={executeImmediateDelete}
+                      disabled={!deleteReason.trim()}
+                      className="flex-1 bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-2.5 rounded-lg font-bold transition-colors"
+                    >
+                      Supprimer définitivement
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Étape 2 — Chargement */}
+            {deleteStep === 'loading' && (
+              <div className="p-10 text-center">
+                <div className="inline-block w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                <p className="text-lg font-semibold text-[#2C3E50] mb-2">Suppression en cours…</p>
+                <p className="text-gray-500 text-sm">Suppression en cascade de toutes les données associées</p>
+              </div>
+            )}
+
+            {/* Étape 3 — Résultat */}
+            {deleteStep === 'result' && deleteResult && (
+              <>
+                <div className={`px-6 py-4 ${deleteResult.success ? 'bg-green-600' : 'bg-red-600'}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{deleteResult.success ? '✅' : '❌'}</span>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">
+                        {deleteResult.success ? 'Suppression effectuée' : 'Erreur lors de la suppression'}
+                      </h3>
+                      <p className="text-sm opacity-90 text-white">
+                        {deleteResult.success
+                          ? `${selectedAccount.nom} ${selectedAccount.prenom} — compte définitivement supprimé`
+                          : deleteResult.error}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  {deleteResult.success && deleteResult.details && (
+                    <div className="bg-gray-50 rounded-lg p-4 mb-5 border border-gray-200">
+                      <p className="text-xs font-semibold text-gray-600 uppercase mb-3">Rapport de suppression</p>
+                      <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
+                        {deleteResult.details}
+                      </pre>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={closeDeleteModal}
+                    className="w-full bg-[#2C3E50] text-white hover:bg-[#1A3A5C] px-4 py-2.5 rounded-lg font-semibold transition-colors"
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
