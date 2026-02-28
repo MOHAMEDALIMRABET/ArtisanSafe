@@ -333,7 +333,7 @@ export default function Home() {
             <h2 className="text-5xl md:text-6xl font-extrabold text-[#2C3E50] mb-6 leading-tight">
               {t('home.whyChoose')}
             </h2>
-            <p className="text-2xl md:text-3xl font-semibold text-[#28A745] max-w-4xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl font-semibold text-[#FF8C42] max-w-4xl mx-auto leading-relaxed">
               {t('home.whyChooseSubtitle')}
             </p>
           </div>
