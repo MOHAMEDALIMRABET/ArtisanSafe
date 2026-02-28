@@ -63,7 +63,7 @@ export default function LanguageSelector() {
       {/* Bouton sélecteur de langue — cercle identique au bouton connexion */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-[#FF6B00] shadow-md transition-all duration-200 flex items-center justify-center p-0"
+        className="w-10 h-10 rounded-full overflow-hidden border border-transparent hover:border-[#FF6B00] shadow-md transition-all duration-200 flex items-center justify-center p-0"
         aria-label="Changer la langue"
         title={language === 'fr' ? 'Français' : 'English'}
       >
