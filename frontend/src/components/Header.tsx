@@ -143,16 +143,6 @@ export default function Header() {
                 {/* Liens de navigation */}
                 <nav className="hidden xl:flex items-center gap-4 mr-4">
                   <Link
-                    href="/annuaire"
-                    className="flex items-center gap-1 text-gray-700 hover:text-[#FF6B00] font-medium transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    {t('nav.directory')}
-                  </Link>
-                  
-                  <Link
                     href="/comment-ca-marche"
                     className="text-gray-700 hover:text-[#FF6B00] font-medium transition-colors"
                   >
@@ -284,17 +274,6 @@ export default function Header() {
 
               {/* Liens navigation */}
               <div className="space-y-2 mb-6">
-                <Link
-                  href="/annuaire"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 text-gray-700 hover:text-[#FF6B00] hover:bg-orange-50 px-4 py-3 rounded-lg font-medium transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  {t('nav.directory')}
-                </Link>
-
                 <Link
                   href="/comment-ca-marche"
                   onClick={() => setIsMobileMenuOpen(false)}

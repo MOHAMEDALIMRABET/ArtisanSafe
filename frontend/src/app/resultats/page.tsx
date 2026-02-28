@@ -267,7 +267,7 @@ function ResultatsContent() {
             <div className="grid md:grid-cols-24 gap-2">
               {/* Type de travaux */}
               <div className="relative min-w-0 md:col-span-4">
-                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Type de travaux</label>
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">{t('home.searchTypeOfWork')}</label>
                 <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors cursor-pointer">
                   <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -277,25 +277,26 @@ function ResultatsContent() {
                     value={categorieInput}
                     onChange={e => setCategorieInput(e.target.value)}
                   >
-                    <option value="plomberie">Plomberie</option>
-                    <option value="electricite">Électricité</option>
-                    <option value="peinture">Peinture</option>
-                    <option value="menuiserie">Menuiserie</option>
-                    <option value="maconnerie">Maçonnerie</option>
-                    <option value="carrelage">Carrelage</option>
-                    <option value="chauffage">Chauffage</option>
-                    <option value="climatisation">Climatisation</option>
-                    <option value="toiture">Toiture</option>
-                    <option value="isolation">Isolation</option>
-                    <option value="serrurerie">Serrurerie</option>
-                    <option value="renovation">Rénovation</option>
+                    <option value="plomberie">{t('home.plumbing')}</option>
+                    <option value="electricite">{t('home.electricity')}</option>
+                    <option value="peinture">{t('home.painting')}</option>
+                    <option value="menuiserie">{t('home.carpentry')}</option>
+                    <option value="maconnerie">{t('home.masonry')}</option>
+                    <option value="carrelage">{t('home.tiling')}</option>
+                    <option value="chauffage">{t('home.heating')}</option>
+                    <option value="climatisation">{t('home.airConditioning')}</option>
+                    <option value="toiture">{t('home.roofing')}</option>
+                    <option value="isolation">{t('home.insulation')}</option>
+                    <option value="serrurerie">{t('home.locksmith')}</option>
+                    <option value="exterieur-jardin">{t('home.exteriorGarden')}</option>
+                    <option value="renovation">{t('home.renovation')}</option>
                   </select>
                 </div>
               </div>
 
               {/* Localisation */}
               <div className="relative md:col-span-6">
-                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Localisation</label>
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">{t('home.searchLocation')}</label>
                 <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
                   <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -339,7 +340,7 @@ function ResultatsContent() {
 
               {/* Rayon de recherche */}
               <div className="relative md:col-span-3">
-                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3 whitespace-nowrap">Rayon</label>
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3 whitespace-nowrap">{t('home.searchRadius')}</label>
                 <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
                   <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c1.657 0 3-1.343 3-3S13.657 2 12 2 9 3.343 9 5s1.343 3 3 3zm0 0v14m6-6H6" />
@@ -349,25 +350,11 @@ function ResultatsContent() {
                     value={rayonMaxInput}
                     onChange={(e) => setRayonMaxInput(e.target.value)}
                   >
-                    <option value="5">5 km</option>
                     <option value="10">10 km</option>
-                    <option value="15">15 km</option>
                     <option value="20">20 km</option>
-                    <option value="25">25 km</option>
                     <option value="30">30 km</option>
-                    <option value="35">35 km</option>
-                    <option value="40">40 km</option>
-                    <option value="45">45 km</option>
                     <option value="50">50 km</option>
-                    <option value="55">55 km</option>
-                    <option value="60">60 km</option>
-                    <option value="65">65 km</option>
-                    <option value="70">70 km</option>
-                    <option value="75">75 km</option>
                     <option value="80">80 km</option>
-                    <option value="85">85 km</option>
-                    <option value="90">90 km</option>
-                    <option value="95">95 km</option>
                     <option value="100">100 km</option>
                   </select>
                 </div>
@@ -375,7 +362,7 @@ function ResultatsContent() {
 
               {/* Date souhaitée */}
               <div className="relative min-w-0 md:col-span-4">
-                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Date souhaitée</label>
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">{t('home.searchDate')}</label>
                 <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
                   <svg className="w-5 h-5 text-[#FF6B00] mr-3 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     onClick={(e) => {
@@ -399,28 +386,21 @@ function ResultatsContent() {
 
               {/* Flexibilité */}
               <div className="relative min-w-0 md:col-span-3">
-                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">Flexibilité</label>
+                <label className="block text-xs font-medium text-[#6C757D] mb-1 ml-3">{t('home.flexibility')}</label>
                 <div className="flex items-center bg-[#F5F7FA] rounded-xl px-3 h-11 hover:bg-[#E9ECEF] transition-colors">
+                  <svg className="w-5 h-5 text-[#FF6B00] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
                   <select
                     className="bg-transparent border-none outline-none w-full text-[#2C3E50] font-medium cursor-pointer"
                     value={flexibiliteInput}
                     onChange={e => setFlexibiliteInput(e.target.value)}
                   >
-                    <option value="0">±0J</option>
-                    <option value="1">±1J</option>
-                    <option value="2">±2J</option>
-                    <option value="3">±3J</option>
-                    <option value="4">±4J</option>
-                    <option value="5">±5J</option>
-                    <option value="6">±6J</option>
-                    <option value="7">±7J</option>
-                    <option value="8">±8J</option>
-                    <option value="9">±9J</option>
-                    <option value="10">±10J</option>
-                    <option value="11">±11J</option>
-                    <option value="12">±12J</option>
-                    <option value="13">±13J</option>
-                    <option value="14">±14J</option>
+                    <option value="0">{t('home.flexibilityOption0')}</option>
+                    <option value="1">{t('home.flexibilityOption1')}</option>
+                    <option value="3">{t('home.flexibilityOption3')}</option>
+                    <option value="7">{t('home.flexibilityOption7')}</option>
+                    <option value="14">{t('home.flexibilityOption14')}</option>
                   </select>
                 </div>
               </div>
