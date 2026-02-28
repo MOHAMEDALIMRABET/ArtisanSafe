@@ -479,38 +479,7 @@ export default function Home() {
                   </div>
                 </Link>
 
-                {/* Carte 4 : Avis certifiés */}
-                <Link href="/confiance/avis-certifies" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
-                  <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
-                    <div className="w-16 h-16 bg-[#FFFBF0] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
-                      <span className="text-4xl">⭐</span>
-                    </div>
-                    <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
-                      {t('home.certifiedReviews')}
-                    </h3>
-                    <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
-                      <li className="flex items-start gap-2">
-                        <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>{t('home.certifiedReviewsItem1')}</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>{t('home.certifiedReviewsItem2')}</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[#28A745] mt-0.5">✓</span>
-                        <span>{t('home.certifiedReviewsItem3')}</span>
-                      </li>
-                    </ul>
-                    <div className="text-center">
-                      <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
-                        {t('home.learnMore')}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-
-                {/* Carte 5 : Devis gratuits */}
+                {/* Carte 4 : Devis gratuits */}
                 <Link href="/confiance/devis-gratuits" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#E8F5E9] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
@@ -541,7 +510,7 @@ export default function Home() {
                   </div>
                 </Link>
 
-                {/* Carte 6 : Petits travaux */}
+                {/* Carte 5 : Petits travaux */}
                 <Link href="/petits-travaux" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
                   <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
                     <div className="w-16 h-16 bg-[#FFF9E6] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
@@ -562,6 +531,37 @@ export default function Home() {
                       <li className="flex items-start gap-2">
                         <span className="text-[#28A745] mt-0.5">✓</span>
                         <span>{t('home.quickWorksItem3')}</span>
+                      </li>
+                    </ul>
+                    <div className="text-center">
+                      <span className="text-[#FF6B00] font-semibold text-sm group-hover:underline">
+                        {t('home.learnMore')}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+
+                {/* Carte 6 : Avis certifiés */}
+                <Link href="/confiance/avis-certifies" className="group flex-shrink-0" style={{ width: cardWidthPx ? `${cardWidthPx}px` : undefined }}>
+                  <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 border-transparent hover:border-[#FF6B00] transform hover:-translate-y-2">
+                    <div className="w-16 h-16 bg-[#FFFBF0] rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                      <span className="text-4xl">⭐</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-[#2C3E50] mb-3 text-center">
+                      {t('home.certifiedReviews')}
+                    </h3>
+                    <ul className="text-sm text-[#6C757D] space-y-2 mb-4">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#28A745] mt-0.5">✓</span>
+                        <span>{t('home.certifiedReviewsItem1')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#28A745] mt-0.5">✓</span>
+                        <span>{t('home.certifiedReviewsItem2')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#28A745] mt-0.5">✓</span>
+                        <span>{t('home.certifiedReviewsItem3')}</span>
                       </li>
                     </ul>
                     <div className="text-center">
