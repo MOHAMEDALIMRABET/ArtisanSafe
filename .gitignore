@@ -26,6 +26,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Backups Firestore (contient des données utilisateurs)
+backups/
+
 # OS files
 .DS_Store
 Thumbs.db

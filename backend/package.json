@@ -7,6 +7,11 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:pm2": "pm2 start ecosystem.config.js",
+    "stop:pm2": "pm2 stop artisandispo-backend",
+    "restart:pm2": "pm2 restart artisandispo-backend",
+    "logs:pm2": "pm2 logs artisandispo-backend",
+    "backup": "node ../scripts/backup-firestore.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -17,6 +22,7 @@
   "author": "MOHAMEDALIMRABET",
   "license": "MIT",
   "dependencies": {
+    "@sentry/node": "^10.40.0",
     "@types/multer": "^2.0.0",
     "@types/node-cron": "^3.0.11",
     "@types/stripe": "^8.0.416",
@@ -28,7 +34,8 @@
     "multer": "^2.0.2",
     "node-cron": "^3.0.3",
     "nodemailer": "^7.0.12",
-    "stripe": "^20.3.1"
+    "stripe": "^20.3.1",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

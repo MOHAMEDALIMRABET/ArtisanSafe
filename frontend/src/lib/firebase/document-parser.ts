@@ -255,7 +255,7 @@ async function analyzeElementsQuality(
   hasSignature: boolean
 ): Promise<{ sealQuality?: 'good' | 'medium' | 'poor'; signatureQuality?: 'good' | 'medium' | 'poor' }> {
   try {
-    const cv = await import('opencv.js');
+    const cv = await import('@techstark/opencv-js');
     const src = cv.matFromImageData(imageData);
     const gray = new cv.Mat();
     const laplacian = new cv.Mat();
@@ -310,7 +310,7 @@ async function detectDocumentAlterations(imageData: ImageData): Promise<{
   score: number;
 }> {
   try {
-    const cv = await import('opencv.js');
+    const cv = await import('@techstark/opencv-js');
     const src = cv.matFromImageData(imageData);
     const gray = new cv.Mat();
     
@@ -379,7 +379,8 @@ function analyzeNoiseConsistency(grayMat: any): number {
       const mean = new (grayMat.constructor as any).Mat();
       const stddev = new (grayMat.constructor as any).Mat();
       
-      const cv = require('opencv.js');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const cv = require('@techstark/opencv-js');
       cv.meanStdDev(roi, mean, stddev);
       
       variances.push(stddev.data64F[0]);
@@ -492,7 +493,7 @@ async function detectVisualElements(imageData: ImageData): Promise<{ hasSeal: bo
  */
 async function detectVisualElementsAdvanced(imageData: ImageData): Promise<{ hasSeal: boolean; hasSignature: boolean }> {
   try {
-    const cv = await import('opencv.js');
+    const cv = await import('@techstark/opencv-js');
     
     // Convertir ImageData en Mat OpenCV
     const { width, height } = imageData;
@@ -641,7 +642,8 @@ function analyzeCircleContent(grayMat: any, x: number, y: number, radius: number
     const mean = new (grayMat.constructor as any).Mat();
     const stddev = new (grayMat.constructor as any).Mat();
     
-    const cv = require('opencv.js');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const cv = require('@techstark/opencv-js');
     cv.meanStdDev(roi, mean, stddev);
     
     const variance = stddev.data64F[0];
@@ -663,7 +665,8 @@ function analyzeCircleContent(grayMat: any, x: number, y: number, radius: number
  */
 function detectHandwrittenRegions(grayMat: any): Array<{ x: number; y: number; width: number; height: number }> {
   try {
-    const cv = require('opencv.js');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const cv = require('@techstark/opencv-js');
     const binary = new cv.Mat();
     const contours = new cv.MatVector();
     const hierarchy = new cv.Mat();
