@@ -19,6 +19,7 @@ export default function Home() {
   const carouselFlexRef = useRef<HTMLDivElement>(null);
   const [stepPx, setStepPx] = useState(0);
   const [cardWidthPx, setCardWidthPx] = useState(0);
+  const [isCarouselHovered, setIsCarouselHovered] = useState(false);
 
   useEffect(() => {
     const measure = () => {
@@ -39,6 +40,16 @@ export default function Home() {
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, []);
+
+  // Auto-défilement toutes les 3.5 secondes, pause au survol
+  useEffect(() => {
+    if (isCarouselHovered) return;
+    const MAX_INDEX = 3; // 7 cartes - 4 visibles = 3 positions
+    const interval = setInterval(() => {
+      setCurrentCardIndex(prev => (prev >= MAX_INDEX ? 0 : prev + 1));
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [isCarouselHovered]);
   
   // État du formulaire de recherche
   const [searchForm, setSearchForm] = useState({
@@ -362,7 +373,11 @@ export default function Home() {
           </div>
 
           {/* Carrousel de cartes avec navigation */}
-          <div className="relative max-w-7xl mx-auto px-14">
+          <div
+            className="relative max-w-7xl mx-auto px-14"
+            onMouseEnter={() => setIsCarouselHovered(true)}
+            onMouseLeave={() => setIsCarouselHovered(false)}
+          >
             {/* Bouton flèche gauche */}
             <button
               onClick={() => setCurrentCardIndex(Math.max(0, currentCardIndex - 1))}
