@@ -379,7 +379,7 @@ export default function NouvelleDemandeExpressPage() {
               <Button
                 type="button"
                 onClick={() => router.back()}
-                className="flex-1 border-2 border-[#E9ECEF] bg-white text-[#2C3E50] hover:bg-[#F5F7FA] py-3 rounded-lg font-semibold"
+                className="flex-1 border-2 border-[#2C3E50] bg-white text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white py-3 rounded-lg font-semibold transition-colors"
               >
                 Annuler
               </Button>
