@@ -31,7 +31,8 @@ export interface EmailNotification {
     | 'litige_enregistre_client'
     | 'litige_signale_artisan'
     | 'validation_automatique_client'
-    | 'validation_automatique_artisan';
+    | 'validation_automatique_artisan'
+    | 'nouvelle_demande_publique';
   metadata?: Record<string, any>;
   createdAt: Timestamp;
   status: 'pending' | 'sent' | 'failed';
@@ -1613,5 +1614,100 @@ export async function sendValidationAutomatiqueArtisanEmail(
     template.text,
     'validation_automatique_artisan',
     { artisanName, montantTTC }
+  );
+}
+
+// ============================================
+// TEMPLATE : Nouvelle demande publique
+// ============================================
+
+function getNouvelleDemandePubliqueTemplate(
+  artisanPrenom: string,
+  metier: string,
+  ville: string,
+  description: string,
+  demandeId: string
+): { html: string; text: string } {
+  const metierFormate = metier.charAt(0).toUpperCase() + metier.slice(1);
+  const lien = `${process.env.NEXT_PUBLIC_APP_URL || 'https://artisandispo.fr'}/artisan/demandes`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #FF6B00; padding: 24px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header h1 { margin: 0; color: white; font-size: 22px; }
+        .header p { margin: 6px 0 0; color: rgba(255,255,255,0.9); font-size: 14px; }
+        .content { background-color: #fff; padding: 30px; border: 1px solid #E9ECEF; }
+        .demand-box { background-color: #FFF8F0; border-left: 4px solid #FF6B00; padding: 18px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .demand-box p { margin: 6px 0; }
+        .demand-box strong { color: #2C3E50; }
+        .cta-btn { display: block; width: fit-content; margin: 24px auto; background-color: #FF6B00; color: white !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; }
+        .footer { background-color: #F8F9FA; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #6C757D; }
+        .badge { display: inline-block; background: #FF6B00; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 6px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🔔 Nouvelle demande dans votre zone</h1>
+          <p>Un client recherche un professionnel en <strong>${metierFormate}</strong></p>
+        </div>
+        <div class="content">
+          <p>Bonjour ${artisanPrenom},</p>
+          <p>Une nouvelle demande correspond à votre profil et à votre zone d'intervention !</p>
+
+          <div class="demand-box">
+            <p><strong>🔧 Métier :</strong> ${metierFormate}</p>
+            <p><strong>📍 Ville :</strong> ${ville}</p>
+            <p><strong>📝 Description :</strong> ${description || 'Aucune description fournie'}</p>
+          </div>
+
+          <p>Soyez le premier à répondre pour maximiser vos chances d'obtenir ce chantier.</p>
+
+          <a href="${lien}" class="cta-btn">👀 Voir la demande</a>
+
+          <p style="color: #6C757D; font-size: 13px; margin-top: 20px;">
+            Cette demande est visible par d'autres artisans de votre secteur. Répondez rapidement !
+          </p>
+        </div>
+        <div class="footer">
+          <p>© ArtisanDispo — Vous recevez cet email car votre profil correspond à cette demande.</p>
+          <p>Pour gérer vos notifications, rendez-vous dans vos paramètres de compte.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `Bonjour ${artisanPrenom},\n\nUne nouvelle demande correspond à votre profil !\n\nMétier : ${metierFormate}\nVille : ${ville}\nDescription : ${description || 'Aucune description'}\n\nVoir la demande : ${lien}\n\n— ArtisanDispo`;
+
+  return { html, text };
+}
+
+/**
+ * Envoyer notification nouvelle demande publique à un artisan
+ */
+export async function sendNouvelleDemandePubliqueEmail(
+  email: string,
+  artisanPrenom: string,
+  metier: string,
+  ville: string,
+  description: string,
+  demandeId: string
+): Promise<{ success: boolean; error?: string }> {
+  const template = getNouvelleDemandePubliqueTemplate(artisanPrenom, metier, ville, description, demandeId);
+
+  return sendEmailNotification(
+    email,
+    `🔔 Nouvelle demande ${metier} à ${ville} — ArtisanDispo`,
+    template.html,
+    template.text,
+    'nouvelle_demande_publique',
+    { artisanPrenom, metier, ville, demandeId }
   );
 }

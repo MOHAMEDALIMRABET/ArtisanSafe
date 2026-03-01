@@ -1,6 +1,7 @@
 import { db } from './config';
-import { collection, addDoc, query, where, getDocs, updateDoc, doc, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, updateDoc, doc, getDoc, orderBy, limit, Timestamp } from 'firebase/firestore';
 import type { Notification } from '@/types/firestore';
+import { sendNouvelleDemandePubliqueEmail } from './email-notification-service';
 
 /**
  * Crée une notification pour un utilisateur
@@ -312,4 +313,119 @@ export async function notifyNouvelAvis(
     message: 'Un client a laissé un avis sur votre profil.',
     lien: '/artisan/profil',
   });
+}
+
+// ============================================
+// Notification nouvelle demande publique
+// ============================================
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Notifie tous les artisans approués dont le métier + zone couvrent la demande publique.
+ * Crée une notification in-app ET programme un email pour chacun.
+ * @returns Liste des IDs artisans notifiés
+ */
+export async function notifyArtisansDemandePublique(
+  demandeId: string,
+  metier: string,
+  ville: string,
+  description: string,
+  demandeCoords?: { latitude: number; longitude: number }
+): Promise<string[]> {
+  try {
+    // 1. Récupérer artisans avec ce métier (single where, pas d'index composite)
+    const artisansSnap = await getDocs(
+      query(
+        collection(db, 'artisans'),
+        where('metiers', 'array-contains', metier)
+      )
+    );
+
+    if (artisansSnap.empty) return [];
+
+    const artisansNotifies: string[] = [];
+    const villeNorm = ville.toLowerCase().trim();
+
+    const promises = artisansSnap.docs.map(async (artisanDoc) => {
+      const artisan = artisanDoc.data();
+      const artisanId = artisanDoc.id;
+
+      // Filtre : approué + email vérifié
+      if (artisan.verificationStatus !== 'approved') return;
+      if (!artisan.emailVerified) return;
+
+      // Filtre : zone d'intervention couvre la demande
+      const zones: any[] = artisan.zonesIntervention || [];
+      if (zones.length === 0) return;
+
+      const zoneMatch = zones.some((zone: any) => {
+        // Comparaison GPS si dispo sur les deux
+        if (demandeCoords && zone.latitude && zone.longitude) {
+          const dist = haversineKm(demandeCoords.latitude, demandeCoords.longitude, zone.latitude, zone.longitude);
+          return dist <= (zone.rayonKm || 50);
+        }
+        // Sinon : comparaison nom de ville
+        return zone.ville?.toLowerCase().trim() === villeNorm;
+      });
+
+      if (!zoneMatch) return;
+
+      // 2a. Notification in-app
+      await createNotification(artisanId, {
+        type: 'nouvelle_demande_publique',
+        titre: `🔔 Nouvelle demande : ${metier} à ${ville}`,
+        message: description
+          ? description.slice(0, 100) + (description.length > 100 ? '...' : '')
+          : `Un client recherche un artisan en ${metier} à ${ville}.`,
+        lien: `/artisan/demandes`,
+      });
+
+      // 2b. Email (fire-and-forget, ne bloque pas)
+      try {
+        const userSnap = await getDoc(doc(db, 'users', artisanId));
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          if (userData.email && userData.preferences?.notifications?.email !== false) {
+            await sendNouvelleDemandePubliqueEmail(
+              userData.email,
+              userData.prenom || 'Artisan',
+              metier,
+              ville,
+              description,
+              demandeId
+            );
+          }
+        }
+      } catch (emailError) {
+        console.error(`⚠️ Email non envoyé pour artisan ${artisanId}:`, emailError);
+      }
+
+      artisansNotifies.push(artisanId);
+    });
+
+    await Promise.all(promises);
+
+    // 3. Mettre à jour la demande avec les artisans notifiés
+    if (artisansNotifies.length > 0) {
+      await updateDoc(doc(db, 'demandes', demandeId), {
+        artisansNotifiesIds: artisansNotifies,
+      });
+      console.log(`✅ ${artisansNotifies.length} artisan(s) notifié(s) pour la demande ${demandeId}`);
+    } else {
+      console.log(`ℹ️ Aucun artisan à notifier pour la demande ${demandeId} (métier: ${metier}, ville: ${ville})`);
+    }
+
+    return artisansNotifies;
+  } catch (error) {
+    console.error('❌ Erreur notifyArtisansDemandePublique:', error);
+    return [];
+  }
 }

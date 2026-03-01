@@ -24,6 +24,7 @@ import type {
   DemandeStatut 
 } from '@/types/firestore';
 import { calculateExpirationDate } from '@/lib/dateExpirationUtils';
+import { notifyArtisansDemandePublique } from './notification-service';
 
 const COLLECTION_NAME = 'demandes';
 
@@ -67,7 +68,20 @@ export async function createDemande(
   };
 
   const docRef = await addDoc(demandesRef, newDemande);
-  
+
+  // 🔔 Notifier les artisans concernés si la demande est publique et publiée
+  if (newDemande.type === 'publique' && newDemande.statut === 'publiee') {
+    notifyArtisansDemandePublique(
+      docRef.id,
+      newDemande.critereRecherche?.metier || '',
+      newDemande.localisation?.ville || '',
+      newDemande.description || '',
+      newDemande.localisation?.coordonneesGPS
+        ? { latitude: newDemande.localisation.coordonneesGPS.latitude, longitude: newDemande.localisation.coordonneesGPS.longitude }
+        : undefined
+    ).catch(err => console.error('⚠️ Erreur notification artisans (non bloquant):', err));
+  }
+
   return {
     ...newDemande,
     id: docRef.id,
