@@ -99,6 +99,7 @@ export type NotificationType =
   | 'proposition_express_recue'  // ✅ Proposition express reçue
   | 'proposition_acceptee'       // ✅ Proposition acceptée
   | 'proposition_refusee'        // ✅ Proposition refusée
+  | 'contre_proposition_recue'   // ✅ Contre-proposition reçue du client
   | 'contrat_signe'
   | 'paiement' 
   | 'paiement_libere'

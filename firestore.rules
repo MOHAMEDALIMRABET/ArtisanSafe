@@ -171,10 +171,13 @@ service cloud.firestore {
     // Client peut accepter/refuser
     
     match /propositions_express/{propositionId} {
-      allow read: if isAuthenticated() && 
-                     (isOwner(resource.data.clientId) || 
+      // Lecture : client concerné, artisan concerné, tout artisan authentifié, ou admin
+      // ✅ isAuthenticated() permet aux clients de lister leurs propositions sans erreur de quota
+      allow read: if isAuthenticated() &&
+                     (isOwner(resource.data.clientId) ||
                       isOwner(resource.data.artisanId) ||
                       isArtisan() ||
+                      isClient() ||
                       isAdmin());
       allow create: if isAuthenticated() && 
                        isArtisan() &&

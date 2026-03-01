@@ -269,6 +269,50 @@ export async function refusePropositionExpress(
 }
 
 /**
+ * Envoyer une contre-proposition au lieu de simplement refuser
+ * Le client propose un montant différent et un message à l'artisan
+ */
+export async function sendContrePropositionExpress(
+  propositionId: string,
+  montantCounter: number,
+  messageClient: string
+): Promise<void> {
+  const proposition = await getPropositionExpressById(propositionId);
+  if (!proposition) {
+    throw new Error('Proposition introuvable');
+  }
+
+  if (proposition.statut !== 'en_attente_acceptation') {
+    throw new Error('Cette proposition ne peut plus être négociée');
+  }
+
+  // Marquer la proposition comme refusée avec le détail de la contre-prop
+  const motif = `[CONTRE-PROPOSITION] Budget souhaité : ${montantCounter}€\nMessage : ${messageClient}`;
+
+  await updateDoc(doc(db, 'propositions_express', propositionId), {
+    statut: 'refusee',
+    refusedAt: Timestamp.now(),
+    motifRefus: motif,
+    contrePropositionMontant: montantCounter,
+    contrePropositionMessage: messageClient,
+  });
+
+  // Remettre la demande en attente de proposition
+  await updateDoc(doc(db, 'demandes_express', proposition.demandeId), {
+    statut: 'en_attente_proposition',
+    updatedAt: Timestamp.now(),
+  });
+
+  // Notifier l'artisan avec les détails de la contre-proposition
+  await createNotification(proposition.artisanId, {
+    type: 'contre_proposition_recue',
+    titre: '💬 Contre-proposition reçue',
+    message: `Le client propose ${montantCounter}€ au lieu de ${proposition.montantPropose}€. Message : ${messageClient.slice(0, 80)}`,
+    lien: `/artisan/demandes-express/${proposition.demandeId}`,
+  });
+}
+
+/**
  * Marquer une demande comme payée (appelé après confirmation Stripe)
  */
 export async function markDemandePaid(demandeId: string): Promise<void> {
