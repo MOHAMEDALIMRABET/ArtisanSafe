@@ -120,9 +120,19 @@ export default function RechercheExpressPage() {
     }
 
     try {
-      const response = await fetch(
-        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,codesPostaux,codeDepartement&boost=population&limit=10`
-      );
+      // Détecter si la saisie est un code postal (que des chiffres)
+      const isCodePostal = /^\d+$/.test(query);
+      
+      let url: string;
+      if (isCodePostal) {
+        // Recherche par code postal
+        url = `https://geo.api.gouv.fr/communes?codePostal=${encodeURIComponent(query)}&fields=nom,codesPostaux,codeDepartement&boost=population&limit=10`;
+      } else {
+        // Recherche par nom de commune
+        url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,codesPostaux,codeDepartement&boost=population&limit=10`;
+      }
+
+      const response = await fetch(url);
       
       if (!response.ok) return;
       
@@ -136,7 +146,7 @@ export default function RechercheExpressPage() {
       );
       
       setVilleSuggestions(suggestions);
-      setShowSuggestions(true);
+      setShowSuggestions(suggestions.length > 0);
     } catch (error) {
       console.error('Erreur recherche villes:', error);
     }
