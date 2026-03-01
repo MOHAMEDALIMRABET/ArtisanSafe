@@ -60,7 +60,7 @@ export default function NouvelleDemandeExpressPage() {
   // Paramètres URL
   const artisanIdParam = searchParams.get('artisanId') || '';
   const categorieParam = searchParams.get('categorie') as Categorie || '';
-  const sousCategorieParam = searchParams.get('sousCategorie') || '';
+  const sousCategorieParam = searchParams.get('sousCategorie') || 'toutes';
   const villeParam = searchParams.get('ville') || '';
   const codePostalParam = searchParams.get('codePostal') || '';
 
@@ -239,7 +239,7 @@ export default function NouvelleDemandeExpressPage() {
                   onChange={(e) => setSousCategorie(e.target.value)}
                   className="w-full px-4 py-3 border-2 border-[#E9ECEF] rounded-lg focus:border-[#FF6B00] focus:outline-none"
                 >
-                  <option value="">Toutes</option>
+                  <option value="toutes">Toutes</option>
                   {SOUS_CATEGORIES[categorie].map((sc) => (
                     <option key={sc.value} value={sc.value}>
                       {sc.label}
