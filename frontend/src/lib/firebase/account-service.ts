@@ -335,12 +335,34 @@ async function deleteUserCompletely(
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
-      const response = await fetch(`${apiUrl}/auth/users/${userId}`, { method: 'DELETE' });
+
+      // Récupérer le token de l'admin connecté pour authentifier la requête backend
+      const { getAuth } = await import('firebase/auth');
+      const currentAdmin = getAuth().currentUser;
+      if (!currentAdmin) {
+        throw new Error('Admin non authentifié');
+      }
+      const adminToken = await currentAdmin.getIdToken();
+
+      const response = await fetch(`${apiUrl}/auth/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
       if (response.ok) {
         console.log(`✅ Compte Firebase Auth supprimé pour ${userId}`);
+      } else {
+        // Remonter l'erreur — ne pas avaler silencieusement
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erreur HTTP ${response.status} lors de la suppression Firebase Auth`);
       }
-    } catch (authError) {
-      console.error('⚠️ Erreur suppression Firebase Auth:', authError);
+    } catch (authError: any) {
+      console.error('❌ Erreur suppression Firebase Auth:', authError);
+      // Remonter l'erreur pour que l'admin sache que la suppression Auth a échoué
+      throw new Error(`Firestore supprimé ✅ mais Firebase Auth non supprimé ❌ : ${authError.message}. Relancez ou supprimez manuellement dans Firebase Console.`);
     }
 
     const details = `

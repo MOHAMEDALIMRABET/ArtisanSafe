@@ -269,12 +269,15 @@ export async function getDemandesPubliquesForArtisan(
   try {
     const demandesRef = collection(db, COLLECTION_NAME);
     
-    // Requête simple par type (éviter index composite)
-    // Le filtre sur statut est fait côté client pour inclure publiee + matchee + quota_atteint
-    // et exclure attribuee, terminee, annulee, expiree
+    // Statuts visibles pour l'artisan (attribuee = accepté → disparaît, expiree = plus visible)
+    // IMPORTANT : on filtre par statut dans Firestore pour correspondre aux règles de sécurité.
+    // Le filtre par type ('publique') est fait côté client pour éviter un index composite.
+    const STATUTS_VISIBLES = ['publiee', 'matchee', 'quota_atteint'];
+    const now = new Date();
+    
     const q = query(
       demandesRef,
-      where('type', '==', 'publique')
+      where('statut', 'in', STATUTS_VISIBLES)
     );
     
     const snapshot = await getDocs(q);
@@ -283,15 +286,11 @@ export async function getDemandesPubliquesForArtisan(
       return [];
     }
     
-    // Statuts visibles pour l'artisan (attribuee = accepté → disparaît, expiree = plus visible)
-    const STATUTS_VISIBLES = ['publiee', 'matchee', 'quota_atteint'];
-    const now = new Date();
-    
     const demandes = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() } as Demande))
       .filter(d => {
-        // Exclure les statuts non visibles
-        if (!STATUTS_VISIBLES.includes(d.statut)) return false;
+        // Filtrer uniquement les demandes publiques (type filtering côté client)
+        if (d.type !== 'publique') return false;
         // Exclure les demandes dont la dateExpiration est dépassée
         if (d.dateExpiration) {
           const expDate = d.dateExpiration.toDate ? d.dateExpiration.toDate() : new Date(d.dateExpiration.seconds * 1000);

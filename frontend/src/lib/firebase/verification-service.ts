@@ -814,10 +814,11 @@ export async function updateVerificationStatus(
     verificationStatus: status
   };
   
-  // Si approuvé, marquer comme vérifié
+  // Si approuvé, marquer comme vérifié et actif
   if (status === 'approved') {
     updateData.verified = true;
     updateData.verificationDate = Timestamp.now();
+    updateData.statut = 'actif';
   }
   
   await updateDoc(artisanRef, updateData);
@@ -865,6 +866,7 @@ export async function validateDocument(
           verified: true,  // ← CHAMP PRINCIPAL pour les recherches
           verificationStatus: 'approved',
           verificationDate: Timestamp.now(),
+          statut: 'actif',  // ← Artisan actif et visible
         });
         // ✅ METTRE À JOUR LE STATUT DANS LA COLLECTION USERS
         const userRef = doc(db, 'users', userId);

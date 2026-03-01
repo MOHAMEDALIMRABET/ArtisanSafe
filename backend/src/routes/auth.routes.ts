@@ -2,16 +2,41 @@
  * Routes pour la gestion des utilisateurs Firebase Authentication
  */
 
-import { Router } from 'express';
-import { adminAuth } from '../config/firebase-admin';
+import { Router, Request, Response, NextFunction } from 'express';
+import { adminAuth, adminDb } from '../config/firebase-admin';
 
 const router = Router();
 
 /**
- * DELETE /api/v1/auth/users/:uid
- * Supprimer un utilisateur de Firebase Authentication
+ * Middleware : vérifie que l'appelant est authentifié ET a le rôle 'admin' dans Firestore
  */
-router.delete('/users/:uid', async (req, res) => {
+async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, error: 'Token manquant' });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    const decoded = await adminAuth.verifyIdToken(idToken);
+
+    // Vérifier le rôle dans Firestore
+    const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+    if (!userDoc.exists || userDoc.data()?.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Accès réservé aux administrateurs' });
+    }
+
+    next();
+  } catch (error) {
+    return res.status(401).json({ success: false, error: 'Token invalide ou expiré' });
+  }
+}
+
+/**
+ * DELETE /api/v1/auth/users/:uid
+ * Supprimer un utilisateur de Firebase Authentication (admin uniquement)
+ */
+router.delete('/users/:uid', requireAdmin, async (req, res) => {
   try {
     const { uid } = req.params;
 
@@ -34,11 +59,11 @@ router.delete('/users/:uid', async (req, res) => {
   } catch (error: any) {
     console.error('Erreur suppression utilisateur Auth:', error);
     
-    // Gérer le cas où l'utilisateur n'existe pas
+    // Gérer le cas où l'utilisateur n'existe pas (considéré comme succès)
     if (error.code === 'auth/user-not-found') {
-      return res.status(404).json({
-        success: false,
-        error: 'Utilisateur non trouvé dans Firebase Auth'
+      return res.json({
+        success: true,
+        message: 'Utilisateur déjà absent de Firebase Auth'
       });
     }
 

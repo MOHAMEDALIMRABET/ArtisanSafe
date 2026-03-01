@@ -15,6 +15,13 @@ interface AddressSuggestion {
   };
 }
 
+// Suggestion de ville (geo.api.gouv.fr)
+interface CommuneSuggestion {
+  nom: string;
+  codesPostaux: string[];
+  codeDepartement: string;
+}
+
 interface AddressData {
   adresseComplete: string;
   rue: string;
@@ -31,6 +38,10 @@ interface AddressAutocompleteProps {
   placeholder?: string;
   required?: boolean;
   helper?: string;
+  /** Mode ville uniquement : utilise geo.api.gouv.fr/communes (recherche par nom ou code postal) */
+  mode?: 'address' | 'city';
+  /** Champ code postal lié (utilisé en mode city pour pré-remplir) */
+  onCitySelect?: (ville: string, codePostal: string) => void;
 }
 
 export function AddressAutocomplete({
@@ -40,9 +51,12 @@ export function AddressAutocomplete({
   onAddressSelect,
   placeholder = "Tapez votre adresse (ex: 15 rue de la République Paris)",
   required = false,
-  helper
+  helper,
+  mode = 'address',
+  onCitySelect,
 }: AddressAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [communeSuggestions, setCommuneSuggestions] = useState<CommuneSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -61,30 +75,52 @@ export function AddressAutocomplete({
 
   // Recherche avec debounce (attendre 300ms après dernière frappe)
   useEffect(() => {
-    if (value.length < 3) {
+    if (value.length < 2) {
       setSuggestions([]);
+      setCommuneSuggestions([]);
       return;
     }
 
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await fetch(
-          `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(value)}&limit=5`
-        );
-        const data = await response.json();
-        setSuggestions(data.features || []);
-        setShowSuggestions(true);
+        if (mode === 'city') {
+          // Mode ville : utiliser geo.api.gouv.fr (API officielle des communes française - exhaustive)
+          const isPostalCode = /^\d+$/.test(value);
+          let url: string;
+
+          if (isPostalCode) {
+            // Recherche par code postal
+            url = `https://geo.api.gouv.fr/communes?codePostal=${encodeURIComponent(value)}&fields=nom,codesPostaux,codeDepartement&limit=8`;
+          } else {
+            // Recherche par nom de commune (supporte les tirets, apostrophes, accents)
+            url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(value)}&fields=nom,codesPostaux,codeDepartement&boost=population&limit=8`;
+          }
+
+          const response = await fetch(url);
+          const data: CommuneSuggestion[] = await response.json();
+          setCommuneSuggestions(data || []);
+          setShowSuggestions(true);
+        } else {
+          // Mode adresse : utiliser l'API BAN (Base Adresse Nationale)
+          const response = await fetch(
+            `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(value)}&limit=5`
+          );
+          const data = await response.json();
+          setSuggestions(data.features || []);
+          setShowSuggestions(true);
+        }
       } catch (error) {
         console.error('Erreur API Adresse:', error);
         setSuggestions([]);
+        setCommuneSuggestions([]);
       } finally {
         setLoading(false);
       }
-    }, 300); // Attendre 300ms
+    }, 300);
 
     return () => clearTimeout(timer);
-  }, [value]);
+  }, [value, mode]);
 
   const handleSelect = (suggestion: AddressSuggestion) => {
     const addressData: AddressData = {
@@ -99,9 +135,19 @@ export function AddressAutocomplete({
     setShowSuggestions(false);
     setSuggestions([]);
 
-    // Notifier le parent avec les données structurées
     if (onAddressSelect) {
       onAddressSelect(addressData);
+    }
+  };
+
+  const handleCommuneSelect = (commune: CommuneSuggestion) => {
+    const codePostal = commune.codesPostaux[0] || '';
+    onChange(commune.nom);
+    setShowSuggestions(false);
+    setCommuneSuggestions([]);
+
+    if (onCitySelect) {
+      onCitySelect(commune.nom, codePostal);
     }
   };
 
@@ -120,7 +166,7 @@ export function AddressAutocomplete({
             onChange(e.target.value);
             setShowSuggestions(true);
           }}
-          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+          onFocus={() => (mode === 'city' ? communeSuggestions.length > 0 : suggestions.length > 0) && setShowSuggestions(true)}
           placeholder={placeholder}
           required={required}
           className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent"
@@ -140,8 +186,8 @@ export function AddressAutocomplete({
         <p className="mt-1 text-sm text-gray-500">{helper}</p>
       )}
 
-      {/* Liste de suggestions */}
-      {showSuggestions && suggestions.length > 0 && (
+      {/* Liste de suggestions adresses (mode address) */}
+      {mode === 'address' && showSuggestions && suggestions.length > 0 && (
         <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <li
@@ -161,10 +207,30 @@ export function AddressAutocomplete({
         </ul>
       )}
 
+      {/* Liste de suggestions communes (mode city) */}
+      {mode === 'city' && showSuggestions && communeSuggestions.length > 0 && (
+        <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+          {communeSuggestions.map((commune, index) => (
+            <li
+              key={index}
+              onClick={() => handleCommuneSelect(commune)}
+              className="px-4 py-3 hover:bg-[#F8F9FA] cursor-pointer border-b border-gray-200 last:border-b-0 transition-colors"
+            >
+              <div className="font-medium text-[#2C3E50]">{commune.nom}</div>
+              <div className="text-xs text-[#6C757D] mt-1 flex items-center gap-1">
+                <span>📍</span>
+                <span>{commune.codesPostaux.join(', ')} - Dép. {commune.codeDepartement}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {/* Aucun résultat */}
-      {showSuggestions && !loading && value.length >= 3 && suggestions.length === 0 && (
+      {showSuggestions && !loading && value.length >= 2 &&
+        (mode === 'address' ? suggestions.length === 0 : communeSuggestions.length === 0) && (
         <div className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-lg p-4 text-center text-sm text-[#6C757D]">
-          Aucune adresse trouvée. Vérifiez votre saisie.
+          Aucune {mode === 'city' ? 'commune' : 'adresse'} trouvée. Vérifiez votre saisie.
         </div>
       )}
     </div>

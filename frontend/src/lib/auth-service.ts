@@ -77,7 +77,12 @@ function getActionCodeSettings(params?: {
   role?: 'client' | 'artisan',
   action?: 'verify' | 'reset' | 'change'
 }): ActionCodeSettings {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+  // ⚠️ Priorité : NEXT_PUBLIC_APP_URL (production) > window.location.origin (dev local)
+  // NEXT_PUBLIC_APP_URL doit pointer vers le domaine de production (ex: https://artisandispo.fr)
+  // Sans cette variable, les liens d'email pointent vers localhost:3000 → inaccessible depuis Firebase
+  const baseUrl = 
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
   
   // URL personnalisée selon action
   let redirectUrl = `${baseUrl}/email-verified`;
@@ -100,14 +105,10 @@ function getActionCodeSettings(params?: {
   return {
     url: `${redirectUrl}?${queryParams.toString()}`,
     handleCodeInApp: false,
-    // Configuration pour future app mobile
-    iOS: {
-      bundleId: 'fr.artisansafe.app'
-    },
-    android: {
-      packageName: 'fr.artisansafe.app',
-      installApp: false
-    }
+    // ⚠️ NE PAS ajouter iOS/android ici : cela active Firebase Dynamic Links
+    // et enveloppe le continueUrl dans /__/auth/links?link=... ce qui casse
+    // la redirection si l'URL pointe vers localhost ou un domaine non autorisé.
+    // À ajouter uniquement quand l'app mobile React Native sera déployée.
   };
 }
 

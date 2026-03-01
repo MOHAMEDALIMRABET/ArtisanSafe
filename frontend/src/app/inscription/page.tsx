@@ -470,21 +470,30 @@ export default function InscriptionPage() {
               />
 
               <div className="grid grid-cols-2 gap-4">
-                <Input
+                <AddressAutocomplete
                   label={t('signup.city')}
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(value) => setCity(value)}
+                  onCitySelect={(ville, cp) => {
+                    setCity(ville);
+                    setPostalCode(cp);
+                  }}
+                  mode="city"
                   required
                   placeholder={t('signup.cityPlaceholder')}
                 />
-                <Input
+                <AddressAutocomplete
                   label={t('signup.postalCode')}
                   value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value)}
+                  onChange={(value) => setPostalCode(value)}
+                  onCitySelect={(ville, cp) => {
+                    setCity(ville);
+                    setPostalCode(cp);
+                  }}
+                  mode="city"
                   required
                   placeholder={t('signup.postalCodePlaceholder')}
-                  maxLength={5}
-                  helperText={t('signup.postalCodeHelper')}
+                  helper={t('signup.postalCodeHelper')}
                 />
               </div>
             </>
