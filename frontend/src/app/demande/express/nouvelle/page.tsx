@@ -140,9 +140,9 @@ export default function NouvelleDemandeExpressPage() {
 
       const demandeId = await createDemandeExpress({
         clientId: firebaseUser.uid,
-        artisanId: artisanId || undefined,
+        artisanId: artisanId || null,
         categorie,
-        sousCategorie: sousCategorie || undefined,
+        sousCategorie: sousCategorie || null,
         description,
         budgetPropose: budget,
         ville,

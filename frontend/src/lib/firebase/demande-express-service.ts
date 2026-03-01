@@ -45,7 +45,12 @@ export async function createDemandeExpress(
     expiresAt: Timestamp.fromDate(new Date(Date.now() + 48 * 60 * 60 * 1000)),
   };
 
-  const docRef = await addDoc(collection(db, 'demandes_express'), demandeData);
+  // Firestore refuse les valeurs undefined → les remplacer par null
+  const sanitized = Object.fromEntries(
+    Object.entries(demandeData).map(([k, v]) => [k, v === undefined ? null : v])
+  );
+
+  const docRef = await addDoc(collection(db, 'demandes_express'), sanitized);
 
   // Notifier artisan si demande directe
   if (data.artisanId) {
