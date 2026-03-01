@@ -819,6 +819,22 @@ export default function ArtisanDemandesPage() {
                         ✅ {t('artisanRequests.status.quoteSigned')}
                       </span>
                     )}
+                    {/* Compteur devis reçus — uniquement pour les demandes publiques */}
+                    {demande.type === 'publique' && (() => {
+                      const nb = demande.devisRecus || 0;
+                      const isQuotaAtteint = nb >= 5 || (demande.statut as string) === 'quota_atteint';
+                      const bgColor = isQuotaAtteint
+                        ? 'bg-red-100 border-red-400 text-red-700'
+                        : nb >= 4
+                        ? 'bg-orange-100 border-orange-400 text-orange-700'
+                        : 'bg-blue-50 border-blue-300 text-blue-700';
+                      return (
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 ${bgColor} flex items-center gap-1`}>
+                          📬 {nb}/5 devis reçus
+                          {isQuotaAtteint && <span className="ml-1">🔒</span>}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
 
