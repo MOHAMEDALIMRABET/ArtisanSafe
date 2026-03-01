@@ -122,10 +122,8 @@ export default function ArtisanDashboardPage() {
       // Charger les demandes pour compter les nouvelles
       try {
         const demandes = await getDemandesForArtisan(currentUser.uid);
-        // Compter seulement les demandes nouvelles (publiées ET sans devis envoyé)
-        const nouvellesCount = demandes.filter(d => 
-          d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)
-        ).length;
+        // Compter toutes les demandes publiées (qu'elles aient ou non des devis)
+        const nouvellesCount = demandes.filter(d => d.statut === 'publiee').length;
         setNouvellesDemandes(nouvellesCount);
       } catch (error) {
         console.error('Erreur chargement demandes:', error);

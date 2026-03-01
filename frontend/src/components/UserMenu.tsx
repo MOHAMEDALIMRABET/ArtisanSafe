@@ -13,6 +13,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useContratsANoter } from '@/hooks/useContratsANoter';
 import { collection, query, where, onSnapshot, or } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
 import type { User } from '@/types/firestore';
 
 interface UserMenuProps {
@@ -35,6 +36,26 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
 
   // État pour les messages non lus
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  // État pour les nouvelles demandes publiées (artisans uniquement)
+  const [nouvellesDemandesCount, setNouvellesDemandesCount] = useState(0);
+
+  // Charger le nombre de demandes publiées pour les artisans
+  useEffect(() => {
+    if (!isArtisan || !user?.uid) return;
+
+    async function loadNouvellesDemandes() {
+      try {
+        const demandes = await getDemandesForArtisan(user.uid);
+        const count = demandes.filter(d => d.statut === 'publiee').length;
+        setNouvellesDemandesCount(count);
+      } catch (error) {
+        console.error('Erreur chargement demandes:', error);
+      }
+    }
+
+    loadNouvellesDemandes();
+  }, [isArtisan, user?.uid]);
 
   // Compter les messages non lus en temps réel
   useEffect(() => {
@@ -73,8 +94,8 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
     n => !n.lue && (n.type === 'nouvelle_demande' || n.type === 'demande_refusee')
   ).length;
 
-  // Nombre total de notifications non lues (incluant messages)
-  const totalNotifications = notifDevis + notifDemandes + unreadMessagesCount;
+  // Nombre total de notifications non lues (incluant messages et nouvelles demandes)
+  const totalNotifications = notifDevis + notifDemandes + unreadMessagesCount + nouvellesDemandesCount;
 
   // Fermer le dropdown au clic extérieur
   useEffect(() => {
