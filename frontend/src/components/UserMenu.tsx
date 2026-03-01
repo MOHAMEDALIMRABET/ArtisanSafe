@@ -13,7 +13,8 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useContratsANoter } from '@/hooks/useContratsANoter';
 import { collection, query, where, onSnapshot, or } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
+import { getDemandesForArtisan, getDemandesPubliquesForArtisan } from '@/lib/firebase/demande-service';
+import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
 import type { User } from '@/types/firestore';
 
 interface UserMenuProps {
@@ -47,8 +48,28 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
     async function loadNouvellesDemandes() {
       try {
         const demandes = await getDemandesForArtisan(user.uid);
-        const count = demandes.filter(d => d.statut === 'publiee').length;
-        setNouvellesDemandesCount(count);
+        const nouvellesDirectes = demandes.filter(d => d.statut === 'publiee').length;
+
+        let nouvellesPubliques = 0;
+        const artisanData = await getArtisanByUserId(user.uid);
+        if (artisanData?.zonesIntervention && artisanData.zonesIntervention.length > 0) {
+          const zone = artisanData.zonesIntervention[0];
+          const demandesPubliques = await getDemandesPubliquesForArtisan({
+            metiers: artisanData.metiers,
+            location: {
+              city: zone.ville,
+              coordinates: zone.latitude && zone.longitude
+                ? { latitude: zone.latitude, longitude: zone.longitude }
+                : undefined,
+            },
+          });
+          const idsDirectes = new Set(demandes.map(d => d.id));
+          nouvellesPubliques = demandesPubliques.filter(
+            d => d.statut === 'publiee' && !idsDirectes.has(d.id)
+          ).length;
+        }
+
+        setNouvellesDemandesCount(nouvellesDirectes + nouvellesPubliques);
       } catch (error) {
         console.error('Erreur chargement demandes:', error);
       }

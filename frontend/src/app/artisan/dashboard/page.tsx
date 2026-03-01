@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { authService, resendVerificationEmail } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
-import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
+import { getDemandesForArtisan, getDemandesPubliquesForArtisan } from '@/lib/firebase/demande-service';
 import { getAvisByArtisanId, calculateAverageRating } from '@/lib/firebase/avis-service';
 import { useNotifications } from '@/hooks/useNotifications';
 import { artisanDoitDecennale } from '@/lib/decennale-helper';
@@ -122,9 +122,30 @@ export default function ArtisanDashboardPage() {
       // Charger les demandes pour compter les nouvelles
       try {
         const demandes = await getDemandesForArtisan(currentUser.uid);
-        // Compter toutes les demandes publiées (qu'elles aient ou non des devis)
-        const nouvellesCount = demandes.filter(d => d.statut === 'publiee').length;
-        setNouvellesDemandes(nouvellesCount);
+        const nouvellesDirectes = demandes.filter(d => d.statut === 'publiee').length;
+
+        // Compter aussi les demandes publiques visibles (non matchées directement)
+        let nouvellesPubliques = 0;
+        const artisanDataForDemandes = await getArtisanByUserId(currentUser.uid);
+        if (artisanDataForDemandes?.zonesIntervention && artisanDataForDemandes.zonesIntervention.length > 0) {
+          const zone = artisanDataForDemandes.zonesIntervention[0];
+          const demandesPubliques = await getDemandesPubliquesForArtisan({
+            metiers: artisanDataForDemandes.metiers,
+            location: {
+              city: zone.ville,
+              coordinates: zone.latitude && zone.longitude
+                ? { latitude: zone.latitude, longitude: zone.longitude }
+                : undefined,
+            },
+          });
+          // Exclure les demandes déjà comptées dans directes
+          const idsDirectes = new Set(demandes.map(d => d.id));
+          nouvellesPubliques = demandesPubliques.filter(
+            d => d.statut === 'publiee' && !idsDirectes.has(d.id)
+          ).length;
+        }
+
+        setNouvellesDemandes(nouvellesDirectes + nouvellesPubliques);
       } catch (error) {
         console.error('Erreur chargement demandes:', error);
       }
