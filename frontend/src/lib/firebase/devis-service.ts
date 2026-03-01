@@ -218,7 +218,9 @@ export async function createDevis(
     try {
       const demandeRef = doc(db, 'demandes', devisData.demandeId);
       await updateDoc(demandeRef, {
-        devisRecus: increment(1)
+        devisRecus: increment(1),
+        // Ajouter l'artisan à artisansMatches pour qu'il garde l'accès lecture à la demande
+        artisansMatches: arrayUnion(devisData.artisanId),
       });
       // Vérifier si le quota de 5 devis est atteint → passer en quota_atteint
       const demandeSnap = await getDoc(demandeRef);

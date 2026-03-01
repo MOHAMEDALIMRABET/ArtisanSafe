@@ -73,13 +73,19 @@ export default function VoirDevisPage() {
 
         // Charger la demande associée si elle existe
         if (devisData.demandeId) {
-          const demandeRef = doc(db, 'demandes', devisData.demandeId);
-          const demandeSnap = await getDoc(demandeRef);
-          if (demandeSnap.exists()) {
-            setDemande({
-              id: demandeSnap.id,
-              ...demandeSnap.data(),
-            } as Demande);
+          try {
+            const demandeRef = doc(db, 'demandes', devisData.demandeId);
+            const demandeSnap = await getDoc(demandeRef);
+            if (demandeSnap.exists()) {
+              setDemande({
+                id: demandeSnap.id,
+                ...demandeSnap.data(),
+              } as Demande);
+            }
+          } catch (demandeError) {
+            // L'artisan n'a pas (ou plus) accès à la demande (changement de statut)
+            // On continue sans bloquer le chargement du devis
+            console.warn('⚠️ Impossible de charger la demande associée (permissions):', demandeError);
           }
         }
       } else {
