@@ -7,14 +7,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanById } from '@/lib/firebase/artisan-service';
 import { getDemandesForArtisan, getDemandesPubliquesForArtisan, removeArtisanFromDemande } from '@/lib/firebase/demande-service';
-import { getDemandesExpressByArtisan } from '@/lib/firebase/demande-express-service';
+import { getDemandesExpressByArtisan, getPropositionsByDemande } from '@/lib/firebase/demande-express-service';
 import { getDevisByDemande, declarerDebutTravaux, declarerFinTravaux } from '@/lib/firebase/devis-service';
 import { createNotification } from '@/lib/firebase/notification-service';
 import { getFileMetadata } from '@/lib/firebase/storage-service';
 import { isDemandeExpired } from '@/lib/dateExpirationUtils';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import type { User, Demande, DemandeExpress } from '@/types/firestore';
+import type { User, Demande, DemandeExpress, PropositionExpress } from '@/types/firestore';
 import type { Devis } from '@/types/devis';
 
 export default function ArtisanDemandesPage() {
@@ -40,6 +40,8 @@ export default function ArtisanDemandesPage() {
   const [devisMap, setDevisMap] = useState<Map<string, Devis[]>>(new Map());
   const [clientsInfo, setClientsInfo] = useState<Map<string, { nom: string; prenom: string }>>(new Map());
   const [expandedDemandeIds, setExpandedDemandeIds] = useState<Set<string>>(new Set());
+  const [expandedExpressIds, setExpandedExpressIds] = useState<Set<string>>(new Set());
+  const [expressPropositionsMap, setExpressPropositionsMap] = useState<Map<string, PropositionExpress[]>>(new Map());
   const demandeRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
 
   useEffect(() => {
@@ -1268,69 +1270,154 @@ export default function ArtisanDemandesPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {demandesExpress.map((demande) => (
-                <div
-                  key={demande.id}
-                  onClick={() => router.push(`/artisan/demandes-express/${demande.id}`)}
-                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer relative border-2 border-transparent hover:border-[#FF6B00] overflow-hidden"
-                >
-                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#FF6B00] to-[#E56100]" />
-                  <div className="p-6 pl-8">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">⚡</span>
-                          <span className="font-bold text-[#2C3E50] text-lg capitalize">{demande.categorie}</span>
-                          {demande.sousCategorie && demande.sousCategorie !== 'toutes' && (
-                            <span className="text-sm text-gray-500">• {demande.sousCategorie}</span>
-                          )}
-                          <span className={`ml-auto px-2 py-1 rounded-full text-xs font-bold ${
-                            demande.urgence === 'urgent' ? 'bg-red-100 text-red-700' :
-                            demande.urgence === 'rapide' ? 'bg-orange-100 text-orange-700' :
-                            'bg-gray-100 text-gray-600'
-                          }`}>
-                            {demande.urgence === 'urgent' ? '🔴 Urgent' :
-                             demande.urgence === 'rapide' ? '🟠 Rapide' : '🟢 Normal'}
-                          </span>
-                        </div>
-                        <p className="text-gray-700 mb-3 line-clamp-3 break-all whitespace-pre-wrap overflow-hidden">{demande.description}</p>
-                        <div className="flex flex-wrap gap-3 text-sm text-gray-500">
-                          <span>📍 {demande.ville} ({demande.codePostal})</span>
-                          <span>📅 {demande.date}</span>
-                          {demande.budgetPropose && (
-                            <span>💰 {demande.budgetPropose}€</span>
-                          )}
-                        </div>
+              {demandesExpress.map((demande) => {
+                const isExpanded = expandedExpressIds.has(demande.id);
+                const propositions = expressPropositionsMap.get(demande.id) || [];
+                const maProposition = propositions.find(p => p.artisanId === authUser?.uid);
+
+                const toggleExpressCard = async (id: string) => {
+                  const next = new Set(expandedExpressIds);
+                  if (next.has(id)) {
+                    next.delete(id);
+                  } else {
+                    next.add(id);
+                    if (!expressPropositionsMap.has(id)) {
+                      try {
+                        const props = await getPropositionsByDemande(id);
+                        setExpressPropositionsMap(prev => new Map(prev).set(id, props));
+                      } catch (e) {
+                        console.error('Erreur chargement propositions express:', e);
+                      }
+                    }
+                  }
+                  setExpandedExpressIds(next);
+                };
+
+                return (
+                  <div
+                    key={demande.id}
+                    className={`bg-white rounded-2xl shadow-md transition-all duration-300 relative border-2 overflow-hidden ${
+                      isExpanded ? 'border-[#FF6B00] ring-1 ring-[#FF6B00] ring-opacity-30' : 'border-transparent hover:border-gray-200 hover:shadow-xl'
+                    }`}
+                  >
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#FF6B00] to-[#E56100]" />
+
+                    {/* Bouton expand/collapse */}
+                    <button
+                      onClick={() => toggleExpressCard(demande.id)}
+                      className="absolute top-5 right-5 p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
+                      title={isExpanded ? 'Réduire' : 'Voir les détails'}
+                    >
+                      <svg
+                        className={`w-5 h-5 text-gray-400 group-hover:text-[#FF6B00] transition-all duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Contenu principal (toujours visible) */}
+                    <div
+                      className="p-6 pl-8 pr-14 cursor-pointer"
+                      onClick={() => toggleExpressCard(demande.id)}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">⚡</span>
+                        <span className="font-bold text-[#2C3E50] text-lg capitalize">{demande.categorie}</span>
+                        {demande.sousCategorie && demande.sousCategorie !== 'toutes' && (
+                          <span className="text-sm text-gray-500">• {demande.sousCategorie}</span>
+                        )}
+                        <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold ${
+                          demande.urgence === 'urgent' ? 'bg-red-100 text-red-700' :
+                          demande.urgence === 'rapide' ? 'bg-orange-100 text-orange-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {demande.urgence === 'urgent' ? '🔴 Urgent' :
+                           demande.urgence === 'rapide' ? '🟠 Rapide' : '🟢 Normal'}
+                        </span>
+                        <span className={`ml-auto mr-2 px-3 py-1 rounded-full text-xs font-bold ${
+                          demande.statut === 'en_attente_proposition' ? 'bg-yellow-100 text-yellow-700' :
+                          demande.statut === 'proposition_recue' ? 'bg-blue-100 text-blue-700' :
+                          demande.statut === 'acceptee' ? 'bg-green-100 text-green-700' :
+                          demande.statut === 'en_cours' ? 'bg-orange-100 text-orange-700' :
+                          demande.statut === 'terminee' ? 'bg-gray-100 text-gray-600' :
+                          demande.statut === 'annulee' ? 'bg-red-100 text-red-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {demande.statut === 'en_attente_proposition' ? '⏳ En attente' :
+                           demande.statut === 'proposition_recue' ? '📨 Proposition envoyée' :
+                           demande.statut === 'acceptee' ? '✅ Acceptée' :
+                           demande.statut === 'en_cours' ? '🔧 En cours' :
+                           demande.statut === 'terminee' ? '🏁 Terminée' :
+                           demande.statut === 'annulee' ? '❌ Annulée' :
+                           demande.statut}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 mb-3 line-clamp-3 break-all whitespace-pre-wrap overflow-hidden">{demande.description}</p>
+                      <div className="flex flex-wrap gap-3 text-sm text-gray-500">
+                        <span>📍 {demande.ville} ({demande.codePostal})</span>
+                        <span>📅 {demande.date}</span>
+                        {demande.budgetPropose && <span>💰 {demande.budgetPropose}€</span>}
                       </div>
                     </div>
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        demande.statut === 'en_attente_proposition' ? 'bg-yellow-100 text-yellow-700' :
-                        demande.statut === 'proposition_recue' ? 'bg-blue-100 text-blue-700' :
-                        demande.statut === 'acceptee' ? 'bg-green-100 text-green-700' :
-                        demande.statut === 'en_cours' ? 'bg-orange-100 text-orange-700' :
-                        demande.statut === 'terminee' ? 'bg-gray-100 text-gray-600' :
-                        demande.statut === 'annulee' ? 'bg-red-100 text-red-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {demande.statut === 'en_attente_proposition' ? '⏳ En attente' :
-                         demande.statut === 'proposition_recue' ? '📨 Proposition envoyée' :
-                         demande.statut === 'acceptee' ? '✅ Acceptée' :
-                         demande.statut === 'en_cours' ? '🔧 En cours' :
-                         demande.statut === 'terminee' ? '🏁 Terminée' :
-                         demande.statut === 'annulee' ? '❌ Annulée' :
-                         demande.statut}
-                      </span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); router.push(`/artisan/demandes-express/${demande.id}`); }}
-                        className="px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] text-sm font-medium transition-all"
-                      >
-                        Voir détails →
-                      </button>
-                    </div>
+
+                    {/* Zone dépliée - proposition */}
+                    {isExpanded && (
+                      <div className="px-8 pb-6 border-t border-gray-100 pt-4">
+                        {maProposition ? (
+                          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
+                            <h4 className="font-bold text-[#2C3E50]">✅ Votre proposition</h4>
+                            <div className="flex items-center gap-4">
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Montant proposé</p>
+                                <p className="text-2xl font-bold text-[#FF6B00]">{maProposition.montantPropose}€</p>
+                              </div>
+                              {maProposition.delaiIntervention && (
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-0.5">Délai</p>
+                                  <p className="text-sm font-medium text-[#2C3E50]">{maProposition.delaiIntervention}</p>
+                                </div>
+                              )}
+                              <span className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${
+                                maProposition.statut === 'acceptee' ? 'bg-green-100 text-green-800' :
+                                maProposition.statut === 'refusee' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {maProposition.statut === 'acceptee' ? '✅ Acceptée' :
+                                 maProposition.statut === 'refusee' ? '❌ Refusée' :
+                                 "⏳ En attente d'acceptation"}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 mb-0.5">Description de votre prestation</p>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{maProposition.description}</p>
+                            </div>
+                          </div>
+                        ) : demande.statut === 'en_attente_proposition' ? (
+                          <div className="text-center py-4">
+                            <p className="text-gray-500 text-sm mb-3">Vous n&apos;avez pas encore fait de proposition sur cette demande.</p>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); router.push(`/artisan/demandes-express/${demande.id}`); }}
+                              className="px-5 py-2.5 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] text-sm font-medium transition-all"
+                            >
+                              💬 Faire une proposition
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="text-center py-3">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); router.push(`/artisan/demandes-express/${demande.id}`); }}
+                              className="px-5 py-2.5 bg-[#2C3E50] text-white rounded-lg hover:bg-[#1A3A5C] text-sm font-medium transition-all"
+                            >
+                              Voir la page complète →
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )
         )}
