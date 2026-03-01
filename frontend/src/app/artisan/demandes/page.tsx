@@ -7,13 +7,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanById } from '@/lib/firebase/artisan-service';
 import { getDemandesForArtisan, getDemandesPubliquesForArtisan, removeArtisanFromDemande } from '@/lib/firebase/demande-service';
+import { getDemandesExpressByArtisan } from '@/lib/firebase/demande-express-service';
 import { getDevisByDemande, declarerDebutTravaux, declarerFinTravaux } from '@/lib/firebase/devis-service';
 import { createNotification } from '@/lib/firebase/notification-service';
 import { getFileMetadata } from '@/lib/firebase/storage-service';
 import { isDemandeExpired } from '@/lib/dateExpirationUtils';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import type { User, Demande } from '@/types/firestore';
+import type { User, Demande, DemandeExpress } from '@/types/firestore';
 import type { Devis } from '@/types/devis';
 
 export default function ArtisanDemandesPage() {
@@ -25,7 +26,8 @@ export default function ArtisanDemandesPage() {
   const [user, setUser] = useState<User | null>(null);
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [demandesPubliques, setDemandesPubliques] = useState<Demande[]>([]);
-  const [sectionActive, setSectionActive] = useState<'mes_demandes' | 'demandes_publiques'>('mes_demandes');
+  const [demandesExpress, setDemandesExpress] = useState<DemandeExpress[]>([]);
+  const [sectionActive, setSectionActive] = useState<'mes_demandes' | 'demandes_publiques' | 'demandes_express'>('mes_demandes');
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'toutes' | 'nouvelles' | 'en_traitement' | 'traitees'>('toutes');
   const [filtreType, setFiltreType] = useState<'toutes' | 'directe' | 'publique'>('toutes');
@@ -109,6 +111,15 @@ export default function ArtisanDemandesPage() {
         });
         console.log('📢 Demandes publiques récupérées:', demandesPubliquesData.length);
         setDemandesPubliques(demandesPubliquesData);
+      }
+
+      // Charger les demandes express assignées à cet artisan
+      try {
+        const demandesExpressData = await getDemandesExpressByArtisan(authUser.uid);
+        console.log('⚡ Demandes express récupérées:', demandesExpressData.length);
+        setDemandesExpress(demandesExpressData);
+      } catch (error) {
+        console.error('Erreur chargement demandes express:', error);
       }
       
       // Charger les devis pour chaque demande
@@ -596,6 +607,25 @@ export default function ArtisanDemandesPage() {
                 </div>
               </div>
             </button>
+
+            <button
+              onClick={() => setSectionActive('demandes_express')}
+              className={`flex-1 py-4 px-6 rounded-lg font-bold text-lg transition-all ${
+                sectionActive === 'demandes_express'
+                  ? 'bg-[#FF6B00] text-white shadow-lg ring-4 ring-[#FF6B00] ring-opacity-30'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-2xl">⚡</span>
+                <div className="text-left">
+                  <div>Express</div>
+                  <div className={`text-sm font-normal ${
+                    sectionActive === 'demandes_express' ? 'text-white opacity-90' : 'text-gray-500'
+                  }`}>{demandesExpress.length} demande{demandesExpress.length > 1 ? 's' : ''}</div>
+                </div>
+              </div>
+            </button>
           </div>
         )}
 
@@ -700,8 +730,8 @@ export default function ArtisanDemandesPage() {
           </>
         )}
         
-        {/* Liste des demandes */}
-        {demandesFiltrees.length === 0 ? (
+        {/* Liste des demandes (hors express) */}
+        {sectionActive !== 'demandes_express' && (demandesFiltrees.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <svg className="w-24 h-24 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -1226,6 +1256,83 @@ export default function ArtisanDemandesPage() {
             );
             })}
           </div>
+        ))}
+
+        {/* Section Demandes Express */}
+        {sectionActive === 'demandes_express' && (
+          demandesExpress.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <span className="text-6xl mb-4 block">⚡</span>
+              <h3 className="text-xl font-bold text-gray-700 mb-2">Aucune demande express</h3>
+              <p className="text-gray-600">Vous n&apos;avez pas encore reçu de demande express.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {demandesExpress.map((demande) => (
+                <div
+                  key={demande.id}
+                  onClick={() => router.push(`/artisan/demandes-express/${demande.id}`)}
+                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer relative border-2 border-transparent hover:border-[#FF6B00] overflow-hidden"
+                >
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#FF6B00] to-[#E56100]" />
+                  <div className="p-6 pl-8">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">⚡</span>
+                          <span className="font-bold text-[#2C3E50] text-lg capitalize">{demande.categorie}</span>
+                          {demande.sousCategorie && demande.sousCategorie !== 'toutes' && (
+                            <span className="text-sm text-gray-500">• {demande.sousCategorie}</span>
+                          )}
+                          <span className={`ml-auto px-2 py-1 rounded-full text-xs font-bold ${
+                            demande.urgence === 'urgent' ? 'bg-red-100 text-red-700' :
+                            demande.urgence === 'rapide' ? 'bg-orange-100 text-orange-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {demande.urgence === 'urgent' ? '🔴 Urgent' :
+                             demande.urgence === 'rapide' ? '🟠 Rapide' : '🟢 Normal'}
+                          </span>
+                        </div>
+                        <p className="text-gray-700 mb-3 line-clamp-2 break-words">{demande.description}</p>
+                        <div className="flex flex-wrap gap-3 text-sm text-gray-500">
+                          <span>📍 {demande.ville} ({demande.codePostal})</span>
+                          <span>📅 {demande.date}</span>
+                          {demande.budgetPropose && (
+                            <span>💰 {demande.budgetPropose}€</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        demande.statut === 'en_attente_proposition' ? 'bg-yellow-100 text-yellow-700' :
+                        demande.statut === 'proposition_recue' ? 'bg-blue-100 text-blue-700' :
+                        demande.statut === 'acceptee' ? 'bg-green-100 text-green-700' :
+                        demande.statut === 'en_cours' ? 'bg-orange-100 text-orange-700' :
+                        demande.statut === 'terminee' ? 'bg-gray-100 text-gray-600' :
+                        demande.statut === 'annulee' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {demande.statut === 'en_attente_proposition' ? '⏳ En attente' :
+                         demande.statut === 'proposition_recue' ? '📨 Proposition envoyée' :
+                         demande.statut === 'acceptee' ? '✅ Acceptée' :
+                         demande.statut === 'en_cours' ? '🔧 En cours' :
+                         demande.statut === 'terminee' ? '🏁 Terminée' :
+                         demande.statut === 'annulee' ? '❌ Annulée' :
+                         demande.statut}
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); router.push(`/artisan/demandes-express/${demande.id}`); }}
+                        className="px-4 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] text-sm font-medium transition-all"
+                      >
+                        Voir détails →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>
