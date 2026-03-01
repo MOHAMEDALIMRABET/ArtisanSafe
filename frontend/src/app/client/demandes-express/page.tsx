@@ -223,7 +223,7 @@ export default function MesDemandesExpressPage() {
                       {demande.sousCategorie && ` - ${demande.sousCategorie}`}
                     </h3>
 
-                    <p className="text-[#6C757D] mb-3 line-clamp-2">
+                    <p className="text-[#6C757D] mb-3 line-clamp-3 break-all whitespace-pre-wrap overflow-hidden">
                       {demande.description}
                     </p>
 
