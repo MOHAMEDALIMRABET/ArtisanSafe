@@ -75,9 +75,9 @@ export default function DemandeExpressDetailArtisanPage() {
       if (demandeData.budgetPropose && !montantPropose) {
         setMontantPropose(demandeData.budgetPropose.toString());
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur chargement demande:', error);
-      alert('Erreur lors du chargement');
+      alert(`Erreur lors du chargement: ${error?.message || error?.code || JSON.stringify(error)}`);
     } finally {
       setLoading(false);
     }
