@@ -19,7 +19,7 @@ export default function DemandeExpressDetailArtisanPage() {
   const router = useRouter();
   const params = useParams();
   const demandeId = params.id as string;
-  const { user: firebaseUser } = useAuth();
+  const { user: firebaseUser, loading: authLoading } = useAuth();
 
   const [userData, setUserData] = useState<User | null>(null);
   const [demande, setDemande] = useState<DemandeExpress | null>(null);
@@ -34,12 +34,13 @@ export default function DemandeExpressDetailArtisanPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!firebaseUser) {
       router.push('/connexion');
       return;
     }
     loadData();
-  }, [firebaseUser, demandeId]);
+  }, [firebaseUser, authLoading, demandeId]);
 
   async function loadData() {
     if (!firebaseUser) return;

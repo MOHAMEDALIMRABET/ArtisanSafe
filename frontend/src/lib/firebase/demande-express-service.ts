@@ -13,7 +13,6 @@ import {
   doc,
   query,
   where,
-  orderBy,
   Timestamp,
   QueryConstraint,
 } from 'firebase/firestore';
@@ -91,34 +90,32 @@ export async function getDemandeExpressById(demandeId: string): Promise<DemandeE
  * Récupérer les demandes express d'un client
  */
 export async function getDemandesExpressByClient(clientId: string): Promise<DemandeExpress[]> {
+  // Pas d'orderBy → évite l'index composite Firestore, tri côté client
   const q = query(
     collection(db, 'demandes_express'),
-    where('clientId', '==', clientId),
-    orderBy('createdAt', 'desc')
+    where('clientId', '==', clientId)
   );
 
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-  } as DemandeExpress));
+  return querySnapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() } as DemandeExpress))
+    .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
 }
 
 /**
  * Récupérer les demandes express pour un artisan
  */
 export async function getDemandesExpressByArtisan(artisanId: string): Promise<DemandeExpress[]> {
+  // Pas d'orderBy → évite l'index composite Firestore, tri côté client
   const q = query(
     collection(db, 'demandes_express'),
-    where('artisanId', '==', artisanId),
-    orderBy('createdAt', 'desc')
+    where('artisanId', '==', artisanId)
   );
 
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-  } as DemandeExpress));
+  return querySnapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() } as DemandeExpress))
+    .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
 }
 
 /**
@@ -187,17 +184,16 @@ export async function getPropositionExpressById(propositionId: string): Promise<
  * Récupérer les propositions pour une demande
  */
 export async function getPropositionsByDemande(demandeId: string): Promise<PropositionExpress[]> {
+  // Pas d'orderBy → évite l'index composite Firestore, tri côté client
   const q = query(
     collection(db, 'propositions_express'),
-    where('demandeId', '==', demandeId),
-    orderBy('createdAt', 'desc')
+    where('demandeId', '==', demandeId)
   );
 
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-  } as PropositionExpress));
+  return querySnapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() } as PropositionExpress))
+    .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
 }
 
 /**

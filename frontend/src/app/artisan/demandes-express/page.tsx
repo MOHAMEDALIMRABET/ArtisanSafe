@@ -12,18 +12,19 @@ import type { DemandeExpress, User } from '@/types/firestore';
 export default function DemandesExpressArtisanPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { user: firebaseUser } = useAuth();
+  const { user: firebaseUser, loading: authLoading } = useAuth();
   const [userData, setUserData] = useState<User | null>(null);
   const [demandes, setDemandes] = useState<DemandeExpress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!firebaseUser) {
       router.push('/connexion');
       return;
     }
     loadData();
-  }, [firebaseUser]);
+  }, [firebaseUser, authLoading]);
 
   async function loadData() {
     if (!firebaseUser) return;
