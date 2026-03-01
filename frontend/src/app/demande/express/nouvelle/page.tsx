@@ -124,15 +124,16 @@ export default function NouvelleDemandeExpressPage() {
 
     try {
       // Géocodage de la ville
-      let coordinates = undefined;
+      let coordinates: { latitude: number; longitude: number } | null = null;
       try {
         const geoResponse = await fetch(
           `https://geo.api.gouv.fr/communes?codePostal=${codePostal}&fields=centre&limit=1`
         );
         const geoData = await geoResponse.json();
-        if (geoData.length > 0) {
-          const { lat, lon } = geoData[0].centre.coordinates;
-          coordinates = { latitude: lon, longitude: lat };
+        if (geoData.length > 0 && geoData[0].centre?.coordinates) {
+          // Format GeoJSON : tableau [longitude, latitude]
+          const [lon, lat] = geoData[0].centre.coordinates;
+          coordinates = { latitude: lat, longitude: lon };
         }
       } catch (error) {
         console.error('Erreur géocodage:', error);

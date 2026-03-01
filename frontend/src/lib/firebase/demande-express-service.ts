@@ -45,10 +45,16 @@ export async function createDemandeExpress(
     expiresAt: Timestamp.fromDate(new Date(Date.now() + 48 * 60 * 60 * 1000)),
   };
 
-  // Firestore refuse les valeurs undefined → les remplacer par null
-  const sanitized = Object.fromEntries(
-    Object.entries(demandeData).map(([k, v]) => [k, v === undefined ? null : v])
-  );
+  // Firestore refuse les valeurs undefined → les remplacer par null (récursif)
+  function sanitizeForFirestore(obj: any): any {
+    if (obj === undefined) return null;
+    if (obj === null || typeof obj !== 'object' || obj instanceof Date) return obj;
+    if ('toDate' in obj) return obj; // Timestamp Firestore
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, sanitizeForFirestore(v)])
+    );
+  }
+  const sanitized = sanitizeForFirestore(demandeData);
 
   const docRef = await addDoc(collection(db, 'demandes_express'), sanitized);
 
