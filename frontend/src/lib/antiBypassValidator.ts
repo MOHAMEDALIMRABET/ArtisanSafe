@@ -32,9 +32,10 @@ const BLOCKED_PATTERNS = {
     // 🚨 CRITIQUE : Numéros français partiels (9+ chiffres commençant par 0)
     /\b0\d{8,}\b/g,
     
-    // 🚨 FRAGMENT : Début de numéro mobile 06/07 avec 4+ chiffres supplémentaires (6+ total)
-    // Bloque "066270", "0762345", etc. (préfixe mobile incomplet mais identifiable)
-    /\b0[67]\d{4,}\b/g,
+    // 🚨 FRAGMENT : Début de numéro français (fixe 01-05, mobile 06-07, VoIP 09, spéciaux 08)
+    // avec 4+ chiffres supplémentaires (6+ total)
+    // Bloque "066270", "0762345", "0412345", "0912345" etc.
+    /\b0[1-9]\d{4,}\b/g,
     
     // 🚨 NOUVEAU : Numéros internationaux (commence par +)
     /\+\d{8,}/g,
