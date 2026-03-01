@@ -61,7 +61,7 @@ interface VilleSuggestion {
 export default function RechercheExpressPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user: firebaseUser } = useAuth();
+  const { user: firebaseUser, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const [userData, setUserData] = useState<User | null>(null);
 
@@ -218,6 +218,8 @@ export default function RechercheExpressPage() {
   }
 
   async function handleDemanderDevis(artisanId: string) {
+    if (authLoading) return; // Attendre Firebase
+
     if (!firebaseUser) {
       // Sauvegarder le contexte et rediriger vers inscription
       const context = {

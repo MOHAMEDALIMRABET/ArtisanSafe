@@ -53,7 +53,7 @@ const SOUS_CATEGORIES: Record<string, Array<{ value: string; label: string }>> =
 export default function NouvelleDemandeExpressPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user: firebaseUser } = useAuth();
+  const { user: firebaseUser, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const [userData, setUserData] = useState<User | null>(null);
 
@@ -77,12 +77,13 @@ export default function NouvelleDemandeExpressPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return; // Attendre que Firebase initialise
     if (!firebaseUser) {
       router.push('/connexion');
       return;
     }
     loadUserData();
-  }, [firebaseUser]);
+  }, [firebaseUser, authLoading]);
 
   async function loadUserData() {
     if (firebaseUser) {
