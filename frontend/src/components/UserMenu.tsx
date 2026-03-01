@@ -18,9 +18,10 @@ import type { User } from '@/types/firestore';
 interface UserMenuProps {
   user: User;
   isArtisan?: boolean;
+  nouvellesDemandesCount?: number;
 }
 
-export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
+export default function UserMenu({ user, isArtisan = false, nouvellesDemandesCount }: UserMenuProps) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -74,7 +75,11 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
   ).length;
 
   // Nombre total de notifications non lues (incluant messages)
-  const totalNotifications = notifDevis + notifDemandes + unreadMessagesCount;
+  // Pour les artisans : utiliser le nombre réel de demandes publiées (plus précis que les notifications)
+  const effectiveDemandesCount = isArtisan && nouvellesDemandesCount !== undefined
+    ? nouvellesDemandesCount
+    : notifDemandes;
+  const totalNotifications = notifDevis + effectiveDemandesCount + unreadMessagesCount;
 
   // Fermer le dropdown au clic extérieur
   useEffect(() => {
@@ -447,9 +452,9 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
                     />
                   </svg>
                   <span className="font-medium flex-1">{t('common.clientRequests')}</span>
-                  {notifDemandes > 0 && (
+                  {effectiveDemandesCount > 0 && (
                     <span className="bg-[#FF6B00] text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
-                      {notifDemandes}
+                      {effectiveDemandesCount}
                     </span>
                   )}
                 </button>

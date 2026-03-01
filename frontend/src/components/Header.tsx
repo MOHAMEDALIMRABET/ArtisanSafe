@@ -16,6 +16,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { authService } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import { getDemandesForArtisan, getDemandesPubliquesForArtisan } from '@/lib/firebase/demande-service';
 import type { User, Artisan } from '@/types/firestore';
 
 export default function Header() {
@@ -26,6 +27,7 @@ export default function Header() {
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [nouvellesDemandesCount, setNouvellesDemandesCount] = useState(0);
 
   // Helper : Déterminer l'URL des travaux express selon le rôle
   const getExpressWorksUrl = () => {
@@ -89,6 +91,47 @@ export default function Header() {
       setIsLoading(false);
     }
   }
+
+  // Calculer le nombre de nouvelles demandes pour les artisans
+  useEffect(() => {
+    if (!artisan || !user) {
+      setNouvellesDemandesCount(0);
+      return;
+    }
+    const uid = user.uid;
+    const currentArtisan = artisan;
+    async function computeCount() {
+      try {
+        const demandes = await getDemandesForArtisan(uid);
+        let count = demandes.filter(d =>
+          d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)
+        ).length;
+        if (currentArtisan.zonesIntervention?.length) {
+          try {
+            const demandesPubliques = await getDemandesPubliquesForArtisan({
+              metiers: currentArtisan.metiers,
+              location: {
+                city: currentArtisan.zonesIntervention[0].ville,
+                coordinates: (currentArtisan.zonesIntervention[0].latitude && currentArtisan.zonesIntervention[0].longitude)
+                  ? { latitude: currentArtisan.zonesIntervention[0].latitude, longitude: currentArtisan.zonesIntervention[0].longitude }
+                  : undefined,
+              },
+            });
+            const matchedIds = new Set(demandes.map(d => d.id));
+            count += demandesPubliques.filter(d =>
+              d.statut === 'publiee' && !matchedIds.has(d.id!)
+            ).length;
+          } catch (e) {
+            console.error('Erreur chargement demandes publiques (header):', e);
+          }
+        }
+        setNouvellesDemandesCount(count);
+      } catch (e) {
+        console.error('Erreur calcul nouvelles demandes (header):', e);
+      }
+    }
+    computeCount();
+  }, [artisan, user?.uid]);
 
   // Ne pas afficher le header sur certaines routes
   if (shouldHideHeader) {
@@ -213,7 +256,7 @@ export default function Header() {
                       <LanguageSelector />
                       
                       {/* Menu utilisateur connecté */}
-                      <UserMenu user={user} isArtisan={user.role === 'artisan'} />
+                      <UserMenu user={user} isArtisan={user.role === 'artisan'} nouvellesDemandesCount={nouvellesDemandesCount} />
                     </>
                   ) : (
                     <>

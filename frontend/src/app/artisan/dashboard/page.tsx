@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { authService, resendVerificationEmail } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
-import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
+import { getDemandesForArtisan, getDemandesPubliquesForArtisan } from '@/lib/firebase/demande-service';
 import { getAvisByArtisanId, calculateAverageRating } from '@/lib/firebase/avis-service';
 import { useNotifications } from '@/hooks/useNotifications';
 import { artisanDoitDecennale } from '@/lib/decennale-helper';
@@ -122,10 +122,33 @@ export default function ArtisanDashboardPage() {
       // Charger les demandes pour compter les nouvelles
       try {
         const demandes = await getDemandesForArtisan(currentUser.uid);
-        // Compter seulement les demandes nouvelles (publiées ET sans devis envoyé)
-        const nouvellesCount = demandes.filter(d => 
+        // Compter les demandes matchées (publiées ET sans devis envoyé)
+        let nouvellesCount = demandes.filter(d => 
           d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)
         ).length;
+
+        // Compter aussi les demandes publiques correspondant au profil de l'artisan
+        if (artisanData?.zonesIntervention?.length) {
+          try {
+            const demandesPubliques = await getDemandesPubliquesForArtisan({
+              metiers: artisanData.metiers,
+              location: {
+                city: artisanData.zonesIntervention[0].ville,
+                coordinates: (artisanData.zonesIntervention[0].latitude && artisanData.zonesIntervention[0].longitude)
+                  ? { latitude: artisanData.zonesIntervention[0].latitude, longitude: artisanData.zonesIntervention[0].longitude }
+                  : undefined,
+              },
+            });
+            // Ajouter uniquement celles non déjà comptées (éviter les doublons)
+            const matchedIds = new Set(demandes.map(d => d.id));
+            nouvellesCount += demandesPubliques.filter(d =>
+              d.statut === 'publiee' && !matchedIds.has(d.id!)
+            ).length;
+          } catch (e) {
+            console.error('Erreur chargement demandes publiques (dashboard):', e);
+          }
+        }
+
         setNouvellesDemandes(nouvellesCount);
       } catch (error) {
         console.error('Erreur chargement demandes:', error);
