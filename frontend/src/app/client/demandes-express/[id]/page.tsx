@@ -192,7 +192,7 @@ export default function DemandeExpressDetailClientPage() {
                 <label className="block text-sm font-semibold text-[#2C3E50] mb-1">
                   Description
                 </label>
-                <p className="text-[#6C757D] whitespace-pre-wrap">{demande.description}</p>
+                <p className="text-[#6C757D] whitespace-pre-wrap break-words">{demande.description}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -288,7 +288,7 @@ export default function DemandeExpressDetailClientPage() {
                   <label className="block text-sm font-semibold text-[#2C3E50] mb-1">
                     📝 Ce qui est inclus
                   </label>
-                  <p className="text-[#6C757D] whitespace-pre-wrap">{proposition.description}</p>
+                  <p className="text-[#6C757D] whitespace-pre-wrap break-words">{proposition.description}</p>
                 </div>
 
                 {proposition.delaiIntervention && (

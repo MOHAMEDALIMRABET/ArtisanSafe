@@ -218,7 +218,7 @@ export default function DemandeExpressDetailArtisanPage() {
                 <label className="block text-sm font-semibold text-[#2C3E50] mb-1">
                   Description des travaux
                 </label>
-                <p className="text-[#6C757D] whitespace-pre-wrap">{demande.description}</p>
+                <p className="text-[#6C757D] whitespace-pre-wrap break-words">{demande.description}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -276,7 +276,7 @@ export default function DemandeExpressDetailArtisanPage() {
                   <label className="block text-sm font-semibold text-[#2C3E50] mb-1">
                     Description
                   </label>
-                  <p className="text-[#6C757D] whitespace-pre-wrap">{maProposition.description}</p>
+                  <p className="text-[#6C757D] whitespace-pre-wrap break-words">{maProposition.description}</p>
                 </div>
                 {maProposition.delaiIntervention && (
                   <div>
