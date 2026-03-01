@@ -1293,7 +1293,7 @@ export default function ArtisanDemandesPage() {
                              demande.urgence === 'rapide' ? '🟠 Rapide' : '🟢 Normal'}
                           </span>
                         </div>
-                        <p className="text-gray-700 mb-3 line-clamp-2 break-words">{demande.description}</p>
+                        <p className="text-gray-700 mb-3 line-clamp-3 break-all whitespace-pre-wrap overflow-hidden">{demande.description}</p>
                         <div className="flex flex-wrap gap-3 text-sm text-gray-500">
                           <span>📍 {demande.ville} ({demande.codePostal})</span>
                           <span>📅 {demande.date}</span>
