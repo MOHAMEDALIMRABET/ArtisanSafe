@@ -5,11 +5,17 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getDemandesExpressByClient } from '@/lib/firebase/demande-express-service';
+import {
+  getDemandesExpressByClient,
+  getPropositionsByDemande,
+  acceptPropositionExpress,
+  refusePropositionExpress,
+  sendContrePropositionExpress,
+} from '@/lib/firebase/demande-express-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import type { DemandeExpress, User, DemandeExpressStatut } from '@/types/firestore';
+import type { DemandeExpress, PropositionExpress, User, DemandeExpressStatut } from '@/types/firestore';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -23,11 +29,92 @@ export default function MesDemandesExpressPage() {
   const [filtreStatut, setFiltreStatut] = useState<'toutes' | DemandeExpressStatut>('toutes');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  const toggleExpand = (id: string) => {
+  // Propositions chargées à la volée à l'ouverture d'une carte
+  const [propositionsMap, setPropositionsMap] = useState<Map<string, PropositionExpress | null>>(new Map());
+  const [loadingPropsIds, setLoadingPropsIds] = useState<Set<string>>(new Set());
+
+  // Modales inline refus / contre-proposition
+  const [refusModal, setRefusModal] = useState<{ id: string; propId: string } | null>(null);
+  const [contreModal, setContreModal] = useState<{ id: string; propId: string; currentMontant: number } | null>(null);
+  const [motifRefus, setMotifRefus] = useState('');
+  const [contreMontant, setContreMontant] = useState('');
+  const [contreMessage, setContreMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const toggleExpand = async (id: string, statut: DemandeExpressStatut) => {
     const next = new Set(expandedIds);
-    if (next.has(id)) next.delete(id); else next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+      // Charger la proposition si statut pertinent et pas encore chargée
+      if (
+        ['proposition_recue', 'acceptee', 'payee', 'en_cours', 'terminee'].includes(statut) &&
+        !propositionsMap.has(id) &&
+        !loadingPropsIds.has(id)
+      ) {
+        setLoadingPropsIds(prev => new Set(prev).add(id));
+        try {
+          const props = await getPropositionsByDemande(id);
+          const active = props.find(p => p.statut === 'en_attente_acceptation') || props[0] || null;
+          setPropositionsMap(prev => new Map(prev).set(id, active));
+        } catch {
+          setPropositionsMap(prev => new Map(prev).set(id, null));
+        } finally {
+          setLoadingPropsIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+        }
+      }
+    }
     setExpandedIds(next);
   };
+
+  async function handleAccepterInline(demandeId: string, propositionId: string) {
+    if (!confirm('Confirmer l\'acceptation de cette proposition ?')) return;
+    setSubmitting(true);
+    try {
+      await acceptPropositionExpress(propositionId);
+      router.push(`/client/paiement-express/${propositionId}`);
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors de l\'acceptation');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleRefuserInline() {
+    if (!refusModal || !motifRefus.trim()) { alert('Veuillez indiquer le motif'); return; }
+    setSubmitting(true);
+    try {
+      await refusePropositionExpress(refusModal.propId, motifRefus.trim());
+      // Mettre à jour la demande localement
+      setDemandes(prev => prev.map(d => d.id === refusModal.id ? { ...d, statut: 'en_attente_proposition' as DemandeExpressStatut } : d));
+      setPropositionsMap(prev => { const m = new Map(prev); m.delete(refusModal.id); return m; });
+      setRefusModal(null); setMotifRefus('');
+    } catch (err: any) {
+      alert(err.message || 'Erreur');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleContreInline() {
+    if (!contreModal) return;
+    const montant = parseFloat(contreMontant);
+    if (isNaN(montant) || montant <= 0 || montant > 150) { alert('Montant invalide (1–150€)'); return; }
+    if (!contreMessage.trim()) { alert('Veuillez ajouter un message'); return; }
+    setSubmitting(true);
+    try {
+      await sendContrePropositionExpress(contreModal.propId, montant, contreMessage.trim());
+      setDemandes(prev => prev.map(d => d.id === contreModal.id ? { ...d, statut: 'en_attente_proposition' as DemandeExpressStatut } : d));
+      setPropositionsMap(prev => { const m = new Map(prev); m.delete(contreModal.id); return m; });
+      setContreModal(null); setContreMontant(''); setContreMessage('');
+      alert('✅ Contre-proposition envoyée !');
+    } catch (err: any) {
+      alert(err.message || 'Erreur');
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -111,7 +198,7 @@ export default function MesDemandesExpressPage() {
     );
   }
 
-  return (
+  return (<>
     <div className="min-h-screen bg-gradient-to-b from-[#F8F9FA] to-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -225,7 +312,7 @@ export default function MesDemandesExpressPage() {
 
                 {/* Bouton expand/collapse */}
                 <button
-                  onClick={() => toggleExpand(demande.id)}
+                  onClick={() => toggleExpand(demande.id, demande.statut)}
                   className="absolute top-5 right-5 p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
                   title={isExpanded ? 'Réduire' : 'Voir les détails'}
                 >
@@ -240,7 +327,7 @@ export default function MesDemandesExpressPage() {
                 {/* Contenu principal - toujours visible */}
                 <div
                   className="p-6 pl-8 pr-14 cursor-pointer"
-                  onClick={() => toggleExpand(demande.id)}
+                  onClick={() => toggleExpand(demande.id, demande.statut)}
                 >
                   <div className="flex items-center gap-3 mb-3 flex-wrap">
                     {getStatutBadge(demande.statut)}
@@ -277,34 +364,159 @@ export default function MesDemandesExpressPage() {
                 </div>
 
                 {/* Zone dépliée */}
-                {isExpanded && (
-                  <div className="px-8 pb-6 border-t border-gray-100 pt-4 space-y-3">
-                    {demande.adresse && (
-                      <div>
-                        <p className="text-xs text-gray-500 mb-0.5">📍 Adresse complète</p>
-                        <p className="text-sm font-medium text-[#2C3E50]">{demande.adresse}</p>
+                {isExpanded && (() => {
+                  const prop = propositionsMap.get(demande.id);
+                  const loadingProp = loadingPropsIds.has(demande.id);
+                  return (
+                    <div className="border-t border-gray-100">
+                      {/* Adresse si disponible */}
+                      {demande.adresse && (
+                        <div className="px-8 py-3 bg-[#F8F9FA] border-b border-gray-100">
+                          <p className="text-xs text-[#6C757D] font-semibold uppercase tracking-wide mb-0.5">📍 Adresse complète</p>
+                          <p className="text-sm font-medium text-[#2C3E50]">{demande.adresse}</p>
+                        </div>
+                      )}
+
+                      <div className="px-8 py-5 space-y-4">
+
+                        {/* En attente */}
+                        {demande.statut === 'en_attente_proposition' && (
+                          <div className="flex items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                            <span className="text-2xl">⏳</span>
+                            <p className="text-sm text-yellow-800 font-medium">Votre demande est en ligne. Un artisan va bientôt vous faire une proposition.</p>
+                          </div>
+                        )}
+
+                        {/* Proposition reçue — chargement */}
+                        {demande.statut === 'proposition_recue' && loadingProp && (
+                          <div className="flex items-center gap-3 py-4">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#FF6B00]" />
+                            <p className="text-sm text-[#6C757D]">Chargement de la proposition…</p>
+                          </div>
+                        )}
+
+                        {/* Proposition reçue — affichage */}
+                        {demande.statut === 'proposition_recue' && !loadingProp && prop && (
+                          <div className="space-y-4">
+                            {/* Header proposition */}
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <span className="text-base font-bold text-[#2C3E50]">💬 Proposition de l&apos;artisan</span>
+                              <span className="text-xs text-[#6C757D]">
+                                Reçue le {prop.createdAt ? format(prop.createdAt.toDate(), 'dd MMM yyyy à HH:mm', { locale: fr }) : ''}
+                              </span>
+                            </div>
+
+                            {/* Montant + comparaison budget */}
+                            <div className="flex items-center gap-4 p-4 bg-[#FFF5EB] rounded-xl">
+                              <div>
+                                <p className="text-xs text-[#6C757D] font-semibold uppercase tracking-wide mb-0.5">Montant proposé TTC</p>
+                                <p className="text-4xl font-extrabold text-[#FF6B00]">{prop.montantPropose}€</p>
+                              </div>
+                              {demande.budgetPropose && (
+                                <div className="ml-auto text-right">
+                                  <p className="text-xs text-[#6C757D] mb-0.5">Votre budget</p>
+                                  <p className="text-xl font-bold text-[#6C757D]">{demande.budgetPropose}€</p>
+                                  {prop.montantPropose <= demande.budgetPropose
+                                    ? <p className="text-xs text-green-600 font-semibold mt-0.5">✅ Dans votre budget</p>
+                                    : <p className="text-xs text-orange-600 font-semibold mt-0.5">⚠️ Au-dessus de votre budget</p>
+                                  }
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Description */}
+                            <div>
+                              <p className="text-xs text-[#6C757D] font-semibold uppercase tracking-wide mb-1">📝 Ce qui est inclus</p>
+                              <div className="bg-[#F8F9FA] rounded-xl p-3">
+                                <p className="text-sm text-[#2C3E50] whitespace-pre-wrap break-words leading-relaxed">{prop.description}</p>
+                              </div>
+                            </div>
+
+                            {/* Délai */}
+                            {prop.delaiIntervention && (
+                              <div>
+                                <p className="text-xs text-[#6C757D] font-semibold uppercase tracking-wide mb-1">⏱️ Délai d&apos;intervention</p>
+                                <span className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-lg text-sm font-semibold">
+                                  {prop.delaiIntervention}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Boutons d'action */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-gray-100">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setMotifRefus(''); setRefusModal({ id: demande.id, propId: prop.id }); }}
+                                disabled={submitting}
+                                className="px-4 py-2.5 border-2 border-red-400 text-red-600 rounded-xl hover:bg-red-50 font-semibold text-sm transition-all disabled:opacity-50"
+                              >
+                                ❌ Refuser
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setContreMontant(String(demande.budgetPropose || '')); setContreMessage(''); setContreModal({ id: demande.id, propId: prop.id, currentMontant: prop.montantPropose }); }}
+                                disabled={submitting}
+                                className="px-4 py-2.5 border-2 border-[#FF6B00] text-[#FF6B00] rounded-xl hover:bg-[#FFF5EB] font-semibold text-sm transition-all disabled:opacity-50"
+                              >
+                                💬 Contre-proposer
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleAccepterInline(demande.id, prop.id); }}
+                                disabled={submitting}
+                                className="px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-sm transition-all disabled:opacity-50 shadow"
+                              >
+                                {submitting ? '⏳…' : '✅ Accepter et payer'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Proposition reçue mais absente en base */}
+                        {demande.statut === 'proposition_recue' && !loadingProp && !prop && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700 font-medium">
+                            💬 Une proposition a été reçue. Cliquez sur &quot;Voir détails&quot; pour la consulter.
+                          </div>
+                        )}
+
+                        {/* En cours */}
+                        {demande.statut === 'en_cours' && (
+                          <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                            <span className="text-2xl">🔧</span>
+                            <p className="text-sm text-indigo-800 font-medium">L&apos;artisan est en cours d&apos;intervention. Vous serez notifié à la fin.</p>
+                          </div>
+                        )}
+
+                        {/* Payée */}
+                        {demande.statut === 'payee' && (
+                          <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-4">
+                            <span className="text-2xl">💳</span>
+                            <div>
+                              <p className="text-sm text-green-800 font-medium">Paiement confirmé.</p>
+                              {prop && <p className="text-sm text-green-700">Montant sécurisé : <strong>{prop.montantPropose}€</strong></p>}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Terminée */}
+                        {demande.statut === 'terminee' && (
+                          <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                            <span className="text-2xl">🎉</span>
+                            <p className="text-sm text-gray-700 font-medium">Intervention terminée. Merci d&apos;avoir utilisé ArtisanSafe !</p>
+                          </div>
+                        )}
+
+                        {/* Bouton Voir détails (toujours présent) */}
+                        <div className="flex justify-end pt-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); router.push(`/client/demandes-express/${demande.id}`); }}
+                            className="px-5 py-2 text-[#FF6B00] border border-[#FF6B00] rounded-lg hover:bg-[#FFF5EB] text-sm font-medium transition-all"
+                          >
+                            {t('clientExpressRequests.card.viewDetails')} →
+                          </button>
+                        </div>
+
                       </div>
-                    )}
-                    {demande.statut === 'proposition_recue' && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm font-semibold text-blue-700">
-                        {t('clientExpressRequests.card.proposalWaiting')}
-                      </div>
-                    )}
-                    {demande.statut === 'en_cours' && (
-                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm font-semibold text-indigo-700">
-                        {t('clientExpressRequests.card.interventionInProgress')}
-                      </div>
-                    )}
-                    <div className="flex gap-3 pt-1">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); router.push(`/client/demandes-express/${demande.id}`); }}
-                        className="px-5 py-2.5 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E56100] text-sm font-medium transition-all"
-                      >
-                        {t('clientExpressRequests.card.viewDetails')}
-                      </button>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
               );
             })}
@@ -340,5 +552,90 @@ export default function MesDemandesExpressPage() {
         </div>
       </div>
     </div>
+
+    {/* ── Modale Refus ─────────────────────────────── */}
+    {refusModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <h3 className="text-xl font-bold text-[#2C3E50] mb-2">❌ Refuser la proposition</h3>
+          <p className="text-[#6C757D] text-sm mb-4">Indiquez pourquoi vous refusez (l&apos;artisan sera notifié). La demande reviendra en attente.</p>
+          <textarea
+            value={motifRefus}
+            onChange={(e) => setMotifRefus(e.target.value)}
+            rows={4}
+            className="w-full px-4 py-3 border-2 border-[#E9ECEF] rounded-xl focus:outline-none focus:border-red-400 mb-4 text-sm"
+            placeholder="Ex : Le tarif est trop élevé pour ce travail…"
+          />
+          <div className="flex gap-3">
+            <button
+              onClick={() => { setRefusModal(null); setMotifRefus(''); }}
+              disabled={submitting}
+              className="flex-1 px-4 py-2.5 border-2 border-[#E9ECEF] text-[#6C757D] rounded-xl hover:border-[#2C3E50] font-medium text-sm"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleRefuserInline}
+              disabled={submitting || !motifRefus.trim()}
+              className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 font-semibold text-sm disabled:opacity-50"
+            >
+              {submitting ? '⏳ Envoi…' : 'Confirmer le refus'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── Modale Contre-proposition ─────────────────── */}
+    {contreModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <h3 className="text-xl font-bold text-[#2C3E50] mb-2">💬 Contre-proposition</h3>
+          <p className="bg-[#FFF5EB] text-[#FF6B00] text-sm font-semibold px-4 py-2 rounded-lg mb-4">
+            Proposition actuelle : {contreModal?.currentMontant ?? 0}€
+          </p>
+          <div className="mb-4">
+            <label className="text-sm font-semibold text-[#2C3E50] mb-1 block">💰 Votre budget souhaité (max 150€)</label>
+            <div className="relative">
+              <input
+                type="number" min="1" max="150"
+                value={contreMontant}
+                onChange={(e) => setContreMontant(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-[#E9ECEF] rounded-xl focus:outline-none focus:border-[#FF6B00] pr-10"
+                placeholder="Ex : 80"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6C757D] font-bold">€</span>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="text-sm font-semibold text-[#2C3E50] mb-1 block">📝 Message à l&apos;artisan</label>
+            <textarea
+              value={contreMessage}
+              onChange={(e) => setContreMessage(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-3 border-2 border-[#E9ECEF] rounded-xl focus:outline-none focus:border-[#FF6B00] text-sm"
+              placeholder="Ex : Je peux aller jusqu'à 80€ car le travail est limité au robinet uniquement."
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => { setContreModal(null); setContreMontant(''); setContreMessage(''); }}
+              disabled={submitting}
+              className="flex-1 px-4 py-2.5 border-2 border-[#E9ECEF] text-[#6C757D] rounded-xl hover:border-[#2C3E50] font-medium text-sm"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleContreInline}
+              disabled={submitting || !contreMontant || !contreMessage.trim()}
+              className="flex-1 px-4 py-2.5 bg-[#FF6B00] text-white rounded-xl hover:bg-[#E56100] font-semibold text-sm disabled:opacity-50"
+            >
+              {submitting ? '⏳ Envoi…' : 'Envoyer'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }
