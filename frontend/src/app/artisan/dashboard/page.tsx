@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { authService, resendVerificationEmail } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
-import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
+import { getDemandesForArtisan, getDemandesPubliquesForArtisan } from '@/lib/firebase/demande-service';
 import { getAvisByArtisanId, calculateAverageRating } from '@/lib/firebase/avis-service';
 import { useNotifications } from '@/hooks/useNotifications';
 import { artisanDoitDecennale } from '@/lib/decennale-helper';
@@ -122,9 +122,27 @@ export default function ArtisanDashboardPage() {
       // Charger les demandes pour compter les nouvelles
       try {
         const demandes = await getDemandesForArtisan(currentUser.uid);
-        // Compter seulement les demandes nouvelles (publiées ET sans devis envoyé)
-        const nouvellesCount = demandes.filter(d => 
-          d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)
+
+        // Charger aussi les demandes publiques correspondant au profil artisan
+        let demandesPubliques: Awaited<ReturnType<typeof getDemandesPubliquesForArtisan>> = [];
+        if (artisanData && artisanData.zonesIntervention?.length > 0) {
+          try {
+            demandesPubliques = await getDemandesPubliquesForArtisan({
+              metiers: artisanData.metiers,
+              location: { city: artisanData.zonesIntervention[0].ville },
+            });
+          } catch (err) {
+            console.warn('Erreur récupération demandes publiques (non bloquant):', err);
+          }
+        }
+
+        // Combiner et dédupliquer par ID
+        const idsDirect = new Set(demandes.map(d => d.id));
+        const publiquesSeulement = demandesPubliques.filter(d => !idsDirect.has(d.id));
+
+        // Compter toutes les demandes publiées
+        const nouvellesCount = [...demandes, ...publiquesSeulement].filter(
+          d => d.statut === 'publiee'
         ).length;
         setNouvellesDemandes(nouvellesCount);
       } catch (error) {
@@ -710,7 +728,7 @@ export default function ArtisanDashboardPage() {
               </div>
               <div className="text-sm text-gray-500">
                 {nouvellesDemandes > 0 ? (
-                  <p className="text-green-600 font-medium">🔔 {nouvellesDemandes} {nouvellesDemandes > 1 ? t('requests.requestsPending') : t('requests.requestPending')}</p>
+                  <p className="text-green-600 font-medium">🔔 {nouvellesDemandes} {nouvellesDemandes > 1 ? t('requests.requestsPublished') : t('requests.requestPublished')}</p>
                 ) : (
                   <p className="text-gray-500">📬 {t('requests.noNewRequests')}</p>
                 )}

@@ -715,7 +715,9 @@
     "noQuoteReceived": "Aucun devis n'a été reçu",
     "requestExpired": "Demande expirée",
     "autoClosedNoResponse": "Fermée automatiquement. Cliquez sur « Aide : Expiration » pour en savoir plus",
-    "requestExpiredClickHelp": "Demande fermée automatiquement. Cliquez sur « Aide : Expiration » pour en savoir plus"
+    "requestExpiredClickHelp": "Demande fermée automatiquement. Cliquez sur « Aide : Expiration » pour en savoir plus",
+    "requestPublished": "nouvelle demande publiée",
+    "requestsPublished": "nouvelles demandes publiées"
   },
   "messages": {
     "title": "Messages",

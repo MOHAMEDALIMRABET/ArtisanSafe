@@ -16,6 +16,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { authService } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
+import { getDemandesForArtisan, getDemandesPubliquesForArtisan } from '@/lib/firebase/demande-service';
 import type { User, Artisan } from '@/types/firestore';
 
 export default function Header() {
@@ -26,6 +27,7 @@ export default function Header() {
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [nouvellesDemandes, setNouvellesDemandes] = useState(0);
 
   // Helper : Déterminer l'URL des travaux express selon le rôle
   const getExpressWorksUrl = () => {
@@ -57,12 +59,15 @@ export default function Header() {
         if (userData?.role === 'artisan') {
           const artisanData = await getArtisanByUserId(firebaseUser.uid);
           setArtisan(artisanData);
+          await loadNouvellesDemandes(firebaseUser.uid, artisanData);
         } else {
           setArtisan(null);
+          setNouvellesDemandes(0);
         }
       } else {
         setUser(null);
         setArtisan(null);
+        setNouvellesDemandes(0);
       }
       setIsLoading(false);
     });
@@ -81,12 +86,36 @@ export default function Header() {
         if (userData?.role === 'artisan') {
           const artisanData = await getArtisanByUserId(currentUser.uid);
           setArtisan(artisanData);
+          await loadNouvellesDemandes(currentUser.uid, artisanData);
         }
       }
     } catch (error) {
       console.error('Erreur chargement utilisateur:', error);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function loadNouvellesDemandes(uid: string, artisanData: Artisan | null) {
+    try {
+      const demandes = await getDemandesForArtisan(uid);
+      let demandesPubliques: Awaited<ReturnType<typeof getDemandesPubliquesForArtisan>> = [];
+      if (artisanData && artisanData.zonesIntervention?.length > 0) {
+        try {
+          demandesPubliques = await getDemandesPubliquesForArtisan({
+            metiers: artisanData.metiers,
+            location: { city: artisanData.zonesIntervention[0].ville },
+          });
+        } catch (err) {
+          console.warn('Erreur récupération demandes publiques pour le badge (non bloquant):', err);
+        }
+      }
+      const idsDirect = new Set(demandes.map(d => d.id));
+      const publiquesSeulement = demandesPubliques.filter(d => !idsDirect.has(d.id));
+      const count = [...demandes, ...publiquesSeulement].filter(d => d.statut === 'publiee').length;
+      setNouvellesDemandes(count);
+    } catch {
+      // Ne pas bloquer le chargement si les demandes échouent
     }
   }
 
@@ -213,7 +242,7 @@ export default function Header() {
                       <LanguageSelector />
                       
                       {/* Menu utilisateur connecté */}
-                      <UserMenu user={user} isArtisan={user.role === 'artisan'} />
+                      <UserMenu user={user} isArtisan={user.role === 'artisan'} nouvellesDemandes={nouvellesDemandes} />
                     </>
                   ) : (
                     <>

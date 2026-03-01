@@ -716,7 +716,9 @@
     "noQuoteReceived": "No quote received",
     "requestExpired": "Request expired",
     "autoClosedNoResponse": "Automatically closed. Click \"Help: Expiration\" to learn more",
-    "requestExpiredClickHelp": "Request automatically closed. Click \"Help: Expiration\" to learn more"
+    "requestExpiredClickHelp": "Request automatically closed. Click \"Help: Expiration\" to learn more",
+    "requestPublished": "new published request",
+    "requestsPublished": "new published requests"
   },
   "messages": {
     "title": "Messages",

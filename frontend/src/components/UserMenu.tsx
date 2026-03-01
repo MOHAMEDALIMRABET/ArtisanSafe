@@ -18,9 +18,10 @@ import type { User } from '@/types/firestore';
 interface UserMenuProps {
   user: User;
   isArtisan?: boolean;
+  nouvellesDemandes?: number;
 }
 
-export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
+export default function UserMenu({ user, isArtisan = false, nouvellesDemandes = 0 }: UserMenuProps) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -73,8 +74,20 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
     n => !n.lue && (n.type === 'nouvelle_demande' || n.type === 'demande_refusee')
   ).length;
 
-  // Nombre total de notifications non lues (incluant messages)
-  const totalNotifications = notifDevis + notifDemandes + unreadMessagesCount;
+  // Pour les artisans : remplacer le comptage "nouvelle_demande" (basé sur les notifications)
+  // par le comptage réel des demandes publiées, plus fiable.
+  // On conserve les notifications "demande_refusee" en supplément.
+  const notifDemandesRefusees = isArtisan
+    ? notifications.filter(n => !n.lue && n.type === 'demande_refusee').length
+    : 0;
+  // Pour les artisans : demandes réelles publiées + notifications de refus
+  // Pour les clients : comptage basé sur les notifications (nouvelle_demande + demande_refusee)
+  const effectiveDemandesCount = isArtisan
+    ? nouvellesDemandes + notifDemandesRefusees
+    : notifDemandes;
+
+  // Nombre total de notifications non lues (incluant messages et nouvelles demandes)
+  const totalNotifications = notifDevis + effectiveDemandesCount + unreadMessagesCount;
 
   // Fermer le dropdown au clic extérieur
   useEffect(() => {
