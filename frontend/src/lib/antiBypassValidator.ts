@@ -209,10 +209,14 @@ export function validateMessageWithHistory(
   if (!singleResult.isValid) return singleResult;
 
   // 2. Accumuler les chiffres des 5 derniers messages + le nouveau
+  // ⚠️ Si le nouveau message ne contient aucun chiffre, il ne peut pas compléter
+  // un numéro fragmenté → skip pour éviter les faux positifs
+  const newContentDigits = extractDigitRuns(newContent);
+  if (!newContentDigits) return { isValid: true, blockedPatterns: [] };
+
   const WINDOW = 5;
   const lastMsgs = recentSenderMsgs.slice(-WINDOW);
-  const combinedDigits =
-    lastMsgs.map(extractDigitRuns).join('') + extractDigitRuns(newContent);
+  const combinedDigits = lastMsgs.map(extractDigitRuns).join('') + newContentDigits;
 
   // 3. Fenêtre glissante de 10 chiffres → numéro français 0[1-9]XXXXXXXX
   for (let i = 0; i <= combinedDigits.length - 10; i++) {
