@@ -13,14 +13,16 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useContratsANoter } from '@/hooks/useContratsANoter';
 import { collection, query, where, onSnapshot, or } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import type { User } from '@/types/firestore';
+import { getDemandesPubliquesForArtisan } from '@/lib/firebase/demande-service';
+import type { User, Artisan } from '@/types/firestore';
 
 interface UserMenuProps {
   user: User;
   isArtisan?: boolean;
+  artisan?: Artisan | null;
 }
 
-export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
+export default function UserMenu({ user, isArtisan = false, artisan }: UserMenuProps) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -35,6 +37,8 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
 
   // État pour les messages non lus
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  // État pour les nouvelles demandes clients (artisans uniquement)
+  const [nouvellesDemandes, setNouvellesDemandes] = useState(0);
 
   // Compter les messages non lus en temps réel
   useEffect(() => {
@@ -58,6 +62,32 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
     return () => unsubscribe();
   }, [user?.uid]);
 
+  // Compter les nouvelles demandes publiques pour les artisans
+  useEffect(() => {
+    if (!isArtisan || !artisan?.metiers?.length || !artisan?.zonesIntervention?.length) return;
+
+    const firstZone = artisan.zonesIntervention[0];
+    if (!firstZone) return;
+
+    getDemandesPubliquesForArtisan({
+      metiers: artisan.metiers,
+      location: {
+        city: firstZone.ville,
+        coordinates: firstZone.latitude && firstZone.longitude ? {
+          latitude: firstZone.latitude,
+          longitude: firstZone.longitude
+        } : undefined
+      }
+    }).then(demandesPubliques => {
+      const count = demandesPubliques.filter(d =>
+        d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)
+      ).length;
+      setNouvellesDemandes(count);
+    }).catch(() => {
+      setNouvellesDemandes(0);
+    });
+  }, [isArtisan, artisan?.userId]);
+
   // Compter les notifications par catégorie (non lues uniquement)
   const notifDevis = notifications.filter(
     n => !n.lue && (
@@ -73,8 +103,8 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
     n => !n.lue && (n.type === 'nouvelle_demande' || n.type === 'demande_refusee')
   ).length;
 
-  // Nombre total de notifications non lues (incluant messages)
-  const totalNotifications = notifDevis + notifDemandes + unreadMessagesCount;
+  // Nombre total de notifications non lues (incluant messages et nouvelles demandes)
+  const totalNotifications = notifDevis + notifDemandes + unreadMessagesCount + nouvellesDemandes;
 
   // Fermer le dropdown au clic extérieur
   useEffect(() => {
@@ -447,9 +477,9 @@ export default function UserMenu({ user, isArtisan = false }: UserMenuProps) {
                     />
                   </svg>
                   <span className="font-medium flex-1">{t('common.clientRequests')}</span>
-                  {notifDemandes > 0 && (
+                  {(notifDemandes + nouvellesDemandes) > 0 && (
                     <span className="bg-[#FF6B00] text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
-                      {notifDemandes}
+                      {notifDemandes + nouvellesDemandes}
                     </span>
                   )}
                 </button>

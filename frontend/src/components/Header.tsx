@@ -213,7 +213,7 @@ export default function Header() {
                       <LanguageSelector />
                       
                       {/* Menu utilisateur connecté */}
-                      <UserMenu user={user} isArtisan={user.role === 'artisan'} />
+                      <UserMenu user={user} isArtisan={user.role === 'artisan'} artisan={artisan} />
                     </>
                   ) : (
                     <>

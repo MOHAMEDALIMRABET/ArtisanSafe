@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { authService, resendVerificationEmail } from '@/lib/auth-service';
 import { getUserById } from '@/lib/firebase/user-service';
 import { getArtisanByUserId } from '@/lib/firebase/artisan-service';
-import { getDemandesForArtisan } from '@/lib/firebase/demande-service';
+import { getDemandesForArtisan, getDemandesPubliquesForArtisan } from '@/lib/firebase/demande-service';
 import { getAvisByArtisanId, calculateAverageRating } from '@/lib/firebase/avis-service';
 import { useNotifications } from '@/hooks/useNotifications';
 import { artisanDoitDecennale } from '@/lib/decennale-helper';
@@ -121,11 +121,32 @@ export default function ArtisanDashboardPage() {
 
       // Charger les demandes pour compter les nouvelles
       try {
-        const demandes = await getDemandesForArtisan(currentUser.uid);
-        // Compter seulement les demandes nouvelles (publiées ET sans devis envoyé)
-        const nouvellesCount = demandes.filter(d => 
-          d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)
-        ).length;
+        let nouvellesCount = 0;
+        if (artisanData?.metiers?.length && artisanData?.zonesIntervention?.length) {
+          // Utiliser la recherche publique pour trouver toutes les demandes correspondant au profil
+          const firstZone = artisanData.zonesIntervention[0];
+          if (firstZone) {
+            const demandesPubliques = await getDemandesPubliquesForArtisan({
+              metiers: artisanData.metiers,
+              location: {
+                city: firstZone.ville,
+                coordinates: firstZone.latitude && firstZone.longitude ? {
+                  latitude: firstZone.latitude,
+                  longitude: firstZone.longitude
+                } : undefined
+              }
+            });
+            nouvellesCount = demandesPubliques.filter(d =>
+              d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)
+            ).length;
+          }
+        } else {
+          // Fallback: demandes explicitement matchées avec cet artisan
+          const demandes = await getDemandesForArtisan(currentUser.uid);
+          nouvellesCount = demandes.filter(d =>
+            d.statut === 'publiee' && (!d.devisRecus || d.devisRecus === 0)
+          ).length;
+        }
         setNouvellesDemandes(nouvellesCount);
       } catch (error) {
         console.error('Erreur chargement demandes:', error);
