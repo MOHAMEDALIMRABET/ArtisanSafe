@@ -149,9 +149,7 @@ service cloud.firestore {
     match /demandes_express/{demandeId} {
       allow read: if isAdmin() ||
                      isOwner(resource.data.clientId) ||
-                     (isArtisan() && isVerified()) ||
-                     (isAuthenticated() && request.auth.uid == resource.data.artisanId) ||
-                     isArtisan(); // Tout artisan connecté peut lire (pour accéder via notification)
+                     isAuthenticated(); // Tout utilisateur connecté peut lire (artisans via notifications)
       allow create: if isAuthenticated() && 
                        isClient() &&
                        request.auth.uid == request.resource.data.clientId &&
