@@ -32,6 +32,10 @@ const BLOCKED_PATTERNS = {
     // 🚨 CRITIQUE : Numéros français partiels (9+ chiffres commençant par 0)
     /\b0\d{8,}\b/g,
     
+    // 🚨 FRAGMENT : Début de numéro mobile 06/07 avec 4+ chiffres supplémentaires (6+ total)
+    // Bloque "066270", "0762345", etc. (préfixe mobile incomplet mais identifiable)
+    /\b0[67]\d{4,}\b/g,
+    
     // 🚨 NOUVEAU : Numéros internationaux (commence par +)
     /\+\d{8,}/g,
     
@@ -173,6 +177,67 @@ function detectFragmentedPhoneNumbers(text: string): boolean {
   }
   
   return false;
+}
+
+/**
+ * Extrait uniquement les séquences de 3+ chiffres consécutifs d'un texte
+ * Évite les faux positifs avec 1-2 chiffres isolés (quantités, dates courtes, etc.)
+ */
+function extractDigitRuns(text: string): string {
+  return (text.match(/\d{3,}/g) || []).join('');
+}
+
+/**
+ * Valide un message en tenant compte des messages récents du même expéditeur.
+ * Détecte les numéros fragmentés sur plusieurs messages.
+ * Ex: "066270" puis "3652" → cumulé = "0662703652" = 06 mobile → BLOQUÉ
+ *
+ * @param newContent        - Le nouveau message à envoyer
+ * @param recentSenderMsgs  - Les N derniers messages envoyés par cet expéditeur (ordre chronologique)
+ * @param isPaid            - Si true, bypass toutes les validations (devis payé)
+ */
+export function validateMessageWithHistory(
+  newContent: string,
+  recentSenderMsgs: string[],
+  isPaid: boolean = false
+): ValidationResult {
+  if (isPaid) return { isValid: true, blockedPatterns: [] };
+
+  // 1. Valider le message seul (règles existantes)
+  const singleResult = validateMessage(newContent, isPaid);
+  if (!singleResult.isValid) return singleResult;
+
+  // 2. Accumuler les chiffres des 5 derniers messages + le nouveau
+  const WINDOW = 5;
+  const lastMsgs = recentSenderMsgs.slice(-WINDOW);
+  const combinedDigits =
+    lastMsgs.map(extractDigitRuns).join('') + extractDigitRuns(newContent);
+
+  // 3. Fenêtre glissante de 10 chiffres → numéro français 0[1-9]XXXXXXXX
+  for (let i = 0; i <= combinedDigits.length - 10; i++) {
+    if (/^0[1-9]\d{8}$/.test(combinedDigits.substring(i, i + 10))) {
+      return {
+        isValid: false,
+        blockedPatterns: ['telephone'],
+        message:
+          '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.',
+      };
+    }
+  }
+
+  // 4. Fenêtre glissante de 11 chiffres → +33 / 0033
+  for (let i = 0; i <= combinedDigits.length - 11; i++) {
+    if (/^33[1-9]\d{8}$/.test(combinedDigits.substring(i, i + 11))) {
+      return {
+        isValid: false,
+        blockedPatterns: ['telephone'],
+        message:
+          '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.',
+      };
+    }
+  }
+
+  return { isValid: true, blockedPatterns: [] };
 }
 
 /**

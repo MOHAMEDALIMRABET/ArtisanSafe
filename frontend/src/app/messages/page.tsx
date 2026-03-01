@@ -24,7 +24,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { validateMessage } from '@/lib/antiBypassValidator';
+import { validateMessage, validateMessageWithHistory } from '@/lib/antiBypassValidator';
 
 interface Message {
   id: string;
@@ -438,7 +438,12 @@ export default function MessagesPage() {
     // Statuts post-paiement où l'échange de coordonnées est autorisé
     const statutsPostPaiement = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
     const isPaid = devisStatus ? statutsPostPaiement.includes(devisStatus) : false;
-    const validation = validateMessage(value, isPaid);
+    // Validation temps réel avec historique
+    const recentSenderMessages = messages
+      .filter(m => m.senderId === user?.uid)
+      .slice(-5)
+      .map(m => m.content || '');
+    const validation = validateMessageWithHistory(value, recentSenderMessages, isPaid);
     if (!validation.isValid) {
       setValidationWarning(validation.message || '');
     } else {
@@ -470,7 +475,13 @@ export default function MessagesPage() {
       // Statuts post-paiement où l'échange de coordonnées est autorisé
       const statutsPostPaiement = ['paye', 'en_cours', 'travaux_termines', 'termine_valide', 'termine_auto_valide', 'litige'];
       const isPaid = devisStatus ? statutsPostPaiement.includes(devisStatus) : false;
-      const validation = validateMessage(messageContent.trim(), isPaid);
+      // Récupérer les derniers messages envoyés par cet utilisateur dans cette conversation
+      const recentSenderMessages = messages
+        .filter(m => m.senderId === user.uid)
+        .slice(-5)
+        .map(m => m.content || '');
+
+      const validation = validateMessageWithHistory(messageContent.trim(), recentSenderMessages, isPaid);
 
       if (!validation.isValid) {
         alert(validation.message); // Message déjà traduit par antiBypassValidator
