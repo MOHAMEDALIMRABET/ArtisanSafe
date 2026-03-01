@@ -142,7 +142,7 @@ export default function NouvelleDemandeExpressPage() {
         clientId: firebaseUser.uid,
         artisanId: artisanId || null,
         categorie,
-        sousCategorie: sousCategorie || null,
+        sousCategorie: sousCategorie,  // '' est valide pour Firestore
         description,
         budgetPropose: budget,
         ville,
