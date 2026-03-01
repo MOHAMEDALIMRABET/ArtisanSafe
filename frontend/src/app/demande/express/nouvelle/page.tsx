@@ -378,8 +378,9 @@ export default function NouvelleDemandeExpressPage() {
             <div className="flex gap-4">
               <Button
                 type="button"
+                variant="outline"
                 onClick={() => router.back()}
-                className="flex-1 border-2 border-[#2C3E50] bg-white text-[#2C3E50] hover:bg-[#2C3E50] hover:text-white py-3 rounded-lg font-semibold transition-colors"
+                className="flex-1 py-3 rounded-lg font-semibold"
               >
                 Annuler
               </Button>
