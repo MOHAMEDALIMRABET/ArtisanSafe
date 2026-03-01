@@ -185,7 +185,7 @@ function detectFragmentedPhoneNumbers(text: string): boolean {
  * Évite les faux positifs avec 1-2 chiffres isolés (quantités, dates courtes, etc.)
  */
 function extractDigitRuns(text: string): string {
-  return (text.match(/\d{2,}/g) || []).join('');
+  return (text.match(/\d+/g) || []).join('');
 }
 
 /**
