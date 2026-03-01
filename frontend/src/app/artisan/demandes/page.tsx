@@ -1352,11 +1352,6 @@ export default function ArtisanDemandesPage() {
                            demande.statut === 'annulee' ? '❌ Annulée' :
                            demande.statut}
                         </span>
-                        {demande.statut === 'proposition_recue' && (
-                          <span className="mr-2 px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">
-                            ⏳ En attente d&apos;acceptation
-                          </span>
-                        )}
                       </div>
                       <p className="text-gray-700 mb-3 line-clamp-3 break-all whitespace-pre-wrap overflow-hidden">{demande.description}</p>
                       <div className="flex flex-wrap gap-3 text-sm text-gray-500">
