@@ -209,36 +209,46 @@ export function validateMessageWithHistory(
   if (!singleResult.isValid) return singleResult;
 
   // 2. Accumuler les chiffres des 5 derniers messages + le nouveau
-  // ⚠️ Si le nouveau message ne contient aucun chiffre, il ne peut pas compléter
-  // un numéro fragmenté → skip pour éviter les faux positifs
-  const newContentDigits = extractDigitRuns(newContent);
-  if (!newContentDigits) return { isValid: true, blockedPatterns: [] };
-
   const WINDOW = 5;
   const lastMsgs = recentSenderMsgs.slice(-WINDOW);
-  const combinedDigits = lastMsgs.map(extractDigitRuns).join('') + newContentDigits;
+  const historyCumulatedDigits = lastMsgs.map(extractDigitRuns).join('');
+  const newContentDigits = extractDigitRuns(newContent);
 
-  // 3. Fenêtre glissante de 10 chiffres → numéro français 0[1-9]XXXXXXXX
+  // ⚠️ Guard : si le nouveau message n'a aucun chiffre ET l'historique a moins de 6 digits
+  // → impossible de former un numéro → skip pour éviter les faux positifs
+  // Mais si l'historique a déjà 6+ digits, on contrôle quand même (ex: "Un" après "0662"+"3555"+"7")
+  if (!newContentDigits && historyCumulatedDigits.length < 6) {
+    return { isValid: true, blockedPatterns: [] };
+  }
+
+  const combinedDigits = historyCumulatedDigits + newContentDigits;
+
+  const BLOCKED_PHONE: ValidationResult = {
+    isValid: false,
+    blockedPatterns: ['telephone'],
+    message:
+      '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.',
+  };
+
+  // 3. Fenêtre glissante de 10 chiffres → numéro français complet 0[1-9]XXXXXXXX
   for (let i = 0; i <= combinedDigits.length - 10; i++) {
     if (/^0[1-9]\d{8}$/.test(combinedDigits.substring(i, i + 10))) {
-      return {
-        isValid: false,
-        blockedPatterns: ['telephone'],
-        message:
-          '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.',
-      };
+      return BLOCKED_PHONE;
     }
   }
 
-  // 4. Fenêtre glissante de 11 chiffres → +33 / 0033
+  // 4. Fenêtre glissante de 9 chiffres → numéro mobile quasi-complet 06/07XXXXXXX
+  // Bloque quand le dernier chiffre n'a pas encore été envoyé
+  for (let i = 0; i <= combinedDigits.length - 9; i++) {
+    if (/^0[67]\d{7}$/.test(combinedDigits.substring(i, i + 9))) {
+      return BLOCKED_PHONE;
+    }
+  }
+
+  // 5. Fenêtre glissante de 11 chiffres → +33 / 0033
   for (let i = 0; i <= combinedDigits.length - 11; i++) {
     if (/^33[1-9]\d{8}$/.test(combinedDigits.substring(i, i + 11))) {
-      return {
-        isValid: false,
-        blockedPatterns: ['telephone'],
-        message:
-          '⚠️ Le partage de coordonnées personnelles (téléphone, email, adresse postale) est interdit avant l\'acceptation du devis.\n\n✅ Utilisez la messagerie ArtisanDispo pour discuter en toute sécurité.',
-      };
+      return BLOCKED_PHONE;
     }
   }
 
