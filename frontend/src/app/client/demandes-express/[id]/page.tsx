@@ -21,7 +21,7 @@ export default function DemandeExpressDetailClientPage() {
   const router = useRouter();
   const params = useParams();
   const demandeId = params.id as string;
-  const { user: firebaseUser } = useAuth();
+  const { user: firebaseUser, loading: authLoading } = useAuth();
   const { t } = useLanguage();
 
   const [userData, setUserData] = useState<User | null>(null);
@@ -36,12 +36,13 @@ export default function DemandeExpressDetailClientPage() {
   const [motifRefus, setMotifRefus] = useState('');
 
   useEffect(() => {
+    if (authLoading) return;
     if (!firebaseUser) {
       router.push('/connexion');
       return;
     }
     loadData();
-  }, [firebaseUser, demandeId]);
+  }, [firebaseUser, authLoading, demandeId]);
 
   async function loadData() {
     if (!firebaseUser) return;

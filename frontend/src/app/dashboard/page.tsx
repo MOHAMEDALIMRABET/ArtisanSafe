@@ -276,6 +276,20 @@ export default function DashboardPage() {
               </div>
             </Link>
 
+            <Link href="/client/demandes-express">
+              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-2xl">⚡</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800">Mes demandes express</h2>
+                    <p className="text-sm text-gray-600">Petits travaux &lt; 150€</p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+
             <Link href="/client/devis">
               <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-[#FF6B00]">
                 <div className="flex items-center gap-4 mb-4">
